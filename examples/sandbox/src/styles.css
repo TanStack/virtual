@@ -1,34 +1,20 @@
 html {
   font-family: sans-serif;
-  font-size: 12px;
+  font-size: 14px;
 }
 
-.List {
-  border: 1px solid #d9dddd;
+.List, .Grid {
+  border: 1px solid #ddd;
 }
 
 .ListItemEven,
-.ListItemOdd {
+.ListItemOdd, .GridItemEven,
+.GridItemOdd { {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.ListItemEven {
-  background-color: #f8f8f0;
-}
-
-.Grid {
-  border: 1px solid #d9dddd;
-}
-
-.GridItemEven,
-.GridItemOdd {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.GridItemEven {
-  background-color: #f8f8f0;
+.ListItemEven, .GridItemEven {
+  background-color: #f8f0f8
 }
