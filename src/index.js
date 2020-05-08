@@ -9,8 +9,6 @@ export function useVirtual({
   overscan = 1,
   parentRef,
   horizontal,
-  // pinnedIndices,
-  // stickyIndices,
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
@@ -71,8 +69,8 @@ export function useVirtual({
   startIndex = Math.max(startIndex - 1 - overscan, 0)
   endIndex = Math.min(endIndex + 1 + overscan, size - 1)
 
-  const items = React.useMemo(() => {
-    const items = []
+  const virtualItems = React.useMemo(() => {
+    const virtualItems = []
 
     for (let i = startIndex; i <= endIndex; i++) {
       const measurement = measurements[i]
@@ -93,10 +91,10 @@ export function useVirtual({
         },
       }
 
-      items.push(item)
+      virtualItems.push(item)
     }
 
-    return items
+    return virtualItems
   }, [startIndex, endIndex, measurements, sizeKey])
 
   const scrollToOffset = React.useCallback(
@@ -119,7 +117,7 @@ export function useVirtual({
   )
 
   return {
-    items,
+    virtualItems,
     totalSize: total,
     scrollToOffset,
     scrollToIndex,

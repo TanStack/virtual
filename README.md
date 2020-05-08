@@ -228,7 +228,7 @@ function RowVirtualizerFixed() {
             position: 'relative',
           }}
         >
-          {rowVirtualizer.items.map(virtualRow => (
+          {rowVirtualizer.virtualItems.map(virtualRow => (
             <div
               key={virtualRow.index}
               className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}

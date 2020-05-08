@@ -33,7 +33,7 @@ describe('useVirtual', () => {
                 position: 'relative',
               }}
             >
-              {rowVirtualizer.items.map(virtualRow => (
+              {rowVirtualizer.virtualItems.map(virtualRow => (
                 <div
                   key={virtualRow.index}
                   className={

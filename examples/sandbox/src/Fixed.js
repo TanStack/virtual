@@ -47,7 +47,7 @@ function RowVirtualizerFixed() {
             position: "relative"
           }}
         >
-          {rowVirtualizer.items.map(virtualRow => (
+          {rowVirtualizer.virtualItems.map(virtualRow => (
             <div
               key={virtualRow.index}
               className={virtualRow.index % 2 ? "ListItemOdd" : "ListItemEven"}
@@ -98,7 +98,7 @@ function ColumnVirtualizerFixed() {
             position: "relative"
           }}
         >
-          {columnVirtualizer.items.map(virtualColumn => (
+          {columnVirtualizer.virtualItems.map(virtualColumn => (
             <div
               key={virtualColumn.index}
               className={
@@ -158,9 +158,9 @@ function GridVirtualizerFixed() {
             position: "relative"
           }}
         >
-          {rowVirtualizer.items.map(virtualRow => (
+          {rowVirtualizer.virtualItems.map(virtualRow => (
             <React.Fragment key={virtualRow.index}>
-              {columnVirtualizer.items.map(virtualColumn => (
+              {columnVirtualizer.virtualItems.map(virtualColumn => (
                 <div
                   key={virtualColumn.index}
                   className={
