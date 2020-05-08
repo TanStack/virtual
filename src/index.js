@@ -3,7 +3,7 @@ import React from 'react'
 import useScroll from './useScroll'
 import useRect from './useRect'
 
-export function useVirtualizer({
+export function useVirtual({
   size = 0,
   estimateSize,
   overscan = 1,

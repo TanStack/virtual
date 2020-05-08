@@ -245,7 +245,7 @@ This is just a quick sample of what it looks like to use React Virtual. Please r
 function RowVirtualizerFixed() {
   const parentRef = React.useRef()
 
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = useVirtual({
     size: 10000,
     parentRef,
     estimateSize: React.useCallback(() => 35, []),
@@ -295,7 +295,7 @@ function RowVirtualizerFixed() {
 
 # API
 
-## `useVirtualizer`
+## `useVirtual`
 
 ```js
 const {
@@ -304,7 +304,7 @@ const {
     /* ... */
   ],
   totalSize,
-} = useVirtualizer({
+} = useVirtual({
   size,
   parentRef,
   estimateSize,

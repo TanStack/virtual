@@ -1,6 +1,6 @@
 import React from "react";
 
-import { useVirtualizer } from "react-virtual";
+import { useVirtual } from "react-virtual";
 
 export default function() {
   return (
@@ -22,7 +22,7 @@ export default function() {
 function RowVirtualizerFixed() {
   const parentRef = React.useRef();
 
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = useVirtual({
     size: 10000,
     parentRef,
     estimateSize: React.useCallback(() => 35, []),
@@ -72,7 +72,7 @@ function RowVirtualizerFixed() {
 function ColumnVirtualizerFixed() {
   const parentRef = React.useRef();
 
-  const columnVirtualizer = useVirtualizer({
+  const columnVirtualizer = useVirtual({
     horizontal: true,
     size: 10000,
     parentRef,
@@ -125,14 +125,14 @@ function ColumnVirtualizerFixed() {
 function GridVirtualizerFixed() {
   const parentRef = React.useRef();
 
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = useVirtual({
     size: 10000,
     parentRef,
     estimateSize: React.useCallback(() => 35, []),
     overscan: 5
   });
 
-  const columnVirtualizer = useVirtualizer({
+  const columnVirtualizer = useVirtual({
     horizontal: true,
     size: 10000,
     parentRef,
