@@ -189,6 +189,12 @@ $ yarn add react-virtual
 
 > React Virtual uses [Scarf](https://www.npmjs.com/package/@scarf/scarf) to collect anonymized installation analytics. These analytics help support the maintainers of this library. However, if you'd like to opt out, you can do so by setting `scarfSettings.enabled = false` in your project's `package.json`. Alternatively, you can set the environment variable `SCARF_ANALYTICS=false` before you install.
 
+# Why?
+
+React Virtual's most distinguishing feature is that it's just one single custom hook instead of a set of components. In more trendy terms, this means that it is "headless", allowing you to control 100% all of the markup and styles, exactly how you want.
+
+React Virtual supplies you with primitive **utilities** that allow you to build any range of virtualized experiences. **One testament to this** is that you can combine 2 instances of `useVirtual` onto the same markup to achieve a virtualized grid, where with other utilites, you would need to use a dedicated `Grid`-like component.
+
 # Sample
 
 This is just a quick sample of what it looks like to use React Virtual. Please refer to the examples for more usage patterns.
