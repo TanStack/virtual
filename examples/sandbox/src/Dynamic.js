@@ -43,8 +43,8 @@ function RowVirtualizerDynamic({ rows }) {
         ref={parentRef}
         className="List"
         style={{
-          height: `150px`,
-          width: `300px`,
+          height: `200px`,
+          width: `400px`,
           overflow: "auto"
         }}
       >
@@ -95,8 +95,8 @@ function ColumnVirtualizerDynamic({ columns }) {
         ref={parentRef}
         className="List"
         style={{
-          width: `300px`,
-          height: `75px`,
+          width: `400px`,
+          height: `100px`,
           overflow: "auto"
         }}
       >
@@ -156,8 +156,8 @@ function GridVirtualizerDynamic({ rows, columns }) {
         ref={parentRef}
         className="Grid"
         style={{
-          height: `150px`,
-          width: `300px`,
+          height: `400px`,
+          width: `500px`,
           overflow: "auto"
         }}
       >

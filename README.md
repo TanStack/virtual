@@ -22,7 +22,7 @@ Hooks for virtualizing scrollable elements in React
   <img alt="" src="https://img.shields.io/twitter/follow/tannerlinsley.svg?style=social&label=Follow" />
 </a>
 
-Enjoy this library? Try them all! [React Table](https://github.com/tannerlinsley/react-table), [React Virtual](https://github.com/tannerlinsley/react-query), [React Form](https://github.com/tannerlinsley/react-form),
+Enjoy this library? Try them all! [React Table](https://github.com/tannerlinsley/react-table), [React Query](https://github.com/tannerlinsley/react-query), [React Form](https://github.com/tannerlinsley/react-form),
 [React Charts](https://github.com/tannerlinsley/react-charts)
 
 ## Quick Features
