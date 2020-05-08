@@ -1,7 +1,7 @@
 {
   "name": "react-virtual",
   "version": "0.0.0",
-  "description": "Hooks for displaying virtualized lists in React",
+  "description": "Hooks for virtualizing scrollable elements in React",
   "author": "tannerlinsley",
   "license": "MIT",
   "repository": "tannerlinsley/react-virtual",
