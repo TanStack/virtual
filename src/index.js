@@ -25,14 +25,6 @@ export function useVirtual({
     _setScrollOffset(newScrollOffset)
   })
 
-  const setScrollOffset = React.useCallback(
-    offset => {
-      _setScrollOffset(offset)
-      parentRef.current[scrollKey] = offset
-    },
-    [parentRef, scrollKey]
-  )
-
   const scrollOffsetPlusSize = scrollOffset + outerSize
 
   const [measuredCache, setMeasuredCache] = React.useState({})
@@ -107,9 +99,29 @@ export function useVirtual({
     return items
   }, [startIndex, endIndex, measurements, sizeKey])
 
+  const scrollToOffset = React.useCallback(
+    offset => {
+      _setScrollOffset(offset)
+      parentRef.current[scrollKey] = offset
+    },
+    [parentRef, scrollKey]
+  )
+
+  const scrollToIndex = React.useCallback(
+    index => {
+      const measurement = measurements[index]
+
+      if (measurement) {
+        scrollToOffset(measurement.start)
+      }
+    },
+    [measurements, scrollToOffset]
+  )
+
   return {
     items,
     totalSize: total,
-    setScrollOffset,
+    scrollToOffset,
+    scrollToIndex,
   }
 }

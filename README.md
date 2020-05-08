@@ -256,6 +256,8 @@ const {
     /* ... */
   ],
   totalSize,
+  scrollToIndex,
+  scrollToOffset,
 } = useVirtual({
   size,
   parentRef,
@@ -300,11 +302,15 @@ const {
       - The static/variable or, if dynamically rendered, the measured size of the item
     - `end: Integer`
       - The ending measurement of the item
-    - `measureRef: React.useRef | Function(el) => void 0`
+    - `measureRef: React.useRef | Function(el: DOMElement) => void 0`
       - The ref/function to place on the rendered element to enable dynamic measurement rendering
 - `totalSize: Integer`
   - The total size of the entire virtualizer
   - When using dynamic measurement refs, this number may change as items are measured after they are rendered.
+- `scrollToIndex: Function(index: Integer) => void 0`
+  - Call this function to scroll the top/left of the parentRef element to the start of the item located at the passed index.
+- `scrollToOffset: Function(offsetInPixels: Integer) => void 0`
+  - Call this function to scroll the top/left of the parentRef element to the passed pixel offset.
 
 # Contributors ✨
 

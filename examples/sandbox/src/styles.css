@@ -4,7 +4,7 @@ html {
 }
 
 .List {
-  border: 1px solid #d9dddd;
+  border: 1px solid #e6e4dc;
 }
 
 .ListItemEven,
@@ -15,11 +15,11 @@ html {
 }
 
 .ListItemEven {
-  background-color: #f8f8f0;
+  background-color: #e6e4dc;
 }
 
 .Grid {
-  border: 1px solid #d9dddd;
+  border: 1px solid #e6e4dc;
 }
 
 .GridItemEven,
@@ -30,5 +30,5 @@ html {
 }
 
 .GridItemEven {
-  background-color: #f8f8f0;
+  background-color: #e6e4dc;
 }
