@@ -144,7 +144,7 @@ function GridVirtualizerFixed() {
     <>
       <div
         ref={parentRef}
-        className="Grid"
+        className="List"
         style={{
           height: `500px`,
           width: `500px`,
@@ -166,11 +166,11 @@ function GridVirtualizerFixed() {
                   className={
                     virtualColumn.index % 2
                       ? virtualRow.index % 2 === 0
-                        ? "GridItemOdd"
-                        : "GridItemEven"
+                        ? "ListItemOdd"
+                        : "ListItemEven"
                       : virtualRow.index % 2
-                      ? "GridItemOdd"
-                      : "GridItemEven"
+                      ? "ListItemOdd"
+                      : "ListItemEven"
                   }
                   style={{
                     position: "absolute",

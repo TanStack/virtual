@@ -154,7 +154,7 @@ function GridVirtualizerDynamic({ rows, columns }) {
     <>
       <div
         ref={parentRef}
-        className="Grid"
+        className="List"
         style={{
           height: `400px`,
           width: `500px`,
@@ -180,11 +180,11 @@ function GridVirtualizerDynamic({ rows, columns }) {
                   className={
                     virtualColumn.index % 2
                       ? virtualRow.index % 2 === 0
-                        ? "GridItemOdd"
-                        : "GridItemEven"
+                        ? "ListItemOdd"
+                        : "ListItemEven"
                       : virtualRow.index % 2
-                      ? "GridItemOdd"
-                      : "GridItemEven"
+                      ? "ListItemOdd"
+                      : "ListItemEven"
                   }
                   style={{
                     position: "absolute",

@@ -5,6 +5,7 @@ html {
 
 .List {
   border: 1px solid #e6e4dc;
+  max-width: 100%;
 }
 
 .ListItemEven,
@@ -15,20 +16,5 @@ html {
 }
 
 .ListItemEven {
-  background-color: #e6e4dc;
-}
-
-.Grid {
-  border: 1px solid #e6e4dc;
-}
-
-.GridItemEven,
-.GridItemOdd {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.GridItemEven {
   background-color: #e6e4dc;
 }

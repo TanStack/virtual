@@ -57,6 +57,15 @@ function App() {
           <Dynamic />
         </>
       ) : null}
+      <br />
+      <br />
+      {process.env.NODE_ENV === "development" ? (
+        <p>
+          <strong>Notice:</strong> You are currently running React in
+          development mode. Rendering performance will be slightly degraded
+          until this application is build for production.
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -152,7 +152,7 @@ function GridVirtualizerVariable({ rows, columns }) {
     <>
       <div
         ref={parentRef}
-        className="Grid"
+        className="List"
         style={{
           height: `400px`,
           width: `500px`,
