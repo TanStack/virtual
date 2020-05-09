@@ -289,7 +289,7 @@ const {
 - `estimateSize: Function(index) => Integer`
   - **Required**
   - **Must be memoized using `React.useCallback()`**
-  - This function recieves the index of each item and should return either:
+  - This function receives the index of each item and should return either:
     - A fixed size
     - A variable size per-item
     - A best-guess size (when using dynamic measurement rendering)
