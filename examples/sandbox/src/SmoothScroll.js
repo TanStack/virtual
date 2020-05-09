@@ -44,6 +44,14 @@ export default function() {
 
   return (
     <>
+      <p>
+        This smooth scroll example uses the <code>`scrollToFn`</code> to
+        implement a custom scrolling function for the methods like{" "}
+        <code>`scrollToIndex`</code> and <code>`scrollToOffset`</code>
+      </p>
+      <br />
+      <br />
+
       <button
         onClick={() =>
           rowVirtualizer.scrollToIndex(Math.floor(Math.random() * 10000))

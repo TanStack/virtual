@@ -5,6 +5,14 @@ import { useVirtual } from "react-virtual";
 export default function() {
   return (
     <div>
+      <p>
+        These components are using <strong>fixed</strong> sizes. This means that
+        every element's dimensions are hard-coded to the same value and never
+        change.
+      </p>
+      <br />
+      <br />
+
       <h3>Rows</h3>
       <RowVirtualizerFixed />
       <br />

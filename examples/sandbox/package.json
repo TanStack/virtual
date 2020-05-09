@@ -8,8 +8,10 @@
     "serve": "serve -s build"
   },
   "dependencies": {
+    "axios": "^0.19.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
+    "react-query": "^1.3.3",
     "react-scripts": "3.0.1",
     "react-virtual": "^2.0.0",
     "stop-runaway-react-effects": "^1.2.0"

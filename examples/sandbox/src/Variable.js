@@ -13,6 +13,13 @@ export default function() {
 
   return (
     <div>
+      <p>
+        These components are using <strong>variable</strong> sizes. This means
+        that each element has a unique, but knowable dimension at render time.
+      </p>
+      <br />
+      <br />
+
       <h3>Rows</h3>
       <RowVirtualizerVariable rows={rows} columns={columns} />
       <br />

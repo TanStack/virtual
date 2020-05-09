@@ -7,6 +7,7 @@ import Fixed from "./Fixed";
 import Variable from "./Variable";
 import Dynamic from "./Dynamic";
 import SmoothScroll from "./SmoothScroll";
+import InfiniteScroll from "./InfiniteScroll";
 
 function App() {
   const [mode, setMode] = React.useState("fixed"); // fixed | variable | dynamic
@@ -18,57 +19,22 @@ function App() {
         <option value="variable">Variable</option>
         <option value="dynamic">Dynamic</option>
         <option value="smooth-scroll">Smooth Scroll</option>
+        <option value="infinite-scroll">Infinite Scroll</option>
       </select>
 
       <br />
       <br />
 
       {mode === "fixed" ? (
-        <>
-          <p>
-            These components are using <strong>fixed</strong> sizes. This means
-            that every element's dimensions are hard-coded to the same value and
-            never change.
-          </p>
-          <br />
-          <br />
-          <Fixed />
-        </>
+        <Fixed />
       ) : mode === "variable" ? (
-        <>
-          <p>
-            These components are using <strong>variable</strong> sizes. This
-            means that each element has a unique, but knowable dimension at
-            render time.
-          </p>
-          <br />
-          <br />
-          <Variable />
-        </>
+        <Variable />
       ) : mode === "dynamic" ? (
-        <>
-          <p>
-            These components are using <strong>dynamic</strong> sizes. This
-            means that each element's exact dimensions are unknown when
-            rendered. An estimated dimension is used to get an a initial
-            measurement, then this measurement is readjusted on the fly as each
-            element is rendered.
-          </p>
-          <br />
-          <br />
-          <Dynamic />
-        </>
+        <Dynamic />
       ) : mode === "smooth-scroll" ? (
-        <>
-          <p>
-            Smooth scroll uses the <code>`scrollToFn`</code> to implement a
-            custom scrolling function for the methods like{" "}
-            <code>`scrollToIndex`</code> and <code>`scrollToOffset`</code>
-          </p>
-          <br />
-          <br />
-          <SmoothScroll />
-        </>
+        <SmoothScroll />
+      ) : mode === "infinite-scroll" ? (
+        <InfiniteScroll />
       ) : null}
       <br />
       <br />
