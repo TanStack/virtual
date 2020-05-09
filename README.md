@@ -43,8 +43,9 @@ Enjoy this library? Try them all! [React Table](https://github.com/tannerlinsley
 ## Examples
 
 - Sandbox - [CodeSandbox](https://codesandbox.io/s/github/tannerlinsley/react-virtual/tree/master/examples/sandbox) - [Source](./examples/sandbox)
-  - Shows examples of Row, Column, and Grid layouts
-  - Shows examples of fixed, variable, and dynamic sizing
+  - Row, Column, and Grid layouts
+  - Fixed, variable, and dynamic sizing
+  - Smooth Scrolling
 
 ## Sponsors
 
