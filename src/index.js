@@ -164,8 +164,10 @@ export function useVirtual({
       if (align === 'auto') {
         if (measurement.end >= scrollOffsetPlusOuterSize) {
           align = 'end'
-        } else {
+        } else if (measurement.start <= scrollOffset) {
           align = 'start'
+        } else {
+          return
         }
       }
 
@@ -178,7 +180,7 @@ export function useVirtual({
 
       return offset
     },
-    [measurements, scrollOffsetPlusOuterSize]
+    [measurements, scrollOffset, scrollOffsetPlusOuterSize]
   )
 
   const scrollToIndex = React.useCallback(
