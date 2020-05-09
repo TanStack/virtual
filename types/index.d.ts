@@ -21,7 +21,7 @@ declare function useVirtual<T>(options: {
   estimateSize: (index?: number) => number
   overscan?: number
   horizontal?: boolean
-  scrollToFn?: (offset: number) => number
+  scrollToFn?: (offset: number) => void
 }): {
   virtualItems: VirtualItem[]
   totalSize: number
