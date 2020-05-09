@@ -9,12 +9,15 @@ function easeInOutQuint(t) {
 export default function() {
   const parentRef = React.useRef();
 
+  const scrollingRef = React.useRef();
+
   const scrollToFn = React.useCallback(offset => {
     const duration = 1000;
     const start = parentRef.current.scrollTop;
-    const startTime = Date.now();
+    const startTime = (scrollingRef.current = Date.now());
 
     const run = () => {
+      if (scrollingRef.current !== startTime) return;
       const now = Date.now();
       const elapsed = now - startTime;
       const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
