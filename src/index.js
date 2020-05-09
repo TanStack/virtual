@@ -7,7 +7,7 @@ import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 export function useVirtual({
   size = 0,
   estimateSize,
-  overscan = 1,
+  overscan = 0,
   parentRef,
   horizontal,
   scrollToFn,
