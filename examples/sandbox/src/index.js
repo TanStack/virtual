@@ -6,6 +6,7 @@ import "./styles.css";
 import Fixed from "./Fixed";
 import Variable from "./Variable";
 import Dynamic from "./Dynamic";
+import SmoothScroll from "./SmoothScroll";
 
 function App() {
   const [mode, setMode] = React.useState("fixed"); // fixed | variable | dynamic
@@ -16,6 +17,7 @@ function App() {
         <option value="fixed">Fixed</option>
         <option value="variable">Variable</option>
         <option value="dynamic">Dynamic</option>
+        <option value="smooth-scroll">Smooth Scroll</option>
       </select>
 
       <br />
@@ -55,6 +57,17 @@ function App() {
           <br />
           <br />
           <Dynamic />
+        </>
+      ) : mode === "smooth-scroll" ? (
+        <>
+          <p>
+            Smooth scroll uses the <code>`scrollToFn`</code> to implement a
+            custom scrolling function for the methods like{" "}
+            <code>`scrollToIndex`</code> and <code>`scrollToOffset`</code>
+          </p>
+          <br />
+          <br />
+          <SmoothScroll />
         </>
       ) : null}
       <br />

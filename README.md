@@ -30,6 +30,8 @@ Enjoy this library? Try them all! [React Table](https://github.com/tannerlinsley
 - Row, Column, and Grid virtualization
 - One single **headless** hook
 - Fixed, variable and dynamic measurement modes
+- Imperative scrollTo control for offset, indices and alignment
+- Custom scrolling function support (eg. smooth scroll)
 - <a href="https://bundlephobia.com/result?p=react-virtual@latest" target="\_parent">
   <img alt="" src="https://badgen.net/bundlephobia/minzip/react-virtual@latest" />
   </a>
@@ -264,12 +266,14 @@ const {
   totalSize,
   scrollToIndex,
   scrollToOffset,
+  getIndexOffset,
+  scrollToFn,
 } = useVirtual({
   size,
   parentRef,
   estimateSize,
   overscan,
-  horiztonal,
+  horizontal,
 })
 ```
 
@@ -290,10 +294,15 @@ const {
     - A best-guess size (when using dynamic measurement rendering)
   - When this function's memoization changes, the entire list is recalculated
 - `overscan: Integer`
-  - The amount of items to load both behind and ahead of the current window range
   - Defaults to `1`
+  - The amount of items to load both behind and ahead of the current window range
 - `horizontal: Boolean`
+  - Defaults to `false`
   - When `true`, this virtualizer will use `width` and `scrollLeft` instead of `height` and `scrollTop` to determine size and offset of virtualized items.
+- `scrollToFn: Function(offset) => void 0`
+  - Optional
+  - This function, if passed, is responsible for implementing the scrollTo log for the parentRef.
+  - Eg. You can use this function implement smooth scrolling by using the supplied offset and animating the parentRef's scroll offset appropriately as seen in the sandbox's **Smooth Scroll** example.
 
 ### Returns
 
@@ -313,10 +322,30 @@ const {
 - `totalSize: Integer`
   - The total size of the entire virtualizer
   - When using dynamic measurement refs, this number may change as items are measured after they are rendered.
-- `scrollToIndex: Function(index: Integer) => void 0`
+- `scrollToIndex: Function(index: Integer, { align: String }) => void 0`
   - Call this function to scroll the top/left of the parentRef element to the start of the item located at the passed index.
-- `scrollToOffset: Function(offsetInPixels: Integer) => void 0`
+  - `align: 'start' | 'center' | 'end' | 'auto'`
+    - Defaults to `start`
+    - `start` places the item at the top/left of the visible scroll area
+    - `center` places the item in the center of the visible scroll area
+    - `end` places the item at the bottom/right of the visible scroll area
+    - `auto` brings the item into the visible scroll area either at the start or end, depending on which is closer. If the item is already in view, it is placed at the `top/left` of the visible scroll area.
+- `scrollToOffset: Function(offsetInPixels: Integer, { align: String }) => void 0`
   - Call this function to scroll the top/left of the parentRef element to the passed pixel offset.
+  - `align: 'start' | 'center' | 'end' | 'auto'`
+    - Defaults to `start`
+    - `start` places the offset at the top/left of the visible scroll area
+    - `center` places the offset in the center of the visible scroll area
+    - `end` places the offset at the bottom/right of the visible scroll area
+    - `auto` brings the offset into the visible scroll area either at the start or end, depending on which is closer. If the offset is already in view, it is placed at the `top/left` of the visible scroll area.
+- `getIndexOffset: Function(index: Integer, { align: String }) => void 0`
+  - Call this function to return the offset of the item located at the passed index.
+  - `align: 'start' | 'center' | 'end' | 'auto'`
+    - Defaults to `start`
+    - `start` returns the item's top/left offset
+    - `center` returns the item's center offset
+    - `end` returns the item's bottom/right offset
+    - `auto` return's the item's start or end offset, depending on which is closer. If the item is already in view, the `top/left` offset will be returned
 
 # Contributors ✨
 

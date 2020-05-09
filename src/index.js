@@ -2,6 +2,7 @@ import React from 'react'
 
 import useScroll from './useScroll'
 import useRect from './useRect'
+import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
 export function useVirtual({
   size = 0,
@@ -9,9 +10,19 @@ export function useVirtual({
   overscan = 1,
   parentRef,
   horizontal,
+  scrollToFn,
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
+
+  const defaultScrollToFn = React.useCallback(
+    offset => {
+      parentRef.current[scrollKey] = offset
+    },
+    [parentRef, scrollKey]
+  )
+
+  scrollToFn = scrollToFn || defaultScrollToFn
 
   const { [sizeKey]: outerSize } = useRect(parentRef) || {
     [sizeKey]: 0,
@@ -23,12 +34,17 @@ export function useVirtual({
     _setScrollOffset(newScrollOffset)
   })
 
-  const scrollOffsetPlusSize = scrollOffset + outerSize
+  const scrollOffsetPlusOuterSize = scrollOffset + outerSize
 
   const [measuredCache, setMeasuredCache] = React.useState({})
 
-  React.useEffect(() => {
-    if (estimateSize || size) setMeasuredCache({})
+  const mountedRef = React.useRef()
+
+  useIsomorphicLayoutEffect(() => {
+    if (mountedRef.current) {
+      if (estimateSize || size) setMeasuredCache({})
+    }
+    mountedRef.current = true
   }, [estimateSize, size])
 
   const measurements = React.useMemo(() => {
@@ -48,7 +64,7 @@ export function useVirtual({
     return measurements
   }, [estimateSize, measuredCache, size])
 
-  const total = measurements[size - 1]?.end || 0
+  const totalSize = measurements[size - 1]?.end || 0
 
   let start = React.useMemo(
     () => measurements.find(rowStat => rowStat.end >= scrollOffset),
@@ -58,8 +74,8 @@ export function useVirtual({
     () =>
       [...measurements]
         .reverse()
-        .find(rowStat => rowStat.start <= scrollOffsetPlusSize),
-    [measurements, scrollOffsetPlusSize]
+        .find(rowStat => rowStat.start <= scrollOffsetPlusOuterSize),
+    [measurements, scrollOffsetPlusOuterSize]
   )
 
   let startIndex = start ? start.index : 0
@@ -97,28 +113,88 @@ export function useVirtual({
     return virtualItems
   }, [startIndex, endIndex, measurements, sizeKey])
 
+  const latestRef = React.useRef()
+  latestRef.current = {
+    outerSize,
+    scrollOffset,
+    scrollOffsetPlusOuterSize,
+    totalSize,
+  }
+
   const scrollToOffset = React.useCallback(
-    offset => {
-      _setScrollOffset(offset)
-      parentRef.current[scrollKey] = offset
+    (offset, { align = 'start' } = {}) => {
+      const {
+        outerSize,
+        scrollOffset,
+        scrollOffsetPlusOuterSize,
+        totalSize,
+      } = latestRef.current
+
+      offset = Math.max(0, Math.min(offset, totalSize - outerSize))
+
+      if (align === 'auto') {
+        if (offset <= scrollOffset) {
+          align = 'start'
+        } else if (offset >= scrollOffsetPlusOuterSize) {
+          align = 'end'
+        } else {
+          align = 'start'
+        }
+      }
+
+      if (align === 'start') {
+        scrollToFn(offset)
+      } else if (align === 'end') {
+        scrollToFn(offset - outerSize)
+      } else if (align === 'center') {
+        scrollToFn(offset - outerSize / 2)
+      }
     },
-    [parentRef, scrollKey]
+    [scrollToFn]
+  )
+
+  const getIndexOffset = React.useCallback(
+    (index, { align = 'start' } = {}) => {
+      const measurement = measurements[index]
+
+      if (!measurement) {
+        return
+      }
+
+      if (align === 'auto') {
+        if (measurement.end >= scrollOffsetPlusOuterSize) {
+          align = 'end'
+        } else {
+          align = 'start'
+        }
+      }
+
+      let offset =
+        align === 'center'
+          ? measurement.start + measurement.size / 2
+          : align === 'end'
+          ? measurement.end
+          : measurement.start
+
+      return offset
+    },
+    [measurements, scrollOffsetPlusOuterSize]
   )
 
   const scrollToIndex = React.useCallback(
-    index => {
-      const measurement = measurements[index]
-
-      if (measurement) {
-        scrollToOffset(measurement.start)
+    (index, options) => {
+      const offset = getIndexOffset(index, options)
+      if (typeof offset !== 'undefined') {
+        scrollToOffset(offset, options)
       }
     },
-    [measurements, scrollToOffset]
+    [getIndexOffset, scrollToOffset]
   )
 
   return {
     virtualItems,
-    totalSize: total,
+    totalSize,
+    getIndexOffset,
     scrollToOffset,
     scrollToIndex,
   }
