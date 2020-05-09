@@ -267,14 +267,13 @@ const {
   totalSize,
   scrollToIndex,
   scrollToOffset,
-  getIndexOffset,
-  scrollToFn,
 } = useVirtual({
   size,
   parentRef,
   estimateSize,
   overscan,
   horizontal,
+  scrollToFn
 })
 ```
 
@@ -326,7 +325,7 @@ const {
 - `scrollToIndex: Function(index: Integer, { align: String }) => void 0`
   - Call this function to scroll the top/left of the parentRef element to the start of the item located at the passed index.
   - `align: 'start' | 'center' | 'end' | 'auto'`
-    - Defaults to `start`
+    - Defaults to `auto`
     - `start` places the item at the top/left of the visible scroll area
     - `center` places the item in the center of the visible scroll area
     - `end` places the item at the bottom/right of the visible scroll area
@@ -339,15 +338,6 @@ const {
     - `center` places the offset in the center of the visible scroll area
     - `end` places the offset at the bottom/right of the visible scroll area
     - `auto` brings the offset into the visible scroll area either at the start or end, depending on which is closer. If the offset is already in view, it is placed at the `top/left` of the visible scroll area.
-- `getIndexOffset: Function(index: Integer, { align: String }) => Integer | undefined`
-  - Call this function to return the offset of the item located at the passed index.
-  - `align: 'start' | 'center' | 'end' | 'auto'`
-    - Defaults to `start`
-    - `start` returns the item's top/left offset
-    - `center` returns the item's center offset
-    - `end` returns the item's bottom/right offset
-    - `auto` return's the item's start or end offset, depending on which is closer. If the item is already in view, the `top/left` offset will be returned
-  - If `align: 'auto'` is passed and no scrolling is necessary to bring the item into view, `undefined` is returned.
 
 # Contributors ✨
 
