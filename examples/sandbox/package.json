@@ -4,20 +4,22 @@
     "start": "rescripts start",
     "build": "rescripts build",
     "test": "rescripts test",
-    "eject": "rescripts eject"
+    "eject": "rescripts eject",
+    "serve": "serve -s build"
   },
   "dependencies": {
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-virtual": "^2.0.0",
     "react-scripts": "3.0.1",
+    "react-virtual": "^2.0.0",
     "stop-runaway-react-effects": "^1.2.0"
   },
   "devDependencies": {
     "@rescripts/cli": "^0.0.11",
     "@rescripts/rescript-use-babel-config": "^0.0.8",
     "@rescripts/rescript-use-eslint-config": "^0.0.9",
-    "babel-eslint": "10.0.1"
+    "babel-eslint": "10.0.1",
+    "serve": "^11.3.0"
   },
   "browserslist": {
     "production": [

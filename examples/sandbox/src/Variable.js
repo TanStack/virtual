@@ -174,11 +174,11 @@ function GridVirtualizerVariable({ rows, columns }) {
                   className={
                     virtualColumn.index % 2
                       ? virtualRow.index % 2 === 0
-                        ? "GridItemOdd"
-                        : "GridItemEven"
+                        ? "ListItemOdd"
+                        : "ListItemEven"
                       : virtualRow.index % 2
-                      ? "GridItemOdd"
-                      : "GridItemEven"
+                      ? "ListItemOdd"
+                      : "ListItemEven"
                   }
                   style={{
                     position: "absolute",
