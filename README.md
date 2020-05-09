@@ -260,7 +260,7 @@ function RowVirtualizerFixed() {
 
 ```js
 const {
-  items: [
+  virtualItems: [
     { index, start, size, end, measureRef },
     /* ... */
   ],
@@ -307,7 +307,7 @@ const {
 
 ### Returns
 
-- `items: Array<item>`
+- `virtualItems: Array<item>`
   - `item: Object`
     - `index: Integer`
       - The index of the item
