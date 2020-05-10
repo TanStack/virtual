@@ -47,7 +47,7 @@ export function useVirtual({
     mountedRef.current = true
   }, [estimateSize, size])
 
-  const measurementsMemo = React.useMemo(() => {
+  const { measurements, reversedMeasurements } = React.useMemo(() => {
     const measurements = []
     const reversedMeasurements = []
 
@@ -65,7 +65,7 @@ export function useVirtual({
     }
     return { measurements, reversedMeasurements }
   }, [estimateSize, measuredCache, size])
-  const { measurements, reversedMeasurements } = measurementsMemo
+
   const totalSize = measurements[size - 1]?.end || 0
 
   let start = React.useMemo(
