@@ -20,7 +20,7 @@ export default () => {
     async (key, nextPage = 0) => {
       await new Promise(r => setTimeout(r, 250));
       const { data } = await axios.get(
-        "http://jsonplaceholder.typicode.com/posts?_limit=10&_page=" + nextPage
+        "https://jsonplaceholder.typicode.com/posts?_limit=10&_page=" + nextPage
       );
       return data;
     },
