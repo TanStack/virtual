@@ -47,21 +47,23 @@ export function useVirtual({
     mountedRef.current = true
   }, [estimateSize, size])
 
-  const measurements = React.useMemo(() => {
+  const { measurements, reversedMeasurements } = React.useMemo(() => {
     const measurements = []
-    for (let i = 0; i < size; i++) {
+    const reversedMeasurements = []
+
+    for (let i = 0, j = size - 1; i < size; i++, j--) {
       const start = measurements[i - 1]?.end || 0
       const size = measuredCache[i] || estimateSize(i)
       const end = start + size
+      const bounds = { index: i, start, size, end }
       measurements[i] = {
-        index: i,
-        start,
-        size,
-        end,
+        ...bounds,
+      }
+      reversedMeasurements[j] = {
+        ...bounds,
       }
     }
-
-    return measurements
+    return { measurements, reversedMeasurements }
   }, [estimateSize, measuredCache, size])
 
   const totalSize = measurements[size - 1]?.end || 0
@@ -72,9 +74,9 @@ export function useVirtual({
   )
   let end = React.useMemo(
     () =>
-      [...measurements]
-        .reverse()
-        .find(rowStat => rowStat.start <= scrollOffsetPlusOuterSize),
+      reversedMeasurements.find(
+        rowStat => rowStat.start <= scrollOffsetPlusOuterSize
+      ),
     [measurements, scrollOffsetPlusOuterSize]
   )
 
