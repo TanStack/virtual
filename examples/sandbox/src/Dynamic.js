@@ -159,58 +159,63 @@ function GridVirtualizerDynamic({ rows, columns }) {
     overscan: 5
   });
 
+  const [show, setShow] = React.useState(true);
+
   return (
     <>
-      <div
-        ref={parentRef}
-        className="List"
-        style={{
-          height: `400px`,
-          width: `500px`,
-          overflow: "auto"
-        }}
-      >
+      {/* <button onClick={() => setShow(old => !old)}>Toggle</button> */}
+      {show ? (
         <div
+          ref={parentRef}
+          className="List"
           style={{
-            height: `${rowVirtualizer.totalSize}px`,
-            width: `${columnVirtualizer.totalSize}px`,
-            position: "relative"
+            height: `400px`,
+            width: `500px`,
+            overflow: "auto"
           }}
         >
-          {rowVirtualizer.virtualItems.map(virtualRow => (
-            <React.Fragment key={virtualRow.index}>
-              {columnVirtualizer.virtualItems.map(virtualColumn => (
-                <div
-                  key={virtualColumn.index}
-                  ref={el => {
-                    virtualRow.measureRef(el);
-                    virtualColumn.measureRef(el);
-                  }}
-                  className={
-                    virtualColumn.index % 2
-                      ? virtualRow.index % 2 === 0
+          <div
+            style={{
+              height: `${rowVirtualizer.totalSize}px`,
+              width: `${columnVirtualizer.totalSize}px`,
+              position: "relative"
+            }}
+          >
+            {rowVirtualizer.virtualItems.map(virtualRow => (
+              <React.Fragment key={virtualRow.index}>
+                {columnVirtualizer.virtualItems.map(virtualColumn => (
+                  <div
+                    key={virtualColumn.index}
+                    ref={el => {
+                      virtualRow.measureRef(el);
+                      virtualColumn.measureRef(el);
+                    }}
+                    className={
+                      virtualColumn.index % 2
+                        ? virtualRow.index % 2 === 0
+                          ? "ListItemOdd"
+                          : "ListItemEven"
+                        : virtualRow.index % 2
                         ? "ListItemOdd"
                         : "ListItemEven"
-                      : virtualRow.index % 2
-                      ? "ListItemOdd"
-                      : "ListItemEven"
-                  }
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: `${columns[virtualColumn.index]}px`,
-                    height: `${rows[virtualRow.index]}px`,
-                    transform: `translateX(${virtualColumn.start}px) translateY(${virtualRow.start}px)`
-                  }}
-                >
-                  Cell {virtualRow.index}, {virtualColumn.index}
-                </div>
-              ))}
-            </React.Fragment>
-          ))}
+                    }
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: `${columns[virtualColumn.index]}px`,
+                      height: `${rows[virtualRow.index]}px`,
+                      transform: `translateX(${virtualColumn.start}px) translateY(${virtualRow.start}px)`
+                    }}
+                  >
+                    Cell {virtualRow.index}, {virtualColumn.index}
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </>
   );
 }

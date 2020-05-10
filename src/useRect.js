@@ -4,34 +4,29 @@ import observeRect from '@reach/observe-rect'
 
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
-export default function useRect(nodeRef, observe = true, onChange) {
-  const [, rerender] = React.useState()
+export default function useRect(nodeRef) {
+  const [element, setElement] = React.useState(nodeRef.current)
   const [rect, setRect] = React.useState(null)
   const initialRectSet = React.useRef(false)
-  const onChangeRef = React.useRef(null)
-  onChangeRef.current = onChange
-
-  const element = nodeRef.current
 
   useIsomorphicLayoutEffect(() => {
-    if (!element) {
-      requestAnimationFrame(() => {
-        rerender({})
-      })
+    if (nodeRef.current !== element) {
+      setElement(nodeRef.current)
     }
+  })
 
-    let observer
-
-    if (element) {
-      observer = observeRect(element, function (rect) {
-        onChangeRef.current && onChangeRef.current(rect)
-        setRect(rect)
-      })
-    }
-
+  useIsomorphicLayoutEffect(() => {
     if (element && !initialRectSet.current) {
       initialRectSet.current = true
       setRect(element.getBoundingClientRect())
+    }
+  }, [element])
+
+  React.useEffect(() => {
+    let observer
+
+    if (element) {
+      observer = observeRect(element, setRect)
     }
 
     observer && observer.observe()
@@ -39,6 +34,7 @@ export default function useRect(nodeRef, observe = true, onChange) {
     return () => {
       observer && observer.unobserve()
     }
-  }, [element, observe, onChange])
+  }, [element])
+
   return rect
 }

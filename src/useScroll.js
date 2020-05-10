@@ -1,12 +1,28 @@
 import React from 'react'
 
-export default function useScroll(ref, onChange) {
+import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
+
+export default function useScroll(nodeRef, onChange) {
+  const [element, setElement] = React.useState(nodeRef.current)
   const onChangeRef = React.useRef()
   onChangeRef.current = onChange
 
-  React.useEffect(() => {
-    const el = ref.current
+  useIsomorphicLayoutEffect(() => {
+    if (nodeRef.current !== element) {
+      setElement(nodeRef.current)
+    }
+  })
 
+  useIsomorphicLayoutEffect(() => {
+    if (element) {
+      onChangeRef.current({
+        scrollLeft: element.scrollLeft,
+        scrollTop: element.scrollTop,
+      })
+    }
+  }, [element])
+
+  React.useEffect(() => {
     const handler = e => {
       onChangeRef.current({
         scrollLeft: e.target.scrollLeft,
@@ -14,15 +30,15 @@ export default function useScroll(ref, onChange) {
       })
     }
 
-    if (el) {
-      el.addEventListener('scroll', handler, {
+    if (element) {
+      element.addEventListener('scroll', handler, {
         capture: false,
         passive: true,
       })
 
       return () => {
-        el.removeEventListener('scroll', handler)
+        element.removeEventListener('scroll', handler)
       }
     }
-  }, [ref])
+  }, [element])
 }

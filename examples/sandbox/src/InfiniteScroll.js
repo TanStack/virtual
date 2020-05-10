@@ -47,10 +47,20 @@ export default () => {
       return;
     }
 
-    if (lastItem.index === flatPosts.length - 1 && canFetchMore) {
+    if (
+      lastItem.index === flatPosts.length - 1 &&
+      canFetchMore &&
+      !isFetchingMore
+    ) {
       fetchMore();
     }
-  }, [canFetchMore, fetchMore, flatPosts.length, rowVirtualizer.virtualItems]);
+  }, [
+    canFetchMore,
+    fetchMore,
+    flatPosts.length,
+    isFetchingMore,
+    rowVirtualizer.virtualItems
+  ]);
 
   return (
     <>
@@ -68,53 +78,53 @@ export default () => {
         <p>Loading...</p>
       ) : status === "error" ? (
         <span>Error: {error.message}</span>
-      ) : null}
-
-      <div
-        ref={parentRef}
-        className="List"
-        style={{
-          height: `500px`,
-          width: `100%`,
-          overflow: "auto"
-        }}
-      >
+      ) : (
         <div
+          ref={parentRef}
+          className="List"
           style={{
-            height: `${rowVirtualizer.totalSize}px`,
-            width: "100%",
-            position: "relative"
+            height: `500px`,
+            width: `100%`,
+            overflow: "auto"
           }}
         >
-          {rowVirtualizer.virtualItems.map(virtualRow => {
-            const isLoaderRow = virtualRow.index > flatPosts.length - 1;
-            const post = flatPosts[virtualRow.index];
+          <div
+            style={{
+              height: `${rowVirtualizer.totalSize}px`,
+              width: "100%",
+              position: "relative"
+            }}
+          >
+            {rowVirtualizer.virtualItems.map(virtualRow => {
+              const isLoaderRow = virtualRow.index > flatPosts.length - 1;
+              const post = flatPosts[virtualRow.index];
 
-            return (
-              <div
-                key={virtualRow.index}
-                className={
-                  virtualRow.index % 2 ? "ListItemOdd" : "ListItemEven"
-                }
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`
-                }}
-              >
-                {isLoaderRow
-                  ? canFetchMore
-                    ? "Loading more..."
-                    : "Nothing more to load"
-                  : post.title}
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={virtualRow.index}
+                  className={
+                    virtualRow.index % 2 ? "ListItemOdd" : "ListItemEven"
+                  }
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`
+                  }}
+                >
+                  {isLoaderRow
+                    ? canFetchMore
+                      ? "Loading more..."
+                      : "Nothing more to load"
+                    : post.title}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
       <div>
         {isFetching && !isFetchingMore ? "Background Updating..." : null}
       </div>

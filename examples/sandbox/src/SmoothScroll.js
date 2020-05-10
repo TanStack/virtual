@@ -6,33 +6,44 @@ function easeInOutQuint(t) {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 }
 
+const timeout = fn => setTimeout(fn, 16);
+
+const raf = fn => requestAnimationFrame(fn);
+
 export default function() {
   const parentRef = React.useRef();
 
   const scrollingRef = React.useRef();
 
-  const scrollToFn = React.useCallback(offset => {
-    const duration = 1000;
-    const start = parentRef.current.scrollTop;
-    const startTime = (scrollingRef.current = Date.now());
+  const [animationType, setAnimationType] = React.useState("setTimeout");
 
-    const run = () => {
-      if (scrollingRef.current !== startTime) return;
-      const now = Date.now();
-      const elapsed = now - startTime;
-      const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
-      const interpolated = start + (offset - start) * progress;
+  const animationFn = animationType === "setTimeout" ? timeout : raf;
 
-      if (elapsed < duration) {
-        parentRef.current.scrollTop = interpolated;
-        setTimeout(run, 16);
-      } else {
-        parentRef.current.scrollTop = interpolated;
-      }
-    };
+  const scrollToFn = React.useCallback(
+    offset => {
+      const duration = 1000;
+      const start = parentRef.current.scrollTop;
+      const startTime = (scrollingRef.current = Date.now());
 
-    setTimeout(run, 16);
-  }, []);
+      const run = () => {
+        if (scrollingRef.current !== startTime) return;
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
+        const interpolated = start + (offset - start) * progress;
+
+        if (elapsed < duration) {
+          parentRef.current.scrollTop = interpolated;
+          animationFn(run);
+        } else {
+          parentRef.current.scrollTop = interpolated;
+        }
+      };
+
+      animationFn(run);
+    },
+    [animationFn]
+  );
 
   const rowVirtualizer = useVirtual({
     size: 10000,
@@ -52,13 +63,25 @@ export default function() {
       <br />
       <br />
 
-      <button
-        onClick={() =>
-          rowVirtualizer.scrollToIndex(Math.floor(Math.random() * 10000))
-        }
-      >
-        Scroll To Random Index
-      </button>
+      <label>
+        Animation Type:
+        <select
+          value={animationType}
+          onChange={e => setAnimationType(e.target.value)}
+        >
+          <option value="setTimeout">setTimeout</option>
+          <option value="raf">requestAnimationFram</option>
+        </select>
+      </label>
+      <div>
+        <button
+          onClick={() =>
+            rowVirtualizer.scrollToIndex(Math.floor(Math.random() * 10000))
+          }
+        >
+          Scroll To Random Index
+        </button>
+      </div>
 
       <br />
       <br />
