@@ -153,8 +153,8 @@ export function useVirtual({
     [scrollToFn]
   )
 
-  const getIndexOffset = React.useCallback(
-    (index, { align = 'start' } = {}) => {
+  const scrollToIndex = React.useCallback(
+    (index, { align = 'auto' } = {}) => {
       const measurement = measurements[index]
 
       if (!measurement) {
@@ -177,26 +177,14 @@ export function useVirtual({
           : align === 'end'
           ? measurement.end
           : measurement.start
-
-      return offset
+      scrollToOffset(offset, options)
     },
-    [measurements, scrollOffset, scrollOffsetPlusOuterSize]
-  )
-
-  const scrollToIndex = React.useCallback(
-    (index, options) => {
-      const offset = getIndexOffset(index, options)
-      if (typeof offset !== 'undefined') {
-        scrollToOffset(offset, options)
-      }
-    },
-    [getIndexOffset, scrollToOffset]
+    [scrollToOffset]
   )
 
   return {
     virtualItems,
     totalSize,
-    getIndexOffset,
     scrollToOffset,
     scrollToIndex,
   }
