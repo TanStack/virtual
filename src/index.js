@@ -115,6 +115,7 @@ export function useVirtual({
 
   const latestRef = React.useRef()
   latestRef.current = {
+    measurements,
     outerSize,
     scrollOffset,
     scrollOffsetPlusOuterSize,
@@ -155,6 +156,12 @@ export function useVirtual({
 
   const scrollToIndex = React.useCallback(
     (index, { align = 'auto' } = {}) => {
+      const {
+        measurements,
+        scrollOffset,
+        scrollOffsetPlusOuterSize,
+      } = latestRef.current
+
       const measurement = measurements[index]
 
       if (!measurement) {
@@ -177,7 +184,7 @@ export function useVirtual({
           : align === 'end'
           ? measurement.end
           : measurement.start
-      scrollToOffset(offset, options)
+      scrollToOffset(offset, { align })
     },
     [scrollToOffset]
   )

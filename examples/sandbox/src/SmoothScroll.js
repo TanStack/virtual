@@ -12,7 +12,6 @@ const raf = fn => requestAnimationFrame(fn);
 
 export default function() {
   const parentRef = React.useRef();
-
   const scrollingRef = React.useRef();
 
   const [animationType, setAnimationType] = React.useState("setTimeout");
