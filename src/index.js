@@ -72,12 +72,13 @@ export function useVirtual({
     () => measurements.find(rowStat => rowStat.end >= scrollOffset),
     [measurements, scrollOffset]
   )
+
   let end = React.useMemo(
     () =>
       reversedMeasurements.find(
         rowStat => rowStat.start <= scrollOffsetPlusOuterSize
       ),
-    [measurements, scrollOffsetPlusOuterSize]
+    [reversedMeasurements, scrollOffsetPlusOuterSize]
   )
 
   let startIndex = start ? start.index : 0
