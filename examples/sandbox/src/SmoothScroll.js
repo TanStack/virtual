@@ -6,43 +6,32 @@ function easeInOutQuint(t) {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 }
 
-const timeout = fn => setTimeout(fn, 16);
-
-const raf = fn => requestAnimationFrame(fn);
-
 export default function() {
   const parentRef = React.useRef();
   const scrollingRef = React.useRef();
 
-  const [animationType, setAnimationType] = React.useState("setTimeout");
+  const scrollToFn = React.useCallback((offset, defaultScrollTo) => {
+    const duration = 1000;
+    const start = parentRef.current.scrollTop;
+    const startTime = (scrollingRef.current = Date.now());
 
-  const animationFn = animationType === "setTimeout" ? timeout : raf;
+    const run = () => {
+      if (scrollingRef.current !== startTime) return;
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
+      const interpolated = start + (offset - start) * progress;
 
-  const scrollToFn = React.useCallback(
-    offset => {
-      const duration = 1000;
-      const start = parentRef.current.scrollTop;
-      const startTime = (scrollingRef.current = Date.now());
+      if (elapsed < duration) {
+        defaultScrollTo(interpolated);
+        requestAnimationFrame(run);
+      } else {
+        defaultScrollTo(interpolated);
+      }
+    };
 
-      const run = () => {
-        if (scrollingRef.current !== startTime) return;
-        const now = Date.now();
-        const elapsed = now - startTime;
-        const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
-        const interpolated = start + (offset - start) * progress;
-
-        if (elapsed < duration) {
-          parentRef.current.scrollTop = interpolated;
-          animationFn(run);
-        } else {
-          parentRef.current.scrollTop = interpolated;
-        }
-      };
-
-      animationFn(run);
-    },
-    [animationFn]
-  );
+    requestAnimationFrame(run);
+  }, []);
 
   const rowVirtualizer = useVirtual({
     size: 10000,
@@ -59,19 +48,10 @@ export default function() {
         implement a custom scrolling function for the methods like{" "}
         <code>`scrollToIndex`</code> and <code>`scrollToOffset`</code>
       </p>
+
       <br />
       <br />
 
-      <label>
-        Animation Type:
-        <select
-          value={animationType}
-          onChange={e => setAnimationType(e.target.value)}
-        >
-          <option value="setTimeout">setTimeout</option>
-          <option value="raf">requestAnimationFram</option>
-        </select>
-      </label>
       <div>
         <button
           onClick={() =>

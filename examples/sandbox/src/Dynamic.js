@@ -147,15 +147,13 @@ function GridVirtualizerDynamic({ rows, columns }) {
   const rowVirtualizer = useVirtual({
     size: rows.length,
     parentRef,
-    estimateSize: React.useCallback(() => 35, []), // This is just a best guess
-    overscan: 5
+    overscan: 0
   });
 
   const columnVirtualizer = useVirtual({
     horizontal: true,
     size: columns.length,
     parentRef,
-    estimateSize: React.useCallback(() => 100, []), // This is just a best guess
     overscan: 5
   });
 
@@ -163,7 +161,10 @@ function GridVirtualizerDynamic({ rows, columns }) {
 
   return (
     <>
-      {/* <button onClick={() => setShow(old => !old)}>Toggle</button> */}
+      <button onClick={() => setShow(old => !old)}>Toggle</button>
+      <button onClick={() => rowVirtualizer.scrollToIndex(5000)}>
+        Scroll to 5000
+      </button>
       {show ? (
         <div
           ref={parentRef}
