@@ -23,6 +23,10 @@ export default function useScroll(nodeRef, onChange) {
   }, [element])
 
   React.useEffect(() => {
+    if (!element) {
+      return
+    }
+
     const handler = e => {
       onChangeRef.current({
         scrollLeft: e.target.scrollLeft,
@@ -30,15 +34,13 @@ export default function useScroll(nodeRef, onChange) {
       })
     }
 
-    if (element) {
-      element.addEventListener('scroll', handler, {
-        capture: false,
-        passive: true,
-      })
+    element.addEventListener('scroll', handler, {
+      capture: false,
+      passive: true,
+    })
 
-      return () => {
-        element.removeEventListener('scroll', handler)
-      }
+    return () => {
+      element.removeEventListener('scroll', handler)
     }
   }, [element])
 }

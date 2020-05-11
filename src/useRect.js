@@ -23,16 +23,16 @@ export default function useRect(nodeRef) {
   }, [element])
 
   React.useEffect(() => {
-    let observer
-
-    if (element) {
-      observer = observeRect(element, setRect)
+    if (!element) {
+      return
     }
 
-    observer && observer.observe()
+    const observer = observeRect(element, setRect)
+
+    observer.observe()
 
     return () => {
-      observer && observer.unobserve()
+      observer.unobserve()
     }
   }, [element])
 
