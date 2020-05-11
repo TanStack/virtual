@@ -41,9 +41,7 @@ function RowVirtualizerDynamic({ rows }) {
 
   const rowVirtualizer = useVirtual({
     size: rows.length,
-    parentRef,
-    estimateSize: React.useCallback(() => 35, []), // This is just a best guess
-    overscan: 5
+    parentRef
   });
 
   return (
@@ -93,9 +91,7 @@ function ColumnVirtualizerDynamic({ columns }) {
   const columnVirtualizer = useVirtual({
     horizontal: true,
     size: columns.length,
-    parentRef,
-    estimateSize: React.useCallback(() => 100, []), // This is just a best guess
-    overscan: 5
+    parentRef
   });
 
   return (
@@ -146,15 +142,13 @@ function GridVirtualizerDynamic({ rows, columns }) {
 
   const rowVirtualizer = useVirtual({
     size: rows.length,
-    parentRef,
-    overscan: 0
+    parentRef
   });
 
   const columnVirtualizer = useVirtual({
     horizontal: true,
     size: columns.length,
-    parentRef,
-    overscan: 5
+    parentRef
   });
 
   const [show, setShow] = React.useState(true);
