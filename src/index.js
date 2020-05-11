@@ -4,9 +4,11 @@ import useScroll from './useScroll'
 import useRect from './useRect'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
+const defaultEstimateSize = () => 50
+
 export function useVirtual({
   size = 0,
-  estimateSize,
+  estimateSize = defaultEstimateSize,
   overscan = 0,
   parentRef,
   horizontal,
