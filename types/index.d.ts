@@ -18,10 +18,13 @@ export type VirtualItem = {
 declare function useVirtual<T>(options: {
   size: number
   parentRef: React.RefObject<T>
-  estimateSize: (index?: number) => number
+  estimateSize?: (index?: number) => number
   overscan?: number
   horizontal?: boolean
-  scrollToFn?: (offset: number) => void
+  scrollToFn?: (
+    offset: number,
+    defaultScrollToFn?: (offset: number) => void
+  ) => void
 }): {
   virtualItems: VirtualItem[]
   totalSize: number

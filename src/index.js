@@ -17,15 +17,6 @@ export function useVirtual({
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
 
-  const defaultScrollToFn = React.useCallback(
-    offset => {
-      parentRef.current[scrollKey] = offset
-    },
-    [parentRef, scrollKey]
-  )
-
-  scrollToFn = scrollToFn || defaultScrollToFn
-
   const { [sizeKey]: outerSize } = useRect(parentRef) || {
     [sizeKey]: 0,
   }
@@ -36,25 +27,35 @@ export function useVirtual({
     _setScrollOffset(newScrollOffset)
   })
 
+  const defaultScrollToFn = React.useCallback(
+    offset => {
+      if (parentRef.current) {
+        _setScrollOffset(offset)
+        parentRef.current[scrollKey] = offset
+      }
+    },
+    [parentRef, scrollKey]
+  )
+
+  const resolvedScrollToFn = scrollToFn || defaultScrollToFn
+
+  scrollToFn = React.useCallback(
+    offset => {
+      resolvedScrollToFn(offset, defaultScrollToFn)
+    },
+    [defaultScrollToFn, resolvedScrollToFn]
+  )
+
   const scrollOffsetPlusOuterSize = scrollOffset + outerSize
 
   const [measuredCache, setMeasuredCache] = React.useState({})
-
-  const mountedRef = React.useRef()
-
-  useIsomorphicLayoutEffect(() => {
-    if (mountedRef.current) {
-      if (estimateSize || size) setMeasuredCache({})
-    }
-    mountedRef.current = true
-  }, [estimateSize, size])
 
   const { measurements, reversedMeasurements } = React.useMemo(() => {
     const measurements = []
     const reversedMeasurements = []
 
     for (let i = 0, j = size - 1; i < size; i++, j--) {
-      const start = measurements[i - 1]?.end || 0
+      const start = measurements[i - 1] ? measurements[i - 1].end : 0
       const size = measuredCache[i] || estimateSize(i)
       const end = start + size
       const bounds = { index: i, start, size, end }
@@ -71,26 +72,44 @@ export function useVirtual({
   const totalSize = measurements[size - 1]?.end || 0
 
   let start = React.useMemo(
-    () => measurements.find(rowStat => rowStat.end >= scrollOffset),
-    [measurements, scrollOffset]
+    () =>
+      reversedMeasurements.reduce(
+        (last, rowStat) => (rowStat.end >= scrollOffset ? rowStat : last),
+        reversedMeasurements[0]
+      ),
+    [reversedMeasurements, scrollOffset]
   )
 
   let end = React.useMemo(
     () =>
-      reversedMeasurements.find(
-        rowStat => rowStat.start <= scrollOffsetPlusOuterSize
+      measurements.reduce(
+        (last, rowStat) =>
+          rowStat.start <= scrollOffsetPlusOuterSize ? rowStat : last,
+        measurements[0]
       ),
-    [reversedMeasurements, scrollOffsetPlusOuterSize]
+    [measurements, scrollOffsetPlusOuterSize]
   )
 
   let startIndex = start ? start.index : 0
   let endIndex = end ? end.index : 0
 
   // Always add at least one overscan item, so focus will work
-  startIndex = Math.max(startIndex - 1 - overscan, 0)
-  endIndex = Math.min(endIndex + 1 + overscan, size - 1)
+  startIndex = Math.max(startIndex - overscan, 0)
+  endIndex = Math.min(endIndex + overscan, size - 1)
+
+  const latestRef = React.useRef({})
+
+  latestRef.current = {
+    measurements,
+    outerSize,
+    scrollOffset,
+    scrollOffsetPlusOuterSize,
+    totalSize,
+  }
 
   const virtualItems = React.useMemo(() => {
+    const { scrollOffset } = latestRef.current
+
     const virtualItems = []
 
     for (let i = startIndex; i <= endIndex; i++) {
@@ -99,15 +118,18 @@ export function useVirtual({
       const item = {
         ...measurement,
         measureRef: el => {
-          if (!el) return
+          if (el) {
+            const { [sizeKey]: measuredSize } = el.getBoundingClientRect()
 
-          const { [sizeKey]: measuredSize } = el.getBoundingClientRect()
-
-          if (measuredSize !== item.size) {
-            setMeasuredCache(old => ({
-              ...old,
-              [i]: measuredSize,
-            }))
+            if (measuredSize !== item.size) {
+              if (item.start < scrollOffset) {
+                defaultScrollToFn(scrollOffset + (measuredSize - item.size))
+              }
+              setMeasuredCache(old => ({
+                ...old,
+                [i]: measuredSize,
+              }))
+            }
           }
         },
       }
@@ -116,16 +138,16 @@ export function useVirtual({
     }
 
     return virtualItems
-  }, [startIndex, endIndex, measurements, sizeKey])
+  }, [startIndex, endIndex, measurements, sizeKey, defaultScrollToFn])
 
-  const latestRef = React.useRef()
-  latestRef.current = {
-    measurements,
-    outerSize,
-    scrollOffset,
-    scrollOffsetPlusOuterSize,
-    totalSize,
-  }
+  const mountedRef = React.useRef()
+
+  useIsomorphicLayoutEffect(() => {
+    if (mountedRef.current) {
+      if (estimateSize || size) setMeasuredCache({})
+    }
+    mountedRef.current = true
+  }, [estimateSize, size])
 
   const scrollToOffset = React.useCallback(
     (offset, { align = 'start' } = {}) => {
@@ -160,7 +182,7 @@ export function useVirtual({
   )
 
   const scrollToIndex = React.useCallback(
-    (index, { align = 'auto' } = {}) => {
+    (index, { align = 'auto', ...rest } = {}) => {
       const {
         measurements,
         scrollOffset,
@@ -189,7 +211,7 @@ export function useVirtual({
           : align === 'end'
           ? measurement.end
           : measurement.start
-      scrollToOffset(offset, { align })
+      scrollToOffset(offset, { align, ...rest })
     },
     [scrollToOffset]
   )
