@@ -961,7 +961,7 @@
     "@babel/helper-plugin-utils" "^7.8.3"
     "@babel/plugin-transform-typescript" "^7.8.3"
 
-"@babel/runtime@7.8.4", "@babel/runtime@^7.0.0", "@babel/runtime@^7.3.4", "@babel/runtime@^7.4.4", "@babel/runtime@^7.6.3", "@babel/runtime@^7.7.2":
+"@babel/runtime@7.8.4", "@babel/runtime@^7.0.0", "@babel/runtime@^7.3.4", "@babel/runtime@^7.6.3", "@babel/runtime@^7.7.2":
   version "7.8.4"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.8.4.tgz#d79f5a2040f7caa24d53e563aad49cbc05581308"
   integrity sha512-neAp3zt80trRVBI1x0azq6c57aNBqYZH8KhMm3TaB7wEI5Q4A2SHfBHE8w9gOhI/lrqxtEbXZgQIrHP+wvSGwQ==
@@ -8288,9 +8288,9 @@ react-scripts@3.0.1:
     fsevents "2.0.6"
 
 react-virtual@^2.0.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/react-virtual/-/react-virtual-2.1.0.tgz#cd7c677beb8f9f341f09df024c02157bafa3110e"
-  integrity sha512-nyzXzCMud/AQbYfu8z46Sb4dkJ/bFfmLw01uKqZ0x1F65wqT5n+dpUKc8bCOm3mfbe496RgUQGksORnjTj448Q==
+  version "2.1.8"
+  resolved "https://registry.yarnpkg.com/react-virtual/-/react-virtual-2.1.8.tgz#e65e467c6327e1e4e6c130a56e24cb2c3f8d9c29"
+  integrity sha512-vvc07dM3Wxmx/gTqxCY4cKV66lIQnhGAdeVRt9W83/PYcXuuvRMtg30z9sL1AAsfbQMk6hhkO/Dhx/0vJuXE8w==
   dependencies:
     "@reach/observe-rect" "^1.1.0"
     "@scarf/scarf" "^1.0.0"
@@ -9216,13 +9216,6 @@ stealthy-require@^1.1.1:
   resolved "https://registry.yarnpkg.com/stealthy-require/-/stealthy-require-1.1.1.tgz#35b09875b4ff49f26a777e509b3090a3226bf24b"
   integrity sha1-NbCYdbT/SfJqd35QmzCQoyJr8ks=
 
-stop-runaway-react-effects@^1.2.0:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/stop-runaway-react-effects/-/stop-runaway-react-effects-1.2.1.tgz#ffc9df565021c69cd2c04171e7f0e4a6c7eb2b21"
-  integrity sha512-56AK/rkH+/Y1ZUF+QYsl/7Z/caSnF46RmkbF6AemYWue2tZpAlOOj+VdcLdhFGo5Vg7ajDP2Lqq+3UhbdWQRmQ==
-  dependencies:
-    "@babel/runtime" "^7.4.4"
-
 stream-browserify@^2.0.1:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/stream-browserify/-/stream-browserify-2.0.2.tgz#87521d38a44aa7ee91ce1cd2a47df0cb49dd660b"
@@ -9641,9 +9634,9 @@ ts-pnp@^1.0.0:
   integrity sha512-CrG5GqAAzMT7144Cl+UIFP7mz/iIhiy+xQ6GGcnjTezhALT02uPMRw7tgDSESgB5MsfKt55+GPWw4ir1kVtMIQ==
 
 ts-toolbelt@^6.4.2:
-  version "6.7.2"
-  resolved "https://registry.yarnpkg.com/ts-toolbelt/-/ts-toolbelt-6.7.2.tgz#7ebf53ed19eb068647cf777bf2028df9362a93ac"
-  integrity sha512-JMZv+tepq6tZ5HFCanwI+9VYdXB0dVACFKeImeyFsLqxBFlGeC8AljSJvh1Z45ETRKmSP25Q+aEYInFKN2NOeg==
+  version "6.7.4"
+  resolved "https://registry.yarnpkg.com/ts-toolbelt/-/ts-toolbelt-6.7.4.tgz#30e6999578a82ed4636563cb525bb3664a255760"
+  integrity sha512-cP8q7BnIyuevMyBpq+TVKf3NvSS70S+BLdhzHVeV/5WNPMoUxN5YWMKgUd54qAwWgk6n2USHi/2XFIxZJa+30g==
 
 tslib@^1.8.1, tslib@^1.9.0:
   version "1.11.0"

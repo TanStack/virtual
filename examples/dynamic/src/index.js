@@ -1,8 +1,11 @@
 import React from "react";
+import ReactDOM from "react-dom";
+
+import "./styles.css";
 
 import { useVirtual } from "react-virtual";
 
-export default function() {
+function App() {
   const rows = new Array(10000)
     .fill(true)
     .map(() => 25 + Math.round(Math.random() * 100));
@@ -211,6 +214,18 @@ function GridVirtualizerDynamic({ rows, columns }) {
           </div>
         </div>
       ) : null}
+      <br />
+      <br />
+      {process.env.NODE_ENV === "development" ? (
+        <p>
+          <strong>Notice:</strong> You are currently running React in
+          development mode. Rendering performance will be slightly degraded
+          until this application is build for production.
+        </p>
+      ) : null}
     </>
   );
 }
+
+const rootElement = document.getElementById("root");
+ReactDOM.render(<App />, rootElement);

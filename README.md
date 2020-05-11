@@ -42,10 +42,11 @@ Enjoy this library? Try them all! [React Table](https://github.com/tannerlinsley
 
 ## Examples
 
-- Sandbox - [CodeSandbox](https://codesandbox.io/s/github/tannerlinsley/react-virtual/tree/master/examples/sandbox) - [Source](./examples/sandbox)
-  - Row, Column, and Grid layouts
-  - Fixed, variable, and dynamic sizing
-  - Smooth Scrolling
+- Fixed Rows/Cols/Grid- [CodeSandbox](https://codesandbox.io/s/github/tannerlinsley/react-virtual/tree/master/examples/fixed) - [Source](./examples/fixed)
+- Variable Rows/Cols/Grid- [CodeSandbox](https://codesandbox.io/s/github/tannerlinsley/react-virtual/tree/master/examples/variable) - [Source](./examples/variable)
+- Dynamic Rows/Cols/Grid- [CodeSandbox](https://codesandbox.io/s/github/tannerlinsley/react-virtual/tree/master/examples/dynamic) - [Source](./examples/dynamic)
+- Smooth Scrolling - [CodeSandbox](https://codesandbox.io/s/github/tannerlinsley/react-virtual/tree/master/examples/smooth-scroll) - [Source](./examples/smooth-scroll)
+- Infinite Scrolling - [CodeSandbox](https://codesandbox.io/s/github/tannerlinsley/react-virtual/tree/master/examples/infinite-scroll) - [Source](./examples/infinite-scroll)
 
 ## Sponsors
 

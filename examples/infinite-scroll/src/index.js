@@ -1,30 +1,41 @@
 import React from "react";
+import ReactDOM from "react-dom";
 import axios from "axios";
 import { useInfiniteQuery } from "react-query";
+
+import "./styles.css";
 
 import { useVirtual } from "react-virtual";
 
 // axios override to fake "get" a website
 // delete lines 9-24 if you are reusing this code outside of this demo
-Object.assign(axios, { ...axios, get: (url) => {
-  if (url.includes('demoapi.com')) {
-    const [d, limitStr = "0", pageStr = "0"] = url.match(`_limit=([0-9]+)&_page=([0-9]+)`)
-    const limit = parseFloat(limitStr);
-    
-    return new Promise(resolve =>
-      setTimeout(() => {
-        const data = new Array(limit).fill(0)
-          .map((e, i) => (`Async loaded row #${i + (parseFloat(pageStr) * limit)}`));
-        
-        return resolve({ data }, Math.round(Math.random() * 250));
-      }))
+Object.assign(axios, {
+  ...axios,
+  get: url => {
+    if (url.includes("demoapi.com")) {
+      const [d, limitStr = "0", pageStr = "0"] = url.match(
+        `_limit=([0-9]+)&_page=([0-9]+)`
+      );
+      const limit = parseFloat(limitStr);
+
+      return new Promise(resolve =>
+        setTimeout(() => {
+          const data = new Array(limit)
+            .fill(0)
+            .map(
+              (e, i) => `Async loaded row #${i + parseFloat(pageStr) * limit}`
+            );
+
+          return resolve({ data }, Math.round(Math.random() * 250));
+        })
+      );
+    }
+
+    return axios.get;
   }
+});
 
-  return axios.get;
-}});
-
-
-export default () => {
+function App() {
   const {
     status,
     data,
@@ -80,7 +91,7 @@ export default () => {
   ]);
 
   return (
-    <>
+    <div>
       <p>
         This infite scroll example uses React Query's useInfiniteScroll hook to
         fetch infinite data from a posts endpoint and then a rowVirtualizer is
@@ -145,6 +156,18 @@ export default () => {
       <div>
         {isFetching && !isFetchingMore ? "Background Updating..." : null}
       </div>
-    </>
+      <br />
+      <br />
+      {process.env.NODE_ENV === "development" ? (
+        <p>
+          <strong>Notice:</strong> You are currently running React in
+          development mode. Rendering performance will be slightly degraded
+          until this application is build for production.
+        </p>
+      ) : null}
+    </div>
   );
-};
+}
+
+const rootElement = document.getElementById("root");
+ReactDOM.render(<App />, rootElement);

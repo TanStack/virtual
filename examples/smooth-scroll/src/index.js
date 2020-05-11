@@ -1,4 +1,7 @@
 import React from "react";
+import ReactDOM from "react-dom";
+
+import "./styles.css";
 
 import { useVirtual } from "react-virtual";
 
@@ -6,7 +9,7 @@ function easeInOutQuint(t) {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
 }
 
-export default function() {
+function App() {
   const parentRef = React.useRef();
   const scrollingRef = React.useRef();
 
@@ -42,7 +45,7 @@ export default function() {
   });
 
   return (
-    <>
+    <div>
       <p>
         This smooth scroll example uses the <code>`scrollToFn`</code> to
         implement a custom scrolling function for the methods like{" "}
@@ -99,6 +102,18 @@ export default function() {
           ))}
         </div>
       </div>
-    </>
+      <br />
+      <br />
+      {process.env.NODE_ENV === "development" ? (
+        <p>
+          <strong>Notice:</strong> You are currently running React in
+          development mode. Rendering performance will be slightly degraded
+          until this application is build for production.
+        </p>
+      ) : null}
+    </div>
   );
 }
+
+const rootElement = document.getElementById("root");
+ReactDOM.render(<App />, rootElement);
