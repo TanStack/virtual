@@ -4,7 +4,25 @@ import { useInfiniteQuery } from "react-query";
 
 import { useVirtual } from "react-virtual";
 
-//
+// axios override to fake "get" a website
+// delete lines 9-24 if you are reusing this code outside of this demo
+Object.assign(axios, { ...axios, get: (url) => {
+  if (url.includes('demoapi.com')) {
+    const [d, limitStr = "0", pageStr = "0"] = url.match(`_limit=([0-9]+)&_page=([0-9]+)`)
+    const limit = parseFloat(limitStr);
+    
+    return new Promise(resolve =>
+      setTimeout(() => {
+        const data = new Array(limit).fill(0)
+          .map((e, i) => (`Async loaded row #${i + (parseFloat(pageStr) * limit)}`));
+        
+        return resolve({ data }, Math.round(Math.random() * 250));
+      }))
+  }
+
+  return axios.get;
+}});
+
 
 export default () => {
   const {
@@ -18,9 +36,8 @@ export default () => {
   } = useInfiniteQuery(
     "projects",
     async (key, nextPage = 0) => {
-      await new Promise(r => setTimeout(r, 250));
       const { data } = await axios.get(
-        "https://jsonplaceholder.typicode.com/posts?_limit=10&_page=" + nextPage
+        "https://demoapi.com?_limit=10&_page=" + nextPage
       );
       return data;
     },
@@ -118,7 +135,7 @@ export default () => {
                     ? canFetchMore
                       ? "Loading more..."
                       : "Nothing more to load"
-                    : post.title}
+                    : post}
                 </div>
               );
             })}
