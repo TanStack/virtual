@@ -54,49 +54,89 @@ This library is being built and maintained by me, @tannerlinsley and I am always
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/diamond.png)](https://github.com/sponsors/tannerlinsley)
 
-[Get Your Logo Here!](https://github.com/sponsors/tannerlinsley)
-
-<hr />
+<table>
+  <tbody>
+    <tr>
+      <td>
+        <a href="https://github.com/sponsors/tannerlinsley" target="_blank">
+          Get Your Logo Here!
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/gold.png)](https://github.com/sponsors/tannerlinsley)
 
-[Get Your Logo Here!](https://github.com/sponsors/tannerlinsley)
-
-<hr />
+<table>
+  <tbody>
+    <tr>
+      <td>
+        <a href="https://github.com/sponsors/tannerlinsley" target="_blank">
+          Get Your Logo Here!
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/silver.png)](https://github.com/sponsors/tannerlinsley)
 
-<p>
-  <a href="https://nozzle.io" target="_blank">
-    <img width='225' src="https://nozzle.io/img/logo-blue.png">
-  </a>
-<p>
-
-[Get Your Logo Here!](https://github.com/sponsors/tannerlinsley)
-
-<hr />
+<table>
+  <tbody>
+    <tr>
+      <td>
+        <a href="https://nozzle.io" target="_blank">
+          <img width='225' src="https://nozzle.io/img/logo-blue.png">
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/bronze.png)](https://github.com/sponsors/tannerlinsley)
 
-[Get Your Logo Here!](https://github.com/sponsors/tannerlinsley)
-
-<hr />
+<table>
+  <tbody>
+    <tr>
+      <td>
+        <a href="https://github.com/sponsors/tannerlinsley" target="_blank">
+          Get Your Logo Here!
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/supporters.png)](https://github.com/sponsors/tannerlinsley)
 
-[Get Your Name Here!](https://github.com/sponsors/tannerlinsley)
-
-<hr />
+<table>
+  <tbody>
+    <tr>
+      <td>
+        <a href="https://github.com/sponsors/tannerlinsley" target="_blank">
+          Get Your Name Here!
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/fans.png)](https://github.com/sponsors/tannerlinsley)
 
-[Get Your Name Here!](https://github.com/sponsors/tannerlinsley)
+<table>
+  <tbody>
+    <tr>
+      <td>
+        <a href="https://github.com/sponsors/tannerlinsley" target="_blank">
+          Get Your Name Here!
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-<hr />
-
-<a href="https://github.com/sponsors/tannerlinsley" target="_blank">
-  Become a Sponsor!
-</a>
+### [Become a Sponsor](https://github.com/sponsors/tannerlinsley/)
 
 # Documentation
 
