@@ -52,37 +52,19 @@ Enjoy this library? Try them all! [React Table](https://github.com/tannerlinsley
 
 This library is being built and maintained by me, @tannerlinsley and I am always in need of more support to keep projects like this afloat. If you would like to get premium support, add your logo or name on this README, or simply just contribute to my open source Sponsorship goal, [visit my Github Sponsors page!](https://github.com/sponsors/tannerlinsley/)
 
-[![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/diamond.png)](https://github.com/sponsors/tannerlinsleyy)
+[![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/diamond.png)](https://github.com/sponsors/tannerlinsley)
 
-<!-- <p>
-  <a href="https://nozzle.io" target="_blank">
-    <img width='225' src="https://nozzle.io/img/logo-blue.png">
-  </a>
-<p> -->
+[Your Logo Here](https://github.com/sponsors/tannerlinsley)
 
-<a href='https://github.com/sponsors/tannerlinsley'>Become a Silver Sponsor</a>
+<hr />
 
-[![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/gold.png)](https://github.com/sponsors/tannerlinsleyy)
+[![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/gold.png)](https://github.com/sponsors/tannerlinsley)
 
-<!-- <p>
-  <a href="https://nozzle.io" target="_blank">
-    <img width='225' src="https://nozzle.io/img/logo-blue.png">
-  </a>
-<p> -->
+[Your Logo Here](https://github.com/sponsors/tannerlinsley)
 
-<a href='https://github.com/sponsors/tannerlinsley'>Become a Silver Sponsor</a>
+<hr />
 
-[![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/silver.png)](https://github.com/sponsors/tannerlinsleyy)
-
-<!-- <p>
-  <a href="https://nozzle.io" target="_blank">
-    <img width='225' src="https://nozzle.io/img/logo-blue.png">
-  </a>
-<p> -->
-
-<a href='https://github.com/sponsors/tannerlinsley'>Become a Silver Sponsor</a>
-
-[![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/bronze.png)](https://github.com/sponsors/tannerlinsleyy)
+[![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/silver.png)](https://github.com/sponsors/tannerlinsley)
 
 <p>
   <a href="https://nozzle.io" target="_blank">
@@ -90,30 +72,30 @@ This library is being built and maintained by me, @tannerlinsley and I am always
   </a>
 <p>
 
-<a href='https://github.com/sponsors/tannerlinsley'>Become a Silver Sponsor</a>
+[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+
+<hr />
+
+[![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/bronze.png)](https://github.com/sponsors/tannerlinsley)
+
+[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+
+<hr />
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/supporters.png)](https://github.com/sponsors/tannerlinsley)
 
-<!-- <p>
-  <a href="https://nozzle.io" target="_blank">
-    <img width='225' src="https://nozzle.io/img/logo-blue.png">
-  </a>
-<p> -->
+[Your Logo Here](https://github.com/sponsors/tannerlinsley)
 
-<a href="https://github.com/sponsors/tannerlinsley" target="_blank">
-  Become a Supporter!
-</a>
+<hr />
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/fans.png)](https://github.com/sponsors/tannerlinsley)
 
-<!-- <p>
-  <a href="https://nozzle.io" target="_blank">
-    <img width='225' src="https://nozzle.io/img/logo-blue.png">
-  </a>
-<p> -->
+[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+
+<hr />
 
 <a href="https://github.com/sponsors/tannerlinsley" target="_blank">
-  Become a Fan!
+  Become a Sponsor!
 </a>
 
 # Documentation
