@@ -54,13 +54,13 @@ This library is being built and maintained by me, @tannerlinsley and I am always
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/diamond.png)](https://github.com/sponsors/tannerlinsley)
 
-[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+[Get Your Logo Here](https://github.com/sponsors/tannerlinsley)
 
 <hr />
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/gold.png)](https://github.com/sponsors/tannerlinsley)
 
-[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+[Get Your Logo Here](https://github.com/sponsors/tannerlinsley)
 
 <hr />
 
@@ -72,25 +72,25 @@ This library is being built and maintained by me, @tannerlinsley and I am always
   </a>
 <p>
 
-[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+[Get Your Logo Here](https://github.com/sponsors/tannerlinsley)
 
 <hr />
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/bronze.png)](https://github.com/sponsors/tannerlinsley)
 
-[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+[Get Your Logo Here](https://github.com/sponsors/tannerlinsley)
 
 <hr />
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/supporters.png)](https://github.com/sponsors/tannerlinsley)
 
-[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+[Get Your Name Here!](https://github.com/sponsors/tannerlinsley)
 
 <hr />
 
 [![Diamond Sponsors](https://raw.githubusercontent.com/tannerlinsley/files/master/sponsorships/fans.png)](https://github.com/sponsors/tannerlinsley)
 
-[Your Logo Here](https://github.com/sponsors/tannerlinsley)
+[Get Your Name Here!](https://github.com/sponsors/tannerlinsley)
 
 <hr />
 
