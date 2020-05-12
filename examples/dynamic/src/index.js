@@ -156,11 +156,16 @@ function GridVirtualizerDynamic({ rows, columns }) {
 
   const [show, setShow] = React.useState(true);
 
+  const halfWay = Math.floor(rows.length / 2);
+
   return (
     <>
       <button onClick={() => setShow(old => !old)}>Toggle</button>
-      <button onClick={() => rowVirtualizer.scrollToIndex(5000)}>
-        Scroll to 5000
+      <button onClick={() => rowVirtualizer.scrollToIndex(halfWay)}>
+        Scroll to index {halfWay}
+      </button>
+      <button onClick={() => rowVirtualizer.scrollToIndex(rows.length)}>
+        Scroll to index {rows.length - 1}
       </button>
       {show ? (
         <div

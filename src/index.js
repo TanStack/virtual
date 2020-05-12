@@ -108,8 +108,6 @@ export function useVirtual({
   }
 
   const virtualItems = React.useMemo(() => {
-    const { scrollOffset } = latestRef.current
-
     const virtualItems = []
 
     for (let i = startIndex; i <= endIndex; i++) {
@@ -118,6 +116,8 @@ export function useVirtual({
       const item = {
         ...measurement,
         measureRef: el => {
+          const { scrollOffset } = latestRef.current
+
           if (el) {
             const { [sizeKey]: measuredSize } = el.getBoundingClientRect()
 
@@ -125,6 +125,7 @@ export function useVirtual({
               if (item.start < scrollOffset) {
                 defaultScrollToFn(scrollOffset + (measuredSize - item.size))
               }
+
               setMeasuredCache(old => ({
                 ...old,
                 [i]: measuredSize,
@@ -155,10 +156,7 @@ export function useVirtual({
         outerSize,
         scrollOffset,
         scrollOffsetPlusOuterSize,
-        totalSize,
       } = latestRef.current
-
-      offset = Math.max(0, Math.min(offset, totalSize - outerSize))
 
       if (align === 'auto') {
         if (offset <= scrollOffset) {
@@ -181,7 +179,7 @@ export function useVirtual({
     [scrollToFn]
   )
 
-  const scrollToIndex = React.useCallback(
+  const tryScrollToIndex = React.useCallback(
     (index, { align = 'auto', ...rest } = {}) => {
       const {
         measurements,
@@ -189,11 +187,7 @@ export function useVirtual({
         scrollOffsetPlusOuterSize,
       } = latestRef.current
 
-      const measurement = measurements[index]
-
-      if (!measurement) {
-        return
-      }
+      const measurement = measurements[Math.max(0, Math.min(index, size - 1))]
 
       if (align === 'auto') {
         if (measurement.end >= scrollOffsetPlusOuterSize) {
@@ -211,9 +205,25 @@ export function useVirtual({
           : align === 'end'
           ? measurement.end
           : measurement.start
+
       scrollToOffset(offset, { align, ...rest })
     },
-    [scrollToOffset]
+    [scrollToOffset, size]
+  )
+
+  const scrollToIndex = React.useCallback(
+    (...args) => {
+      // We do a double request here because of
+      // dynamic sizes which can cause offset shift
+      // and end up in the wrong spot. Unfortunately,
+      // we can't know about those dynamic sizes until
+      // we try and render them. So double down!
+      tryScrollToIndex(...args)
+      requestAnimationFrame(() => {
+        tryScrollToIndex(...args)
+      })
+    },
+    [tryScrollToIndex]
   )
 
   return {
