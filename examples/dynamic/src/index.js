@@ -164,7 +164,7 @@ function GridVirtualizerDynamic({ rows, columns }) {
       <button onClick={() => rowVirtualizer.scrollToIndex(halfWay)}>
         Scroll to index {halfWay}
       </button>
-      <button onClick={() => rowVirtualizer.scrollToIndex(rows.length)}>
+      <button onClick={() => rowVirtualizer.scrollToIndex(rows.length - 1)}>
         Scroll to index {rows.length - 1}
       </button>
       {show ? (
