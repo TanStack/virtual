@@ -189,6 +189,10 @@ export function useVirtual({
 
       const measurement = measurements[Math.max(0, Math.min(index, size - 1))]
 
+      if (!measurement) {
+        return
+      }
+
       if (align === 'auto') {
         if (measurement.end >= scrollOffsetPlusOuterSize) {
           align = 'end'
