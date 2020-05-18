@@ -272,6 +272,12 @@ const {
   - Optional
   - This function, if passed, is responsible for implementing the scrollTo log for the parentRef which is used when methods like `scrolllToOffset` and `scrollToIndex` are called.
   - Eg. You can use this function implement smooth scrolling by using the supplied offset and the `defaultScrollToFn` as seen in the sandbox's **Smooth Scroll** example.
+- `paddingStart: Integer`
+  - Defaults to `0`
+  - The amount of padding in pixels to add to the start of the virtual list
+- `paddingEnd: Integer`
+  - Defaults to `0`
+  - The amount of padding in pixels to add to the end of the virtual list
 
 ### Returns
 

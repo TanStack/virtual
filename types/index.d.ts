@@ -25,6 +25,8 @@ declare function useVirtual<T>(options: {
     offset: number,
     defaultScrollToFn?: (offset: number) => void
   ) => void
+  paddingStart?: number
+  paddingEnd?: number
 }): {
   virtualItems: VirtualItem[]
   totalSize: number

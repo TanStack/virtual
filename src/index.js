@@ -10,6 +10,8 @@ export function useVirtual({
   size = 0,
   estimateSize = defaultEstimateSize,
   overscan = 0,
+  paddingStart = 0,
+  paddingEnd = 0,
   parentRef,
   horizontal,
   scrollToFn,
@@ -22,6 +24,8 @@ export function useVirtual({
   }
 
   const [scrollOffset, _setScrollOffset] = React.useState(0)
+
+  const scrollOffsetPlusOuterSize = scrollOffset + outerSize
 
   useScroll(parentRef, ({ [scrollKey]: newScrollOffset }) => {
     _setScrollOffset(newScrollOffset)
@@ -46,8 +50,6 @@ export function useVirtual({
     [defaultScrollToFn, resolvedScrollToFn]
   )
 
-  const scrollOffsetPlusOuterSize = scrollOffset + outerSize
-
   const [measuredCache, setMeasuredCache] = React.useState({})
 
   const { measurements, reversedMeasurements } = React.useMemo(() => {
@@ -55,7 +57,7 @@ export function useVirtual({
     const reversedMeasurements = []
 
     for (let i = 0, j = size - 1; i < size; i++, j--) {
-      const start = measurements[i - 1] ? measurements[i - 1].end : 0
+      const start = measurements[i - 1] ? measurements[i - 1].end : paddingStart
       const size = measuredCache[i] || estimateSize(i)
       const end = start + size
       const bounds = { index: i, start, size, end }
@@ -67,9 +69,9 @@ export function useVirtual({
       }
     }
     return { measurements, reversedMeasurements }
-  }, [estimateSize, measuredCache, size])
+  }, [estimateSize, measuredCache, paddingStart, size])
 
-  const totalSize = measurements[size - 1]?.end || 0
+  const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
   let start = React.useMemo(
     () =>
@@ -151,7 +153,7 @@ export function useVirtual({
   }, [estimateSize, size])
 
   const scrollToOffset = React.useCallback(
-    (offset, { align = 'start' } = {}) => {
+    (toOffset, { align = 'start' } = {}) => {
       const {
         outerSize,
         scrollOffset,
@@ -159,9 +161,9 @@ export function useVirtual({
       } = latestRef.current
 
       if (align === 'auto') {
-        if (offset <= scrollOffset) {
+        if (toOffset <= scrollOffset) {
           align = 'start'
-        } else if (offset >= scrollOffsetPlusOuterSize) {
+        } else if (scrollOffset >= scrollOffsetPlusOuterSize) {
           align = 'end'
         } else {
           align = 'start'
@@ -169,11 +171,11 @@ export function useVirtual({
       }
 
       if (align === 'start') {
-        scrollToFn(offset)
+        scrollToFn(toOffset)
       } else if (align === 'end') {
-        scrollToFn(offset - outerSize)
+        scrollToFn(toOffset - outerSize)
       } else if (align === 'center') {
-        scrollToFn(offset - outerSize / 2)
+        scrollToFn(toOffset - outerSize / 2)
       }
     },
     [scrollToFn]
@@ -203,14 +205,14 @@ export function useVirtual({
         }
       }
 
-      let offset =
+      const toOffset =
         align === 'center'
           ? measurement.start + measurement.size / 2
           : align === 'end'
           ? measurement.end
           : measurement.start
 
-      scrollToOffset(offset, { align, ...rest })
+      scrollToOffset(toOffset, { align, ...rest })
     },
     [scrollToOffset, size]
   )
