@@ -37,7 +37,6 @@
   ],
   "dependencies": {
     "@reach/observe-rect": "^1.1.0",
-    "@scarf/scarf": "^1.0.0",
     "ts-toolbelt": "^6.4.2"
   },
   "peerDependencies": {
