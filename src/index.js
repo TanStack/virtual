@@ -57,8 +57,10 @@ export function useVirtual({
     const reversedMeasurements = []
 
     for (let i = 0, j = size - 1; i < size; i++, j--) {
+      const measuredSize = measuredCache[i]
       const start = measurements[i - 1] ? measurements[i - 1].end : paddingStart
-      const size = measuredCache[i] || estimateSize(i)
+      const size =
+        typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
       const end = start + size
       const bounds = { index: i, start, size, end }
       measurements[i] = {
