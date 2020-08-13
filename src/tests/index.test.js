@@ -87,6 +87,47 @@ describe('useVirtual', () => {
     rendered.getByText('Row 1')
   })
 
+  it('should render given dynamic size', async () => {
+    function App() {
+      const parentRef = React.useRef()
+
+      const rowVirtualizer = useVirtual({
+        size: 20,
+        parentRef,
+        overscan: 5,
+      })
+
+      return (
+        <>
+          <Container ref={parentRef}>
+            <Inner
+              style={{
+                height: `${rowVirtualizer.totalSize}px`,
+              }}
+            >
+              {rowVirtualizer.virtualItems.map(virtualRow => (
+                <Row
+                  key={virtualRow.index}
+                  ref={virtualRow.measureRef}
+                  style={{
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  Row {virtualRow.index}
+                </Row>
+              ))}
+            </Inner>
+          </Container>
+        </>
+      )
+    }
+
+    const rendered = render(<App />)
+
+    rendered.getByText('Row 1')
+  })
+
   // it('scrolling utilities should work', async () => {
   //   function App() {
   //     const parentRef = React.useRef()

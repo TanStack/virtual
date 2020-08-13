@@ -1062,11 +1062,6 @@
     estree-walker "^1.0.1"
     picomatch "^2.2.2"
 
-"@scarf/scarf@^1.0.0":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@scarf/scarf/-/scarf-1.0.4.tgz#d7c09e7d38428123df18a8d83a4bb5d09517d952"
-  integrity sha512-lkhjzeYyYAG4VvdrjvbZCOYzXH5vCwfzYj9xJ4zHDgyYIOzObZwcsbW6W1q5Z4tywrb14oG/tfsFAMMQPCTFqw==
-
 "@sheerun/mutationobserver-shim@^0.3.2":
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/@sheerun/mutationobserver-shim/-/mutationobserver-shim-0.3.3.tgz#5405ee8e444ed212db44e79351f0c70a582aae25"
