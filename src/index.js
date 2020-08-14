@@ -87,7 +87,7 @@ export function useVirtual({
     return () => {
       element.removeEventListener('scroll', onScroll)
     }
-  }, [parentRef, scrollKey])
+  }, [parentRef, scrollKey, size /* required */])
 
   const virtualItems = React.useMemo(() => {
     const virtualItems = []
