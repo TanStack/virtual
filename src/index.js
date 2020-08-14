@@ -1,6 +1,5 @@
 import React from 'react'
 
-import useScroll from './useScroll'
 import useRect from './useRect'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
