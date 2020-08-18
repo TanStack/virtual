@@ -1,6 +1,5 @@
 import React from 'react'
 
-import useScroll from './useScroll'
 import useRect from './useRect'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
@@ -18,23 +17,15 @@ export function useVirtual({
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
+  const latestRef = React.useRef({})
 
   const { [sizeKey]: outerSize } = useRect(parentRef) || {
     [sizeKey]: 0,
   }
 
-  const [scrollOffset, _setScrollOffset] = React.useState(0)
-
-  const scrollOffsetPlusOuterSize = scrollOffset + outerSize
-
-  useScroll(parentRef, ({ [scrollKey]: newScrollOffset }) => {
-    _setScrollOffset(newScrollOffset)
-  })
-
   const defaultScrollToFn = React.useCallback(
     offset => {
       if (parentRef.current) {
-        _setScrollOffset(offset)
         parentRef.current[scrollKey] = offset
       }
     },
@@ -52,69 +43,56 @@ export function useVirtual({
 
   const [measuredCache, setMeasuredCache] = React.useState({})
 
-  const { measurements, reversedMeasurements } = React.useMemo(() => {
+  const measurements = React.useMemo(() => {
     const measurements = []
-    const reversedMeasurements = []
-
-    for (let i = 0, j = size - 1; i < size; i++, j--) {
+    for (let i = 0; i < size; i++) {
       const measuredSize = measuredCache[i]
       const start = measurements[i - 1] ? measurements[i - 1].end : paddingStart
       const size =
         typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
       const end = start + size
-      const bounds = { index: i, start, size, end }
-      measurements[i] = {
-        ...bounds,
-      }
-      reversedMeasurements[j] = {
-        ...bounds,
-      }
+      measurements[i] = { index: i, start, size, end }
     }
-    return { measurements, reversedMeasurements }
+    return measurements
   }, [estimateSize, measuredCache, paddingStart, size])
 
   const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
-  let start = React.useMemo(
-    () =>
-      reversedMeasurements.reduce(
-        (last, rowStat) => (rowStat.end >= scrollOffset ? rowStat : last),
-        reversedMeasurements[0]
-      ),
-    [reversedMeasurements, scrollOffset]
-  )
-
-  let end = React.useMemo(
-    () =>
-      measurements.reduce(
-        (last, rowStat) =>
-          rowStat.start <= scrollOffsetPlusOuterSize ? rowStat : last,
-        measurements[0]
-      ),
-    [measurements, scrollOffsetPlusOuterSize]
-  )
-
-  let startIndex = start ? start.index : 0
-  let endIndex = end ? end.index : 0
-
-  // Always add at least one overscan item, so focus will work
-  startIndex = Math.max(startIndex - overscan, 0)
-  endIndex = Math.min(endIndex + overscan, size - 1)
-
-  const latestRef = React.useRef({})
-
-  latestRef.current = {
+  Object.assign(latestRef.current, {
+    overscan,
     measurements,
     outerSize,
-    scrollOffset,
-    scrollOffsetPlusOuterSize,
     totalSize,
-  }
+  })
+
+  const [range, setRange] = React.useState({ start: 0, end: 0 })
+
+  useIsomorphicLayoutEffect(() => {
+    const element = parentRef.current
+
+    const onScroll = () => {
+      const scrollOffset = element[scrollKey]
+      latestRef.current.scrollOffset = scrollOffset
+      setRange(prevRange => calculateRange(latestRef.current, prevRange))
+    }
+
+    // Determine initially visible range
+    onScroll()
+
+    element.addEventListener('scroll', onScroll, {
+      capture: false,
+      passive: true,
+    })
+
+    return () => {
+      element.removeEventListener('scroll', onScroll)
+    }
+  }, [parentRef.current, scrollKey, size /* required */])
 
   const virtualItems = React.useMemo(() => {
     const virtualItems = []
 
-    for (let i = startIndex; i <= endIndex; i++) {
+    for (let i = range.start; i <= range.end; i++) {
       const measurement = measurements[i]
 
       const item = {
@@ -143,7 +121,7 @@ export function useVirtual({
     }
 
     return virtualItems
-  }, [startIndex, endIndex, measurements, sizeKey, defaultScrollToFn])
+  }, [range.start, range.end, measurements, sizeKey, defaultScrollToFn])
 
   const mountedRef = React.useRef()
 
@@ -156,16 +134,12 @@ export function useVirtual({
 
   const scrollToOffset = React.useCallback(
     (toOffset, { align = 'start' } = {}) => {
-      const {
-        outerSize,
-        scrollOffset,
-        scrollOffsetPlusOuterSize,
-      } = latestRef.current
+      const { scrollOffset, outerSize } = latestRef.current
 
       if (align === 'auto') {
         if (toOffset <= scrollOffset) {
           align = 'start'
-        } else if (scrollOffset >= scrollOffsetPlusOuterSize) {
+        } else if (scrollOffset >= scrollOffset + outerSize) {
           align = 'end'
         } else {
           align = 'start'
@@ -185,11 +159,7 @@ export function useVirtual({
 
   const tryScrollToIndex = React.useCallback(
     (index, { align = 'auto', ...rest } = {}) => {
-      const {
-        measurements,
-        scrollOffset,
-        scrollOffsetPlusOuterSize,
-      } = latestRef.current
+      const { measurements, scrollOffset, outerSize } = latestRef.current
 
       const measurement = measurements[Math.max(0, Math.min(index, size - 1))]
 
@@ -198,7 +168,7 @@ export function useVirtual({
       }
 
       if (align === 'auto') {
-        if (measurement.end >= scrollOffsetPlusOuterSize) {
+        if (measurement.end >= scrollOffset + outerSize) {
           align = 'end'
         } else if (measurement.start <= scrollOffset) {
           align = 'start'
@@ -240,4 +210,31 @@ export function useVirtual({
     scrollToOffset,
     scrollToIndex,
   }
+}
+
+function calculateRange({
+  overscan,
+  measurements,
+  outerSize,
+  scrollOffset,
+}, prevRange) {
+  const total = measurements.length
+  let start = total - 1
+  while (start > 0 && measurements[start].end >= scrollOffset) {
+    start -= 1
+  }
+  let end = 0
+  while (end < total - 1 && measurements[end].start <= scrollOffset + outerSize) {
+    end += 1
+  }
+
+  // Always add at least one overscan item, so focus will work
+  start = Math.max(start - overscan, 0)
+  end = Math.min(end + overscan, total - 1)
+
+  if (!prevRange || prevRange.start !== start || prevRange.end !== end) {
+    return { start, end }
+  }
+
+  return prevRange
 }
