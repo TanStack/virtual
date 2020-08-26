@@ -91,8 +91,9 @@ export function useVirtual({
 
   const virtualItems = React.useMemo(() => {
     const virtualItems = []
+    const end = Math.min(range.end, measurements.length - 1)
 
-    for (let i = range.start; i <= range.end; i++) {
+    for (let i = range.start; i <= end; i++) {
       const measurement = measurements[i]
 
       const item = {
