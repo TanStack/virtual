@@ -42,14 +42,14 @@ export function useVirtual({
   )
 
   const [measuredCache, setMeasuredCache] = React.useState({})
-  const [requestMeasure, setRequestMeasure] = React.useState(false)
+  const [requestMeasure, setRequestMeasure] = React.useState(0)
 
-  const measure = React.useCallback(() => setRequestMeasure(true), [])
+  const measure = React.useCallback(
+    () => setRequestMeasure(requestMeasure + 1),
+    [requestMeasure]
+  )
 
   const measurements = React.useMemo(() => {
-    if (requestMeasure) {
-      setRequestMeasure(false)
-    }
     const measurements = []
     for (let i = 0; i < size; i++) {
       const measuredSize = measuredCache[i]
@@ -60,7 +60,7 @@ export function useVirtual({
       measurements[i] = { index: i, start, size, end }
     }
     return measurements
-  }, [estimateSize, measuredCache, paddingStart, size, requestMeasure])
+  }, [estimateSize, measuredCache, paddingStart, size])
 
   const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
@@ -128,7 +128,15 @@ export function useVirtual({
     }
 
     return virtualItems
-  }, [range.start, range.end, measurements, sizeKey, defaultScrollToFn])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    range.start,
+    range.end,
+    measurements,
+    sizeKey,
+    defaultScrollToFn,
+    requestMeasure /* required */,
+  ])
 
   const mountedRef = React.useRef()
 
