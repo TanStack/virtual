@@ -71,6 +71,7 @@ export function useVirtual({
     const element = parentRef.current
 
     const onScroll = () => {
+      if (!element) return
       const scrollOffset = element[scrollKey]
       latestRef.current.scrollOffset = scrollOffset
       setRange(prevRange => calculateRange(latestRef.current, prevRange))
