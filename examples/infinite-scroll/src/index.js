@@ -8,7 +8,7 @@ import "./styles.css";
 import { useVirtual } from "react-virtual";
 
 // axios override to fake "get" a website
-// delete lines 9-24 if you are reusing this code outside of this demo
+// delete lines 9-36 if you are reusing this code outside of this demo
 Object.assign(axios, {
   ...axios,
   get: url => {
