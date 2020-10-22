@@ -237,6 +237,7 @@ const {
   overscan,
   horizontal,
   scrollToFn,
+  useObserver,
 })
 ```
 
@@ -266,6 +267,11 @@ const {
   - Optional
   - This function, if passed, is responsible for implementing the scrollTo log for the parentRef which is used when methods like `scrolllToOffset` and `scrollToIndex` are called.
   - Eg. You can use this function implement smooth scrolling by using the supplied offset and the `defaultScrollToFn` as seen in the sandbox's **Smooth Scroll** example.
+- `useObserver: Function(parentRef) => ({ width: number; height: number })`
+  - Optional
+  - This hook, if passed, is responsible for getting `parentRef`'s dimensions
+  - Eg. You can use this hook to replace [@reach/observe-rect](https://github.com/reach/observe-rect) that `react-virtual` uses by default with [ResizeObserver API](https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver)
+    - Caution! Depending on your bundling target, you might need to add [resize-observer-polyfill](https://www.npmjs.com/package/resize-observer-polyfill)
 - `paddingStart: Integer`
   - Defaults to `0`
   - The amount of padding in pixels to add to the start of the virtual list
