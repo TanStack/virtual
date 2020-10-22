@@ -14,14 +14,14 @@ export function useVirtual({
   parentRef,
   horizontal,
   scrollToFn,
-  observer,
+  useObserver,
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
   const latestRef = React.useRef({})
-  const useObserver = observer || useRect
+  const useMeasureParent = useObserver || useRect
 
-  const { [sizeKey]: outerSize } = useObserver(parentRef) || {
+  const { [sizeKey]: outerSize } = useMeasureParent(parentRef) || {
     [sizeKey]: 0,
   }
 
