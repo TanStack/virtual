@@ -6,6 +6,12 @@
   "license": "MIT",
   "repository": "tannerlinsley/react-virtual",
   "homepage": "https://github.com/tannerlinsley/react-virtual#readme",
+  "support": {
+    "backing": "npm-funding"
+  },
+  "funding": [
+    "https://github.com/sponsors/tannerlinsley"
+  ],
   "main": "index.js",
   "module": "dist/react-virtual.mjs",
   "types": "types",
