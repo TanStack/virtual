@@ -1,10 +1,12 @@
 import React from 'react'
 
 import useRect from './useRect'
+import useWindowRect from './useWindowRect'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
 const defaultEstimateSize = () => 50
 
+<<<<<<< HEAD
 const defaultKeyExtractor = index => index
 
 const defaultMeasureSize = (el, horizontal) => {
@@ -24,6 +26,37 @@ export const defaultRangeExtractor = range => {
   }
 
   return arr
+=======
+export function useVirtualWindow({
+  windowRef,
+  scrollToFn,
+  horizontal,
+  parentRef,
+  ...rest
+}) {
+  const scrollKey = horizontal ? 'scrollX' : 'scrollY'
+  const defaultScrollToFn = React.useCallback(
+    offset => {
+      if (windowRef.current) {
+        windowRef.current[scrollKey] = offset
+      }
+    },
+    [scrollKey, windowRef]
+  )
+
+  return useVirtual({
+    ...rest,
+    horizontal,
+    parentRef,
+    scrollToFn: scrollToFn || defaultScrollToFn,
+    onScrollElement: windowRef,
+    scrollOffsetFn() {
+      const bounds = parentRef.current.getBoundingClientRect();
+      return horizontal ? bounds.left * -1 : bounds.top * -1;
+    },
+    useObserver: () => useWindowRect(windowRef),
+  });
+>>>>>>> 32d34d8 (feat: add support for window scrolling)
 }
 
 export function useVirtual({
@@ -38,9 +71,12 @@ export function useVirtual({
   useObserver,
   onScrollElement,
   scrollOffsetFn,
+<<<<<<< HEAD
   keyExtractor = defaultKeyExtractor,
   measureSize = defaultMeasureSize,
   rangeExtractor = defaultRangeExtractor,
+=======
+>>>>>>> 32d34d8 (feat: add support for window scrolling)
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
@@ -273,8 +309,8 @@ export function useVirtual({
         align === 'center'
           ? measurement.start + measurement.size / 2
           : align === 'end'
-          ? measurement.end
-          : measurement.start
+            ? measurement.end
+            : measurement.start
 
       scrollToOffset(toOffset, { align, ...rest })
     },
