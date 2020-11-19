@@ -44,11 +44,10 @@ export function useVirtual({
   )
 
   const [measuredCache, setMeasuredCache] = React.useState({})
-  const [requestMeasure, setRequestMeasure] = React.useState(0)
 
   const measure = React.useCallback(
-    () => setRequestMeasure(requestMeasure + 1),
-    [requestMeasure]
+    () => setMeasuredCache({}),
+    []
   )
 
   const measurements = React.useMemo(() => {
@@ -138,7 +137,6 @@ export function useVirtual({
     measurements,
     sizeKey,
     defaultScrollToFn,
-    requestMeasure /* required */,
   ])
 
   const mountedRef = React.useRef()
