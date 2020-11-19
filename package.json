@@ -6,6 +6,12 @@
   "license": "MIT",
   "repository": "tannerlinsley/react-virtual",
   "homepage": "https://github.com/tannerlinsley/react-virtual#readme",
+  "support": {
+    "backing": "npm-funding"
+  },
+  "funding": [
+    "https://github.com/sponsors/tannerlinsley"
+  ],
   "main": "index.js",
   "module": "dist/react-virtual.mjs",
   "types": "types",
@@ -27,7 +33,6 @@
     "doctoc": "npx doctoc --maxlevel 2 README.md",
     "jump2header": "npx @strdr4605/jump2header --header 'documentation' --start 'Installation' -e 2 --silent -l 2",
     "stats": "open ./stats.html",
-    "postinstall": "node ./scripts/postinstall.js || exit 0",
     "dtslint": "dtslint types"
   },
   "files": [

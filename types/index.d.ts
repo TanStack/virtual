@@ -27,6 +27,13 @@ declare function useVirtual<T>(options: {
   ) => void
   paddingStart?: number
   paddingEnd?: number
+  useObserver?: (
+    ref: React.RefObject<T>
+  ) => {
+    width: number
+    height: number
+    [key: string]: any
+  }
 }): {
   virtualItems: VirtualItem[]
   totalSize: number

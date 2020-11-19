@@ -14,12 +14,14 @@ export function useVirtual({
   parentRef,
   horizontal,
   scrollToFn,
+  useObserver,
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
   const latestRef = React.useRef({})
+  const useMeasureParent = useObserver || useRect
 
-  const { [sizeKey]: outerSize } = useRect(parentRef) || {
+  const { [sizeKey]: outerSize } = useMeasureParent(parentRef) || {
     [sizeKey]: 0,
   }
 
@@ -75,6 +77,7 @@ export function useVirtual({
 
   useIsomorphicLayoutEffect(() => {
     const element = parentRef.current
+    if (!element) { return }
 
     const onScroll = () => {
       const scrollOffset = element[scrollKey]
@@ -93,7 +96,7 @@ export function useVirtual({
     return () => {
       element.removeEventListener('scroll', onScroll)
     }
-  }, [parentRef.current, scrollKey, size /* required */])
+  }, [parentRef.current, scrollKey, size /* required */, outerSize /* required */])
 
   const virtualItems = React.useMemo(() => {
     const virtualItems = []
