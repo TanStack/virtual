@@ -130,14 +130,7 @@ export function useVirtual({
     }
 
     return virtualItems
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    range.start,
-    range.end,
-    measurements,
-    sizeKey,
-    defaultScrollToFn,
-  ])
+  }, [range.start, range.end, measurements, sizeKey, defaultScrollToFn])
 
   const mountedRef = React.useRef()
 
