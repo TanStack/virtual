@@ -245,7 +245,7 @@ const {
 
 - `size: Integer`
   - **Required**
-  - The size of the virtualizer
+  - The totel count of elements
 - `parentRef: React.useRef(DOMElement)`
   - **Required**
   - The parent element whose inner-content is scrollable
