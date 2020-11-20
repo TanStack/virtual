@@ -245,7 +245,7 @@ const {
 
 - `size: Integer`
   - **Required**
-  - The totel count of elements
+  - The total count of elements
 - `parentRef: React.useRef(DOMElement)`
   - **Required**
   - The parent element whose inner-content is scrollable
