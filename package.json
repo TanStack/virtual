@@ -45,7 +45,7 @@
     "ts-toolbelt": "^6.4.2"
   },
   "peerDependencies": {
-    "react": "^16.6.3"
+    "react": "^16.6.3 || ^17.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.6",
