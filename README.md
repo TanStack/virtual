@@ -245,7 +245,7 @@ const {
 
 - `size: Integer`
   - **Required**
-  - The totel count of elements
+  - The total count of elements
 - `parentRef: React.useRef(DOMElement)`
   - **Required**
   - The parent element whose inner-content is scrollable
@@ -265,8 +265,8 @@ const {
   - When `true`, this virtualizer will use `width` and `scrollLeft` instead of `height` and `scrollTop` to determine size and offset of virtualized items.
 - `scrollToFn: Function(offset, defaultScrollToFn) => void 0`
   - Optional
-  - This function, if passed, is responsible for implementing the scrollTo log for the parentRef which is used when methods like `scrolllToOffset` and `scrollToIndex` are called.
-  - Eg. You can use this function implement smooth scrolling by using the supplied offset and the `defaultScrollToFn` as seen in the sandbox's **Smooth Scroll** example.
+  - This function, if passed, is responsible for implementing the scrollTo logic for the parentRef which is used when methods like `scrolllToOffset` and `scrollToIndex` are called.
+  - Eg. You can use this function to implement smooth scrolling by using the supplied offset and the `defaultScrollToFn` as seen in the sandbox's **Smooth Scroll** example.
 - `useObserver: Function(parentRef) => ({ width: number; height: number })`
   - Optional
   - This hook, if passed, is responsible for getting `parentRef`'s dimensions
