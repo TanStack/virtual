@@ -47,6 +47,11 @@ export function useVirtual({
 
   const [measuredCache, setMeasuredCache] = React.useState({})
 
+  const measure = React.useCallback(
+    () => setMeasuredCache({}),
+    []
+  )
+
   const measurements = React.useMemo(() => {
     const measurements = []
     for (let i = 0; i < size; i++) {
@@ -215,6 +220,7 @@ export function useVirtual({
     totalSize,
     scrollToOffset,
     scrollToIndex,
+    measure,
   }
 }
 

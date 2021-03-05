@@ -39,6 +39,7 @@ declare function useVirtual<T>(options: {
   totalSize: number
   scrollToOffset: (index: number, options?: ScrollToOffsetOptions) => void
   scrollToIndex: (index: number, options?: ScrollToIndexOptions) => void
+  measure: () => void
 }
 
 export { useVirtual }
