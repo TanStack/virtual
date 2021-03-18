@@ -49,10 +49,7 @@ export function useVirtual({
 
   const [measuredCache, setMeasuredCache] = React.useState({})
 
-  const measure = React.useCallback(
-    () => setMeasuredCache({}),
-    []
-  )
+  const measure = React.useCallback(() => setMeasuredCache({}), [])
 
   const measurements = React.useMemo(() => {
     const measurements = []
@@ -80,10 +77,14 @@ export function useVirtual({
 
   const element = onScrollElement ? onScrollElement.current : parentRef.current
   useIsomorphicLayoutEffect(() => {
-    if (!element) { return }
+    if (!element) {
+      return
+    }
 
     const onScroll = () => {
-      const scrollOffset = scrollOffsetFn ? scrollOffsetFn() : element[scrollKey]
+      const scrollOffset = scrollOffsetFn
+        ? scrollOffsetFn()
+        : element[scrollKey]
       latestRef.current.scrollOffset = scrollOffset
       setRange(prevRange => calculateRange(latestRef.current, prevRange))
     }
@@ -134,7 +135,14 @@ export function useVirtual({
     }
 
     return virtualItems
-  }, [range.start, range.end, measurements, sizeKey, defaultScrollToFn, keyExtractor])
+  }, [
+    range.start,
+    range.end,
+    measurements,
+    sizeKey,
+    defaultScrollToFn,
+    keyExtractor,
+  ])
 
   const mountedRef = React.useRef()
 
@@ -194,8 +202,8 @@ export function useVirtual({
         align === 'center'
           ? measurement.start + measurement.size / 2
           : align === 'end'
-            ? measurement.end
-            : measurement.start
+          ? measurement.end
+          : measurement.start
 
       scrollToOffset(toOffset, { align, ...rest })
     },
@@ -226,19 +234,20 @@ export function useVirtual({
   }
 }
 
-function calculateRange({
-  overscan,
-  measurements,
-  outerSize,
-  scrollOffset,
-}, prevRange) {
+function calculateRange(
+  { overscan, measurements, outerSize, scrollOffset },
+  prevRange
+) {
   const total = measurements.length
   let start = total - 1
   while (start > 0 && measurements[start].end >= scrollOffset) {
     start -= 1
   }
   let end = 0
-  while (end < total - 1 && measurements[end].start <= scrollOffset + outerSize) {
+  while (
+    end < total - 1 &&
+    measurements[end].start <= scrollOffset + outerSize
+  ) {
     end += 1
   }
 
