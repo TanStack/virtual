@@ -284,6 +284,10 @@ const {
  - `scrollOffsetFn: Function() => number`
    - Optional
    - This function, if passed, is called on scroll to get the scroll offest rather than using `parentRef`'s `width` or `height`
+- `keyExtractor: Function(index) => String | Integer`
+  - Optional
+  - This function receives the index of each item and should return the item's unique ID.
+  - This function should be passed whenever dynamic measurement rendering is enabled and the size or order of items in the list changes.
 
 ### Returns
 
