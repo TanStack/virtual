@@ -34,6 +34,7 @@ declare function useVirtual<T>(options: {
     height: number
     [key: string]: any
   }
+  keyExtractor?: (index: number) => number | string
 }): {
   virtualItems: VirtualItem[]
   totalSize: number
