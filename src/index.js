@@ -160,7 +160,7 @@ export function useVirtual({
       if (align === 'auto') {
         if (toOffset <= scrollOffset) {
           align = 'start'
-        } else if (scrollOffset >= scrollOffset + outerSize) {
+        } else if (toOffset >= scrollOffset + outerSize) {
           align = 'end'
         } else {
           align = 'start'
