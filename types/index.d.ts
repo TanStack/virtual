@@ -12,7 +12,7 @@ export type VirtualItem = {
   start: number
   end: number
   size: number
-  measureRef: React.RefObject<any>
+  measureRef: (el: HTMLElement | null) => void
 }
 
 declare function useVirtual<T>(options: {
@@ -35,6 +35,8 @@ declare function useVirtual<T>(options: {
     [key: string]: any
   }
   keyExtractor?: (index: number) => number | string
+  onScrollElement?: React.RefObject<HTMLElement>
+  scrollOffsetFn?: () => number
 }): {
   virtualItems: VirtualItem[]
   totalSize: number
