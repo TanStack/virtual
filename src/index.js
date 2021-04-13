@@ -85,9 +85,9 @@ export function useVirtual({
       return
     }
 
-    const onScroll = () => {
+    const onScroll = event => {
       const scrollOffset = scrollOffsetFnRef.current
-        ? scrollOffsetFnRef.current()
+        ? scrollOffsetFnRef.current(event)
         : element[scrollKey]
       latestRef.current.scrollOffset = scrollOffset
 
