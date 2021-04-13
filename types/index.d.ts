@@ -36,7 +36,7 @@ declare function useVirtual<T>(options: {
   }
   keyExtractor?: (index: number) => number | string
   onScrollElement?: React.RefObject<HTMLElement>
-  scrollOffsetFn?: () => number
+  scrollOffsetFn?: (event?: Event) => number
 }): {
   virtualItems: VirtualItem[]
   totalSize: number

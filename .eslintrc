@@ -6,5 +6,11 @@
   },
   "parserOptions": {
     "sourceType": "module"
+  },
+  "rules": {
+    "react-hooks/exhaustive-deps": [
+      "warn",
+      { "additionalHooks": "(useIsomorphicLayoutEffect)" }
+    ]
   }
 }
