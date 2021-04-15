@@ -1,211 +1,121 @@
-import { render, act, waitForElement, fireEvent } from '@testing-library/react'
+import '@testing-library/jest-dom'
+import { render, screen, fireEvent } from '@testing-library/react'
 import * as React from 'react'
 
 import { useVirtual } from '../index'
 
-const sleep = (time = 1000) => new Promise(r => setTimeout(r, time))
+function List({
+  size = 200,
+  overscan,
+  height = 200,
+  width = 200,
+  getBoundingClientRect,
+  parentRef = React.createRef(),
+}) {
+  const rowVirtualizer = useVirtual({
+    size,
+    parentRef,
+    overscan,
+    useObserver: React.useCallback(() => ({ height, width }), [height, width]),
+  })
 
-const Container = React.forwardRef((props, ref) => (
-  <div
-    {...props}
-    data-testid="container"
-    ref={ref}
-    style={{
-      height: `200px`,
-      width: `200px`,
-      overflow: 'auto',
-    }}
-  />
-))
+  return (
+    <>
+      <div
+        ref={parentRef}
+        style={{
+          height,
+          width,
+          overflow: 'auto',
+        }}
+      >
+        <div
+          style={{
+            height: `${rowVirtualizer.totalSize}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {rowVirtualizer.virtualItems.map(virtualRow => (
+            <div
+              key={virtualRow.index}
+              ref={
+                getBoundingClientRect
+                  ? el => {
+                      if (el) {
+                        el.getBoundingClientRect = getBoundingClientRect(
+                          virtualRow.index
+                        )
+                      }
+                      virtualRow.measureRef(el)
+                    }
+                  : undefined
+              }
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+                ...(getBoundingClientRect
+                  ? {}
+                  : { height: `${virtualRow.size}px` }),
+              }}
+            >
+              Row {virtualRow.index}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
 
-const Inner = React.forwardRef(({ style = {}, ...rest }, ref) => (
-  <div
-    {...rest}
-    data-testid="inner"
-    ref={ref}
-    style={{
-      width: '100%',
-      position: 'relative',
-      ...style,
-    }}
-  />
-))
-
-const Row = React.forwardRef(({ style = {}, ...rest }, ref) => (
-  <div
-    {...rest}
-    ref={ref}
-    style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      ...style,
-    }}
-  />
-))
-
-describe('useVirtual', () => {
+describe('useVirtual list', () => {
   it('should render', async () => {
-    function App() {
-      const parentRef = React.useRef()
+    render(<List />)
 
-      const rowVirtualizer = useVirtual({
-        size: 10000,
-        parentRef,
-        estimateSize: React.useCallback(() => 35, []),
-        overscan: 5,
-      })
-
-      return (
-        <>
-          <Container ref={parentRef}>
-            <Inner
-              style={{
-                height: `${rowVirtualizer.totalSize}px`,
-              }}
-            >
-              {rowVirtualizer.virtualItems.map(virtualRow => (
-                <Row
-                  key={virtualRow.index}
-                  style={{
-                    height: `${virtualRow.size}px`,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
-                  Row {virtualRow.index}
-                </Row>
-              ))}
-            </Inner>
-          </Container>
-        </>
-      )
-    }
-
-    const rendered = render(<App />)
-
-    rendered.getByText('Row 1')
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
   })
+  it('should render with overscan', async () => {
+    render(<List overscan={0} />)
 
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 4')).not.toBeInTheDocument()
+  })
   it('should render given dynamic size', async () => {
-    function App() {
-      const parentRef = React.useRef()
+    const getBoundingClientRect = index =>
+      jest.fn(() => ({
+        height: index % 2 === 0 ? 25 : 50,
+      }))
 
-      const rowVirtualizer = useVirtual({
-        size: 20,
-        parentRef,
-        overscan: 5,
-      })
+    render(<List getBoundingClientRect={getBoundingClientRect} />)
 
-      return (
-        <>
-          <Container ref={parentRef}>
-            <Inner
-              style={{
-                height: `${rowVirtualizer.totalSize}px`,
-              }}
-            >
-              {rowVirtualizer.virtualItems.map(virtualRow => (
-                <Row
-                  key={virtualRow.index}
-                  ref={virtualRow.measureRef}
-                  style={{
-                    height: `${virtualRow.size}px`,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
-                  Row {virtualRow.index}
-                </Row>
-              ))}
-            </Inner>
-          </Container>
-        </>
-      )
-    }
-
-    const rendered = render(<App />)
-
-    rendered.getByText('Row 1')
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 6')).not.toBeInTheDocument()
   })
 
-  // it('scrolling utilities should work', async () => {
-  //   function App() {
-  //     const parentRef = React.useRef()
+  it('should render given dynamic size after scroll', async () => {
+    const getBoundingClientRect = index =>
+      jest.fn(() => ({
+        height: index % 2 === 0 ? 25 : 50,
+      }))
+    const parentRef = React.createRef()
 
-  //     const rowVirtualizer = useVirtual({
-  //       size: 10000,
-  //       parentRef,
-  //       estimateSize: React.useCallback(() => 35, []),
-  //       overscan: 5,
-  //     })
+    render(
+      <List
+        getBoundingClientRect={getBoundingClientRect}
+        parentRef={parentRef}
+      />
+    )
 
-  //     return (
-  //       <>
-  //         <Container ref={parentRef}>
-  //           <Inner
-  //             style={{
-  //               height: `${rowVirtualizer.totalSize}px`,
-  //             }}
-  //           >
-  //             {rowVirtualizer.virtualItems.map(virtualRow => (
-  //               <Row
-  //                 key={virtualRow.index}
-  //                 style={{
-  //                   height: `${virtualRow.size}px`,
-  //                   transform: `translateY(${virtualRow.start}px)`,
-  //                 }}
-  //               >
-  //                 Row {virtualRow.index}
-  //               </Row>
-  //             ))}
-  //           </Inner>
-  //         </Container>
-  //         <button
-  //           onClick={() => {
-  //             rowVirtualizer.scrollToOffset(500)
-  //           }}
-  //         >
-  //           scrollToOffset500
-  //         </button>
-  //         <button
-  //           onClick={() => {
-  //             rowVirtualizer.scrollToIndex(50)
-  //           }}
-  //         >
-  //           scrollToIndex50
-  //         </button>
-  //       </>
-  //     )
-  //   }
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 6')).not.toBeInTheDocument()
 
-  //   const rendered = render(<App />)
+    fireEvent.scroll(parentRef.current, { target: { scrollTop: 375 } })
 
-  //   await rendered.getByText('Row 1')
-
-  //   act(() => {
-  //     fireEvent.click(rendered.getByText('scrollToOffset500'))
-  //     fireEvent.scroll(rendered.getByTestId('container'), {
-  //       target: rendered.getByTestId('container'),
-  //     })
-  //     // await sleep()
-  //   })
-
-  //   await rendered.findByText('Row 20')
-  //   await rendered.findByText('Row 8')
-
-  //   act(() => {
-  //     fireEvent.click(rendered.getByText('scrollToIndex50'))
-  //     fireEvent.scroll(rendered.getByTestId('container'), {
-  //       target: rendered.getByTestId('container'),
-  //     })
-  //     // await sleep()
-  //   })
-
-  //   await rendered.findByText('Row 62')
-  //   await rendered.findByText('Row 50')
-
-  //   // expect(rendered.getByTestId('container').scrollTop).toEqual(500)
-  // })
+    expect(screen.queryByText('Row 8')).toBeInTheDocument()
+    expect(screen.queryByText('Row 14')).not.toBeInTheDocument()
+  })
 })
-
-// fireEvent.scroll(scrollContainer, { target: { scrollY: 100 } });

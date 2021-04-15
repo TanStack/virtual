@@ -9,7 +9,7 @@ const defaultKeyExtractor = index => index
 export function useVirtual({
   size = 0,
   estimateSize = defaultEstimateSize,
-  overscan = 0,
+  overscan = 1,
   paddingStart = 0,
   paddingEnd = 0,
   parentRef,
@@ -82,6 +82,9 @@ export function useVirtual({
 
   useIsomorphicLayoutEffect(() => {
     if (!element) {
+      setRange({ start: 0, end: 0 })
+      latestRef.current.scrollOffset = undefined
+
       return
     }
 
@@ -239,26 +242,43 @@ export function useVirtual({
   }
 }
 
+const findNearestBinarySearch = (low, high, getCurrentValue, value) => {
+  while (low <= high) {
+    let middle = ((low + high) / 2) | 0
+    let currentValue = getCurrentValue(middle)
+
+    if (currentValue < value) {
+      low = middle + 1
+    } else if (currentValue > value) {
+      high = middle - 1
+    } else {
+      return middle
+    }
+  }
+
+  if (low > 0) {
+    return low - 1
+  } else {
+    return 0
+  }
+}
+
 function calculateRange(
   { overscan, measurements, outerSize, scrollOffset },
   prevRange
 ) {
-  const total = measurements.length
-  let start = total - 1
-  while (start > 0 && measurements[start].end >= scrollOffset) {
-    start -= 1
-  }
-  let end = 0
-  while (
-    end < total - 1 &&
-    measurements[end].start <= scrollOffset + outerSize
-  ) {
-    end += 1
+  const size = measurements.length - 1
+  const getOffset = index => measurements[index].start
+
+  let start = findNearestBinarySearch(0, size, getOffset, scrollOffset)
+  let end = start
+
+  while (end < size && measurements[end].end < scrollOffset + outerSize) {
+    end++
   }
 
-  // Always add at least one overscan item, so focus will work
   start = Math.max(start - overscan, 0)
-  end = Math.min(end + overscan, total - 1)
+  end = Math.min(end + overscan, size)
 
   if (!prevRange || prevRange.start !== start || prevRange.end !== end) {
     return { start, end }
