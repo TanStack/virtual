@@ -66,12 +66,10 @@ export function useVirtual({
 
   const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
-  Object.assign(latestRef.current, {
-    overscan,
-    measurements,
-    outerSize,
-    totalSize,
-  })
+  latestRef.current.overscan = overscan
+  latestRef.current.measurements = measurements
+  latestRef.current.outerSize = outerSize
+  latestRef.current.totalSize = totalSize
 
   const [range, setRange] = React.useState({ start: 0, end: 0 })
 
