@@ -250,6 +250,7 @@ const {
   - **Required**
   - The parent element whose inner-content is scrollable
 - `estimateSize: Function(index) => Integer`
+  - Defaults to `() => 50`
   - **Required**
   - **Must be memoized using `React.useCallback()`**
   - This function receives the index of each item and should return either:
