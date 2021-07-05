@@ -4,7 +4,14 @@ import useRect from './useRect'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
 const defaultEstimateSize = () => 50
+
 const defaultKeyExtractor = index => index
+
+const defaultMeasureSize = (el, horizontal) => {
+  const key = horizontal ? 'offsetWidth' : 'offsetHeight'
+
+  return el[key]
+}
 
 export function useVirtual({
   size = 0,
@@ -19,6 +26,7 @@ export function useVirtual({
   onScrollElement,
   scrollOffsetFn,
   keyExtractor = defaultKeyExtractor,
+  measureSize = defaultMeasureSize,
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
@@ -108,6 +116,9 @@ export function useVirtual({
     }
   }, [element, scrollKey, size, outerSize])
 
+  const measureSizeRef = React.useRef(measureSize)
+  measureSizeRef.current = measureSize
+
   const virtualItems = React.useMemo(() => {
     const virtualItems = []
     const end = Math.min(range.end, measurements.length - 1)
@@ -118,12 +129,12 @@ export function useVirtual({
       const item = {
         ...measurement,
         measureRef: el => {
-          const { scrollOffset } = latestRef.current
-
           if (el) {
-            const { [sizeKey]: measuredSize } = el.getBoundingClientRect()
+            const measuredSize = measureSizeRef.current(el, horizontal)
 
             if (measuredSize !== item.size) {
+              const { scrollOffset } = latestRef.current
+
               if (item.start < scrollOffset) {
                 defaultScrollToFn(scrollOffset + (measuredSize - item.size))
               }
@@ -145,7 +156,7 @@ export function useVirtual({
     range.start,
     range.end,
     measurements,
-    sizeKey,
+    horizontal,
     defaultScrollToFn,
     keyExtractor,
   ])

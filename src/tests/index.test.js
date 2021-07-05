@@ -2,15 +2,16 @@ import '@testing-library/jest-dom'
 import { render, screen, fireEvent } from '@testing-library/react'
 import * as React from 'react'
 
-import { useVirtual } from '../index'
+import { useVirtual as useVirtualImpl } from '../index'
 
 function List({
   size = 200,
   overscan,
   height = 200,
   width = 200,
-  getBoundingClientRect,
-  parentRef = React.createRef(),
+  onRef,
+  parentRef,
+  useVirtual,
 }) {
   const rowVirtualizer = useVirtual({
     size,
@@ -39,27 +40,14 @@ function List({
           {rowVirtualizer.virtualItems.map(virtualRow => (
             <div
               key={virtualRow.index}
-              ref={
-                getBoundingClientRect
-                  ? el => {
-                      if (el) {
-                        el.getBoundingClientRect = getBoundingClientRect(
-                          virtualRow.index
-                        )
-                      }
-                      virtualRow.measureRef(el)
-                    }
-                  : undefined
-              }
+              ref={onRef ? onRef(virtualRow) : undefined}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
-                ...(getBoundingClientRect
-                  ? {}
-                  : { height: `${virtualRow.size}px` }),
+                height: `${virtualRow.size}px`,
               }}
             >
               Row {virtualRow.index}
@@ -72,50 +60,67 @@ function List({
 }
 
 describe('useVirtual list', () => {
-  it('should render', async () => {
-    render(<List />)
+  let useVirtual, parentRef, props
+
+  beforeEach(() => {
+    parentRef = React.createRef()
+    useVirtual = jest.fn(props => useVirtualImpl(props))
+
+    props = { parentRef, useVirtual }
+  })
+
+  it('should render', () => {
+    render(<List {...props} />)
 
     expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 4')).toBeInTheDocument()
     expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
+
+    expect(useVirtual).toHaveBeenCalledTimes(3)
   })
-  it('should render with overscan', async () => {
-    render(<List overscan={0} />)
+  it('should render with overscan', () => {
+    render(<List {...props} overscan={0} />)
 
     expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 3')).toBeInTheDocument()
     expect(screen.queryByText('Row 4')).not.toBeInTheDocument()
-  })
-  it('should render given dynamic size', async () => {
-    const getBoundingClientRect = index =>
-      jest.fn(() => ({
-        height: index % 2 === 0 ? 25 : 50,
-      }))
 
-    render(<List getBoundingClientRect={getBoundingClientRect} />)
+    expect(useVirtual).toHaveBeenCalledTimes(3)
+  })
+  it('should render given dynamic size', () => {
+    const onRef = virtualRow => el => {
+      if (el) {
+        jest.spyOn(el, 'offsetHeight', 'get').mockImplementation(() => 25)
+      }
+      virtualRow.measureRef(el)
+    }
+
+    render(<List {...props} onRef={onRef} />)
 
     expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 5')).toBeInTheDocument()
     expect(screen.queryByText('Row 6')).not.toBeInTheDocument()
+
+    expect(useVirtual).toHaveBeenCalledTimes(4)
   })
+  it('should render given dynamic size after scroll', () => {
+    const onRef = virtualRow => el => {
+      if (el) {
+        jest.spyOn(el, 'offsetHeight', 'get').mockImplementation(() => 25)
+      }
+      virtualRow.measureRef(el)
+    }
 
-  it('should render given dynamic size after scroll', async () => {
-    const getBoundingClientRect = index =>
-      jest.fn(() => ({
-        height: index % 2 === 0 ? 25 : 50,
-      }))
-    const parentRef = React.createRef()
-
-    render(
-      <List
-        getBoundingClientRect={getBoundingClientRect}
-        parentRef={parentRef}
-      />
-    )
+    render(<List {...props} onRef={onRef} />)
 
     expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 5')).toBeInTheDocument()
     expect(screen.queryByText('Row 6')).not.toBeInTheDocument()
 
     fireEvent.scroll(parentRef.current, { target: { scrollTop: 375 } })
 
-    expect(screen.queryByText('Row 8')).toBeInTheDocument()
-    expect(screen.queryByText('Row 14')).not.toBeInTheDocument()
+    expect(screen.queryByText('Row 9')).toBeInTheDocument()
+    expect(screen.queryByText('Row 15')).toBeInTheDocument()
+    expect(screen.queryByText('Row 16')).not.toBeInTheDocument()
   })
 })
