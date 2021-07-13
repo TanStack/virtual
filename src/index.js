@@ -13,6 +13,19 @@ const defaultMeasureSize = (el, horizontal) => {
   return el[key]
 }
 
+export const defaultRangeExtractor = range => {
+  const start = Math.max(range.start - range.overscan, 0)
+  const end = Math.min(range.end + range.overscan, range.size - 1)
+
+  const arr = []
+
+  for (let i = start; i <= end; i++) {
+    arr.push(i)
+  }
+
+  return arr
+}
+
 export function useVirtual({
   size = 0,
   estimateSize = defaultEstimateSize,
@@ -27,6 +40,7 @@ export function useVirtual({
   scrollOffsetFn,
   keyExtractor = defaultKeyExtractor,
   measureSize = defaultMeasureSize,
+  rangeExtractor = defaultRangeExtractor,
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
@@ -74,7 +88,6 @@ export function useVirtual({
 
   const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
-  latestRef.current.overscan = overscan
   latestRef.current.measurements = measurements
   latestRef.current.outerSize = outerSize
   latestRef.current.totalSize = totalSize
@@ -120,10 +133,17 @@ export function useVirtual({
   measureSizeRef.current = measureSize
 
   const virtualItems = React.useMemo(() => {
-    const virtualItems = []
-    const end = Math.min(range.end, measurements.length - 1)
+    const indexes = rangeExtractor({
+      start: range.start,
+      end: range.end,
+      overscan,
+      size: measurements.length,
+    })
 
-    for (let i = range.start; i <= end; i++) {
+    const virtualItems = []
+
+    for (let k = 0, len = indexes.length; k < len; k++) {
+      const i = indexes[k]
       const measurement = measurements[i]
 
       const item = {
@@ -153,12 +173,14 @@ export function useVirtual({
 
     return virtualItems
   }, [
-    range.start,
-    range.end,
-    measurements,
-    horizontal,
     defaultScrollToFn,
+    horizontal,
     keyExtractor,
+    measurements,
+    overscan,
+    range.end,
+    range.start,
+    rangeExtractor,
   ])
 
   const mountedRef = React.useRef()
@@ -272,10 +294,7 @@ const findNearestBinarySearch = (low, high, getCurrentValue, value) => {
   }
 }
 
-function calculateRange(
-  { overscan, measurements, outerSize, scrollOffset },
-  prevRange
-) {
+function calculateRange({ measurements, outerSize, scrollOffset }, prevRange) {
   const size = measurements.length - 1
   const getOffset = index => measurements[index].start
 
@@ -286,10 +305,7 @@ function calculateRange(
     end++
   }
 
-  start = Math.max(start - overscan, 0)
-  end = Math.min(end + overscan, size)
-
-  if (!prevRange || prevRange.start !== start || prevRange.end !== end) {
+  if (prevRange.start !== start || prevRange.end !== end) {
     return { start, end }
   }
 

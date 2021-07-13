@@ -289,7 +289,11 @@ const {
   - Optional
   - This function receives the index of each item and should return the item's unique ID.
   - This function should be passed whenever dynamic measurement rendering is enabled and the size or order of items in the list changes.
-
+- `rangeExtractor: Function(range: {start: number; end: number; overscan: number; size: number}) => number[]`
+  - Optional
+  - Defaults to `defaultRangeExtractor`, is exported
+  - **Must be memoized using `React.useCallback()`**
+  - This function receives visible range parameters and should return array of indexes to render
 ### Returns
 
 - `virtualItems: Array<item>`
