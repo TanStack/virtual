@@ -12,12 +12,14 @@ function List({
   onRef,
   parentRef,
   useVirtual,
+  rangeExtractor,
 }) {
   const rowVirtualizer = useVirtual({
     size,
     parentRef,
     overscan,
     useObserver: React.useCallback(() => ({ height, width }), [height, width]),
+    rangeExtractor,
   })
 
   return (
@@ -122,5 +124,12 @@ describe('useVirtual list', () => {
     expect(screen.queryByText('Row 9')).toBeInTheDocument()
     expect(screen.queryByText('Row 15')).toBeInTheDocument()
     expect(screen.queryByText('Row 16')).not.toBeInTheDocument()
+  })
+  it('should use rangeExtractor', () => {
+    render(<List {...props} rangeExtractor={() => [0, 1]} />)
+
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 1')).toBeInTheDocument()
+    expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
   })
 })
