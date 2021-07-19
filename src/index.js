@@ -69,6 +69,8 @@ export function useVirtual({
     [defaultScrollToFn, resolvedScrollToFn]
   )
 
+  const element = onScrollElement ? onScrollElement.current : parentRef.current
+
   const [measuredCache, setMeasuredCache] = React.useState({})
 
   const measure = React.useCallback(() => setMeasuredCache({}), [])
@@ -83,8 +85,14 @@ export function useVirtual({
       const end = start + size
       measurements[i] = { index: i, start, size, end }
     }
+
+    // calculate new range by triggering scroll event
+    if (element) {
+      element.dispatchEvent(new CustomEvent('scroll'))
+    }
+
     return measurements
-  }, [estimateSize, measuredCache, paddingStart, size, keyExtractor])
+  }, [element, estimateSize, measuredCache, paddingStart, size, keyExtractor])
 
   const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
@@ -93,8 +101,6 @@ export function useVirtual({
   latestRef.current.totalSize = totalSize
 
   const [range, setRange] = React.useState({ start: 0, end: 0 })
-
-  const element = onScrollElement ? onScrollElement.current : parentRef.current
 
   const scrollOffsetFnRef = React.useRef(scrollOffsetFn)
   scrollOffsetFnRef.current = scrollOffsetFn
@@ -111,6 +117,7 @@ export function useVirtual({
       const scrollOffset = scrollOffsetFnRef.current
         ? scrollOffsetFnRef.current(event)
         : element[scrollKey]
+
       latestRef.current.scrollOffset = scrollOffset
 
       setRange(prevRange => calculateRange(latestRef.current, prevRange))
@@ -127,7 +134,7 @@ export function useVirtual({
     return () => {
       element.removeEventListener('scroll', onScroll)
     }
-  }, [element, scrollKey, size, outerSize])
+  }, [element, scrollKey, outerSize])
 
   const measureSizeRef = React.useRef(measureSize)
   measureSizeRef.current = measureSize
