@@ -69,6 +69,17 @@ export function useVirtual({
     [defaultScrollToFn, resolvedScrollToFn]
   )
 
+  const itemCache = React.useMemo(() => {
+    const obj = {}
+    for (let i = 0; i < size; i++) {
+      obj[i] = {
+        size: estimateSize(i),
+        key: keyExtractor(i),
+      }
+    }
+    return obj
+  }, [size, keyExtractor, estimateSize])
+
   const [measuredCache, setMeasuredCache] = React.useState({})
 
   const measure = React.useCallback(() => setMeasuredCache({}), [])
@@ -76,17 +87,17 @@ export function useVirtual({
   const measurements = React.useMemo(() => {
     const measurements = []
     for (let i = 0; i < size; i++) {
-      const key = keyExtractor(i)
+      const key = itemCache[i].key
       const measuredSize = measuredCache[key]
       const start = measurements[i - 1] ? measurements[i - 1].end : paddingStart
       const size =
-        typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
+        typeof measuredSize === 'number' ? measuredSize : itemCache[i].size
       const end = start + size
 
       measurements[i] = { key, index: i, start, size, end }
     }
     return measurements
-  }, [estimateSize, measuredCache, paddingStart, size, keyExtractor])
+  }, [measuredCache, paddingStart, size, itemCache])
 
   const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
