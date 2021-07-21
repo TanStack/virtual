@@ -69,16 +69,38 @@ export function useVirtual({
     [defaultScrollToFn, resolvedScrollToFn]
   )
 
-  const itemCache = React.useMemo(() => {
+  const measureSizeRef = React.useRef(measureSize)
+  measureSizeRef.current = measureSize
+
+  const staticCache = React.useMemo(() => {
     const obj = {}
     for (let i = 0; i < size; i++) {
       obj[i] = {
         size: estimateSize(i),
         key: keyExtractor(i),
+        measureRef: el => {
+          if (el) {
+            const { scrollOffset, measurements } = latestRef.current
+            const item = measurements[i]
+
+            const measuredSize = measureSizeRef.current(el, horizontal)
+
+            if (measuredSize !== item.size) {
+              if (item.start < scrollOffset) {
+                defaultScrollToFn(scrollOffset + (measuredSize - item.size))
+              }
+
+              setMeasuredCache(prev => ({
+                ...prev,
+                [item.key]: measuredSize,
+              }))
+            }
+          }
+        },
       }
     }
     return obj
-  }, [size, keyExtractor, estimateSize])
+  }, [size, keyExtractor, estimateSize, defaultScrollToFn, horizontal])
 
   const [measuredCache, setMeasuredCache] = React.useState({})
 
@@ -87,17 +109,23 @@ export function useVirtual({
   const measurements = React.useMemo(() => {
     const measurements = []
     for (let i = 0; i < size; i++) {
-      const key = itemCache[i].key
-      const measuredSize = measuredCache[key]
+      const cached = staticCache[i]
+      const measuredSize = measuredCache[cached.key]
       const start = measurements[i - 1] ? measurements[i - 1].end : paddingStart
-      const size =
-        typeof measuredSize === 'number' ? measuredSize : itemCache[i].size
+      const size = typeof measuredSize === 'number' ? measuredSize : cached.size
       const end = start + size
 
-      measurements[i] = { key, index: i, start, size, end }
+      measurements[i] = {
+        key: cached.key,
+        index: i,
+        start,
+        size,
+        end,
+        measureRef: cached.measureRef,
+      }
     }
     return measurements
-  }, [measuredCache, paddingStart, size, itemCache])
+  }, [measuredCache, paddingStart, size, staticCache])
 
   const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
@@ -142,9 +170,6 @@ export function useVirtual({
     }
   }, [element, scrollKey, size, outerSize])
 
-  const measureSizeRef = React.useRef(measureSize)
-  measureSizeRef.current = measureSize
-
   const virtualItems = React.useMemo(() => {
     const indexes = rangeExtractor({
       start: range.start,
@@ -157,43 +182,12 @@ export function useVirtual({
 
     for (let k = 0, len = indexes.length; k < len; k++) {
       const i = indexes[k]
-      const measurement = measurements[i]
 
-      const item = {
-        ...measurement,
-        measureRef: el => {
-          if (el) {
-            const measuredSize = measureSizeRef.current(el, horizontal)
-
-            if (measuredSize !== item.size) {
-              const { scrollOffset } = latestRef.current
-
-              if (item.start < scrollOffset) {
-                defaultScrollToFn(scrollOffset + (measuredSize - item.size))
-              }
-
-              setMeasuredCache(prev => ({
-                ...prev,
-                [item.key]: measuredSize,
-              }))
-            }
-          }
-        },
-      }
-
-      virtualItems.push(item)
+      virtualItems.push(measurements[i])
     }
 
     return virtualItems
-  }, [
-    defaultScrollToFn,
-    horizontal,
-    measurements,
-    overscan,
-    range.end,
-    range.start,
-    rangeExtractor,
-  ])
+  }, [measurements, overscan, range.end, range.start, rangeExtractor])
 
   const mountedRef = React.useRef()
 
