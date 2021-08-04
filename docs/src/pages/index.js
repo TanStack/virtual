@@ -37,7 +37,7 @@ const Home = props => {
               <div className="col-span-12 lg:col-span-6 ">
                 <div className="text-center lg:text-left md:max-w-2xl md:mx-auto ">
                   <h1 className="text-4xl tracking-tight leading-10 font-extrabold text-gray-900 sm:leading-none sm:text-6xl lg:text-5xl xl:text-6xl">
-                    Auto-sizing, buttery smooth headless virtualization... with
+                    Auto-sizing, buttery smooth, headless virtualization... with
                     just one hook.
                   </h1>
                   <p className="mt-3 text-base text-gray-700 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
