@@ -3,6 +3,10 @@ id: overview
 title: Overview
 ---
 
+[![](https://badgen.net/bundlephobia/minzip/react-virtual)](https://bundlephobia.com/result?p=react-virtual)
+
+<br />
+
 React Virtual is a single headless React hook that is exported as a utility to help you build virtualizers. It is not a component and does not render any markup or styles for you. At a bare minimum, it requires a size, a parent element ref to get the job done.
 
 React Virtual virtualizers do not have an orientation, which makes it possible to use the same hook for both vertical and horizontal virtualizers.
