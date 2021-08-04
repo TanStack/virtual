@@ -1,0 +1,65 @@
+{
+  "routes": [
+    {
+      "title": "Documentation",
+      "heading": true,
+      "routes": [
+        {
+          "title": "Overview",
+          "path": "/docs/overview",
+          "editUrl": "/docs/overview.md"
+        },
+        {
+          "title": "Installation",
+          "path": "/docs/installation",
+          "editUrl": "/docs/installation.md"
+        },
+        {
+          "title": "API Reference",
+          "path": "/docs/api",
+          "editUrl": "/docs/api.md"
+        }
+      ]
+    },
+    {
+      "title": "Examples",
+      "open": true,
+      "routes": [
+        {
+          "title": "Fixed",
+          "path": "/examples/fixed",
+          "editUrl": "/examples/fixed.md"
+        },
+        {
+          "title": "Variable",
+          "path": "/examples/variable",
+          "editUrl": "/examples/variable.md"
+        },
+
+        {
+          "title": "Dynamic",
+          "path": "/examples/dynamic",
+          "editUrl": "/examples/dynamic.md"
+        },
+
+        {
+          "title": "Infinite Scroll",
+          "path": "/examples/infinite-scroll",
+          "editUrl": "/examples/infinite-scroll.md"
+        },
+
+        {
+          "title": "Padding",
+          "path": "/examples/padding",
+          "editUrl": "/examples/padding.md"
+        },
+
+        {
+          "title": "Smooth Scroll",
+          "path": "/examples/smooth-scroll",
+          "editUrl": "/examples/smooth-scroll.md"
+        }
+      ]
+    }
+  ]
+}
