@@ -93,7 +93,7 @@ const Home = props => {
                       Dynamic Virtualization
                     </h3>
                     <div className="mt-2  lg:mt-4 text-base xl:text-lg lg:leading-normal leading-6 text-gray-600">
-                      In today's UI's dyanmically sized scrollable elements are
+                      In today's UI's dynamically sized scrollable elements are
                       becoming the norm, so tools that handle that should too.
                       React Virtual comes with built in support for dynamic item
                       measuring of your virtualized elements.
