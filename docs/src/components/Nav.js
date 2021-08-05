@@ -12,7 +12,7 @@ export const Nav = () => (
           <Link href="/" as="/">
             <a>
               <span className="sr-only">Home</span>
-              <img src={logoSrc} alt="React Charts" />
+              <img src={logoSrc} alt="React Virtual" />
             </a>
           </Link>
         </div>
