@@ -17,7 +17,7 @@ export default function CarbonAds() {
 
   React.useEffect(() => {
     const script = buildScript(
-      '//cdn.carbonads.com/carbon.js?serve=CESITK7L&placement=react-virtualtanstackcom',
+      '//cdn.carbonads.com/carbon.js?serve=CESI4KJU&placement=react-virtualtanstackcom',
       {
         type: 'text/javascript',
         id: '_carbonads_js',
