@@ -11,7 +11,7 @@ export const Seo = withRouter(
       {/* DEFAULT */}
 
       {title != undefined && (
-        <title key="title">{title} | React Charts | TanStack</title>
+        <title key="title">{title} | React Virtual | TanStack</title>
       )}
       {description != undefined && (
         <meta name="description" key="description" content={description} />
