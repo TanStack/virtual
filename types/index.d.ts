@@ -22,7 +22,7 @@ export interface Range {
   size: number
 }
 
-export interface ReactVirtualOptions {
+export interface Options<T> {
   size: number
   parentRef: React.RefObject<T>
   estimateSize?: (index: number) => number
@@ -49,7 +49,7 @@ export interface ReactVirtualOptions {
 
 declare function defaultRangeExtractor(range: Range): number[]
 
-declare function useVirtual<T>(options: ReactVirtualOptions): {
+declare function useVirtual<T>(options: Options<T>): {
   virtualItems: VirtualItem[]
   totalSize: number
   scrollToOffset: (index: number, options?: ScrollToOffsetOptions) => void
