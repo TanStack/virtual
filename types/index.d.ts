@@ -46,6 +46,7 @@ declare function useVirtual<T>(options: {
   keyExtractor?: (index: number) => number | string
   onScrollElement?: React.RefObject<HTMLElement>
   scrollOffsetFn?: (event?: Event) => number
+  measureSize: (el: HTMLElement, horizontal: boolean) => number
   rangeExtractor?: (range: Range) => number[]
 }): {
   virtualItems: VirtualItem[]
