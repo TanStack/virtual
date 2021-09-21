@@ -8287,14 +8287,12 @@ react-scripts@3.0.1:
   optionalDependencies:
     fsevents "2.0.6"
 
-react-virtual@^2.0.0:
-  version "2.1.8"
-  resolved "https://registry.yarnpkg.com/react-virtual/-/react-virtual-2.1.8.tgz#e65e467c6327e1e4e6c130a56e24cb2c3f8d9c29"
-  integrity sha512-vvc07dM3Wxmx/gTqxCY4cKV66lIQnhGAdeVRt9W83/PYcXuuvRMtg30z9sL1AAsfbQMk6hhkO/Dhx/0vJuXE8w==
+react-virtual@^2.1.8:
+  version "2.8.1"
+  resolved "https://registry.yarnpkg.com/react-virtual/-/react-virtual-2.8.1.tgz#7ec28a3c9361ce62bc3cc1ea14c4a5c2f7a4a266"
+  integrity sha512-7BeUWUCQPQP7vc0wU5LBi6/iM4Ct51j69LcvTNG0V40dS2TyEeTj9c5Br4TiOX9DHy6m/uEbx32KQ3Dp7altSg==
   dependencies:
     "@reach/observe-rect" "^1.1.0"
-    "@scarf/scarf" "^1.0.0"
-    ts-toolbelt "^6.4.2"
 
 react@^16.8.6:
   version "16.13.0"
@@ -9564,9 +9562,9 @@ tmp@^0.0.33:
     os-tmpdir "~1.0.2"
 
 tmpl@1.0.x:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/tmpl/-/tmpl-1.0.4.tgz#23640dd7b42d00433911140820e5cf440e521dd1"
-  integrity sha1-I2QN17QtAEM5ERQIIOXPRA5SHdE=
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/tmpl/-/tmpl-1.0.5.tgz#8683e0b902bb9c20c4f726e3c0b69f36518c07cc"
+  integrity sha512-3f0uOEAQwIqGuWW2MVzYg8fV/QNnc/IpuJNG837rLuczAaLVHslWHZQj4IGiEl5Hs3kkbhwL9Ab7Hrsmuj+Smw==
 
 to-arraybuffer@^1.0.0:
   version "1.0.1"
