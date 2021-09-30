@@ -2,6 +2,9 @@ import React from 'react'
 
 import useRect from './useRect'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
+import { requestTimeout, cancelTimeout } from './timer'
+
+const ResetScrollingTimeout = 100
 
 const defaultEstimateSize = () => 50
 
@@ -47,6 +50,7 @@ export function useVirtual({
   const latestRef = React.useRef({
     scrollOffset: 0,
     measurements: [],
+    scrollDirection: undefined,
   })
   const useMeasureParent = useObserver || useRect
 
@@ -112,21 +116,38 @@ export function useVirtual({
   const scrollOffsetFnRef = React.useRef(scrollOffsetFn)
   scrollOffsetFnRef.current = scrollOffsetFn
 
-  const rangeTimeoutIdRef = React.useRef(null)
+  const isMountedRef = React.useRef(false)
 
-  const cancelAsyncRange = React.useCallback(() => {
-    if (rangeTimeoutIdRef.current !== null) {
-      clearTimeout(rangeTimeoutIdRef.current)
-      rangeTimeoutIdRef.current = null
+  useIsomorphicLayoutEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
     }
   }, [])
 
+  const [isScrolling, setIsScrolling] = React.useState(false)
+  const scrollingIdRef = React.useRef(null)
+
+  const debouncedResetScrolling = React.useCallback(() => {
+    if (scrollingIdRef.current !== null) {
+      cancelTimeout(scrollingIdRef.current)
+    }
+
+    scrollingIdRef.current = requestTimeout(() => {
+      scrollingIdRef.current = null
+
+      if (isMountedRef.current) {
+        setIsScrolling(false)
+        latestRef.current.scrollDirection = undefined
+      }
+    }, ResetScrollingTimeout)
+  }, [])
+
   useIsomorphicLayoutEffect(() => {
-    rangeTimeoutIdRef.current = setTimeout(() => {
-      setRange(prevRange => calculateRange(latestRef.current, prevRange))
-    })
-    return () => cancelAsyncRange()
-  }, [measurements, outerSize, cancelAsyncRange])
+    if (!isScrolling) {
+      setRange(calculateRange(latestRef.current))
+    }
+  }, [isScrolling, measurements, outerSize])
 
   useIsomorphicLayoutEffect(() => {
     if (!element) {
@@ -141,10 +162,18 @@ export function useVirtual({
         ? scrollOffsetFnRef.current(event)
         : element[scrollKey]
 
+      if (event) {
+        latestRef.current.scrollDirection =
+          latestRef.current.scrollOffset <= scrollOffset
+            ? 'forward'
+            : 'backward'
+        setIsScrolling(true)
+        debouncedResetScrolling()
+      }
+
       latestRef.current.scrollOffset = scrollOffset
 
-      cancelAsyncRange()
-      setRange(prevRange => calculateRange(latestRef.current, prevRange))
+      setRange(calculateRange(latestRef.current))
     }
 
     // Determine initially visible range
@@ -158,7 +187,7 @@ export function useVirtual({
     return () => {
       element.removeEventListener('scroll', onScroll)
     }
-  }, [element, scrollKey, cancelAsyncRange])
+  }, [element, scrollKey, debouncedResetScrolling])
 
   const measureSizeRef = React.useRef(measureSize)
   measureSizeRef.current = measureSize
@@ -184,9 +213,9 @@ export function useVirtual({
             const measuredSize = measureSizeRef.current(el, horizontal)
 
             if (measuredSize !== item.size) {
-              const { scrollOffset } = latestRef.current
+              const { scrollOffset, scrollDirection } = latestRef.current
 
-              if (item.start < scrollOffset) {
+              if (item.start < scrollOffset && scrollDirection === 'backward') {
                 defaultScrollToFn(scrollOffset + (measuredSize - item.size))
               }
 
@@ -302,6 +331,7 @@ export function useVirtual({
     scrollToOffset,
     scrollToIndex,
     measure,
+    isScrolling,
   }
 }
 
@@ -326,7 +356,11 @@ const findNearestBinarySearch = (low, high, getCurrentValue, value) => {
   }
 }
 
-function calculateRange({ measurements, outerSize, scrollOffset }, prevRange) {
+const calculateRange = ({
+  measurements,
+  outerSize,
+  scrollOffset,
+}) => prevRange => {
   const size = measurements.length - 1
   const getOffset = index => measurements[index].start
 

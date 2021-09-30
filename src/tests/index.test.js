@@ -103,7 +103,7 @@ describe('useVirtual list', () => {
     await waitFor(() => expect(screen.queryByText('Row 8')).toBeInTheDocument())
     expect(screen.queryByText('Row 9')).not.toBeInTheDocument()
 
-    expect(useVirtual).toHaveBeenCalledTimes(8)
+    expect(useVirtual).toHaveBeenCalledTimes(9)
   })
   it('should render given dynamic size after scroll', async () => {
     const onRef = virtualRow => el => {
