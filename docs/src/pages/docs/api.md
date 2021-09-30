@@ -8,7 +8,7 @@ title: API
 ```js
 const {
   virtualItems: [
-    { index, start, size, end, measureRef },
+    { key, index, start, size, end, measureRef },
     /* ... */
   ],
   totalSize,
@@ -83,6 +83,9 @@ const {
 
 - `virtualItems: Array<item>`
   - `item: Object`
+    - `key: String | Integer`
+      - The key of the item
+      - Defaults to `index`
     - `index: Integer`
       - The index of the item
     - `start: Integer`

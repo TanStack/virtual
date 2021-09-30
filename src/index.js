@@ -46,12 +46,14 @@ export function useVirtual({
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
   const latestRef = React.useRef({
     scrollOffset: 0,
+    measurements: [],
   })
   const useMeasureParent = useObserver || useRect
 
   const { [sizeKey]: outerSize } = useMeasureParent(parentRef) || {
     [sizeKey]: 0,
   }
+  latestRef.current.outerSize = outerSize
 
   const defaultScrollToFn = React.useCallback(
     offset => {
@@ -75,15 +77,25 @@ export function useVirtual({
 
   const measure = React.useCallback(() => setMeasuredCache({}), [])
 
+  const pendingMeasuredCacheIndexesRef = React.useRef([])
+
   const measurements = React.useMemo(() => {
-    const measurements = []
-    for (let i = 0; i < size; i++) {
-      const measuredSize = measuredCache[keyExtractor(i)]
+    const min =
+      pendingMeasuredCacheIndexesRef.current.length > 0
+        ? Math.min(...pendingMeasuredCacheIndexesRef.current)
+        : 0
+    pendingMeasuredCacheIndexesRef.current = []
+
+    const measurements = latestRef.current.measurements.slice(0, min)
+
+    for (let i = min; i < size; i++) {
+      const key = keyExtractor(i)
+      const measuredSize = measuredCache[key]
       const start = measurements[i - 1] ? measurements[i - 1].end : paddingStart
       const size =
         typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
       const end = start + size
-      measurements[i] = { index: i, start, size, end }
+      measurements[i] = { index: i, start, size, end, key }
     }
     return measurements
   }, [estimateSize, measuredCache, paddingStart, size, keyExtractor])
@@ -91,7 +103,6 @@ export function useVirtual({
   const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
 
   latestRef.current.measurements = measurements
-  latestRef.current.outerSize = outerSize
   latestRef.current.totalSize = totalSize
 
   const [range, setRange] = React.useState({ start: 0, end: 0 })
@@ -179,9 +190,11 @@ export function useVirtual({
                 defaultScrollToFn(scrollOffset + (measuredSize - item.size))
               }
 
+              pendingMeasuredCacheIndexesRef.current.push(i)
+
               setMeasuredCache(old => ({
                 ...old,
-                [keyExtractor(i)]: measuredSize,
+                [item.key]: measuredSize,
               }))
             }
           }
@@ -195,7 +208,6 @@ export function useVirtual({
   }, [
     defaultScrollToFn,
     horizontal,
-    keyExtractor,
     measurements,
     overscan,
     range.end,
