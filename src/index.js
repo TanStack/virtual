@@ -6,7 +6,6 @@ import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
 const defaultEstimateSize = () => 50
 
-<<<<<<< HEAD
 const defaultKeyExtractor = index => index
 
 const defaultMeasureSize = (el, horizontal) => {
@@ -26,7 +25,8 @@ export const defaultRangeExtractor = range => {
   }
 
   return arr
-=======
+}
+
 export function useVirtualWindow({
   windowRef,
   scrollToFn,
@@ -56,7 +56,26 @@ export function useVirtualWindow({
     },
     useObserver: () => useWindowRect(windowRef),
   });
->>>>>>> 32d34d8 (feat: add support for window scrolling)
+}
+const defaultKeyExtractor = index => index
+
+const defaultMeasureSize = (el, horizontal) => {
+  const key = horizontal ? 'offsetWidth' : 'offsetHeight'
+
+  return el[key]
+}
+
+export const defaultRangeExtractor = range => {
+  const start = Math.max(range.start - range.overscan, 0)
+  const end = Math.min(range.end + range.overscan, range.size - 1)
+
+  const arr = []
+
+  for (let i = start; i <= end; i++) {
+    arr.push(i)
+  }
+
+  return arr
 }
 
 export function useVirtual({
@@ -71,12 +90,10 @@ export function useVirtual({
   useObserver,
   onScrollElement,
   scrollOffsetFn,
-<<<<<<< HEAD
+
   keyExtractor = defaultKeyExtractor,
   measureSize = defaultMeasureSize,
   rangeExtractor = defaultRangeExtractor,
-=======
->>>>>>> 32d34d8 (feat: add support for window scrolling)
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
