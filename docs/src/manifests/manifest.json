@@ -58,6 +58,11 @@
           "title": "Smooth Scroll",
           "path": "/examples/smooth-scroll",
           "editUrl": "/examples/smooth-scroll.md"
+        },
+        {
+          "title": "Window Scroll",
+          "path": "/examples/browser-window",
+          "editUrl": "/examples/browser-window.md"
         }
       ]
     }

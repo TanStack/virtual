@@ -245,6 +245,7 @@ const Home = props => {
                   'Fixed Sizing',
                   'Variable Sizing',
                   'Dynamic Sizing',
+                  'Browser Window as the scroll container',
                   'Scrolling Utilities',
                   'Sticky Items',
                 ].map(d => {

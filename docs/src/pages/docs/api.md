@@ -116,3 +116,32 @@ const {
     - `center` places the offset in the center of the visible scroll area
     - `end` places the offset at the bottom/right of the visible scroll area
     - `auto` brings the offset into the visible scroll area either at the start or end, depending on which is closer. If the offset is already in view, it is placed at the `top/left` of the visible scroll area.
+
+## `useVirtualWindow`
+
+```js
+const {
+  virtualItems: [
+    { index, start, size, end, measureRef },
+    /* ... */
+  ],
+  totalSize,
+  scrollToIndex,
+  scrollToOffset,
+} = useVirtualWindow({
+  windowObj,
+  size,
+  parentRef,
+  estimateSize,
+  overscan,
+  horizontal,
+})
+```
+
+### Options
+
+Supports all the same options as `useVirtual` along with:
+
+- `windowObj: Window`
+  - **Required**
+  - This window element whose scroll offset will be used for scrolling the `parentRef`

@@ -1,49 +1,26 @@
-import React from 'react'
-
+import * as React from 'react'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
 export default function useWindowRect(windowRef) {
-  const [element, setElement] = React.useState(windowRef.current)
-  const [rect, dispatch] = React.useReducer(rectReducer, null)
+  const [rect, setRect] = React.useState({ height: undefined, width: undefined })
+
+  const element = windowRef.current
 
   useIsomorphicLayoutEffect(() => {
-    if (windowRef.current !== element) {
-      setElement(windowRef.current)
-    }
-  })
-
-  useIsomorphicLayoutEffect(() => {
-    dispatch({
-      rect: {
+    const resizeHandler = () => {
+      const next = {
         height: element.innerHeight,
         width: element.innerWidth,
       }
-    });
-  }, [windowRef])
+      setRect(prev => (prev.height !== next.height || prev.width !== next.width ? next : prev))
+    }
+    resizeHandler()
 
-  React.useEffect(() => {
-    const resizeHandler = () => {
-      dispatch({
-        rect: {
-          height: element.innerHeight,
-          width: element.innerWidth,
-        }
-      });
-    };
-    resizeHandler();
-    element.addEventListener("resize", resizeHandler);
+    element.addEventListener('resize', resizeHandler)
     return () => {
-      element.removeEventListener("resize", resizeHandler);
-    };
-  }, [element]);
+      element.removeEventListener('resize', resizeHandler)
+    }
+  }, [element])
 
   return rect
-}
-
-function rectReducer(state, action) {
-  const rect = action.rect
-  if (!state || state.height !== rect.height || state.width !== rect.width) {
-    return rect
-  }
-  return state
 }

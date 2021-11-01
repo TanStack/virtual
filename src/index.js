@@ -57,26 +57,6 @@ export function useVirtualWindow({
     useObserver: () => useWindowRect(windowRef),
   });
 }
-const defaultKeyExtractor = index => index
-
-const defaultMeasureSize = (el, horizontal) => {
-  const key = horizontal ? 'offsetWidth' : 'offsetHeight'
-
-  return el[key]
-}
-
-export const defaultRangeExtractor = range => {
-  const start = Math.max(range.start - range.overscan, 0)
-  const end = Math.min(range.end + range.overscan, range.size - 1)
-
-  const arr = []
-
-  for (let i = start; i <= end; i++) {
-    arr.push(i)
-  }
-
-  return arr
-}
 
 export function useVirtual({
   size = 0,
@@ -90,7 +70,6 @@ export function useVirtual({
   useObserver,
   onScrollElement,
   scrollOffsetFn,
-
   keyExtractor = defaultKeyExtractor,
   measureSize = defaultMeasureSize,
   rangeExtractor = defaultRangeExtractor,
@@ -326,8 +305,8 @@ export function useVirtual({
         align === 'center'
           ? measurement.start + measurement.size / 2
           : align === 'end'
-            ? measurement.end
-            : measurement.start
+          ? measurement.end
+          : measurement.start
 
       scrollToOffset(toOffset, { align, ...rest })
     },
