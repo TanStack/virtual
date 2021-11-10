@@ -163,14 +163,18 @@ export function useVirtual({
   const measureSizeRef = React.useRef(measureSize)
   measureSizeRef.current = measureSize
 
-  const virtualItems = React.useMemo(() => {
-    const indexes = rangeExtractor({
-      start: range.start,
-      end: range.end,
-      overscan,
-      size: measurements.length,
-    })
+  const indexes = React.useMemo(
+    () =>
+      rangeExtractor({
+        start: range.start,
+        end: range.end,
+        overscan,
+        size: measurements.length,
+      }),
+    [measurements.length, overscan, range.end, range.start, rangeExtractor]
+  )
 
+  const virtualItems = React.useMemo(() => {
     const virtualItems = []
 
     for (let k = 0, len = indexes.length; k < len; k++) {
@@ -205,15 +209,7 @@ export function useVirtual({
     }
 
     return virtualItems
-  }, [
-    defaultScrollToFn,
-    horizontal,
-    measurements,
-    overscan,
-    range.end,
-    range.start,
-    rangeExtractor,
-  ])
+  }, [indexes, defaultScrollToFn, horizontal, measurements])
 
   const mountedRef = React.useRef()
 
