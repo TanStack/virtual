@@ -1,5 +1,4 @@
 import React from 'react'
-
 import useRect from './useRect'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
@@ -36,6 +35,7 @@ export function useVirtual({
   horizontal,
   scrollToFn,
   useObserver,
+  initialRect,
   onScrollElement,
   scrollOffsetFn,
   keyExtractor = defaultKeyExtractor,
@@ -44,15 +44,19 @@ export function useVirtual({
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
+
   const latestRef = React.useRef({
     scrollOffset: 0,
     measurements: [],
   })
+
+  const [scrollOffset, setScrollOffset] = React.useState(0)
+  latestRef.current.scrollOffset = scrollOffset
+
   const useMeasureParent = useObserver || useRect
 
-  const { [sizeKey]: outerSize } = useMeasureParent(parentRef) || {
-    [sizeKey]: 0,
-  }
+  const { [sizeKey]: outerSize } = useMeasureParent(parentRef, initialRect)
+
   latestRef.current.outerSize = outerSize
 
   const defaultScrollToFn = React.useCallback(
@@ -105,49 +109,26 @@ export function useVirtual({
   latestRef.current.measurements = measurements
   latestRef.current.totalSize = totalSize
 
-  const [range, setRange] = React.useState({ start: 0, end: 0 })
-
   const element = onScrollElement ? onScrollElement.current : parentRef.current
 
   const scrollOffsetFnRef = React.useRef(scrollOffsetFn)
   scrollOffsetFnRef.current = scrollOffsetFn
 
-  const rangeTimeoutIdRef = React.useRef(null)
-
-  const cancelAsyncRange = React.useCallback(() => {
-    if (rangeTimeoutIdRef.current !== null) {
-      clearTimeout(rangeTimeoutIdRef.current)
-      rangeTimeoutIdRef.current = null
-    }
-  }, [])
-
-  useIsomorphicLayoutEffect(() => {
-    rangeTimeoutIdRef.current = setTimeout(() => {
-      setRange(prevRange => calculateRange(latestRef.current, prevRange))
-    })
-    return () => cancelAsyncRange()
-  }, [measurements, outerSize, cancelAsyncRange])
-
   useIsomorphicLayoutEffect(() => {
     if (!element) {
-      setRange({ start: 0, end: 0 })
-      latestRef.current.scrollOffset = 0
+      setScrollOffset(0)
 
       return
     }
 
     const onScroll = event => {
-      const scrollOffset = scrollOffsetFnRef.current
+      const offset = scrollOffsetFnRef.current
         ? scrollOffsetFnRef.current(event)
         : element[scrollKey]
 
-      latestRef.current.scrollOffset = scrollOffset
-
-      cancelAsyncRange()
-      setRange(prevRange => calculateRange(latestRef.current, prevRange))
+      setScrollOffset(offset)
     }
 
-    // Determine initially visible range
     onScroll()
 
     element.addEventListener('scroll', onScroll, {
@@ -158,19 +139,25 @@ export function useVirtual({
     return () => {
       element.removeEventListener('scroll', onScroll)
     }
-  }, [element, scrollKey, cancelAsyncRange])
+  }, [element, scrollKey])
+
+  const { start, end } = calculateRange(latestRef.current)
+
+  const indexes = React.useMemo(
+    () =>
+      rangeExtractor({
+        start,
+        end,
+        overscan,
+        size: measurements.length,
+      }),
+    [start, end, overscan, measurements.length, rangeExtractor]
+  )
 
   const measureSizeRef = React.useRef(measureSize)
   measureSizeRef.current = measureSize
 
   const virtualItems = React.useMemo(() => {
-    const indexes = rangeExtractor({
-      start: range.start,
-      end: range.end,
-      overscan,
-      size: measurements.length,
-    })
-
     const virtualItems = []
 
     for (let k = 0, len = indexes.length; k < len; k++) {
@@ -205,21 +192,13 @@ export function useVirtual({
     }
 
     return virtualItems
-  }, [
-    defaultScrollToFn,
-    horizontal,
-    measurements,
-    overscan,
-    range.end,
-    range.start,
-    rangeExtractor,
-  ])
+  }, [indexes, defaultScrollToFn, horizontal, measurements])
 
-  const mountedRef = React.useRef()
+  const mountedRef = React.useRef(false)
 
   useIsomorphicLayoutEffect(() => {
     if (mountedRef.current) {
-      if (estimateSize) setMeasuredCache({})
+      setMeasuredCache({})
     }
     mountedRef.current = true
   }, [estimateSize])
@@ -326,7 +305,7 @@ const findNearestBinarySearch = (low, high, getCurrentValue, value) => {
   }
 }
 
-function calculateRange({ measurements, outerSize, scrollOffset }, prevRange) {
+function calculateRange({ measurements, outerSize, scrollOffset }) {
   const size = measurements.length - 1
   const getOffset = index => measurements[index].start
 
@@ -337,9 +316,5 @@ function calculateRange({ measurements, outerSize, scrollOffset }, prevRange) {
     end++
   }
 
-  if (prevRange.start !== start || prevRange.end !== end) {
-    return { start, end }
-  }
-
-  return prevRange
+  return { start, end }
 }

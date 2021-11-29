@@ -27,7 +27,12 @@ export interface Range {
 
 declare function defaultRangeExtractor(range: Range): number[]
 
-declare function useVirtual<T>(options: {
+interface Rect {
+  width: number
+  height: number
+}
+
+export interface Options<T> {
   size: number
   parentRef: React.RefObject<T>
   estimateSize?: (index: number) => number
@@ -39,18 +44,17 @@ declare function useVirtual<T>(options: {
   ) => void
   paddingStart?: number
   paddingEnd?: number
-  useObserver?: (
-    ref: React.RefObject<T>
-  ) => {
-    width: number
-    height: number
-    [key: string]: any
-  }
+  useObserver?: (ref: React.RefObject<T>, initialRect?: Rect) => Rect
+  initialRect?: Rect
   keyExtractor?: (index: number) => Key
   onScrollElement?: React.RefObject<HTMLElement>
   scrollOffsetFn?: (event?: Event) => number
   rangeExtractor?: (range: Range) => number[]
-}): {
+}
+
+declare function useVirtual<T>(
+  options: Options<T>
+): {
   virtualItems: VirtualItem[]
   totalSize: number
   scrollToOffset: (index: number, options?: ScrollToOffsetOptions) => void

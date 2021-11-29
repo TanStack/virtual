@@ -52,7 +52,10 @@ const {
   - Optional
   - This function, if passed, is responsible for implementing the scrollTo logic for the parentRef which is used when methods like `scrollToOffset` and `scrollToIndex` are called.
   - Eg. You can use this function to implement smooth scrolling by using the supplied offset and the `defaultScrollToFn` as seen in the sandbox's **Smooth Scroll** example.
-- `useObserver: Function(parentRef) => ({ width: number; height: number })`
+- `initialRect: Object({ width: number; height: number })`
+  - Optional
+  - Defines initial rect size of list. Can be used for server-side rendering
+- `useObserver: Function(parentRef: React.useRef(DOMElement), initialRect?: { width: number; height: number }) => ({ width: number; height: number })`
   - Optional
   - This hook, if passed, is responsible for getting `parentRef`'s dimensions
   - Eg. You can use this hook to replace [@reach/observe-rect](https://github.com/reach/observe-rect) that `react-virtual` uses by default with [ResizeObserver API](https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver)
