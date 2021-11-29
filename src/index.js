@@ -35,6 +35,7 @@ export function useVirtual({
   horizontal,
   scrollToFn,
   useObserver,
+  initialRect,
   onScrollElement,
   scrollOffsetFn,
   keyExtractor = defaultKeyExtractor,
@@ -54,9 +55,8 @@ export function useVirtual({
 
   const useMeasureParent = useObserver || useRect
 
-  const { [sizeKey]: outerSize } = useMeasureParent(parentRef) || {
-    [sizeKey]: 0,
-  }
+  const { [sizeKey]: outerSize } = useMeasureParent(parentRef, initialRect)
+
   latestRef.current.outerSize = outerSize
 
   const defaultScrollToFn = React.useCallback(
