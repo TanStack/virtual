@@ -129,24 +129,31 @@ export const useWindowScroll = ({
   const [scrollOffset, setScrollOffset] = React.useState(0)
   const [element, setElement] = React.useState(windowRef.current)
 
+  const parentOffsetRef = React.useRef(0)
+
+  const rectKey = horizontal ? 'left' : 'top'
+  const scrollKey = horizontal ? 'scrollX' : 'scrollY'
+
   useIsomorphicLayoutEffect(() => {
     setElement(windowRef.current)
   })
 
   useIsomorphicLayoutEffect(() => {
     if (!element) {
+      parentOffsetRef.current = 0
       setScrollOffset(0)
 
       return
     }
 
-    const onScroll = () => {
-      if (parentRef.current) {
-        const bounds = parentRef.current.getBoundingClientRect()
-        const offset = horizontal ? bounds.left * -1 : bounds.top * -1
+    if (parentRef.current) {
+      parentOffsetRef.current =
+        element[scrollKey] + parentRef.current.getBoundingClientRect()[rectKey]
+    }
 
-        setScrollOffset(offset)
-      }
+    const onScroll = () => {
+      const offset = element[scrollKey] - parentOffsetRef.current
+      setScrollOffset(offset)
     }
 
     onScroll()
@@ -159,17 +166,19 @@ export const useWindowScroll = ({
     return () => {
       element.removeEventListener('scroll', onScroll)
     }
-  }, [element, parentRef, horizontal])
+  }, [element, scrollKey, rectKey, parentRef])
 
   const scrollToFn = React.useCallback(
-    offset => {
+    (offset, reason) => {
       if (windowRef.current) {
-        windowRef.current.scrollTo(
-          horizontal ? { left: offset } : { top: offset }
-        )
+        const delta = ['ToIndex', 'SizeChanged'].includes(reason)
+          ? parentOffsetRef.current
+          : 0
+
+        windowRef.current.scrollTo({ [rectKey]: offset + delta })
       }
     },
-    [windowRef, horizontal]
+    [windowRef, rectKey]
   )
 
   const useMeasureParent = useWindowObserver || useWindowRect
@@ -185,7 +194,7 @@ export const useWindowScroll = ({
   }
 }
 
-const useDefaultScroll = props => {
+export const useDefaultScroll = props => {
   const { parentRef, windowRef } = props
 
   const useWindow = windowRef !== undefined
@@ -236,12 +245,19 @@ export function useVirtual({
     useWindowObserver,
     initialRect,
   })
+
+  const scrollOffsetWithAdjustmentsRef = React.useRef(scrollOffset)
+  if (latestRef.current.scrollOffset !== scrollOffset) {
+    scrollOffsetWithAdjustmentsRef.current = scrollOffset
+  }
+
   latestRef.current.outerSize = outerSize
   latestRef.current.scrollOffset = scrollOffset
 
   const scrollTo = React.useCallback(
-    offset => {
-      const resolvedScrollToFn = scrollToFn || defaultScrollToFn
+    (offset, reason) => {
+      const resolvedScrollToFn =
+        scrollToFn || (offset => defaultScrollToFn(offset, reason))
 
       resolvedScrollToFn(offset, defaultScrollToFn)
     },
@@ -313,7 +329,13 @@ export function useVirtual({
               const { scrollOffset } = latestRef.current
 
               if (item.start < scrollOffset) {
-                defaultScrollToFn(scrollOffset + (measuredSize - item.size))
+                const delta = measuredSize - item.size
+                scrollOffsetWithAdjustmentsRef.current += delta
+
+                defaultScrollToFn(
+                  scrollOffsetWithAdjustmentsRef.current,
+                  'SizeChanged'
+                )
               }
 
               pendingMeasuredCacheIndexesRef.current.push(i)
@@ -343,7 +365,7 @@ export function useVirtual({
   }, [estimateSize])
 
   const scrollToOffset = React.useCallback(
-    (toOffset, { align = 'start' } = {}) => {
+    (toOffset, { align = 'start' } = {}, reason = 'ToOffset') => {
       const { scrollOffset, outerSize } = latestRef.current
 
       if (align === 'auto') {
@@ -357,11 +379,11 @@ export function useVirtual({
       }
 
       if (align === 'start') {
-        scrollTo(toOffset)
+        scrollTo(toOffset, reason)
       } else if (align === 'end') {
-        scrollTo(toOffset - outerSize)
+        scrollTo(toOffset - outerSize, reason)
       } else if (align === 'center') {
-        scrollTo(toOffset - outerSize / 2)
+        scrollTo(toOffset - outerSize / 2, reason)
       }
     },
     [scrollTo]
@@ -394,7 +416,7 @@ export function useVirtual({
           ? measurement.end
           : measurement.start
 
-      scrollToOffset(toOffset, { align, ...rest })
+      scrollToOffset(toOffset, { align, ...rest }, 'ToIndex')
     },
     [scrollToOffset, size]
   )

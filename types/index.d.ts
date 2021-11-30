@@ -41,6 +41,8 @@ interface ScrollOptions<T> {
   initialRect?: Rect
 }
 
+type ScrollReason = 'ToIndex' | 'ToOffset' | 'SizeChanged'
+
 export interface Options<T> extends ScrollOptions<T> {
   size: number
   estimateSize?: (index: number) => number
@@ -58,7 +60,7 @@ export interface Options<T> extends ScrollOptions<T> {
   ) => {
     outerSize: number
     scrollOffset: number
-    scrollToFn: (offset: number) => void
+    scrollToFn: (offset: number, reason: ScrollReason) => void
   }
 }
 

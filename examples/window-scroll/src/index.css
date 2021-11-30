@@ -1,10 +1,11 @@
-html {
+html, body {
+  margin: 0px;
+  padding: 0px;
   font-family: sans-serif;
   font-size: 14px;
 }
 
 .List {
-  border: 1px solid #e6e4dc;
   max-width: 100%;
 }
 

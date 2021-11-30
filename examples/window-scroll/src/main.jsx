@@ -20,7 +20,7 @@ function App() {
   return (
     <div>
       <h1>Window scroll - demo</h1>
-      <div className="List">
+      <div>
         <div ref={parentRef} style={{ width: `100%` }}>
           <div
             style={{
@@ -32,6 +32,7 @@ function App() {
             {rowVirtualizer.virtualItems.map(virtualRow => (
               <div
                 key={virtualRow.key}
+                ref={virtualRow.measureRef}
                 className={
                   virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'
                 }
@@ -43,7 +44,9 @@ function App() {
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
-                <div style={{ height: `50px` }}>Row {virtualRow.index}</div>
+                <div style={{ height: `${rows[virtualRow.index]}px` }}>
+                  Row {virtualRow.index}
+                </div>
               </div>
             ))}
           </div>
