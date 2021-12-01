@@ -66,12 +66,6 @@ const {
 - `paddingEnd: Integer`
   - Defaults to `0`
   - The amount of padding in pixels to add to the end of the virtual list
-  - `onScrollElement: React.useRef(DOMElement)`
-  - Optional
-  - Allows using a different element to bind the `onScroll` event to
-- `scrollOffsetFn: Function(event?: Event) => number`
-  - Optional
-  - This function, if passed, is called on scroll to get the scroll offset rather than using `parentRef`'s `width` or `height`
 - `keyExtractor: Function(index) => String | Integer`
   - Optional
   - This function receives the index of each item and should return the item's unique ID.
@@ -81,6 +75,15 @@ const {
   - Defaults to `defaultRangeExtractor`, is exported
   - **Must be memoized using `React.useCallback()`**
   - This function receives visible range parameters and should return array of indexes to render
+- `windowRef: React.useRef(Window)`
+  - Optional
+  - If passed, will be used as scroll container
+- `useWindowObserver: Function(windowRef: React.useRef(Window), initialRect?: { width: number; height: number }) => ({ width: number; height: number })`
+  - Optional
+  - This hook, if passed, is responsible for getting `windowRef`'s dimensions, in window scroll mode
+- `useScroll: Function({ parentRef; windowRef; horizontal; useObserver; useWindowObserver; initialRect }) => ({ outerSize: number; scrollOffset: number; scrollToFn: (offset: number, reason: ScrollReason) => void })`
+  - Optional
+  - This hook, if passed, is responsible for handling scroll
 
 ### Returns
 
