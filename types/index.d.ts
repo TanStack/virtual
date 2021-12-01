@@ -41,6 +41,14 @@ interface ScrollOptions<T> {
   initialRect?: Rect
 }
 
+declare function useDefaultScroll<T>(
+  options: ScrollOptions<T>
+): {
+  outerSize: number
+  scrollOffset: number
+  scrollToFn: (offset: number, reason: ScrollReason) => void
+}
+
 type ScrollReason = 'ToIndex' | 'ToOffset' | 'SizeChanged'
 
 export interface Options<T> extends ScrollOptions<T> {
@@ -55,13 +63,7 @@ export interface Options<T> extends ScrollOptions<T> {
   paddingEnd?: number
   keyExtractor?: (index: number) => Key
   rangeExtractor?: (range: Range) => number[]
-  useScroll?: (
-    props: ScrollOptions<T>
-  ) => {
-    outerSize: number
-    scrollOffset: number
-    scrollToFn: (offset: number, reason: ScrollReason) => void
-  }
+  useScroll?: typeof useDefaultScroll
 }
 
 declare function useVirtual<T>(
@@ -74,4 +76,4 @@ declare function useVirtual<T>(
   measure: () => void
 }
 
-export { defaultRangeExtractor, useVirtual }
+export { defaultRangeExtractor, useVirtual, useDefaultScroll }
