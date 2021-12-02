@@ -247,6 +247,7 @@ const Home = props => {
                   'Dynamic Sizing',
                   'Scrolling Utilities',
                   'Sticky Items',
+                  'Window Scrolling'
                 ].map(d => {
                   return (
                     <a className="mb-2" key={d}>
