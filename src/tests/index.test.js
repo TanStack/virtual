@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import * as React from 'react'
-
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react-hooks'
 import { useVirtual as useVirtualImpl } from '../index'
 
 function List({
@@ -18,7 +18,7 @@ function List({
     size,
     parentRef,
     overscan,
-    useObserver: React.useCallback(() => ({ height, width }), [height, width]),
+    useObserver: () => ({ height, width }),
     rangeExtractor,
   })
 
@@ -78,7 +78,7 @@ describe('useVirtual list', () => {
     expect(screen.queryByText('Row 4')).toBeInTheDocument()
     expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
 
-    expect(useVirtual).toHaveBeenCalledTimes(1)
+    expect(useVirtual).toHaveBeenCalledTimes(3)
   })
   it('should render with overscan', () => {
     render(<List {...props} overscan={0} />)
@@ -87,7 +87,7 @@ describe('useVirtual list', () => {
     expect(screen.queryByText('Row 3')).toBeInTheDocument()
     expect(screen.queryByText('Row 4')).not.toBeInTheDocument()
 
-    expect(useVirtual).toHaveBeenCalledTimes(1)
+    expect(useVirtual).toHaveBeenCalledTimes(3)
   })
   it('should render given dynamic size', async () => {
     const onRef = virtualRow => el => {
@@ -103,7 +103,7 @@ describe('useVirtual list', () => {
     await waitFor(() => expect(screen.queryByText('Row 8')).toBeInTheDocument())
     expect(screen.queryByText('Row 9')).not.toBeInTheDocument()
 
-    expect(useVirtual).toHaveBeenCalledTimes(4)
+    expect(useVirtual).toHaveBeenCalledTimes(5)
   })
   it('should render given dynamic size after scroll', async () => {
     const onRef = virtualRow => el => {
@@ -134,5 +134,58 @@ describe('useVirtual list', () => {
     expect(screen.queryByText('Row 0')).toBeInTheDocument()
     expect(screen.queryByText('Row 1')).toBeInTheDocument()
     expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+  })
+  it('should allow to provide useScroll', () => {
+    let scrollOffset = 0
+    const scrollToFn = jest.fn(offset => {
+      scrollOffset = offset
+    })
+    const { result, rerender } = renderHook(() =>
+      useVirtualImpl({
+        size: 100,
+        parentRef: React.useRef(null),
+        overscan: 0,
+        estimateSize: React.useCallback(() => 50, []),
+        useScroll: () => ({ outerSize: 200, scrollOffset, scrollToFn }),
+      })
+    )
+    expect(result.current.virtualItems.length).toBe(4)
+    expect(result.current.virtualItems[3].index).toBe(3)
+    act(() => {
+      result.current.scrollToIndex(5)
+    })
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    rerender()
+    expect(result.current.virtualItems[3].index).toBe(5)
+  })
+  it('should allow to pass a window', () => {
+    const { result } = renderHook(() =>
+      useVirtualImpl({
+        size: 100,
+        parentRef: React.useRef(document.createElement('div')),
+        windowRef: React.useRef(window),
+        useWindowObserver: () => ({ height: 200, width: '100%' }),
+        overscan: 0,
+        estimateSize: React.useCallback(() => 50, []),
+      })
+    )
+    expect(result.current.virtualItems.length).toBe(4)
+  })
+  it('should handle scroll in window mode', () => {
+    const { result } = renderHook(() =>
+      useVirtualImpl({
+        size: 100,
+        parentRef: React.useRef(document.createElement('div')),
+        windowRef: React.useRef(window),
+        useWindowObserver: () => ({ height: 200, width: '100%' }),
+        overscan: 0,
+        estimateSize: React.useCallback(() => 50, []),
+      })
+    )
+    expect(result.current.virtualItems[0].index).toBe(0)
+    act(() => {
+      fireEvent.scroll(window, { target: { scrollY: 100 } })
+    })
+    expect(result.current.virtualItems[0].index).toBe(2)
   })
 })

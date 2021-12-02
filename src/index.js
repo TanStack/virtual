@@ -25,41 +25,44 @@ export const defaultRangeExtractor = range => {
   return arr
 }
 
-export function useVirtual({
-  size = 0,
-  estimateSize = defaultEstimateSize,
-  overscan = 1,
-  paddingStart = 0,
-  paddingEnd = 0,
+export const useElementScroll = ({
   parentRef,
   horizontal,
-  scrollToFn,
   useObserver,
   initialRect,
-  onScrollElement,
-  scrollOffsetFn,
-  keyExtractor = defaultKeyExtractor,
-  measureSize = defaultMeasureSize,
-  rangeExtractor = defaultRangeExtractor,
-}) {
-  const sizeKey = horizontal ? 'width' : 'height'
+}) => {
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
+  const [scrollOffset, setScrollOffset] = React.useState(0)
+  const [element, setElement] = React.useState(parentRef.current)
 
-  const latestRef = React.useRef({
-    scrollOffset: 0,
-    measurements: [],
+  useIsomorphicLayoutEffect(() => {
+    setElement(parentRef.current)
   })
 
-  const [scrollOffset, setScrollOffset] = React.useState(0)
-  latestRef.current.scrollOffset = scrollOffset
+  useIsomorphicLayoutEffect(() => {
+    if (!element) {
+      setScrollOffset(0)
 
-  const useMeasureParent = useObserver || useRect
+      return
+    }
 
-  const { [sizeKey]: outerSize } = useMeasureParent(parentRef, initialRect)
+    const onScroll = () => {
+      setScrollOffset(element[scrollKey])
+    }
 
-  latestRef.current.outerSize = outerSize
+    onScroll()
 
-  const defaultScrollToFn = React.useCallback(
+    element.addEventListener('scroll', onScroll, {
+      capture: false,
+      passive: true,
+    })
+
+    return () => {
+      element.removeEventListener('scroll', onScroll)
+    }
+  }, [element, scrollKey])
+
+  const scrollToFn = React.useCallback(
     offset => {
       if (parentRef.current) {
         parentRef.current[scrollKey] = offset
@@ -68,13 +71,197 @@ export function useVirtual({
     [parentRef, scrollKey]
   )
 
-  const resolvedScrollToFn = scrollToFn || defaultScrollToFn
+  const useMeasureParent = useObserver || useRect
 
-  scrollToFn = React.useCallback(
-    offset => {
+  const sizeKey = horizontal ? 'width' : 'height'
+
+  const { [sizeKey]: outerSize } = useMeasureParent(parentRef, initialRect)
+
+  return {
+    outerSize,
+    scrollOffset,
+    scrollToFn,
+  }
+}
+
+const useWindowRect = (windowRef, initialRect = { width: 0, height: 0 }) => {
+  const [rect, setRect] = React.useState(initialRect)
+  const [element, setElement] = React.useState(windowRef.current)
+
+  useIsomorphicLayoutEffect(() => {
+    setElement(windowRef.current)
+  })
+
+  useIsomorphicLayoutEffect(() => {
+    if (!element) {
+      return
+    }
+
+    function resizeHandler() {
+      const next = {
+        width: element.innerWidth,
+        height: element.innerHeight,
+      }
+
+      setRect(prev =>
+        prev.height !== next.height || prev.width !== next.width ? next : prev
+      )
+    }
+    resizeHandler()
+
+    element.addEventListener('resize', resizeHandler)
+
+    return () => {
+      element.removeEventListener('resize', resizeHandler)
+    }
+  }, [element])
+
+  return rect
+}
+
+export const useWindowScroll = ({
+  windowRef,
+  parentRef,
+  horizontal,
+  useWindowObserver,
+  initialRect,
+}) => {
+  const [scrollOffset, setScrollOffset] = React.useState(0)
+  const [element, setElement] = React.useState(windowRef.current)
+
+  const parentOffsetRef = React.useRef(0)
+
+  const rectKey = horizontal ? 'left' : 'top'
+  const scrollKey = horizontal ? 'scrollX' : 'scrollY'
+
+  useIsomorphicLayoutEffect(() => {
+    setElement(windowRef.current)
+  })
+
+  useIsomorphicLayoutEffect(() => {
+    if (!element) {
+      parentOffsetRef.current = 0
+      setScrollOffset(0)
+
+      return
+    }
+
+    if (parentRef.current) {
+      parentOffsetRef.current =
+        element[scrollKey] + parentRef.current.getBoundingClientRect()[rectKey]
+    }
+
+    const onScroll = () => {
+      const offset = element[scrollKey] - parentOffsetRef.current
+      setScrollOffset(offset)
+    }
+
+    onScroll()
+
+    element.addEventListener('scroll', onScroll, {
+      capture: false,
+      passive: true,
+    })
+
+    return () => {
+      element.removeEventListener('scroll', onScroll)
+    }
+  }, [element, scrollKey, rectKey, parentRef])
+
+  const scrollToFn = React.useCallback(
+    (offset, reason) => {
+      if (windowRef.current) {
+        const delta = ['ToIndex', 'SizeChanged'].includes(reason)
+          ? parentOffsetRef.current
+          : 0
+
+        windowRef.current.scrollTo({ [rectKey]: offset + delta })
+      }
+    },
+    [windowRef, rectKey]
+  )
+
+  const useMeasureParent = useWindowObserver || useWindowRect
+
+  const sizeKey = horizontal ? 'width' : 'height'
+
+  const { [sizeKey]: outerSize } = useMeasureParent(windowRef, initialRect)
+
+  return {
+    outerSize,
+    scrollOffset,
+    scrollToFn,
+  }
+}
+
+export const useDefaultScroll = props => {
+  const { parentRef, windowRef } = props
+
+  const useWindow = windowRef !== undefined
+
+  const emptyRef = React.useRef(null)
+
+  const elementRes = useElementScroll({
+    ...props,
+    parentRef: useWindow ? emptyRef : parentRef,
+  })
+
+  const windowRes = useWindowScroll({
+    ...props,
+    windowRef: useWindow ? windowRef : emptyRef,
+  })
+
+  return useWindow ? windowRes : elementRes
+}
+
+export function useVirtual({
+  size = 0,
+  estimateSize = defaultEstimateSize,
+  overscan = 1,
+  paddingStart = 0,
+  paddingEnd = 0,
+  parentRef,
+  windowRef,
+  horizontal,
+  scrollToFn,
+  useObserver,
+  useWindowObserver,
+  initialRect,
+  keyExtractor = defaultKeyExtractor,
+  measureSize = defaultMeasureSize,
+  rangeExtractor = defaultRangeExtractor,
+  useScroll = useDefaultScroll,
+}) {
+  const latestRef = React.useRef({
+    scrollOffset: 0,
+    measurements: [],
+  })
+
+  const { outerSize, scrollOffset, scrollToFn: defaultScrollToFn } = useScroll({
+    windowRef,
+    parentRef,
+    horizontal,
+    useObserver,
+    useWindowObserver,
+    initialRect,
+  })
+
+  const scrollOffsetWithAdjustmentsRef = React.useRef(scrollOffset)
+  if (latestRef.current.scrollOffset !== scrollOffset) {
+    scrollOffsetWithAdjustmentsRef.current = scrollOffset
+  }
+
+  latestRef.current.outerSize = outerSize
+  latestRef.current.scrollOffset = scrollOffset
+
+  const scrollTo = React.useCallback(
+    (offset, reason) => {
+      const resolvedScrollToFn =
+        scrollToFn || (offset => defaultScrollToFn(offset, reason))
+
       resolvedScrollToFn(offset, defaultScrollToFn)
     },
-    [defaultScrollToFn, resolvedScrollToFn]
+    [scrollToFn, defaultScrollToFn]
   )
 
   const [measuredCache, setMeasuredCache] = React.useState({})
@@ -109,38 +296,6 @@ export function useVirtual({
   latestRef.current.measurements = measurements
   latestRef.current.totalSize = totalSize
 
-  const element = onScrollElement ? onScrollElement.current : parentRef.current
-
-  const scrollOffsetFnRef = React.useRef(scrollOffsetFn)
-  scrollOffsetFnRef.current = scrollOffsetFn
-
-  useIsomorphicLayoutEffect(() => {
-    if (!element) {
-      setScrollOffset(0)
-
-      return
-    }
-
-    const onScroll = event => {
-      const offset = scrollOffsetFnRef.current
-        ? scrollOffsetFnRef.current(event)
-        : element[scrollKey]
-
-      setScrollOffset(offset)
-    }
-
-    onScroll()
-
-    element.addEventListener('scroll', onScroll, {
-      capture: false,
-      passive: true,
-    })
-
-    return () => {
-      element.removeEventListener('scroll', onScroll)
-    }
-  }, [element, scrollKey])
-
   const { start, end } = calculateRange(latestRef.current)
 
   const indexes = React.useMemo(
@@ -174,7 +329,13 @@ export function useVirtual({
               const { scrollOffset } = latestRef.current
 
               if (item.start < scrollOffset) {
-                defaultScrollToFn(scrollOffset + (measuredSize - item.size))
+                const delta = measuredSize - item.size
+                scrollOffsetWithAdjustmentsRef.current += delta
+
+                defaultScrollToFn(
+                  scrollOffsetWithAdjustmentsRef.current,
+                  'SizeChanged'
+                )
               }
 
               pendingMeasuredCacheIndexesRef.current.push(i)
@@ -204,7 +365,7 @@ export function useVirtual({
   }, [estimateSize])
 
   const scrollToOffset = React.useCallback(
-    (toOffset, { align = 'start' } = {}) => {
+    (toOffset, { align = 'start' } = {}, reason = 'ToOffset') => {
       const { scrollOffset, outerSize } = latestRef.current
 
       if (align === 'auto') {
@@ -218,14 +379,14 @@ export function useVirtual({
       }
 
       if (align === 'start') {
-        scrollToFn(toOffset)
+        scrollTo(toOffset, reason)
       } else if (align === 'end') {
-        scrollToFn(toOffset - outerSize)
+        scrollTo(toOffset - outerSize, reason)
       } else if (align === 'center') {
-        scrollToFn(toOffset - outerSize / 2)
+        scrollTo(toOffset - outerSize / 2, reason)
       }
     },
-    [scrollToFn]
+    [scrollTo]
   )
 
   const tryScrollToIndex = React.useCallback(
@@ -255,7 +416,7 @@ export function useVirtual({
           ? measurement.end
           : measurement.start
 
-      scrollToOffset(toOffset, { align, ...rest })
+      scrollToOffset(toOffset, { align, ...rest }, 'ToIndex')
     },
     [scrollToOffset, size]
   )

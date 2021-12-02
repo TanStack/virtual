@@ -32,24 +32,38 @@ interface Rect {
   height: number
 }
 
-export interface Options<T> {
-  size: number
+interface ScrollOptions<T> {
   parentRef: React.RefObject<T>
+  windowRef?: React.RefObject<Window>
+  horizontal?: boolean
+  useObserver?: (ref: React.RefObject<T>, initialRect?: Rect) => Rect
+  useWindowObserver?: (ref: React.RefObject<Window>, initialRect?: Rect) => Rect
+  initialRect?: Rect
+}
+
+declare function useDefaultScroll<T>(
+  options: ScrollOptions<T>
+): {
+  outerSize: number
+  scrollOffset: number
+  scrollToFn: (offset: number, reason: ScrollReason) => void
+}
+
+type ScrollReason = 'ToIndex' | 'ToOffset' | 'SizeChanged'
+
+export interface Options<T> extends ScrollOptions<T> {
+  size: number
   estimateSize?: (index: number) => number
   overscan?: number
-  horizontal?: boolean
   scrollToFn?: (
     offset: number,
     defaultScrollToFn?: (offset: number) => void
   ) => void
   paddingStart?: number
   paddingEnd?: number
-  useObserver?: (ref: React.RefObject<T>, initialRect?: Rect) => Rect
-  initialRect?: Rect
   keyExtractor?: (index: number) => Key
-  onScrollElement?: React.RefObject<HTMLElement>
-  scrollOffsetFn?: (event?: Event) => number
   rangeExtractor?: (range: Range) => number[]
+  useScroll?: typeof useDefaultScroll
 }
 
 declare function useVirtual<T>(
@@ -62,4 +76,4 @@ declare function useVirtual<T>(
   measure: () => void
 }
 
-export { defaultRangeExtractor, useVirtual }
+export { defaultRangeExtractor, useVirtual, useDefaultScroll }
