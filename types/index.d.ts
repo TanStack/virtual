@@ -1,13 +1,13 @@
-type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
+export type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
-interface ScrollToOptions {
+export interface ScrollToOptions {
   align: ScrollAlignment
 }
 
-interface ScrollToOffsetOptions extends ScrollToOptions {}
-interface ScrollToIndexOptions extends ScrollToOptions {}
+export interface ScrollToOffsetOptions extends ScrollToOptions {}
+export interface ScrollToIndexOptions extends ScrollToOptions {}
 
-type Key = number | string
+export type Key = number | string
 
 export type VirtualItem = {
   key: Key
@@ -27,29 +27,33 @@ export interface Range {
 
 declare function defaultRangeExtractor(range: Range): number[]
 
-interface Rect {
+export interface Rect {
   width: number
   height: number
 }
 
-interface ScrollOptions<T> {
+export type Observer<T> = (ref: React.RefObject<T>, initialRect?: Rect) => Rect
+
+export interface ScrollOptions<T> {
   parentRef: React.RefObject<T>
   windowRef?: React.RefObject<Window>
   horizontal?: boolean
-  useObserver?: (ref: React.RefObject<T>, initialRect?: Rect) => Rect
-  useWindowObserver?: (ref: React.RefObject<Window>, initialRect?: Rect) => Rect
+  useObserver?: Observer<T>
+  useWindowObserver?: Observer<Window>
   initialRect?: Rect
 }
 
-declare function useDefaultScroll<T>(
-  options: ScrollOptions<T>
-): {
+export interface Scroller {
   outerSize: number
   scrollOffset: number
   scrollToFn: (offset: number, reason: ScrollReason) => void
 }
 
-type ScrollReason = 'ToIndex' | 'ToOffset' | 'SizeChanged'
+declare function useDefaultScroll<T>(
+  options: ScrollOptions<T>
+): Scroller
+
+export type ScrollReason = 'ToIndex' | 'ToOffset' | 'SizeChanged'
 
 export interface Options<T> extends ScrollOptions<T> {
   size: number
@@ -63,17 +67,19 @@ export interface Options<T> extends ScrollOptions<T> {
   paddingEnd?: number
   keyExtractor?: (index: number) => Key
   rangeExtractor?: (range: Range) => number[]
-  useScroll?: typeof useDefaultScroll
+  useScroll?: Scroller
 }
 
-declare function useVirtual<T>(
-  options: Options<T>
-): {
+export interface Virtualizer {
   virtualItems: VirtualItem[]
   totalSize: number
   scrollToOffset: (index: number, options?: ScrollToOffsetOptions) => void
   scrollToIndex: (index: number, options?: ScrollToIndexOptions) => void
   measure: () => void
 }
+
+declare function useVirtual<T>(
+  options: Options<T>
+): Virtualizer
 
 export { defaultRangeExtractor, useVirtual, useDefaultScroll }
