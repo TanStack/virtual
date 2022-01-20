@@ -38,3 +38,5 @@ Enjoy this library? Try the entire [TanStack](https://tanstack.com)! [React Quer
 - <a href="https://bundlephobia.com/result?p=react-virtual@latest" target="\_parent">
   <img alt="" src="https://badgen.net/bundlephobia/minzip/react-virtual@latest" />
   </a>
+
+<!-- Force  -->
