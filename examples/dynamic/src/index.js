@@ -75,7 +75,7 @@ function RowVirtualizerDynamic({ rows }) {
                 top: 0,
                 left: 0,
                 width: "100%",
-                height: `${virtualRow.size}px`,
+                height: `${rows[virtualRow.index]}px`,
                 transform: `translateY(${virtualRow.start}px)`
               }}
             >
@@ -127,7 +127,7 @@ function ColumnVirtualizerDynamic({ columns }) {
                 top: 0,
                 left: 0,
                 height: "100%",
-                width: `${virtualColumn.size}px`,
+                width: `${columns[virtualColumn.index]}px`,
                 transform: `translateX(${virtualColumn.start}px)`
               }}
             >
@@ -206,8 +206,8 @@ function GridVirtualizerDynamic({ rows, columns }) {
                       position: "absolute",
                       top: 0,
                       left: 0,
-                      width: `${virtualColumn.size}px`,
-                      height: `${virtualRow.size}px`,
+                      width: `${columns[virtualColumn.index]}px`,
+                      height: `${rows[virtualRow.index]}px`,
                       transform: `translateX(${virtualColumn.start}px) translateY(${virtualRow.start}px)`
                     }}
                   >
