@@ -76,7 +76,7 @@ function App() {
     }
 
     if (
-      lastItem.index === flatPosts.length - 1 &&
+      lastItem.index >= flatPosts.length - 1 &&
       canFetchMore &&
       !isFetchingMore
     ) {

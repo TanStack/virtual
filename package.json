@@ -14,7 +14,7 @@
   ],
   "main": "index.js",
   "module": "dist/react-virtual.mjs",
-  "types": "types",
+  "types": "types/index.d.ts",
   "sideEffects": false,
   "scripts": {
     "test": "is-ci \"test:ci\" \"test:dev\"",

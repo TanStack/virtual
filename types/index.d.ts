@@ -7,7 +7,10 @@ interface ScrollToOptions {
 interface ScrollToOffsetOptions extends ScrollToOptions {}
 interface ScrollToIndexOptions extends ScrollToOptions {}
 
+type Key = number | string
+
 export type VirtualItem = {
+  key: Key
   index: number
   start: number
   end: number
@@ -22,6 +25,13 @@ export interface Range {
   size: number
 }
 
+declare function defaultRangeExtractor(range: Range): number[]
+
+interface Rect {
+  width: number
+  height: number
+}
+
 export interface Options<T> {
   size: number
   parentRef: React.RefObject<T>
@@ -34,20 +44,13 @@ export interface Options<T> {
   ) => void
   paddingStart?: number
   paddingEnd?: number
-  useObserver?: (
-    ref: React.RefObject<T>
-  ) => {
-    width: number
-    height: number
-    [key: string]: any
-  }
-  keyExtractor?: (index: number) => number | string
+  useObserver?: (ref: React.RefObject<T>, initialRect?: Rect) => Rect
+  initialRect?: Rect
+  keyExtractor?: (index: number) => Key
   onScrollElement?: React.RefObject<HTMLElement>
   scrollOffsetFn?: (event?: Event) => number
   rangeExtractor?: (range: Range) => number[]
 }
-
-declare function defaultRangeExtractor(range: Range): number[]
 
 declare function useVirtual<T>(options: Options<T>): {
   virtualItems: VirtualItem[]

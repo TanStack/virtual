@@ -58,6 +58,12 @@
           "title": "Smooth Scroll",
           "path": "/examples/smooth-scroll",
           "editUrl": "/examples/smooth-scroll.md"
+        },
+
+        {
+          "title": "Sticky",
+          "path": "/examples/sticky",
+          "editUrl": "/examples/sticky.md"
         }
       ]
     }
