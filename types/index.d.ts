@@ -52,9 +52,7 @@ export interface Options<T> {
   rangeExtractor?: (range: Range) => number[]
 }
 
-declare function useVirtual<T>(
-  options: Options<T>
-): {
+declare function useVirtual<T>(options: Options<T>): {
   virtualItems: VirtualItem[]
   totalSize: number
   scrollToOffset: (index: number, options?: ScrollToOffsetOptions) => void
