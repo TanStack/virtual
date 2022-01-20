@@ -39,4 +39,4 @@ Enjoy this library? Try the entire [TanStack](https://tanstack.com)! [React Quer
   <img alt="" src="https://badgen.net/bundlephobia/minzip/react-virtual@latest" />
   </a>
 
-<!-- Force 1  -->
+<!-- Force  -->
