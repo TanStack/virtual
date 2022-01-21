@@ -104,7 +104,7 @@ export function useVirtual({
     return measurements
   }, [estimateSize, measuredCache, paddingStart, size, keyExtractor])
 
-  const totalSize = (measurements[size - 1]?.end || 0) + paddingEnd
+  const totalSize = (measurements[size - 1]?.end || paddingStart) + paddingEnd
 
   latestRef.current.measurements = measurements
   latestRef.current.totalSize = totalSize
