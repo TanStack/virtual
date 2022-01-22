@@ -1,35 +1,20 @@
 {
+  "name": "padding",
   "private": true,
   "scripts": {
-    "start": "rescripts start",
-    "build": "rescripts build",
-    "test": "rescripts test",
-    "eject": "rescripts eject",
-    "serve": "serve -s build"
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "start": "vite"
   },
   "dependencies": {
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1",
-    "react-virtual": "^2.1.8"
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-virtual": "2.10.3"
   },
   "devDependencies": {
-    "@rescripts/cli": "^0.0.11",
-    "@rescripts/rescript-use-babel-config": "^0.0.8",
-    "@rescripts/rescript-use-eslint-config": "^0.0.9",
-    "babel-eslint": "10.0.1",
-    "serve": "^11.3.0"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "@rollup/plugin-replace": "^3.0.1",
+    "@vitejs/plugin-react": "^1.1.4",
+    "vite": "^2.7.13"
   }
 }
