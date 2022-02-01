@@ -1,3 +1,6 @@
 {
-  "node": "12"
+  "node": "12",
+  "container": {
+    "node": "12"
+  }
 }
