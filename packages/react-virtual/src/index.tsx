@@ -1,18 +1,35 @@
-import React from 'react'
-import useRect from './useRect'
-import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
+import * as React from 'react'
+import { useRect, Rect } from './useRect'
+import { useIsomorphicLayoutEffect } from './useIsomorphicLayoutEffect'
 
 const defaultEstimateSize = () => 50
 
-const defaultKeyExtractor = index => index
+const defaultKeyExtractor = (index: number) => index
 
-const defaultMeasureSize = (el, horizontal) => {
+const defaultMeasureSize = (el: HTMLElement, horizontal: boolean) => {
   const key = horizontal ? 'offsetWidth' : 'offsetHeight'
 
   return el[key]
 }
 
-export const defaultRangeExtractor = range => {
+type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
+
+interface ScrollToOptions {
+  align: ScrollAlignment
+}
+
+interface ScrollToOffsetOptions extends ScrollToOptions {}
+
+interface ScrollToIndexOptions extends ScrollToOptions {}
+
+export interface Range {
+  start: number
+  end: number
+  overscan: number
+  size: number
+}
+
+export const defaultRangeExtractor = (range: Range) => {
   const start = Math.max(range.start - range.overscan, 0)
   const end = Math.min(range.end + range.overscan, range.size - 1)
 
@@ -25,14 +42,49 @@ export const defaultRangeExtractor = range => {
   return arr
 }
 
-export function useVirtual({
+type Key = number | string
+
+interface Item {
+  key: Key
+  index: number
+  start: number
+  end: number
+  size: number
+}
+
+export interface VirtualItem extends Item {
+  measureRef: (el: HTMLElement | null) => void
+}
+
+export interface Options<T> {
+  size: number
+  parentRef: React.RefObject<T>
+  estimateSize?: (index: number) => number
+  overscan?: number
+  horizontal?: boolean
+  scrollToFn?: (
+    offset: number,
+    defaultScrollToFn?: (offset: number) => void,
+  ) => void
+  paddingStart?: number
+  paddingEnd?: number
+  useObserver?: (ref: React.RefObject<T>, initialRect?: Rect) => Rect
+  initialRect?: Rect
+  keyExtractor?: (index: number) => Key
+  onScrollElement?: React.RefObject<HTMLElement>
+  scrollOffsetFn?: (event?: Event) => number
+  rangeExtractor?: (range: Range) => number[]
+  measureSize?: (el: HTMLElement, horizontal: boolean) => number
+}
+
+export const useVirtual = <T extends HTMLElement>({
   size = 0,
   estimateSize = defaultEstimateSize,
   overscan = 1,
   paddingStart = 0,
   paddingEnd = 0,
   parentRef,
-  horizontal,
+  horizontal = false,
   scrollToFn,
   useObserver,
   initialRect,
@@ -41,13 +93,20 @@ export function useVirtual({
   keyExtractor = defaultKeyExtractor,
   measureSize = defaultMeasureSize,
   rangeExtractor = defaultRangeExtractor,
-}) {
+}: Options<T>) => {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
 
-  const latestRef = React.useRef({
+  const latestRef = React.useRef<{
+    scrollOffset: number
+    measurements: Item[]
+    outerSize: number
+    totalSize: number
+  }>({
+    outerSize: 0,
     scrollOffset: 0,
     measurements: [],
+    totalSize: 0,
   })
 
   const [scrollOffset, setScrollOffset] = React.useState(0)
@@ -60,28 +119,30 @@ export function useVirtual({
   latestRef.current.outerSize = outerSize
 
   const defaultScrollToFn = React.useCallback(
-    offset => {
+    (offset: number) => {
       if (parentRef.current) {
         parentRef.current[scrollKey] = offset
       }
     },
-    [parentRef, scrollKey]
+    [parentRef, scrollKey],
   )
 
   const resolvedScrollToFn = scrollToFn || defaultScrollToFn
 
-  scrollToFn = React.useCallback(
-    offset => {
+  const scrollTo = React.useCallback(
+    (offset: number) => {
       resolvedScrollToFn(offset, defaultScrollToFn)
     },
-    [defaultScrollToFn, resolvedScrollToFn]
+    [defaultScrollToFn, resolvedScrollToFn],
   )
 
-  const [measuredCache, setMeasuredCache] = React.useState({})
+  const [measuredCache, setMeasuredCache] = React.useState<Record<Key, number>>(
+    {},
+  )
 
   const measure = React.useCallback(() => setMeasuredCache({}), [])
 
-  const pendingMeasuredCacheIndexesRef = React.useRef([])
+  const pendingMeasuredCacheIndexesRef = React.useRef<number[]>([])
 
   const measurements = React.useMemo(() => {
     const min =
@@ -121,7 +182,7 @@ export function useVirtual({
       return
     }
 
-    const onScroll = event => {
+    const onScroll = (event?: Event) => {
       const offset = scrollOffsetFnRef.current
         ? scrollOffsetFnRef.current(event)
         : element[scrollKey]
@@ -151,13 +212,13 @@ export function useVirtual({
         overscan,
         size: measurements.length,
       }),
-    [start, end, overscan, measurements.length, rangeExtractor]
+    [start, end, overscan, measurements.length, rangeExtractor],
   )
 
   const measureSizeRef = React.useRef(measureSize)
   measureSizeRef.current = measureSize
 
-  const virtualItems = React.useMemo(() => {
+  const virtualItems: VirtualItem[] = React.useMemo(() => {
     const virtualItems = []
 
     for (let k = 0, len = indexes.length; k < len; k++) {
@@ -166,7 +227,7 @@ export function useVirtual({
 
       const item = {
         ...measurement,
-        measureRef: el => {
+        measureRef: (el: HTMLElement | null) => {
           if (el) {
             const measuredSize = measureSizeRef.current(el, horizontal)
 
@@ -179,7 +240,7 @@ export function useVirtual({
 
               pendingMeasuredCacheIndexesRef.current.push(i)
 
-              setMeasuredCache(old => ({
+              setMeasuredCache((old) => ({
                 ...old,
                 [item.key]: measuredSize,
               }))
@@ -204,7 +265,10 @@ export function useVirtual({
   }, [estimateSize])
 
   const scrollToOffset = React.useCallback(
-    (toOffset, { align = 'start' } = {}) => {
+    (
+      toOffset: number,
+      { align }: ScrollToOffsetOptions = { align: 'start' },
+    ) => {
       const { scrollOffset, outerSize } = latestRef.current
 
       if (align === 'auto') {
@@ -218,18 +282,21 @@ export function useVirtual({
       }
 
       if (align === 'start') {
-        scrollToFn(toOffset)
+        scrollTo(toOffset)
       } else if (align === 'end') {
-        scrollToFn(toOffset - outerSize)
+        scrollTo(toOffset - outerSize)
       } else if (align === 'center') {
-        scrollToFn(toOffset - outerSize / 2)
+        scrollTo(toOffset - outerSize / 2)
       }
     },
-    [scrollToFn]
+    [scrollTo],
   )
 
   const tryScrollToIndex = React.useCallback(
-    (index, { align = 'auto', ...rest } = {}) => {
+    (
+      index: number,
+      { align, ...rest }: ScrollToIndexOptions = { align: 'auto' },
+    ) => {
       const { measurements, scrollOffset, outerSize } = latestRef.current
 
       const measurement = measurements[Math.max(0, Math.min(index, size - 1))]
@@ -257,22 +324,22 @@ export function useVirtual({
 
       scrollToOffset(toOffset, { align, ...rest })
     },
-    [scrollToOffset, size]
+    [scrollToOffset, size],
   )
 
   const scrollToIndex = React.useCallback(
-    (...args) => {
+    (index: number, options?: ScrollToIndexOptions) => {
       // We do a double request here because of
       // dynamic sizes which can cause offset shift
       // and end up in the wrong spot. Unfortunately,
       // we can't know about those dynamic sizes until
       // we try and render them. So double down!
-      tryScrollToIndex(...args)
+      tryScrollToIndex(index, options)
       requestAnimationFrame(() => {
-        tryScrollToIndex(...args)
+        tryScrollToIndex(index, options)
       })
     },
-    [tryScrollToIndex]
+    [tryScrollToIndex],
   )
 
   return {
@@ -284,7 +351,12 @@ export function useVirtual({
   }
 }
 
-const findNearestBinarySearch = (low, high, getCurrentValue, value) => {
+const findNearestBinarySearch = (
+  low: number,
+  high: number,
+  getCurrentValue: (i: number) => number,
+  value: number,
+) => {
   while (low <= high) {
     let middle = ((low + high) / 2) | 0
     let currentValue = getCurrentValue(middle)
@@ -305,9 +377,17 @@ const findNearestBinarySearch = (low, high, getCurrentValue, value) => {
   }
 }
 
-function calculateRange({ measurements, outerSize, scrollOffset }) {
+function calculateRange({
+  measurements,
+  outerSize,
+  scrollOffset,
+}: {
+  measurements: Item[]
+  outerSize: number
+  scrollOffset: number
+}) {
   const size = measurements.length - 1
-  const getOffset = index => measurements[index].start
+  const getOffset = (index: number) => measurements[index].start
 
   let start = findNearestBinarySearch(0, size, getOffset, scrollOffset)
   let end = start
