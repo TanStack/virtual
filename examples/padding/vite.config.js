@@ -18,7 +18,10 @@ export default defineConfig({
   resolve: process.env.USE_SOURCE
     ? {
         alias: {
-          'react-virtual': path.resolve(__dirname, '../../src/index.js'),
+          'react-virtual': path.resolve(
+            __dirname,
+            '../../packages/react-virtual/src/index.tsx',
+          ),
         },
       }
     : {},

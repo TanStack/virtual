@@ -1,13 +1,27 @@
 import React from 'react'
 import observeRect from '@reach/observe-rect'
-import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
+import { useIsomorphicLayoutEffect } from './useIsomorphicLayoutEffect'
 
-export default function useRect(
-  nodeRef,
-  initialRect = { width: 0, height: 0 }
-) {
+export interface Rect {
+  width: number
+  height: number
+}
+
+function rectReducer(state: Rect, action: { rect: Rect }) {
+  const rect = action.rect
+  if (state.height !== rect.height || state.width !== rect.width) {
+    return rect
+  }
+  return state
+}
+
+export const useRect = <T extends HTMLElement>(
+  nodeRef: React.RefObject<T>,
+  initialRect: Rect = { width: 0, height: 0 },
+) => {
   const [element, setElement] = React.useState(nodeRef.current)
   const [rect, dispatch] = React.useReducer(rectReducer, initialRect)
+
   const initialRectSet = React.useRef(false)
 
   useIsomorphicLayoutEffect(() => {
@@ -29,7 +43,7 @@ export default function useRect(
       return
     }
 
-    const observer = observeRect(element, rect => {
+    const observer = observeRect(element, (rect) => {
       dispatch({ rect })
     })
 
@@ -41,12 +55,4 @@ export default function useRect(
   }, [element])
 
   return rect
-}
-
-function rectReducer(state, action) {
-  const rect = action.rect
-  if (state.height !== rect.height || state.width !== rect.width) {
-    return rect
-  }
-  return state
 }
