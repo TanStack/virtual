@@ -3,36 +3,7 @@ import { BranchConfig, Package } from './types'
 
 // TODO: List your npm packages here. The first package will be used as the versioner.
 export const packages: Package[] = [
-  { name: '@tanstack/react-location', srcDir: 'packages/react-location/src' },
-  {
-    name: '@tanstack/react-location-lite-experimental',
-    srcDir: 'packages/react-location-lite-experimental/src',
-  },
-  {
-    name: '@tanstack/react-location-devtools',
-    srcDir: 'packages/react-location-devtools/src',
-    peerDependencies: ['@tanstack/react-location'],
-  },
-  {
-    name: '@tanstack/react-location-elements-to-routes',
-    srcDir: 'packages/react-location-elements-to-routes/src',
-    peerDependencies: ['@tanstack/react-location'],
-  },
-  {
-    name: '@tanstack/react-location-simple-cache',
-    srcDir: 'packages/react-location-simple-cache/src',
-    peerDependencies: ['@tanstack/react-location'],
-  },
-  {
-    name: '@tanstack/react-location-rank-routes',
-    srcDir: 'packages/react-location-rank-routes/src',
-    peerDependencies: ['@tanstack/react-location'],
-  },
-  {
-    name: '@tanstack/react-location-jsurl',
-    srcDir: 'packages/react-location-jsurl/src',
-    peerDependencies: [],
-  },
+  { name: '@tanstack/react-virtual', srcDir: 'packages/react-virtual/src' },
 ]
 
 export const latestBranch = 'main'

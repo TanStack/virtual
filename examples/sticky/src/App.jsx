@@ -2,7 +2,7 @@ import './App.css'
 import * as React from 'react'
 import faker from 'faker'
 import { findIndex, groupBy } from 'lodash'
-import { useVirtual, defaultRangeExtractor } from 'react-virtual'
+import { useVirtual, defaultRangeExtractor } from '@tanstack/react-virtual'
 
 const groupedNames = groupBy(
   Array.from({ length: 1000 })

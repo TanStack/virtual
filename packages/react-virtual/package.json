@@ -1,9 +1,9 @@
 {
   "name": "@tanstack/react-virtual",
   "author": "Tanner Linsley",
-  "version": "0.0.0",
+  "version": "3.0.0-alpha.0",
   "license": "MIT",
-  "repository": "https://github.com/tannerlinsley/react-virtual.git",
+  "repository": "https://github.com/tanstack/react-virtual.git",
   "homepage": "https://react-virtual.tanstack.com/",
   "description": "",
   "publishConfig": {

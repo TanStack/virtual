@@ -3,7 +3,7 @@ id: overview
 title: Overview
 ---
 
-[![](https://badgen.net/bundlephobia/minzip/react-virtual)](https://bundlephobia.com/result?p=react-virtual)
+[![](https://badgen.net/bundlephobia/minzip/@tanstack/react-virtual)](https://bundlephobia.com/result?p=@tanstack/react-virtual)
 
 <br />
 

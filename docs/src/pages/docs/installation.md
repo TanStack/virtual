@@ -10,11 +10,11 @@ You can install React Virtual with [NPM](https://npmjs.com),
 ### NPM
 
 ```sh
-npm install react-virtual --save
+npm install @tanstack/react-virtual --save
 ```
 
 or
 
 ```sh
-yarn add react-virtual
+yarn add @tanstack/react-virtual
 ```

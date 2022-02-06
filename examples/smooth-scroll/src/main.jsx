@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 
 import './index.css'
 
-import { useVirtual } from 'react-virtual'
+import { useVirtual } from '@tanstack/react-virtual'
 
 function easeInOutQuint(t) {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t

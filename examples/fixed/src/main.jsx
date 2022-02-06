@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 
 import './index.css'
 
-import { useVirtual } from 'react-virtual'
+import { useVirtual } from '@tanstack/react-virtual'
 
 function App() {
   return (

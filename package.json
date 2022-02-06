@@ -1,6 +1,6 @@
 {
   "private": true,
-  "repository": "https://github.com/tannerlinsley/react-virtual.git",
+  "repository": "https://github.com/tanstack/react-virtual.git",
   "scripts": {
     "linkAll": "lerna exec 'yarn link'",
     "unlinkAll": "lerna exec 'yarn unlink'",

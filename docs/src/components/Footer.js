@@ -41,7 +41,7 @@ export const Footer = props => {
             <ul className="mt-4">
               <li className="mt-4">
                 <a
-                  href="https://github.com/tannerlinsley/react-virtual/discussions"
+                  href="https://github.com/tanstack/react-virtual/discussions"
                   className="text-base leading-6 text-gray-500 hover:text-gray-900"
                 >
                   Forum & Support
@@ -65,7 +65,7 @@ export const Footer = props => {
               </li>
               <li className="mt-4">
                 <a
-                  href="https://github.com/tannerlinsley/react-virtual/releases"
+                  href="https://github.com/tanstack/react-virtual/releases"
                   className="text-base leading-6 text-gray-500 hover:text-gray-900"
                 >
                   Releases
@@ -74,12 +74,12 @@ export const Footer = props => {
               <li className="mt-4">
                 <a
                   className="github-button"
-                  href="https://github.com/tannerlinsley/react-virtual"
+                  href="https://github.com/tanstack/react-virtual"
                   data-color-scheme="no-preference: light; light: light; dark: dark;"
                   data-icon="octicon-star"
                   data-size="large"
                   data-show-count="true"
-                  aria-label="Star tannerlinsley/react-virtual on GitHub"
+                  aria-label="Star tanstack/react-virtual on GitHub"
                 >
                   Star
                 </a>

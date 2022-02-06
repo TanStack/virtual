@@ -5,7 +5,7 @@ import { useInfiniteQuery } from 'react-query'
 
 import './index.css'
 
-import { useVirtual } from 'react-virtual'
+import { useVirtual } from '@tanstack/react-virtual'
 
 // axios override to fake "get" a website
 // delete lines 9-36 if you are reusing this code outside of this demo

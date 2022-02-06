@@ -4,12 +4,12 @@ title: Sticky
 toc: false
 ---
 
-- [Open in CodeSandbox](https://codesandbox.io/s/github/tannerlinsley/react-virtual/tree/master/examples/sticky)
-- [View Source](https://github.com/tannerlinsley/react-virtual/tree/master/examples/sticky)
+- [Open in CodeSandbox](https://codesandbox.io/s/github/tanstack/react-virtual/tree/master/examples/sticky)
+- [View Source](https://github.com/tanstack/react-virtual/tree/master/examples/sticky)
 
 <iframe
-  src="https://codesandbox.io/embed/github/tannerlinsley/react-virtual/tree/master/examples/sticky?autoresize=1&fontsize=14&theme=dark"
-  title="tannerlinsley/react-virtual: sticky"
+  src="https://codesandbox.io/embed/github/tanstack/react-virtual/tree/master/examples/sticky?autoresize=1&fontsize=14&theme=dark"
+  title="tanstack/react-virtual: sticky"
   sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
   style={{
     width: '100%',
