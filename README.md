@@ -1,4 +1,4 @@
-![React Virtual Header](https://github.com/tanstack/react-virtual/raw/master/media/repo-dark.png)
+![React Virtual Header](https://github.com/tanstack/react-virtual/raw/main/media/repo-dark.png)
 
 Hooks for virtualizing scrollable elements in React
 
