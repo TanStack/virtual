@@ -1,4 +1,4 @@
-![React Virtual Header](https://github.com/tannerlinsley/react-virtual/raw/master/media/repo-dark.png)
+![React Virtual Header](https://github.com/tanstack/react-virtual/raw/master/media/repo-dark.png)
 
 Hooks for virtualizing scrollable elements in React
 
@@ -15,7 +15,7 @@ Hooks for virtualizing scrollable elements in React
   <img alt="Join the community on Spectrum" src="https://withspectrum.github.io/badge/badge.svg" />
 </a>
 <a href="https://github.com/react-virtual/react-virtual" target="\_parent">
-  <img alt="" src="https://img.shields.io/github/stars/tannerlinsley/react-virtual.svg?style=social&label=Star" />
+  <img alt="" src="https://img.shields.io/github/stars/tanstack/react-virtual.svg?style=social&label=Star" />
 </a>
 <a href="https://twitter.com/tannerlinsley" target="\_parent">
   <img alt="" src="https://img.shields.io/twitter/follow/tannerlinsley.svg?style=social&label=Follow" />
