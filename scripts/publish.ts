@@ -44,12 +44,14 @@ async function run() {
   remoteURL = remoteURL.substring(0, remoteURL.indexOf('.git'))
 
   // Get tags
-  let tags: string[] = execSync('git tag').toString().split('\n')
+  let tags: string[] = execSync('git tag')
+    .toString()
+    .split('\n')
 
   // Filter tags to our branch/pre-release combo
   tags = tags
     .filter(semver.valid)
-    .filter((tag) => {
+    .filter(tag => {
       if (isLatestBranch) {
         return semver.prerelease(tag) == null
       }
@@ -98,16 +100,16 @@ async function run() {
         _: range,
       })
 
-      streamToArray(strm, function (err: any, arr: any[]) {
+      streamToArray(strm, function(err: any, arr: any[]) {
         if (err) return reject(err)
 
         Promise.all(
-          arr.map(async (d) => {
+          arr.map(async d => {
             const parsed = await parseCommit(d.subject)
 
             return { ...d, parsed }
           }),
-        ).then((res) => resolve(res.filter(Boolean)))
+        ).then(res => resolve(res.filter(Boolean)))
       })
     })
   ).filter((commit: Commit) => {
@@ -157,8 +159,8 @@ async function run() {
   const changedPackages = RELEASE_ALL
     ? packages
     : changedFiles.reduce((changedPackages, file) => {
-        const pkg = packages.find((p) => file.startsWith(p.srcDir))
-        if (pkg && !changedPackages.find((d) => d.name === pkg.name)) {
+        const pkg = packages.find(p => file.startsWith(p.srcDir))
+        if (pkg && !changedPackages.find(d => d.name === pkg.name)) {
           changedPackages.push(pkg)
         }
         return changedPackages
@@ -167,7 +169,10 @@ async function run() {
   if (!process.env.TAG) {
     if (recommendedReleaseLevel === 2) {
       console.log(
-        `Major versions releases must be tagged and released manually.`,
+        `Major versions releases must be tagged and released manually.
+Use the following NPM script to release all packages on a specific version:
+
+  CI=true TAG=v0.0.0 yarn cipublish`,
       )
       return
     }
@@ -184,7 +189,7 @@ async function run() {
     return (a: TItem, b: TItem) => {
       let i = 0
 
-      sorters.some((sorter) => {
+      sorters.some(sorter => {
         const sortedA = sorter(a)
         const sortedB = sorter(b)
         if (sortedA > sortedB) {
@@ -233,13 +238,12 @@ async function run() {
           .reverse()
           .map(async ([type, commits]) => {
             return Promise.all(
-              commits.map(async (commit) => {
+              commits.map(async commit => {
                 let username = ''
 
                 if (process.env.GH_TOKEN) {
-                  const query = `${
-                    commit.author.email ?? commit.committer.email
-                  }`
+                  const query = `${commit.author.email ??
+                    commit.committer.email}`
 
                   const res = await axios.get(
                     'https://api.github.com/search/users',
@@ -268,9 +272,9 @@ async function run() {
                     : `by ${commit.author.name ?? commit.author.email}`
                 }`
               }),
-            ).then((commits) => [type, commits] as const)
+            ).then(commits => [type, commits] as const)
           }),
-      ).then((groups) => {
+      ).then(groups => {
         return groups
           .map(([type, commits]) => {
             return [`### ${capitalize(type)}`, commits.join('\n')].join('\n\n')
@@ -307,7 +311,7 @@ async function run() {
     `## Changes`,
     changelogCommitsMd,
     `## Packages`,
-    changedPackages.map((d) => `- ${d.name}@${version}`).join('\n'),
+    changedPackages.map(d => `- ${d.name}@${version}`).join('\n'),
   ].join('\n\n')
 
   console.log('Generating changelog...')
@@ -332,9 +336,9 @@ async function run() {
   for (const pkg of changedPackages) {
     console.log(`  Updating ${pkg.name} version to ${version}...`)
 
-    await updatePackageConfig(pkg.name, (config) => {
+    await updatePackageConfig(pkg.name, config => {
       config.version = version
-      pkg.peerDependencies?.forEach((peerDep) => {
+      pkg.peerDependencies?.forEach(peerDep => {
         if (config.peerDependencies?.[peerDep]) {
           console.log(
             `    Updating peerDependency on ${pkg.name} to version ${version}.`,
@@ -353,8 +357,8 @@ async function run() {
 
     console.log(`  Updating example ${example} to version ${version}...`)
 
-    await updateExamplesPackageConfig(example, (config) => {
-      changedPackages.forEach((pkg) => {
+    await updateExamplesPackageConfig(example, config => {
+      changedPackages.forEach(pkg => {
         if (config.dependencies?.[pkg.name]) {
           console.log(
             `    Updating dependency ${pkg.name} to version ${version}...`,
@@ -388,7 +392,7 @@ async function run() {
 
   // Ensure packages are up to date and ready
   await Promise.all(
-    changedPackages.map(async (pkg) => {
+    changedPackages.map(async pkg => {
       let file = path.join(
         rootDir,
         'packages',
@@ -403,7 +407,7 @@ async function run() {
         )
       }
 
-      ;(pkg.peerDependencies ?? []).forEach((peerDependency) => {
+      ;(pkg.peerDependencies ?? []).forEach(peerDependency => {
         if (json.peerDependencies?.[peerDependency]) {
           if (json.peerDependencies[peerDependency] !== version) {
             throw new Error(
@@ -419,7 +423,7 @@ async function run() {
   console.log(`Publishing all packages to npm with tag "${npmTag}"`)
 
   // Publish each package
-  changedPackages.map((pkg) => {
+  changedPackages.map(pkg => {
     let packageDir = path.join(rootDir, 'packages', getPackageDir(pkg.name))
     const cmd = `cd ${packageDir} && yarn publish --tag ${npmTag} --access=public`
     console.log(
@@ -461,7 +465,7 @@ async function run() {
   console.log(`All done!`)
 }
 
-run().catch((err) => {
+run().catch(err => {
   console.log(err)
   process.exit(1)
 })
