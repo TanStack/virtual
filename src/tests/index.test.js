@@ -172,10 +172,15 @@ describe('useVirtual list', () => {
     expect(result.current.virtualItems.length).toBe(4)
   })
   it('should handle scroll in window mode', () => {
+    let offset = 0
+    const el = document.createElement('div')
+    el.getBoundingClientRect = jest.fn(() => {
+      return { top: offset * -1 }
+    })
     const { result } = renderHook(() =>
       useVirtualImpl({
         size: 100,
-        parentRef: React.useRef(document.createElement('div')),
+        parentRef: React.useRef(el),
         windowRef: React.useRef(window),
         useWindowObserver: () => ({ height: 200, width: '100%' }),
         overscan: 0,
@@ -184,7 +189,8 @@ describe('useVirtual list', () => {
     )
     expect(result.current.virtualItems[0].index).toBe(0)
     act(() => {
-      fireEvent.scroll(window, { target: { scrollY: 100 } })
+      offset = 100
+      fireEvent.scroll(window, { target: { scrollY: offset } })
     })
     expect(result.current.virtualItems[0].index).toBe(2)
   })

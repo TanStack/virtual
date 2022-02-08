@@ -32,6 +32,16 @@ interface Rect {
   height: number
 }
 
+declare function useRect<T extends HTMLElement>(
+  ref: React.RefObject<T>,
+  initialRect?: Rect
+): Rect
+
+declare function useWindowRect(
+  ref: React.RefObject<Window>,
+  initialRect?: Rect
+): Rect
+
 interface ScrollOptions<T> {
   parentRef: React.RefObject<T>
   windowRef?: React.RefObject<Window>
@@ -76,4 +86,10 @@ declare function useVirtual<T>(
   measure: () => void
 }
 
-export { defaultRangeExtractor, useVirtual, useDefaultScroll }
+export {
+  defaultRangeExtractor,
+  useVirtual,
+  useDefaultScroll,
+  useRect,
+  useWindowRect,
+}

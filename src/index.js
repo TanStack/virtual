@@ -2,6 +2,8 @@ import React from 'react'
 import useRect from './useRect'
 import useIsomorphicLayoutEffect from './useIsomorphicLayoutEffect'
 
+export { useRect }
+
 const defaultEstimateSize = () => 50
 
 const defaultKeyExtractor = index => index
@@ -84,7 +86,10 @@ export const useElementScroll = ({
   }
 }
 
-const useWindowRect = (windowRef, initialRect = { width: 0, height: 0 }) => {
+export const useWindowRect = (
+  windowRef,
+  initialRect = { width: 0, height: 0 }
+) => {
   const [rect, setRect] = React.useState(initialRect)
   const [element, setElement] = React.useState(windowRef.current)
 
@@ -129,9 +134,8 @@ export const useWindowScroll = ({
   const [scrollOffset, setScrollOffset] = React.useState(0)
   const [element, setElement] = React.useState(windowRef.current)
 
-  const parentOffsetRef = React.useRef(0)
-
   const rectKey = horizontal ? 'left' : 'top'
+
   const scrollKey = horizontal ? 'scrollX' : 'scrollY'
 
   useIsomorphicLayoutEffect(() => {
@@ -140,20 +144,15 @@ export const useWindowScroll = ({
 
   useIsomorphicLayoutEffect(() => {
     if (!element) {
-      parentOffsetRef.current = 0
       setScrollOffset(0)
 
       return
     }
 
-    if (parentRef.current) {
-      parentOffsetRef.current =
-        element[scrollKey] + parentRef.current.getBoundingClientRect()[rectKey]
-    }
-
     const onScroll = () => {
-      const offset = element[scrollKey] - parentOffsetRef.current
-      setScrollOffset(offset)
+      setScrollOffset(
+        Math.max(0, parentRef.current.getBoundingClientRect()[rectKey] * -1)
+      )
     }
 
     onScroll()
@@ -166,19 +165,20 @@ export const useWindowScroll = ({
     return () => {
       element.removeEventListener('scroll', onScroll)
     }
-  }, [element, scrollKey, rectKey, parentRef])
+  }, [element, rectKey, parentRef])
 
   const scrollToFn = React.useCallback(
     (offset, reason) => {
       if (windowRef.current) {
         const delta = ['ToIndex', 'SizeChanged'].includes(reason)
-          ? parentOffsetRef.current
+          ? windowRef.current[scrollKey] +
+            parentRef.current.getBoundingClientRect()[rectKey]
           : 0
 
         windowRef.current.scrollTo({ [rectKey]: offset + delta })
       }
     },
-    [windowRef, rectKey]
+    [windowRef, parentRef, scrollKey, rectKey]
   )
 
   const useMeasureParent = useWindowObserver || useWindowRect
@@ -304,9 +304,9 @@ export function useVirtual({
         start,
         end,
         overscan,
-        size: measurements.length,
+        size,
       }),
-    [start, end, overscan, measurements.length, rangeExtractor]
+    [start, end, overscan, size, rangeExtractor]
   )
 
   const measureSizeRef = React.useRef(measureSize)
