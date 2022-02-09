@@ -5,7 +5,5 @@
     "outDir": "./build/types"
   },
   "files": ["src/index.tsx"],
-  "include": [
-    "src"
-  ]
+  "include": ["src", "__tests__"]
 }
