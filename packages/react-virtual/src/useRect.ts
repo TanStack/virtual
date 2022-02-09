@@ -1,58 +1,70 @@
-import React from 'react'
+import * as React from 'react'
 import observeRect from '@reach/observe-rect'
-import { useIsomorphicLayoutEffect } from './useIsomorphicLayoutEffect'
 
 export interface Rect {
   width: number
   height: number
 }
 
-function rectReducer(state: Rect, action: { rect: Rect }) {
-  const rect = action.rect
-  if (state.height !== rect.height || state.width !== rect.width) {
-    return rect
-  }
-  return state
-}
-
 export const useRect = <T extends HTMLElement>(
-  nodeRef: React.RefObject<T>,
+  ref: React.RefObject<T> | React.RefObject<Window>,
   initialRect: Rect = { width: 0, height: 0 },
 ) => {
-  const [element, setElement] = React.useState(nodeRef.current)
-  const [rect, dispatch] = React.useReducer(rectReducer, initialRect)
+  const [rect, setRect] = React.useState<Rect>(initialRect)
 
-  const initialRectSet = React.useRef(false)
-
-  useIsomorphicLayoutEffect(() => {
-    if (nodeRef.current !== element) {
-      setElement(nodeRef.current)
-    }
-  })
-
-  useIsomorphicLayoutEffect(() => {
-    if (element && !initialRectSet.current) {
-      initialRectSet.current = true
-      const rect = element.getBoundingClientRect()
-      dispatch({ rect })
-    }
-  }, [element])
+  const updateRect = React.useCallback((next: Rect) => {
+    setRect((prev) =>
+      prev.height !== next.height || prev.width !== next.width ? next : prev,
+    )
+  }, [])
 
   React.useEffect(() => {
+    const element =
+      ref.current && 'getBoundingClientRect' in ref.current ? ref.current : null
+
     if (!element) {
       return
     }
 
-    const observer = observeRect(element, (rect) => {
-      dispatch({ rect })
-    })
+    const observer = observeRect(element, updateRect)
 
     observer.observe()
+
+    updateRect(element.getBoundingClientRect())
 
     return () => {
       observer.unobserve()
     }
-  }, [element])
+  }, [ref, updateRect])
+
+  React.useEffect(() => {
+    const window =
+      ref.current && !('getBoundingClientRect' in ref.current)
+        ? ref.current
+        : null
+
+    if (!window) {
+      return
+    }
+
+    function resizeHandler() {
+      if (!window) {
+        return
+      }
+
+      updateRect({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+    }
+    resizeHandler()
+
+    window.addEventListener('resize', resizeHandler)
+
+    return () => {
+      window.removeEventListener('resize', resizeHandler)
+    }
+  }, [ref, updateRect])
 
   return rect
 }

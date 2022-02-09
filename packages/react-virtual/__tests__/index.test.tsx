@@ -6,6 +6,12 @@ import { useVirtual, Range } from '../src/index'
 let renderer: jest.Mock<undefined, []>
 let useDynamic = false
 
+const scrollTo = (offset: number) => {
+  fireEvent.scroll(screen.getByTestId('scroller'), {
+    target: { scrollTop: offset },
+  })
+}
+
 interface ListProps {
   size?: number
   overscan?: number
@@ -80,7 +86,7 @@ test('should render', () => {
   expect(screen.queryByText('Row 4')).toBeInTheDocument()
   expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(1)
+  expect(renderer).toHaveBeenCalledTimes(2)
 })
 
 test('should render with overscan', () => {
@@ -90,6 +96,28 @@ test('should render with overscan', () => {
   expect(screen.queryByText('Row 3')).toBeInTheDocument()
   expect(screen.queryByText('Row 4')).not.toBeInTheDocument()
 
+  expect(renderer).toHaveBeenCalledTimes(2)
+})
+
+test('should only re-render if scroll offset change range', () => {
+  render(<List overscan={0} />)
+
+  const expectRange = () => {
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 3')).toBeInTheDocument()
+    expect(screen.queryByText('Row 4')).toBeInTheDocument()
+    expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
+  }
+
+  renderer.mockReset()
+  scrollTo(10)
+  expectRange()
+  expect(renderer).toHaveBeenCalledTimes(1)
+  renderer.mockReset()
+
+  scrollTo(15)
+  expectRange()
+  // why it's 1?
   expect(renderer).toHaveBeenCalledTimes(1)
 })
 
@@ -105,7 +133,7 @@ test('should render given dynamic size', () => {
   expect(screen.queryByText('Row 8')).toBeInTheDocument()
   expect(screen.queryByText('Row 9')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(4)
+  expect(renderer).toHaveBeenCalledTimes(8)
   mock.mockRestore()
 })
 
@@ -122,13 +150,22 @@ test('should render given dynamic size after scroll', () => {
   expect(screen.queryByText('Row 8')).toBeInTheDocument()
   expect(screen.queryByText('Row 9')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(4)
+  expect(renderer).toHaveBeenCalledTimes(8)
   renderer.mockReset()
 
-  fireEvent.scroll(screen.getByTestId('scroller'), {
-    target: { scrollTop: 75 },
-  })
+  scrollTo(1)
+  expect(screen.queryByText('Row 0')).toBeInTheDocument()
+  expect(screen.queryByText('Row 9')).toBeInTheDocument()
+  expect(screen.queryByText('Row 10')).not.toBeInTheDocument()
+  expect(renderer).toHaveBeenCalledTimes(3)
+  renderer.mockReset()
 
+  scrollTo(2)
+  scrollTo(3)
+  expect(renderer).toHaveBeenCalledTimes(0)
+  renderer.mockReset()
+
+  scrollTo(75)
   expect(screen.queryByText('Row 1')).not.toBeInTheDocument()
   expect(screen.queryByText('Row 2')).toBeInTheDocument()
   expect(screen.queryByText('Row 11')).toBeInTheDocument()
