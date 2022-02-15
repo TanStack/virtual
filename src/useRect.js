@@ -17,7 +17,20 @@ export default function useRect(
   })
 
   useIsomorphicLayoutEffect(() => {
-    if (element && !initialRectSet.current) {
+    /**
+     * React native
+     */
+     if (navigator.product === 'ReactNative' && element && !initialRectSet.current) {
+      initialRectSet.current = true
+      setTimeout(() => element.measure((fx, fy, width, height) => {
+        dispatch({ rect: { width, height } })
+      }), 0)
+    }
+
+    /**
+     * Browser
+     */
+    if (navigator.product !== 'ReactNative' && element && !initialRectSet.current) {
       initialRectSet.current = true
       const rect = element.getBoundingClientRect()
       dispatch({ rect })
@@ -25,7 +38,8 @@ export default function useRect(
   }, [element])
 
   React.useEffect(() => {
-    if (!element) {
+    // * TODO: Handle react native support for observeRect
+    if (navigator.product === 'ReactNative' || !element) {
       return
     }
 
