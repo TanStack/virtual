@@ -281,6 +281,7 @@ export function useVirtual({
     scrollToOffset,
     scrollToIndex,
     measure,
+    scrollOffset,
   }
 }
 

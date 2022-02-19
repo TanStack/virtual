@@ -24,6 +24,7 @@ function List({
 
   return (
     <>
+      <div data-testid="scrollOffset">{rowVirtualizer.scrollOffset}</div>
       <div
         ref={parentRef}
         style={{
@@ -134,5 +135,20 @@ describe('useVirtual list', () => {
     expect(screen.queryByText('Row 0')).toBeInTheDocument()
     expect(screen.queryByText('Row 1')).toBeInTheDocument()
     expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+  })
+  it('should update scrollOffset', async () => {
+    const onRef = virtualRow => el => {
+      if (el) {
+        jest.spyOn(el, 'offsetHeight', 'get').mockImplementation(() => 25)
+      }
+      virtualRow.measureRef(el)
+    }
+    render(<List {...props} onRef={onRef} />)
+
+    expect(screen.queryByTestId('scrollOffset')).toHaveTextContent(/^0$/)
+
+    fireEvent.scroll(parentRef.current, { target: { scrollTop: 100 } })
+
+    expect(screen.queryByTestId('scrollOffset')).toHaveTextContent(/^100$/)
   })
 })

@@ -14,6 +14,7 @@ const {
   totalSize,
   scrollToIndex,
   scrollToOffset,
+  scrollOffset,
 } = useVirtual({
   size,
   parentRef,
@@ -119,3 +120,7 @@ const {
     - `center` places the offset in the center of the visible scroll area
     - `end` places the offset at the bottom/right of the visible scroll area
     - `auto` brings the offset into the visible scroll area either at the start or end, depending on which is closer. If the offset is already in view, it is placed at the `top/left` of the visible scroll area.
+- `scrollOffset: number`
+  - The scroll offset of the virtualizer at the time of rendering.
+  - Can be used to implement scroll position dependent functionality, such as pagination UI.
+  - `useVirtual` causes the host component to re-render on every scroll event. This offset is returned so you can implement scroll offset dependent functionality without adding second onScroll event which would result in double rendering and tearing.
