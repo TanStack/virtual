@@ -220,6 +220,8 @@ export function useVirtual({
   overscan = 1,
   paddingStart = 0,
   paddingEnd = 0,
+  scrollPaddingStart = 0,
+  scrollPaddingEnd = 0,
   parentRef,
   windowRef,
   horizontal,
@@ -369,9 +371,9 @@ export function useVirtual({
       const { scrollOffset, outerSize } = latestRef.current
 
       if (align === 'auto') {
-        if (toOffset <= scrollOffset) {
+        if (toOffset <= scrollOffset + scrollPaddingStart) {
           align = 'start'
-        } else if (toOffset >= scrollOffset + outerSize) {
+        } else if (toOffset >= scrollOffset + outerSize - scrollPaddingEnd) {
           align = 'end'
         } else {
           align = 'start'
@@ -379,14 +381,19 @@ export function useVirtual({
       }
 
       if (align === 'start') {
-        scrollTo(toOffset, reason)
+        scrollTo(toOffset - scrollPaddingStart, reason)
       } else if (align === 'end') {
-        scrollTo(toOffset - outerSize, reason)
+        scrollTo(toOffset - outerSize + scrollPaddingEnd, reason)
       } else if (align === 'center') {
-        scrollTo(toOffset - outerSize / 2, reason)
+        scrollTo(
+          toOffset -
+            scrollPaddingStart -
+            (outerSize - scrollPaddingStart - scrollPaddingEnd) / 2,
+          reason
+        )
       }
     },
-    [scrollTo]
+    [scrollPaddingEnd, scrollPaddingStart, scrollTo]
   )
 
   const tryScrollToIndex = React.useCallback(
@@ -400,9 +407,9 @@ export function useVirtual({
       }
 
       if (align === 'auto') {
-        if (measurement.end >= scrollOffset + outerSize) {
+        if (measurement.end >= scrollOffset + outerSize - scrollPaddingEnd) {
           align = 'end'
-        } else if (measurement.start <= scrollOffset) {
+        } else if (measurement.start <= scrollOffset + scrollPaddingStart) {
           align = 'start'
         } else {
           return

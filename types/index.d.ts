@@ -71,6 +71,8 @@ export interface Options<T> extends ScrollOptions<T> {
   ) => void
   paddingStart?: number
   paddingEnd?: number
+  scrollPaddingStart?: number
+  scrollPaddingEnd?: number
   keyExtractor?: (index: number) => Key
   rangeExtractor?: (range: Range) => number[]
   useScroll?: typeof useDefaultScroll
