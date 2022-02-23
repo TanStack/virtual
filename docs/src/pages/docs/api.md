@@ -66,6 +66,14 @@ const {
 - `paddingEnd: Integer`
   - Defaults to `0`
   - The amount of padding in pixels to add to the end of the virtual list
+- `scrollPaddingStart: Integer`
+  - Defaults to `0`
+  - The offset in pixels from the top of the viewport at which the optimal viewing area starts
+  - The scrollTo functions will avoid placing things above this
+- `scrollPaddingEnd: Integer`
+  - Defaults to `0`
+  - The offset in pixels from the bottom of the viewport at which the optimal viewing area starts
+  - The scrollTo functions will avoid placing things below this
 - `keyExtractor: Function(index) => String | Integer`
   - Optional
   - This function receives the index of each item and should return the item's unique ID.
