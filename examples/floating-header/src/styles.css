@@ -1,0 +1,41 @@
+html {
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+.List {
+  border: 1px solid #e6e4dc;
+  max-width: 100%;
+}
+
+.FloatingHeader,
+.FloatingFooter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.FloatingHeader {
+  background-color: #e3e6dc;
+  position: sticky;
+  top: 0;
+  height: 70px;
+  z-index: 1;
+}
+.FloatingFooter {
+  background-color: #e3e6dc;
+  position: sticky;
+  height: 35px;
+  bottom: 0;
+  z-index: 1;
+}
+
+.ListItemEven,
+.ListItemOdd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ListItemEven {
+  background-color: #e6e4dc;
+}
