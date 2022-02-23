@@ -10,9 +10,14 @@ function List({
   height = 200,
   width = 200,
   onRef,
+  rowVirtualizerRef,
   parentRef,
   useVirtual,
   rangeExtractor,
+  paddingStart,
+  paddingEnd,
+  scrollPaddingStart,
+  scrollPaddingEnd,
 }) {
   const rowVirtualizer = useVirtual({
     size,
@@ -20,7 +25,14 @@ function List({
     overscan,
     useObserver: () => ({ height, width }),
     rangeExtractor,
+    paddingStart,
+    paddingEnd,
+    scrollPaddingStart,
+    scrollPaddingEnd,
   })
+  if (rowVirtualizerRef) {
+    rowVirtualizerRef.current = rowVirtualizer
+  }
 
   return (
     <>
@@ -128,6 +140,15 @@ describe('useVirtual list', () => {
     )
     expect(screen.queryByText('Row 12')).not.toBeInTheDocument()
   })
+  it('should render with padding', () => {
+    render(<List {...props} overscan={0} paddingStart={100} />)
+
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 1')).toBeInTheDocument()
+    expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+
+    expect(useVirtual).toHaveBeenCalledTimes(3)
+  })
   it('should use rangeExtractor', () => {
     render(<List {...props} rangeExtractor={() => [0, 1]} />)
 
@@ -157,6 +178,36 @@ describe('useVirtual list', () => {
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     rerender()
     expect(result.current.virtualItems[3].index).toBe(5)
+  })
+  it('should scroll with padding', async () => {
+    const scrollToFn = jest.fn(offset => {
+      // scrollTop doesn't work in jsdom  so override it with a scroll event
+      fireEvent.scroll(parentRef.current, { target: { scrollTop: offset } })
+    })
+    const rowVirtualizerRef = React.createRef()
+    render(
+      <List
+        {...props}
+        useVirtual={options => useVirtual({ ...options, scrollToFn })}
+        rowVirtualizerRef={rowVirtualizerRef}
+        overscan={0}
+        paddingStart={100}
+        scrollPaddingStart={100}
+      />
+    )
+
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 1')).toBeInTheDocument()
+    expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+
+    rowVirtualizerRef.current.scrollToIndex(1, { align: 'start' })
+
+    expect(screen.queryByText('Row 1')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Row 2')).toBeInTheDocument())
+    expect(screen.queryByText('Row 2')).toBeInTheDocument()
+    expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
+
+    expect(useVirtual).toHaveBeenCalledTimes(5)
   })
   it('should allow to pass a window', () => {
     const { result } = renderHook(() =>
