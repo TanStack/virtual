@@ -425,7 +425,7 @@ export function useVirtual({
 
       scrollToOffset(toOffset, { align, ...rest }, 'ToIndex')
     },
-    [scrollToOffset, size]
+    [scrollPaddingEnd, scrollPaddingStart, scrollToOffset, size]
   )
 
   const scrollToIndex = React.useCallback(
