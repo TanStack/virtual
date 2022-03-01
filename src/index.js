@@ -13,12 +13,25 @@ const defaultMeasureSize = (el, horizontal) => {
 }
 
 export const defaultRangeExtractor = range => {
-  const start = Math.max(range.start - range.overscan, 0)
-  const end = Math.min(range.end + range.overscan, range.size - 1)
+  const start = Math.min(range.start + range.overscan, range.size - 1)
+  const end = Math.min(Math.max(range.end - range.overscan, 0), start)
 
   const arr = []
 
-  for (let i = start; i <= end; i++) {
+  for (let i = start; i >= end; i--) {
+    arr.push(i)
+  }
+
+  return arr
+}
+
+export const defaultRangeExtractorInverted = range => {
+  const start = Math.min(range.start + range.overscan, range.size - 1)
+  const end = Math.min(Math.max(range.end - range.overscan, 0), start)
+
+  const arr = []
+
+  for (let i = start; i >= end; i--) {
     arr.push(i)
   }
 
@@ -40,10 +53,15 @@ export function useVirtual({
   scrollOffsetFn,
   keyExtractor = defaultKeyExtractor,
   measureSize = defaultMeasureSize,
-  rangeExtractor = defaultRangeExtractor,
+  rangeExtractor,
+  inverted = false,
 }) {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
+  
+  if (!rangeExtractor) {
+    rangeExtractor = !inverted ? defaultRangeExtractor : defaultRangeExtractorInverted
+  }
 
   const latestRef = React.useRef({
     scrollOffset: 0,
@@ -92,19 +110,33 @@ export function useVirtual({
 
     const measurements = latestRef.current.measurements.slice(0, min)
 
-    for (let i = min; i < size; i++) {
-      const key = keyExtractor(i)
-      const measuredSize = measuredCache[key]
-      const start = measurements[i - 1] ? measurements[i - 1].end : paddingStart
-      const size =
-        typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
-      const end = start + size
-      measurements[i] = { index: i, start, size, end, key }
+    if (!inverted) {
+      for (let i = min; i < size; i++) {
+        const key = keyExtractor(i)
+        const measuredSize = measuredCache[key]
+        const start = measurements[i - 1] ? measurements[i - 1].end : paddingStart
+        const size =
+          typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
+        const end = start + size
+        measurements[i] = { index: i, start, size, end, key }
+      }
+    }
+
+    else {
+      for (let i = size - 1; i >= min; i--) {
+        const key = keyExtractor(i)
+        const measuredSize = measuredCache[key]
+        const start = measurements[i + 1] ? measurements[i + 1].end : paddingStart
+        const size =
+          typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
+        const end = start + size
+        measurements[i] = { index: i, start, size, end, key }
+      }
     }
     return measurements
   }, [estimateSize, measuredCache, paddingStart, size, keyExtractor])
 
-  const totalSize = (measurements[size - 1]?.end || paddingStart) + paddingEnd
+  const totalSize = (measurements[0]?.end || paddingStart) + paddingEnd
 
   latestRef.current.measurements = measurements
   latestRef.current.totalSize = totalSize
@@ -141,7 +173,7 @@ export function useVirtual({
     }
   }, [element, scrollKey])
 
-  const { start, end } = calculateRange(latestRef.current)
+  const { start, end } = (!inverted ? calculateRange : calculateRangeInverted)(latestRef.current)
 
   const indexes = React.useMemo(
     () =>
@@ -305,6 +337,27 @@ const findNearestBinarySearch = (low, high, getCurrentValue, value) => {
   }
 }
 
+const findNearestBinarySearchInverted = (low, high, getCurrentValue, value) => {
+  while (high <= low) {
+    let middle = ((low + high) / 2) | 0
+    let currentValue = getCurrentValue(middle)
+
+    if (currentValue < value) {
+      low = middle - 1
+    } else if (currentValue > value) {
+      high = middle + 1
+    } else {
+      return middle
+    }
+  }
+
+  if (low > 0) {
+    return low + 1
+  } else {
+    return 0
+  }
+}
+
 function calculateRange({ measurements, outerSize, scrollOffset }) {
   const size = measurements.length - 1
   const getOffset = index => measurements[index].start
@@ -314,6 +367,20 @@ function calculateRange({ measurements, outerSize, scrollOffset }) {
 
   while (end < size && measurements[end].end < scrollOffset + outerSize) {
     end++
+  }
+
+  return { start, end }
+}
+
+function calculateRangeInverted({ measurements, outerSize, scrollOffset }) {
+  const size = measurements.length - 1
+  const getOffset = index => measurements[index].start
+
+  let start = findNearestBinarySearchInverted(size, 0, getOffset, scrollOffset)
+  let end = start
+
+  while (end > 0 && measurements[end].end < scrollOffset + outerSize) {
+    end--
   }
 
   return { start, end }
