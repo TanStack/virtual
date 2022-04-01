@@ -1,11 +1,11 @@
 type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
-interface ScrollToOptions {
+export interface ScrollToOptions {
   align: ScrollAlignment
 }
 
-interface ScrollToOffsetOptions extends ScrollToOptions {}
-interface ScrollToIndexOptions extends ScrollToOptions {}
+export interface ScrollToOffsetOptions extends ScrollToOptions {}
+export interface ScrollToIndexOptions extends ScrollToOptions {}
 
 type Key = number | string
 
