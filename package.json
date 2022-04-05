@@ -44,7 +44,7 @@
     "@reach/observe-rect": "^1.1.0"
   },
   "peerDependencies": {
-    "react": "^16.6.3 || ^17.0.0"
+    "react": "^16.6.3 || ^17.0.0 || ^18.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.6",
