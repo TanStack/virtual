@@ -37,7 +37,7 @@ export default [
   {
     input: 'src/index.js',
     output: {
-      name: 'ReactQuery',
+      name: 'ReactVirtual',
       file: 'dist/react-virtual.development.js',
       format: 'umd',
       sourcemap: true,
