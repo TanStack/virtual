@@ -66,7 +66,7 @@ const {
 - `paddingEnd: Integer`
   - Defaults to `0`
   - The amount of padding in pixels to add to the end of the virtual list
-  - `onScrollElement: React.useRef(DOMElement)`
+- `onScrollElement: React.useRef(DOMElement)`
   - Optional
   - Allows using a different element to bind the `onScroll` event to
 - `scrollOffsetFn: Function(event?: Event) => number`
