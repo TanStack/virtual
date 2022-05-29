@@ -169,10 +169,7 @@ async function run() {
   if (!process.env.TAG) {
     if (recommendedReleaseLevel === 2) {
       console.log(
-        `Major versions releases must be tagged and released manually.
-Use the following NPM script to release all packages on a specific version:
-
-  CI=true TAG=v0.0.0 yarn cipublish`,
+        `Major versions releases must be tagged and released manually.`,
       )
       return
     }
@@ -441,7 +438,7 @@ Use the following NPM script to release all packages on a specific version:
     // Stringify the markdown to excape any quotes
     execSync(
       `gh release create v${version} ${
-        branchName ? '--prerelease' : ''
+        isLatestBranch ? '--prerelease' : ''
       } --notes '${changelogMd}'`,
     )
     console.log(`  Github release created.`)

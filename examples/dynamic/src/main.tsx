@@ -26,11 +26,11 @@ function App() {
       <br />
 
       <h3>Rows</h3>
-      <RowVirtualizerDynamic rows={rows} columns={columns} />
+      <RowVirtualizerDynamic rows={rows} />
       <br />
       <br />
       <h3>Columns</h3>
-      <ColumnVirtualizerDynamic rows={rows} columns={columns} />
+      <ColumnVirtualizerDynamic columns={columns} />
       <br />
       <br />
       <h3>Grid</h3>
@@ -40,7 +40,7 @@ function App() {
 }
 
 function RowVirtualizerDynamic({ rows }) {
-  const parentRef = React.useRef()
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtual({
     size: rows.length,
@@ -243,5 +243,5 @@ ReactDOM.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-  document.getElementById('root')
+  document.getElementById('root'),
 )

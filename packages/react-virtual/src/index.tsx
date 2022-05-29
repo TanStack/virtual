@@ -52,13 +52,17 @@ interface Item {
   size: number
 }
 
-export interface VirtualItem extends Item {
-  measureRef: (el: HTMLElement | null) => void
+export interface VirtualItem<TItemElement> extends Item {
+  measureRef: (el: TItemElement | null) => void
 }
 
-export interface Options<T> {
+export interface Options<
+  TParentRef,
+  TItemElement = HTMLElement,
+  TOnScrollElement = TParentRef
+> {
   size: number
-  parentRef: React.RefObject<T>
+  parentRef: React.RefObject<TParentRef>
   estimateSize?: (index: number) => number
   overscan?: number
   horizontal?: boolean
@@ -68,16 +72,20 @@ export interface Options<T> {
   ) => void
   paddingStart?: number
   paddingEnd?: number
-  useObserver?: (ref: React.RefObject<T>, initialRect?: Rect) => Rect
+  useObserver?: (ref: React.RefObject<TParentRef>, initialRect?: Rect) => Rect
   initialRect?: Rect
   keyExtractor?: (index: number) => Key
-  onScrollElement?: React.RefObject<HTMLElement>
+  onScrollElement?: React.RefObject<TOnScrollElement>
   scrollOffsetFn?: (event?: Event) => number
   rangeExtractor?: (range: Range) => number[]
-  measureSize?: (el: HTMLElement, horizontal: boolean) => number
+  measureSize?: (el: TItemElement, horizontal: boolean) => number
 }
 
-export const useVirtual = <T extends HTMLElement>({
+export const useVirtual = <
+  TParentRef extends HTMLElement,
+  TItemElement extends HTMLElement = HTMLElement,
+  TOnScrollElement extends HTMLElement = TParentRef
+>({
   size = 0,
   estimateSize = defaultEstimateSize,
   overscan = 1,
@@ -93,7 +101,13 @@ export const useVirtual = <T extends HTMLElement>({
   keyExtractor = defaultKeyExtractor,
   measureSize = defaultMeasureSize,
   rangeExtractor = defaultRangeExtractor,
-}: Options<T>) => {
+}: Options<TParentRef, TItemElement>): {
+  virtualItems: VirtualItem<TItemElement>[]
+  totalSize: number
+  scrollToOffset: (offset: number, options?: ScrollToOffsetOptions) => void
+  scrollToIndex: (index: number, options?: ScrollToIndexOptions) => void
+  measure: (index: number) => void
+} => {
   const sizeKey = horizontal ? 'width' : 'height'
   const scrollKey = horizontal ? 'scrollLeft' : 'scrollTop'
 
@@ -218,7 +232,7 @@ export const useVirtual = <T extends HTMLElement>({
   const measureSizeRef = React.useRef(measureSize)
   measureSizeRef.current = measureSize
 
-  const virtualItems: VirtualItem[] = React.useMemo(() => {
+  const virtualItems: VirtualItem<TItemElement>[] = React.useMemo(() => {
     const virtualItems = []
 
     for (let k = 0, len = indexes.length; k < len; k++) {
@@ -227,7 +241,7 @@ export const useVirtual = <T extends HTMLElement>({
 
       const item = {
         ...measurement,
-        measureRef: (el: HTMLElement | null) => {
+        measureRef: (el: TItemElement | null) => {
           if (el) {
             const measuredSize = measureSizeRef.current(el, horizontal)
 
@@ -240,7 +254,7 @@ export const useVirtual = <T extends HTMLElement>({
 
               pendingMeasuredCacheIndexesRef.current.push(i)
 
-              setMeasuredCache((old) => ({
+              setMeasuredCache(old => ({
                 ...old,
                 [item.key]: measuredSize,
               }))
