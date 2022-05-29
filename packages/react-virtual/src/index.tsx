@@ -18,9 +18,9 @@ interface ScrollToOptions {
   align: ScrollAlignment
 }
 
-interface ScrollToOffsetOptions extends ScrollToOptions {}
+type ScrollToOffsetOptions = ScrollToOptions
 
-interface ScrollToIndexOptions extends ScrollToOptions {}
+type ScrollToIndexOptions = ScrollToOptions
 
 export interface Range {
   start: number
@@ -372,8 +372,8 @@ const findNearestBinarySearch = (
   value: number,
 ) => {
   while (low <= high) {
-    let middle = ((low + high) / 2) | 0
-    let currentValue = getCurrentValue(middle)
+    const middle = ((low + high) / 2) | 0
+    const currentValue = getCurrentValue(middle)
 
     if (currentValue < value) {
       low = middle + 1
@@ -403,7 +403,7 @@ function calculateRange({
   const size = measurements.length - 1
   const getOffset = (index: number) => measurements[index].start
 
-  let start = findNearestBinarySearch(0, size, getOffset, scrollOffset)
+  const start = findNearestBinarySearch(0, size, getOffset, scrollOffset)
   let end = start
 
   while (end < size && measurements[end].end < scrollOffset + outerSize) {
