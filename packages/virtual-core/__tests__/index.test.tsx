@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 
-import { useVirtual, Range } from '../src/index'
+import { useVirtual, Range } from '../src/index2'
 
 let renderer: jest.Mock<undefined, []>
 let useDynamic = false

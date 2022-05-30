@@ -5,5 +5,9 @@
     "outDir": "./build/types"
   },
   "files": ["src/index.ts"],
-  "include": ["src"]
+  "include": [
+    "src",
+    "../virtual-core/src/utils.ts",
+    "../virtual-core/src/index.tsx"
+  ]
 }

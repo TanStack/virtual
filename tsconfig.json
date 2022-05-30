@@ -1,6 +1,9 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/react-virtual" },
+    { "path": "packages/virtual-core" },
+    { "path": "packages/react-virtual" }
+    // { "path": "examples/react/basic/tsconfig.dev.json" },
   ]
+  // "exclude": ["node_modules"]
 }
