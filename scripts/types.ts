@@ -36,7 +36,9 @@ export type Parsed = {
 
 export type Package = {
   name: string
+  packageDir: string
   srcDir: string
+  dependencies?: string[]
   peerDependencies?: string[]
 }
 

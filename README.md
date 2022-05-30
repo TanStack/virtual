@@ -1,6 +1,6 @@
 ![React Virtual Header](https://github.com/tanstack/react-virtual/raw/master/media/repo-dark.png)
 
-Hooks for virtualizing scrollable elements in React
+Headless UI for virtualizing scrollable elements in TS/JS and React
 
 <a href="https://twitter.com/intent/tweet?button_hashtag=TanStack" target="\_parent">
   <img alt="#TanStack" src="https://img.shields.io/twitter/url?color=%2308a0e9&label=%23TanStack&style=social&url=https%3A%2F%2Ftwitter.com%2Fintent%2Ftweet%3Fbutton_hashtag%3DTanStack" />
@@ -23,14 +23,14 @@ Hooks for virtualizing scrollable elements in React
 <br />
 <br />
 
-Enjoy this library? Try the entire [TanStack](https://tanstack.com)! [React Query](https://github.com/@tanstack/react-query), [React Table](https://github.com/@tanstack/react-table), [React Charts](https://github.com/@tanstack/react-charts)
+Enjoy this library? Try the entire [TanStack](https://tanstack.com)! [React Query](https://github.com/@tanstack/react-query), [TanStack Table](https://github.com/@tanstack/table), [React Charts](https://github.com/@tanstack/react-charts)
 
-## Visit [react-virtual.tanstack.com](https://react-virtual.tanstack.com) for docs, guides, API and more!
+## Visit [tanstack.com/virtual](https://tanstack.com/virtual) for docs, guides, API and more!
 
 ## Quick Features
 
 - Row, Column, and Grid virtualization
-- One single **headless** hook
+- One single **headless** function
 - Fixed, variable and dynamic measurement modes
 - Imperative scrollTo control for offset, indices and alignment
 - Custom scrolling function support (eg. smooth scroll)
