@@ -65,7 +65,7 @@ function RowVirtualizerDynamic({ rows }) {
             position: 'relative',
           }}
         >
-          {rowVirtualizer.virtualItems.map(virtualRow => (
+          {rowVirtualizer.virtualItems.map((virtualRow) => (
             <div
               key={virtualRow.index}
               ref={virtualRow.measureRef}
@@ -116,7 +116,7 @@ function ColumnVirtualizerDynamic({ columns }) {
             position: 'relative',
           }}
         >
-          {columnVirtualizer.virtualItems.map(virtualColumn => (
+          {columnVirtualizer.virtualItems.map((virtualColumn) => (
             <div
               key={virtualColumn.key}
               ref={virtualColumn.measureRef}
@@ -162,7 +162,7 @@ function GridVirtualizerDynamic({ rows, columns }) {
 
   return (
     <>
-      <button onClick={() => setShow(old => !old)}>Toggle</button>
+      <button onClick={() => setShow((old) => !old)}>Toggle</button>
       <button onClick={() => rowVirtualizer.scrollToIndex(halfWay)}>
         Scroll to index {halfWay}
       </button>
@@ -186,12 +186,12 @@ function GridVirtualizerDynamic({ rows, columns }) {
               position: 'relative',
             }}
           >
-            {rowVirtualizer.virtualItems.map(virtualRow => (
+            {rowVirtualizer.virtualItems.map((virtualRow) => (
               <React.Fragment key={virtualRow.key}>
-                {columnVirtualizer.virtualItems.map(virtualColumn => (
+                {columnVirtualizer.virtualItems.map((virtualColumn) => (
                   <div
                     key={virtualColumn.key}
-                    ref={el => {
+                    ref={(el) => {
                       virtualRow.measureRef(el)
                       virtualColumn.measureRef(el)
                     }}

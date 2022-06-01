@@ -1,3 +1,5 @@
+import observeRect from '@reach/observe-rect'
+import React from 'react'
 import { memo } from './utils'
 
 export * from './utils'
@@ -15,8 +17,8 @@ type ScrollToOffsetOptions = ScrollToOptions
 type ScrollToIndexOptions = ScrollToOptions
 
 export interface Range {
-  start: number
-  end: number
+  startIndex: number
+  endIndex: number
   overscan: number
   count: number
 }
@@ -31,6 +33,11 @@ interface Item {
   size: number
 }
 
+interface Rect {
+  width: number
+  height: number
+}
+
 export interface VirtualItem<TItemElement> extends Item {
   measureElement: (el: TItemElement | null) => void
 }
@@ -38,13 +45,12 @@ export interface VirtualItem<TItemElement> extends Item {
 //
 
 const DEBUG = true
-const defaultEstimateSize = () => 50
-
-const defaultKeyExtractor = (index: number) => index
+export const defaultEstimateSize = () => 50
+export const defaultKeyExtractor = (index: number) => index
 
 export const defaultRangeExtractor = (range: Range) => {
-  const start = Math.max(range.start - range.overscan, 0)
-  const end = Math.min(range.end + range.overscan, range.count - 1)
+  const start = Math.max(range.startIndex - range.overscan, 0)
+  const end = Math.min(range.endIndex + range.overscan, range.count - 1)
 
   const arr = []
 
@@ -55,39 +61,138 @@ export const defaultRangeExtractor = (range: Range) => {
   return arr
 }
 
-// export const defaultScrollToFn: Options['scrollToFn'] = (offset, instance) => instance.options.parentElement[instance.getScrollKey()] = offset
-// export const defaultGetScrollOffsetFn: Options['getScrollOffsetFn'] = (instance) => instance.options.parentElement[instance.getScrollKey()]
+export const observeElementRect = (
+  instance: Virtual<any, any>,
+  cb: (rect: Rect) => void,
+) => {
+  const observer = observeRect(instance.scrollElement as Element, (rect) => {
+    cb(rect)
+  })
 
-export interface VirtualOptions<TItemElement = unknown> {
+  observer.observe()
+
+  return () => {
+    observer.unobserve()
+  }
+}
+
+export const observeWindowRect = (
+  instance: Virtual<any, any>,
+  cb: (rect: Rect) => void,
+) => {
+  const onResize = () => {
+    cb({
+      width: instance.scrollElement.innerWidth,
+      height: instance.scrollElement.innerHeight,
+    })
+  }
+
+  instance.scrollElement.addEventListener('resize', onResize, {
+    capture: false,
+    passive: true,
+  })
+
+  return () => {
+    instance.scrollElement.removeEventListener('resize', onResize)
+  }
+}
+
+export const observeElementOffset = (
+  instance: Virtual<any, any>,
+  cb: (offset: number) => void,
+) => {
+  const onScroll = () =>
+    cb(
+      instance.scrollElement[
+        instance.options.horizontal ? 'scrollLeft' : 'scrollTop'
+      ],
+    )
+
+  onScroll()
+
+  instance.scrollElement.addEventListener('scroll', onScroll, {
+    capture: false,
+    passive: true,
+  })
+
+  return () => {
+    instance.scrollElement.removeEventListener('scroll', onScroll)
+  }
+}
+
+export const observeWindowOffset = (
+  instance: Virtual<any, any>,
+  cb: (offset: number) => void,
+) => {
+  const onScroll = () =>
+    cb(
+      instance.scrollElement[
+        instance.options.horizontal ? 'scrollX' : 'scrollY'
+      ],
+    )
+
+  onScroll()
+
+  instance.scrollElement.addEventListener('scroll', onScroll, {
+    capture: false,
+    passive: true,
+  })
+
+  return () => {
+    instance.scrollElement.removeEventListener('scroll', onScroll)
+  }
+}
+
+// export const defaultScrollToFn: Options['scrollToFn'] = (offset, instance) => instance.options.parentElement[instance.getScrollKey()] = offset
+// export const defaultGetScrollOffset = (
+//   element: unknown,
+//   instance: Virtual<any, any>,
+// ) => (element as Element)?.[instance.getScrollKey()] ?? 0
+
+export interface VirtualOptions<
+  TScrollElement = unknown,
+  TItemElement = unknown,
+> {
   count: number
-  size: number
-  offset: number
-  start: number
-  end: number
-  onOffsetChange: (offset: number) => void
-  onUpdate: () => void
-  outerSize: number
-  measureSize: (el: TItemElement, instance: Virtual<TItemElement>) => number
-  scrollToFn: (offset: number, instance: Virtual<TItemElement>) => void
+  onOffsetChange?: (offset: number) => void
+  onUpdate?: () => void
+  measureSize?: (
+    el: TItemElement,
+    instance: Virtual<TScrollElement, TItemElement>,
+  ) => number
+  scrollToFn?: (
+    offset: number,
+    instance: Virtual<TScrollElement, TItemElement>,
+  ) => void
   //
   estimateSize?: (index: number) => number
   overscan?: number
   horizontal?: boolean
   paddingStart?: number
   paddingEnd?: number
-  // measureParent?: (element: TParentElement, initialRect?: Rect) => Rect
-  // initialRect?: Rect
+  scrollElement: TScrollElement
+  observeElementRect?: (
+    instance: Virtual<TScrollElement, TItemElement>,
+    cb: (rect: Rect) => void,
+  ) => () => void
+  observeElementOffset?: (
+    instance: Virtual<TScrollElement, TItemElement>,
+    cb: (offset: number) => void,
+  ) => () => void
+  initialRect?: Rect
+  initialOffset?: number
   keyExtractor?: (index: number) => Key
-  // getScrollOffsetFn?: (instance: Virtual) => number
   rangeExtractor?: (range: Range) => number[]
 }
 
-export class Virtual<TItemElement = unknown> {
+export class Virtual<TScrollElement = unknown, TItemElement = unknown> {
+  options!: Required<VirtualOptions<TScrollElement, TItemElement>>
+  scrollElement: TScrollElement | null = null
   private measurementsCache: Item[] = []
-
-  options!: Required<VirtualOptions<TItemElement>>
   private itemMeasurementsCache: Record<Key, number> = {}
   private pendingMeasuredCacheIndexes: number[] = []
+  private scrollRect: Rect
+  private scrollOffset: number
 
   //
   // virtualItems: VirtualItem<TItemElement>[]
@@ -96,11 +201,27 @@ export class Virtual<TItemElement = unknown> {
   // scrollToIndex: (index: number, options?: ScrollToIndexOptions) => void
   // measure: (index: number) => void
 
-  constructor(opts: VirtualOptions<TItemElement>) {
+  constructor(opts: VirtualOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
+    this.scrollRect = this.options.initialRect
+    this.scrollOffset = this.options.initialOffset
   }
 
-  setOptions = (opts: VirtualOptions<TItemElement>) => {
+  setOptions = (opts: VirtualOptions<TScrollElement, TItemElement>) => {
+    let isWindow
+    let windowHeight
+
+    if (typeof window !== 'undefined') {
+      isWindow = !(opts.scrollElement as unknown as Element).tagName
+
+      if (isWindow) {
+        windowHeight = {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        }
+      }
+    }
+
     this.options = {
       ...opts,
       estimateSize: opts.estimateSize ?? defaultEstimateSize,
@@ -110,21 +231,111 @@ export class Virtual<TItemElement = unknown> {
       horizontal: opts.horizontal ?? false,
       keyExtractor: opts.keyExtractor ?? defaultKeyExtractor,
       rangeExtractor: opts.rangeExtractor ?? defaultRangeExtractor,
+      observeElementRect:
+        opts.observeElementRect ??
+        (isWindow ? observeWindowRect : observeElementRect),
+      observeElementOffset:
+        opts.observeElementOffset ??
+        (isWindow ? observeWindowOffset : observeElementOffset),
+      initialRect:
+        opts.initialRect ?? (windowHeight || { width: 0, height: 0 }),
+      initialOffset: opts.initialOffset ?? 0,
+      onOffsetChange: opts.onOffsetChange ?? (() => {}),
+      onUpdate: opts.onUpdate ?? (() => {}),
+      scrollToFn: opts.scrollToFn ?? (() => {}),
+      measureSize: opts.measureSize ?? ((() => {}) as any),
     }
   }
+
+  _willUpdate = () => {
+    const unsubs: (() => void)[] = []
+
+    if (this.scrollElement !== this.options.scrollElement) {
+      this.scrollElement = this.options.scrollElement
+
+      unsubs.push(
+        this.options.observeElementRect(this, (rect) => {
+          this.scrollRect = rect
+        }),
+      )
+
+      unsubs.push(
+        this.options.observeElementOffset(this, (offset) => {
+          this.scrollOffset = offset
+        }),
+      )
+    }
+
+    return () => {
+      unsubs.forEach((d) => d())
+    }
+  }
+
+  private getSize = () => {
+    return this.scrollRect[this.getSizeKey()]
+  }
+
+  private getMeasurements = memo(
+    () => [
+      this.options.count,
+      this.options.paddingStart,
+      this.getEstimateSizeFn(),
+      this.options.keyExtractor,
+    ],
+    (count, paddingStart, estimateSize, keyExtractor) => {
+      const min =
+        this.pendingMeasuredCacheIndexes.length > 0
+          ? Math.min(...this.pendingMeasuredCacheIndexes)
+          : 0
+      this.pendingMeasuredCacheIndexes = []
+
+      const measurements = this.measurementsCache.slice(0, min)
+
+      for (let i = min; i < count; i++) {
+        const key = keyExtractor(i)
+        const measuredSize = this.itemMeasurementsCache[key]
+        const start = measurements[i - 1]
+          ? measurements[i - 1]!.end
+          : paddingStart
+        const size =
+          typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
+        const end = start + size
+        measurements[i] = { index: i, start, size, end, key }
+      }
+
+      this.measurementsCache = measurements
+      return measurements
+    },
+    {
+      key: process.env.NODE_ENV === 'development' && 'getMeasurements',
+      debug: () => DEBUG,
+    },
+  )
+
+  private calculateRange = memo(
+    () => [this.getMeasurements(), this.getSize(), this.scrollOffset],
+    (measurements, outerSize, scrollOffset) => {
+      return calculateRange({
+        measurements,
+        outerSize,
+        scrollOffset,
+      })
+    },
+    {
+      key: process.env.NODE_ENV === 'development' && 'calculateRange',
+    },
+  )
 
   private getIndexes = memo(
     () => [
       this.options.rangeExtractor,
-      this.options.start,
-      this.options.end,
+      this.calculateRange(),
       this.options.overscan,
       this.options.count,
     ],
-    (rangeExtractor, start, end, overscan, measurementsLength) => {
+    (rangeExtractor, range, overscan, measurementsLength) => {
       return rangeExtractor({
-        start,
-        end,
+        ...range,
         overscan,
         count: measurementsLength,
       })
@@ -141,7 +352,7 @@ export class Virtual<TItemElement = unknown> {
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
-        const measurement = measurements[i]
+        const measurement = measurements[i]!
 
         const item = {
           ...measurement,
@@ -150,9 +361,9 @@ export class Virtual<TItemElement = unknown> {
               const measuredItemSize = measureSize(measurableItem, this)
 
               if (measuredItemSize !== item.size) {
-                if (item.start < this.options.offset) {
+                if (item.start < this.scrollOffset) {
                   this.setScrollOffset(
-                    this.options.offset + (measuredItemSize - item.size),
+                    this.scrollOffset + (measuredItemSize - item.size),
                   )
                 }
 
@@ -178,12 +389,13 @@ export class Virtual<TItemElement = unknown> {
     toOffset: number,
     { align }: ScrollToOffsetOptions = { align: 'start' },
   ) => {
-    const { offset, outerSize } = this.options
+    const offset = this.scrollOffset
+    const size = this.getSize()
 
     if (align === 'auto') {
       if (toOffset <= offset) {
         align = 'start'
-      } else if (toOffset >= offset + outerSize) {
+      } else if (toOffset >= offset + size) {
         align = 'end'
       } else {
         align = 'start'
@@ -193,9 +405,9 @@ export class Virtual<TItemElement = unknown> {
     if (align === 'start') {
       this.setScrollOffset(toOffset)
     } else if (align === 'end') {
-      this.setScrollOffset(toOffset - outerSize)
+      this.setScrollOffset(toOffset - size)
     } else if (align === 'center') {
-      this.setScrollOffset(toOffset - outerSize / 2)
+      this.setScrollOffset(toOffset - size / 2)
     }
   }
 
@@ -204,7 +416,9 @@ export class Virtual<TItemElement = unknown> {
     { align, ...rest }: ScrollToIndexOptions = { align: 'auto' },
   ) => {
     const measurements = this.getMeasurements()
-    const { count, offset, outerSize } = this.options
+    const offset = this.scrollOffset
+    const size = this.getSize()
+    const { count } = this.options
 
     const measurement = measurements[Math.max(0, Math.min(index, count - 1))]
 
@@ -213,7 +427,7 @@ export class Virtual<TItemElement = unknown> {
     }
 
     if (align === 'auto') {
-      if (measurement.end >= offset + outerSize) {
+      if (measurement.end >= offset + size) {
         align = 'end'
       } else if (measurement.start <= offset) {
         align = 'start'
@@ -248,8 +462,7 @@ export class Virtual<TItemElement = unknown> {
     (this.getMeasurements()[this.options.count - 1]?.end ||
       this.options.paddingStart) + this.options.paddingEnd
 
-  // getScrollKey = () => (this.options.horizontal ? 'scrollLeft' : 'scrollTop')
-  // getSizeKey = () => (this.options.horizontal ? 'width' : 'height')
+  private getSizeKey = () => (this.options.horizontal ? 'width' : 'height')
 
   private setScrollOffset = (offset: number) => {
     this.options.onOffsetChange(offset)
@@ -263,44 +476,6 @@ export class Virtual<TItemElement = unknown> {
       onChange: () => {
         this.itemMeasurementsCache = {}
       },
-    },
-  )
-
-  private getMeasurements = memo(
-    () => [
-      this.options.count,
-      this.options.paddingStart,
-      this.getEstimateSizeFn(),
-      this.options.keyExtractor,
-      this.options.size,
-    ],
-    (count, paddingStart, estimateSize, keyExtractor) => {
-      const min =
-        this.pendingMeasuredCacheIndexes.length > 0
-          ? Math.min(...this.pendingMeasuredCacheIndexes)
-          : 0
-      this.pendingMeasuredCacheIndexes = []
-
-      const measurements = this.measurementsCache.slice(0, min)
-
-      for (let i = min; i < count; i++) {
-        const key = keyExtractor(i)
-        const measuredSize = this.itemMeasurementsCache[key]
-        const start = measurements[i - 1]
-          ? measurements[i - 1].end
-          : paddingStart
-        const size =
-          typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
-        const end = start + size
-        measurements[i] = { index: i, start, size, end, key }
-      }
-
-      this.measurementsCache = measurements
-      return measurements
-    },
-    {
-      key: process.env.NODE_ENV === 'development' && 'getMeasurements',
-      debug: () => DEBUG,
     },
   )
 
@@ -346,14 +521,17 @@ function calculateRange({
   scrollOffset: number
 }) {
   const count = measurements.length - 1
-  const getOffset = (index: number) => measurements[index].start
+  const getOffset = (index: number) => measurements[index]!.start
 
-  const start = findNearestBinarySearch(0, count, getOffset, scrollOffset)
-  let end = start
+  const startIndex = findNearestBinarySearch(0, count, getOffset, scrollOffset)
+  let endIndex = startIndex
 
-  while (end < count && measurements[end].end < scrollOffset + outerSize) {
-    end++
+  while (
+    endIndex < count &&
+    measurements[endIndex]!.end < scrollOffset + outerSize
+  ) {
+    endIndex++
   }
 
-  return { start, end }
+  return { startIndex, endIndex }
 }

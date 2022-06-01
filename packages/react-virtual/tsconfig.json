@@ -4,7 +4,7 @@
   "compilerOptions": {
     "outDir": "./build/types"
   },
-  "files": ["src/index.ts"],
+  "files": ["src/index.tsx"],
   "include": [
     "src",
     "../virtual-core/src/utils.ts",
