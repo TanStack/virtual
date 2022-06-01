@@ -3,24 +3,26 @@ html {
   font-size: 14px;
 }
 
-table {
-  border: 1px solid lightgray;
+body {
+  padding: 1rem;
 }
 
-tbody {
-  border-bottom: 1px solid lightgray;
+.List {
+  border: 1px solid #e6e4dc;
+  max-width: 100%;
 }
 
-th {
-  border-bottom: 1px solid lightgray;
-  border-right: 1px solid lightgray;
-  padding: 2px 4px;
+.ListItemEven,
+.ListItemOdd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-tfoot {
-  color: gray;
+.ListItemEven {
+  background-color: #e6e4dc;
 }
 
-tfoot th {
-  font-weight: normal;
+button {
+  border: 1px solid gray;
 }

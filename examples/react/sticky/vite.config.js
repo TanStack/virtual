@@ -15,14 +15,4 @@ export default defineConfig({
     }),
     react(),
   ],
-  resolve: process.env.USE_SOURCE
-    ? {
-        alias: {
-          '@tanstack/react-virtual': path.resolve(
-            __dirname,
-            '../../packages/react-virtual/src/index.tsx',
-          ),
-        },
-      }
-    : {},
 })

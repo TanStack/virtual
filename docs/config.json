@@ -1,0 +1,54 @@
+{
+  "docSearch": {
+    "appId": "",
+    "indexName": "",
+    "apiKey": ""
+  },
+  "menu": [
+    {
+      "label": "Adapters",
+      "children": [
+        { "label": "React Virtual", "to": "adapters/react-virtual" },
+        { "label": "Solid Virtual", "to": "adapters/solid-virtual" },
+        { "label": "Svelte Virtual", "to": "adapters/svelte-virtual" },
+        { "label": "Vue Virtual", "to": "adapters/vue-virtual" }
+      ]
+    },
+    {
+      "label": "Guide",
+      "children": [
+        { "label": "Introduction", "to": "guide/00-introduction" },
+        { "label": "Installation", "to": "guide/01-installation" },
+        { "label": "Virtualization", "to": "guide/02-virtualization" }
+      ]
+    },
+    {
+      "label": "Core APIs",
+      "children": [{ "label": "Virtualizer", "to": "api/core/table" }]
+    },
+    {
+      "label": "React Examples",
+      "children": [
+        { "to": "examples/react/fixed", "label": "Fixed" },
+        { "to": "examples/react/variable", "label": "Variable" },
+        { "to": "examples/react/dynamic", "label": "Dynamic" },
+        { "to": "examples/react/padding", "label": "Padding" },
+        { "to": "examples/react/sticky", "label": "Sticky" },
+        { "to": "examples/react/infinite-scroll", "label": "Infinite Scroll" },
+        { "to": "examples/react/smooth-scroll", "label": "Smooth Scroll" }
+      ]
+    },
+    {
+      "label": "Solid Examples",
+      "children": [{ "to": "", "label": "Coming Soon!" }]
+    },
+    {
+      "label": "Svelte Examples",
+      "children": [{ "to": "", "label": "Coming Soon!" }]
+    },
+    {
+      "label": "Vue Examples",
+      "children": [{ "to": "", "label": "Coming Soon!" }]
+    }
+  ]
+}

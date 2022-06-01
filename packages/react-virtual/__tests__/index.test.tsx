@@ -1,24 +1,26 @@
 import * as React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 
-import { useVirtual, Range } from '../../virtual-core/src/index'
+import { useVirtual, Range } from '../src/index'
 
 let renderer: jest.Mock<undefined, []>
 let useDynamic = false
 
 interface ListProps {
-  size?: number
+  count?: number
   overscan?: number
   height?: number
   width?: number
+  itemSize?: number
   rangeExtractor?: (range: Range) => number[]
 }
 
 function List({
-  size = 200,
+  count = 200,
   overscan,
   height = 200,
   width = 200,
+  itemSize,
   rangeExtractor,
 }: ListProps) {
   renderer()
@@ -26,10 +28,13 @@ function List({
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtual({
-    size,
-    parentRef,
+    count,
+    getScrollElement: () => parentRef.current,
     overscan,
-    useObserver: React.useCallback(() => ({ height, width }), [height, width]),
+    observeElementRect: (_, cb) => {
+      cb({ height, width })
+    },
+    measureElement: () => itemSize,
     rangeExtractor,
   })
 
@@ -41,16 +46,16 @@ function List({
     >
       <div
         style={{
-          height: rowVirtualizer.totalSize,
+          height: rowVirtualizer.getTotalSize(),
           width: '100%',
           position: 'relative',
         }}
       >
-        {rowVirtualizer.virtualItems.map((virtualRow) => (
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => (
           <div
             data-testid={`item-${virtualRow.key}`}
             key={virtualRow.key}
-            ref={useDynamic ? virtualRow.measureRef : undefined}
+            ref={useDynamic ? virtualRow.measureElement : undefined}
             style={{
               position: 'absolute',
               top: 0,
@@ -80,7 +85,7 @@ test('should render', () => {
   expect(screen.queryByText('Row 4')).toBeInTheDocument()
   expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(1)
+  expect(renderer).toHaveBeenCalledTimes(2)
 })
 
 test('should render with overscan', () => {
@@ -90,39 +95,31 @@ test('should render with overscan', () => {
   expect(screen.queryByText('Row 3')).toBeInTheDocument()
   expect(screen.queryByText('Row 4')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(1)
+  expect(renderer).toHaveBeenCalledTimes(2)
 })
 
 test('should render given dynamic size', () => {
   useDynamic = true
-  // can we mock elements based on data-testid?
-  const mock = jest
-    .spyOn(HTMLElement.prototype, 'offsetHeight', 'get')
-    .mockImplementation(() => 25)
 
-  render(<List />)
+  render(<List itemSize={25} />)
+
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
   expect(screen.queryByText('Row 8')).toBeInTheDocument()
   expect(screen.queryByText('Row 9')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(4)
-  mock.mockRestore()
+  expect(renderer).toHaveBeenCalledTimes(5)
 })
 
 test('should render given dynamic size after scroll', () => {
   useDynamic = true
-  // can we mock elements based on data-testid?
-  const mock = jest
-    .spyOn(HTMLElement.prototype, 'offsetHeight', 'get')
-    .mockImplementation(() => 25)
 
-  render(<List />)
+  render(<List itemSize={25} />)
 
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
   expect(screen.queryByText('Row 8')).toBeInTheDocument()
   expect(screen.queryByText('Row 9')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(4)
+  expect(renderer).toHaveBeenCalledTimes(5)
   renderer.mockReset()
 
   fireEvent.scroll(screen.getByTestId('scroller'), {
@@ -135,7 +132,6 @@ test('should render given dynamic size after scroll', () => {
   expect(screen.queryByText('Row 12')).not.toBeInTheDocument()
 
   expect(renderer).toHaveBeenCalledTimes(3)
-  mock.mockRestore()
 })
 
 test('should use rangeExtractor', () => {

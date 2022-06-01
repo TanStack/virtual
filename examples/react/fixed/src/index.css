@@ -3,6 +3,10 @@ html {
   font-size: 14px;
 }
 
+body {
+  padding: 1rem;
+}
+
 .List {
   border: 1px solid #e6e4dc;
   max-width: 100%;
@@ -17,4 +21,8 @@ html {
 
 .ListItemEven {
   background-color: #e6e4dc;
+}
+
+button {
+  border: 1px solid gray;
 }
