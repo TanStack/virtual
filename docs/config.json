@@ -6,19 +6,19 @@
   },
   "menu": [
     {
+      "label": "Guide",
+      "children": [
+        { "label": "Introduction", "to": "guide/00-introduction" },
+        { "label": "Installation", "to": "guide/01-installation" }
+      ]
+    },
+    {
       "label": "Adapters",
       "children": [
         { "label": "React Virtual", "to": "adapters/react-virtual" },
         { "label": "Solid Virtual", "to": "adapters/solid-virtual" },
         { "label": "Svelte Virtual", "to": "adapters/svelte-virtual" },
         { "label": "Vue Virtual", "to": "adapters/vue-virtual" }
-      ]
-    },
-    {
-      "label": "Guide",
-      "children": [
-        { "label": "Introduction", "to": "guide/00-introduction" },
-        { "label": "Installation", "to": "guide/01-installation" }
       ]
     },
     {
