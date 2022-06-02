@@ -3,17 +3,17 @@ import ReactDOM from 'react-dom'
 
 import './index.css'
 
-import { useVirtual } from '@tanstack/react-virtual'
+import { useVirtualizer } from '@tanstack/react-virtual'
+
+const rows = new Array(10000)
+  .fill(true)
+  .map(() => 25 + Math.round(Math.random() * 100))
+
+const columns = new Array(10000)
+  .fill(true)
+  .map(() => 75 + Math.round(Math.random() * 100))
 
 function App() {
-  const rows = new Array(10000)
-    .fill(true)
-    .map(() => 25 + Math.round(Math.random() * 100))
-
-  const columns = new Array(10000)
-    .fill(true)
-    .map(() => 75 + Math.round(Math.random() * 100))
-
   return (
     <div>
       <p>
@@ -42,9 +42,10 @@ function App() {
 function RowVirtualizerDynamic({ rows }) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
+    estimateSize: () => 125,
   })
 
   return (
@@ -92,10 +93,11 @@ function RowVirtualizerDynamic({ rows }) {
 function ColumnVirtualizerDynamic({ columns }) {
   const parentRef = React.useRef()
 
-  const columnVirtualizer = useVirtual({
+  const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: columns.length,
     getScrollElement: () => parentRef.current,
+    estimateSize: () => 125,
   })
 
   return (
@@ -145,15 +147,17 @@ function ColumnVirtualizerDynamic({ columns }) {
 function GridVirtualizerDynamic({ rows, columns }) {
   const parentRef = React.useRef()
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
+    estimateSize: () => 125,
   })
 
-  const columnVirtualizer = useVirtual({
+  const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: columns.length,
     getScrollElement: () => parentRef.current,
+    estimateSize: () => 125,
   })
 
   const [show, setShow] = React.useState(true)

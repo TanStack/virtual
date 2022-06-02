@@ -18,13 +18,15 @@
       "label": "Guide",
       "children": [
         { "label": "Introduction", "to": "guide/00-introduction" },
-        { "label": "Installation", "to": "guide/01-installation" },
-        { "label": "Virtualization", "to": "guide/02-virtualization" }
+        { "label": "Installation", "to": "guide/01-installation" }
       ]
     },
     {
       "label": "Core APIs",
-      "children": [{ "label": "Virtualizer", "to": "api/core/table" }]
+      "children": [
+        { "label": "Virtualizer", "to": "api/core/virtualizer" },
+        { "label": "VirtualItem", "to": "api/core/virtual-item" }
+      ]
     },
     {
       "label": "React Examples",

@@ -5,8 +5,8 @@ import './index.css'
 
 import {
   elementScroll,
-  useVirtual,
-  VirtualOptions,
+  useVirtualizer,
+  VirtualizerOptions,
 } from '@tanstack/react-virtual'
 
 function easeInOutQuint(t) {
@@ -17,8 +17,8 @@ function App() {
   const parentRef = React.useRef<HTMLDivElement>()
   const scrollingRef = React.useRef<number>()
 
-  const scrollToFn: VirtualOptions<any, any>['scrollToFn'] = React.useCallback(
-    (offset, canSmooth, instance) => {
+  const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] =
+    React.useCallback((offset, canSmooth, instance) => {
       const duration = 1000
       const start = parentRef.current.scrollTop
       const startTime = (scrollingRef.current = Date.now())
@@ -39,14 +39,12 @@ function App() {
       }
 
       requestAnimationFrame(run)
-    },
-    [],
-  )
+    }, [])
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: 10000,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback(() => 35, []),
+    estimateSize: () => 35,
     overscan: 5,
     scrollToFn,
   })
@@ -119,10 +117,3 @@ function App() {
     </div>
   )
 }
-
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root'),
-)

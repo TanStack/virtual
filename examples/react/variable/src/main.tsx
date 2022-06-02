@@ -3,17 +3,17 @@ import ReactDOM from 'react-dom'
 
 import './index.css'
 
-import { useVirtual } from '@tanstack/react-virtual'
+import { useVirtualizer } from '@tanstack/react-virtual'
+
+const rows = new Array(10000)
+  .fill(true)
+  .map(() => 25 + Math.round(Math.random() * 100))
+
+const columns = new Array(10000)
+  .fill(true)
+  .map(() => 75 + Math.round(Math.random() * 100))
 
 function App() {
-  const rows = new Array(10000)
-    .fill(true)
-    .map(() => 25 + Math.round(Math.random() * 100))
-
-  const columns = new Array(10000)
-    .fill(true)
-    .map(() => 75 + Math.round(Math.random() * 100))
-
   return (
     <div>
       <p>
@@ -49,10 +49,10 @@ function App() {
 function RowVirtualizerVariable({ rows }) {
   const parentRef = React.useRef()
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback((i) => rows[i], [rows]),
+    estimateSize: (i) => rows[i],
     overscan: 5,
   })
 
@@ -99,11 +99,11 @@ function RowVirtualizerVariable({ rows }) {
 function ColumnVirtualizerVariable({ columns }) {
   const parentRef = React.useRef()
 
-  const columnVirtualizer = useVirtual({
+  const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: columns.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback((i) => columns[i], [columns]),
+    estimateSize: (i) => columns[i],
     overscan: 5,
   })
 
@@ -152,18 +152,18 @@ function ColumnVirtualizerVariable({ columns }) {
 function GridVirtualizerVariable({ rows, columns }) {
   const parentRef = React.useRef()
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback((i) => rows[i], [rows]),
+    estimateSize: (i) => rows[i],
     overscan: 5,
   })
 
-  const columnVirtualizer = useVirtual({
+  const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: columns.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback((i) => columns[i], [columns]),
+    estimateSize: (i) => columns[i],
     overscan: 5,
   })
 

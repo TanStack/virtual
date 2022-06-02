@@ -1,4 +1,5 @@
 import observeRect from '@reach/observe-rect'
+import { check } from 'prettier'
 import React from 'react'
 import { memo } from './utils'
 
@@ -44,7 +45,6 @@ export interface VirtualItem<TItemElement> extends Item {
 
 //
 
-export const defaultEstimateSize = () => 50
 export const defaultKeyExtractor = (index: number) => index
 
 export const defaultRangeExtractor = (range: Range) => {
@@ -162,11 +162,13 @@ export const observeWindowOffset = (
   }
 }
 
-export const defaultMeasureElement = (
+export const measureElement = (
   element: unknown,
   instance: Virtualizer<any, any>,
 ) => {
-  return (element as Element).getBoundingClientRect()[instance.getSizeKey()]
+  return (element as Element).getBoundingClientRect()[
+    instance.options.horizontal ? 'width' : 'height'
+  ]
 }
 
 export const windowScroll = (
@@ -195,13 +197,17 @@ export interface VirtualizerOptions<
   TScrollElement = unknown,
   TItemElement = unknown,
 > {
+  // Required from the user
   count: number
+  getScrollElement: () => TScrollElement
+  estimateSize: (index: number) => number
+
+  // Required from the framework adapter (but can be overridden)
   scrollToFn: (
     offset: number,
     canSmooth: boolean,
     instance: Virtualizer<TScrollElement, TItemElement>,
   ) => void
-  getScrollElement: () => TScrollElement
   observeElementRect: (
     instance: Virtualizer<TScrollElement, TItemElement>,
     cb: (rect: Rect) => void,
@@ -211,8 +217,7 @@ export interface VirtualizerOptions<
     cb: (offset: number) => void,
   ) => void | (() => void)
 
-  //
-
+  // Optional
   debug?: any
   initialRect?: Rect
   onChange?: (instance: Virtualizer<TScrollElement, TItemElement>) => void
@@ -220,19 +225,18 @@ export interface VirtualizerOptions<
     el: TItemElement,
     instance: Virtualizer<TScrollElement, TItemElement>,
   ) => number
-  estimateSize?: (index: number) => number
   overscan?: number
   horizontal?: boolean
   paddingStart?: number
   paddingEnd?: number
   initialOffset?: number
-  keyExtractor?: (index: number) => Key
+  getItemKey?: (index: number) => Key
   rangeExtractor?: (range: Range) => number[]
   enableSmoothScroll?: boolean
 }
 
 export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
-  unsubs: (void | (() => void))[] = []
+  private unsubs: (void | (() => void))[] = []
   options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
   scrollElement: TScrollElement | null = null
   private measurementsCache: Item[] = []
@@ -240,13 +244,8 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private pendingMeasuredCacheIndexes: number[] = []
   private scrollRect: Rect
   private scrollOffset: number
-
-  //
-  // virtualItems: VirtualItem<TItemElement>[]
-  // totalSize: number
-  // scrollToOffset: (offset: number, options?: ScrollToOffsetOptions) => void
-  // scrollToIndex: (index: number, options?: ScrollToIndexOptions) => void
-  // measure: (index: number) => void
+  private destinationOffset: undefined | number
+  private scrollCheckFrame!: ReturnType<typeof setTimeout>
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
@@ -262,16 +261,15 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     this.options = {
       debug: false,
       initialOffset: 0,
-      estimateSize: defaultEstimateSize,
       overscan: 1,
       paddingStart: 0,
       paddingEnd: 0,
       horizontal: false,
-      keyExtractor: defaultKeyExtractor,
+      getItemKey: defaultKeyExtractor,
       rangeExtractor: defaultRangeExtractor,
       enableSmoothScroll: false,
       onChange: () => {},
-      measureElement: defaultMeasureElement,
+      measureElement,
       initialRect: { width: 0, height: 0 },
       ...opts,
     }
@@ -317,18 +315,17 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   }
 
   private getSize = () => {
-    return this.scrollRect[this.getSizeKey()]
+    return this.scrollRect[this.options.horizontal ? 'width' : 'height']
   }
 
   private getMeasurements = memo(
     () => [
       this.options.count,
       this.options.paddingStart,
-      this.getEstimateSizeFn(),
-      this.options.keyExtractor,
+      this.options.getItemKey,
       this.itemMeasurementsCache,
     ],
-    (count, paddingStart, estimateSize, keyExtractor, measurementsCache) => {
+    (count, paddingStart, getItemKey, measurementsCache) => {
       const min =
         this.pendingMeasuredCacheIndexes.length > 0
           ? Math.min(...this.pendingMeasuredCacheIndexes)
@@ -338,13 +335,15 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       const measurements = this.measurementsCache.slice(0, min)
 
       for (let i = min; i < count; i++) {
-        const key = keyExtractor(i)
+        const key = getItemKey(i)
         const measuredSize = measurementsCache[key]
         const start = measurements[i - 1]
           ? measurements[i - 1]!.end
           : paddingStart
         const size =
-          typeof measuredSize === 'number' ? measuredSize : estimateSize(i)
+          typeof measuredSize === 'number'
+            ? measuredSize
+            : this.options.estimateSize(i)
         const end = start + size
         measurements[i] = { index: i, start, size, end, key }
       }
@@ -419,10 +418,12 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
                   )
                     console.info('correction', measuredItemSize - item.size)
 
-                  this._scrollToOffset(
-                    this.scrollOffset + (measuredItemSize - item.size),
-                    false,
-                  )
+                  if (!this.destinationOffset) {
+                    this._scrollToOffset(
+                      this.scrollOffset + (measuredItemSize - item.size),
+                      false,
+                    )
+                  }
                 }
 
                 this.pendingMeasuredCacheIndexes.push(i)
@@ -450,29 +451,36 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     toOffset: number,
     { align }: ScrollToOffsetOptions = { align: 'start' },
   ) => {
-    const offset = this.scrollOffset
-    const size = this.getSize()
+    const attempt = () => {
+      const offset = this.scrollOffset
+      const size = this.getSize()
 
-    if (align === 'auto') {
-      if (toOffset <= offset) {
-        align = 'start'
-      } else if (toOffset >= offset + size) {
-        align = 'end'
-      } else {
-        align = 'start'
+      if (align === 'auto') {
+        if (toOffset <= offset) {
+          align = 'start'
+        } else if (toOffset >= offset + size) {
+          align = 'end'
+        } else {
+          align = 'start'
+        }
+      }
+
+      if (align === 'start') {
+        this._scrollToOffset(toOffset, true)
+      } else if (align === 'end') {
+        this._scrollToOffset(toOffset - size, true)
+      } else if (align === 'center') {
+        this._scrollToOffset(toOffset - size / 2, true)
       }
     }
 
-    if (align === 'start') {
-      this._scrollToOffset(toOffset, true)
-    } else if (align === 'end') {
-      this._scrollToOffset(toOffset - size, true)
-    } else if (align === 'center') {
-      this._scrollToOffset(toOffset - size / 2, true)
-    }
+    attempt()
+    requestAnimationFrame(() => {
+      attempt()
+    })
   }
 
-  private tryScrollToIndex = (
+  scrollToIndex = (
     index: number,
     { align, ...rest }: ScrollToIndexOptions = { align: 'auto' },
   ) => {
@@ -507,42 +515,36 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     this.scrollToOffset(toOffset, { align, ...rest })
   }
 
-  scrollToIndex = (index: number, options?: ScrollToIndexOptions) => {
-    // We do a double request here because of
-    // dynamic sizes which can cause offset shift
-    // and end up in the wrong spot. Unfortunately,
-    // we can't know about those dynamic sizes until
-    // we try and render them. So double down!
-    this.tryScrollToIndex(index, options)
-    requestAnimationFrame(() => {
-      this.tryScrollToIndex(index, options)
-    })
-  }
-
   getTotalSize = () =>
     (this.getMeasurements()[this.options.count - 1]?.end ||
       this.options.paddingStart) + this.options.paddingEnd
 
-  getSizeKey = () => (this.options.horizontal ? 'width' : 'height')
-
   private _scrollToOffset = (offset: number, canSmooth: boolean) => {
-    this.options.scrollToFn(
-      offset,
-      this.options.enableSmoothScroll && canSmooth,
-      this,
-    )
-  }
+    clearTimeout(this.scrollCheckFrame)
 
-  private getEstimateSizeFn = memo(
-    () => [this.options.estimateSize],
-    (d) => d,
-    {
-      key: false,
-      onChange: () => {
-        this.itemMeasurementsCache = {}
-      },
-    },
-  )
+    this.destinationOffset = offset
+    this.options.scrollToFn(offset, canSmooth, this)
+
+    let scrollCheckFrame: ReturnType<typeof setTimeout>
+
+    const check = () => {
+      let lastOffset = this.scrollOffset
+      this.scrollCheckFrame = scrollCheckFrame = setTimeout(() => {
+        if (this.scrollCheckFrame !== scrollCheckFrame) {
+          return
+        }
+
+        if (this.scrollOffset === lastOffset) {
+          this.destinationOffset = undefined
+          return
+        }
+        lastOffset = this.scrollOffset
+        check()
+      }, 100)
+    }
+
+    check()
+  }
 
   measure = () => {
     this.itemMeasurementsCache = {}

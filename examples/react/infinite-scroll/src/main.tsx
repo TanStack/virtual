@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider, useInfiniteQuery } from 'react-query'
 
 import './index.css'
 
-import { useVirtual } from '@tanstack/react-virtual'
+import { useVirtualizer } from '@tanstack/react-virtual'
 
 const queryClient = new QueryClient()
 
@@ -64,10 +64,10 @@ function App() {
 
   const parentRef = React.useRef()
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? flatPosts.length + 1 : flatPosts.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback(() => 100, []),
+    estimateSize: () => 100,
   })
 
   React.useEffect(() => {

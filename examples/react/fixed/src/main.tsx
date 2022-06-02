@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 
 import './index.css'
 
-import { useVirtual } from '@tanstack/react-virtual'
+import { useVirtualizer } from '@tanstack/react-virtual'
 
 function App() {
   return (
@@ -42,10 +42,10 @@ function App() {
 function RowVirtualizerFixed() {
   const parentRef = React.useRef()
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: 10000,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback(() => 35, []),
+    estimateSize: () => 35,
     overscan: 5,
   })
 
@@ -92,11 +92,11 @@ function RowVirtualizerFixed() {
 function ColumnVirtualizerFixed() {
   const parentRef = React.useRef()
 
-  const columnVirtualizer = useVirtual({
+  const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: 10000,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback(() => 100, []),
+    estimateSize: () => 100,
     overscan: 5,
   })
 
@@ -145,18 +145,18 @@ function ColumnVirtualizerFixed() {
 function GridVirtualizerFixed() {
   const parentRef = React.useRef()
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: 10000,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback(() => 35, []),
+    estimateSize: () => 35,
     overscan: 5,
   })
 
-  const columnVirtualizer = useVirtual({
+  const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: 10000,
     getScrollElement: () => parentRef.current,
-    estimateSize: React.useCallback(() => 100, []),
+    estimateSize: () => 100,
     overscan: 5,
   })
 

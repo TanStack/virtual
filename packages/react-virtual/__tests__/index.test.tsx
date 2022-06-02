@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 
-import { useVirtual, Range } from '../src/index'
+import { useVirtualizer, Range } from '../src/index'
 
 let renderer: jest.Mock<undefined, []>
 let useDynamic = false
@@ -27,9 +27,10 @@ function List({
 
   const parentRef = React.useRef<HTMLDivElement>(null)
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count,
     getScrollElement: () => parentRef.current,
+    estimateSize: () => 50,
     overscan,
     observeElementRect: (_, cb) => {
       cb({ height, width })

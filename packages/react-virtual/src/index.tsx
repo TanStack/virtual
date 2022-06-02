@@ -17,7 +17,7 @@ export * from '@tanstack/virtual-core'
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect
 
-function useVirtualBase<TScrollElement, TItemElement = unknown>(
+function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
   options: VirtualizerOptions<TScrollElement, TItemElement>,
 ): Virtualizer<TScrollElement, TItemElement> {
   const rerender = React.useReducer(() => ({}), {})[1]
@@ -47,13 +47,13 @@ function useVirtualBase<TScrollElement, TItemElement = unknown>(
   return instance
 }
 
-export function useVirtual<TScrollElement, TItemElement = unknown>(
+export function useVirtualizer<TScrollElement, TItemElement = unknown>(
   options: PartialKeys<
     VirtualizerOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
   >,
 ): Virtualizer<TScrollElement, TItemElement> {
-  return useVirtualBase<TScrollElement, TItemElement>({
+  return useVirtualizerBase<TScrollElement, TItemElement>({
     observeElementRect: observeElementRect,
     observeElementOffset: observeElementOffset,
     scrollToFn: elementScroll,
@@ -61,13 +61,17 @@ export function useVirtual<TScrollElement, TItemElement = unknown>(
   })
 }
 
-export function useVirtualWindow<TScrollElement, TItemElement = unknown>(
+export function useWindowVirtualizer<TItemElement = unknown>(
   options: PartialKeys<
-    VirtualizerOptions<TScrollElement, TItemElement>,
-    'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
+    VirtualizerOptions<Window, TItemElement>,
+    | 'getScrollElement'
+    | 'observeElementRect'
+    | 'observeElementOffset'
+    | 'scrollToFn'
   >,
-): Virtualizer<TScrollElement, TItemElement> {
-  return useVirtualBase<TScrollElement, TItemElement>({
+): Virtualizer<Window, TItemElement> {
+  return useVirtualizerBase<Window, TItemElement>({
+    getScrollElement: () => (typeof window !== 'undefined' ? window : null!),
     observeElementRect: observeWindowRect,
     observeElementOffset: observeWindowOffset,
     scrollToFn: windowScroll,

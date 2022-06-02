@@ -3,7 +3,7 @@ import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { faker } from '@faker-js/faker'
 import { findIndex, groupBy } from 'lodash'
-import { useVirtual, defaultRangeExtractor } from '@tanstack/react-virtual'
+import { useVirtualizer, defaultRangeExtractor } from '@tanstack/react-virtual'
 
 const groupedNames = groupBy(
   Array.from({ length: 1000 })
@@ -28,9 +28,9 @@ const App = () => {
 
   const isActiveSticky = (index) => activeStickyIndexRef.current === index
 
-  const rowVirtualizer = useVirtual({
+  const rowVirtualizer = useVirtualizer({
     count: rows.length,
-    estimateSize: React.useCallback(() => 50, []),
+    estimateSize: () => 50,
     getScrollElement: () => parentRef.current,
     rangeExtractor: React.useCallback(
       (range) => {
