@@ -42,15 +42,15 @@
     },
     {
       "label": "Solid Examples",
-      "children": [{ "to": "", "label": "Coming Soon!" }]
+      "children": [{ "to": "#", "label": "Coming Soon!" }]
     },
     {
       "label": "Svelte Examples",
-      "children": [{ "to": "", "label": "Coming Soon!" }]
+      "children": [{ "to": "#", "label": "Coming Soon!" }]
     },
     {
       "label": "Vue Examples",
-      "children": [{ "to": "", "label": "Coming Soon!" }]
+      "children": [{ "to": "#", "label": "Coming Soon!" }]
     }
   ]
 }
