@@ -4,9 +4,9 @@ Headless UI for virtualizing scrollable elements in TS/JS and React
 
 <a href="https://twitter.com/intent/tweet?button_hashtag=TanStack" target="\_parent">
   <img alt="#TanStack" src="https://img.shields.io/twitter/url?color=%2308a0e9&label=%23TanStack&style=social&url=https%3A%2F%2Ftwitter.com%2Fintent%2Ftweet%3Fbutton_hashtag%3DTanStack" />
-</a><a href="https://github.com/tanstack/virtual/actions?table=workflow%3A%22react-virtual+tests%22">
-<img src="https://github.com/tanstack/virtual/workflows/react-virtual%20tests/badge.svg" />
-</a><a href="https://npmjs.com/package/react-virtual" target="\_parent">
+</a><a href="https://github.com/tanstack/virtual/actions?table=workflow%3A%22@tanstack/virtual-core+tests%22">
+<img src="https://github.com/tanstack/virtual/workflows/@tanstack/virtual-core%20tests/badge.svg" />
+</a><a href="https://npmjs.com/package/@tanstack/virtual-core" target="\_parent">
   <img alt="" src="https://img.shields.io/npm/dm/@tanstack/virtual.svg" />
 </a><a href="https://bundlephobia.com/result?p=@tanstack/virtual@latest" target="\_parent">
   <img alt="" src="https://badgen.net/bundlephobia/minzip/@tanstack/virtual@latest" />
@@ -34,8 +34,5 @@ Enjoy this library? Try the entire [TanStack](https://tanstack.com)! [React Quer
 - Fixed, variable and dynamic measurement modes
 - Imperative scrollTo control for offset, indices and alignment
 - Custom scrolling function support (eg. smooth scroll)
-- <a href="https://bundlephobia.com/result?p=tanstack/virtual-core@beta" target="\_parent">
-  <img alt="" src="https://badgen.net/bundlephobia/minzip/tanstack/virtual-core@beta" />
-  </a>
 
 <!-- Force  -->
