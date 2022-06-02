@@ -1,7 +1,7 @@
 {
   "name": "@tanstack/virtual-core",
   "author": "Tanner Linsley",
-  "version": "4.0.0-alpha.0",
+  "version": "3.0.0-alpha.1",
   "description": "Headless UI for virtualizing scrollable elements in TS/JS + Frameworks",
   "license": "MIT",
   "homepage": "https://github.com/tanstack/virtual#readme",
