@@ -126,7 +126,7 @@ This function receives visible range indexes and should return array of indexes 
 enableSmoothScroll?: boolean
 ```
 
-Set to `true` to enable smooth scrolling. Smooth scrolling is disabled by default to avoid inaccurate landing positions when dynamically measuring elements (a common use case and configuration). If you plan to use smooth scrolling, it's suggested that you either estimate the size of your elements as close to their maximums as possible, or simply turn off dynamic measuring of elements.
+Enables/disables smooth scrolling. Smooth scrolling is enabled by default, but may result in inaccurate landing positions when dynamically measuring elements (a common use case and configuration). If you plan to use smooth scrolling, it's suggested that you either estimate the size of your elements as close to their maximums as possible, or simply turn off dynamic measuring of elements.
 
 ### `scrollToFn`
 

@@ -229,6 +229,8 @@ export interface VirtualizerOptions<
   horizontal?: boolean
   paddingStart?: number
   paddingEnd?: number
+  scrollPaddingStart?: number
+  scrollPaddingEnd?: number
   initialOffset?: number
   getItemKey?: (index: number) => Key
   rangeExtractor?: (range: Range) => number[]
@@ -264,10 +266,12 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       overscan: 1,
       paddingStart: 0,
       paddingEnd: 0,
+      scrollPaddingStart: 0,
+      scrollPaddingEnd: 0,
       horizontal: false,
       getItemKey: defaultKeyExtractor,
       rangeExtractor: defaultRangeExtractor,
-      enableSmoothScroll: false,
+      enableSmoothScroll: true,
       onChange: () => {},
       measureElement,
       initialRect: { width: 0, height: 0 },
@@ -496,9 +500,12 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     }
 
     if (align === 'auto') {
-      if (measurement.end >= offset + size) {
+      if (measurement.end >= offset + size - this.options.scrollPaddingEnd) {
         align = 'end'
-      } else if (measurement.start <= offset) {
+      } else if (
+        measurement.start <=
+        offset + this.options.scrollPaddingStart
+      ) {
         align = 'start'
       } else {
         return
@@ -506,11 +513,9 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     }
 
     const toOffset =
-      align === 'center'
-        ? measurement.start + measurement.size / 2
-        : align === 'end'
-        ? measurement.end
-        : measurement.start
+      align === 'end'
+        ? measurement.end + this.options.scrollPaddingEnd
+        : measurement.start - this.options.scrollPaddingStart
 
     this.scrollToOffset(toOffset, { align, ...rest })
   }
@@ -523,7 +528,11 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     clearTimeout(this.scrollCheckFrame)
 
     this.destinationOffset = offset
-    this.options.scrollToFn(offset, canSmooth, this)
+    this.options.scrollToFn(
+      offset,
+      this.options.enableSmoothScroll && canSmooth,
+      this,
+    )
 
     let scrollCheckFrame: ReturnType<typeof setTimeout>
 
