@@ -23,6 +23,7 @@
     "./examples/react/fixed",
     "./examples/react/infinite-scroll",
     "./examples/react/padding",
+    "./examples/react/scroll-padding",
     "./examples/react/smooth-scroll",
     "./examples/react/sticky",
     "./examples/react/variable"
