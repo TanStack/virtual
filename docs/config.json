@@ -24,8 +24,8 @@
     {
       "label": "Core APIs",
       "children": [
-        { "label": "Virtualizer", "to": "api/core/virtualizer" },
-        { "label": "VirtualItem", "to": "api/core/virtual-item" }
+        { "label": "Virtualizer", "to": "api/virtualizer" },
+        { "label": "VirtualItem", "to": "api/virtual-item" }
       ]
     },
     {
