@@ -1,6 +1,4 @@
 import observeRect from '@reach/observe-rect'
-import { check } from 'prettier'
-import React from 'react'
 import { memo } from './utils'
 
 export * from './utils'
