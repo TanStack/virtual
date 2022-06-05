@@ -23,7 +23,7 @@ Headless UI for virtualizing scrollable elements in TS/JS and React
 <br />
 <br />
 
-Enjoy this library? Try the entire [TanStack](https://tanstack.com)! [React Query](https://github.com/@tanstack/react-query), [TanStack Table](https://github.com/@tanstack/table), [React Charts](https://github.com/@tanstack/react-charts)
+Enjoy this library? Try the entire [TanStack](https://tanstack.com)! [React Query](https://github.com/TanStack/react-query), [TanStack Table](https://github.com/TanStack/table), [React Charts](https://github.com/TanStack/react-charts)
 
 ## Visit [tanstack.com/virtual](https://tanstack.com/virtual) for docs, guides, API and more!
 
