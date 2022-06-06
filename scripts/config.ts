@@ -14,6 +14,12 @@ export const packages: Package[] = [
     srcDir: 'src',
     dependencies: ['@tanstack/virtual-core'],
   },
+  {
+    name: '@tanstack/solid-virtual',
+    packageDir: 'solid-virtual',
+    srcDir: 'src',
+    dependencies: ['@tanstack/virtual-core'],
+  },
 ]
 
 export const latestBranch = 'main'
