@@ -6,8 +6,6 @@
   },
   "files": ["src/index.tsx"],
   "include": [
-    "src",
-    "../virtual-core/src/utils.ts",
-    "../virtual-core/src/index.tsx"
+    "src"
   ]
 }

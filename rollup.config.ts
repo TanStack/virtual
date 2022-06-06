@@ -198,15 +198,10 @@ function umdProd({
         gzipSize: true,
       }),
       visualizer({
-        filename: `${packageDir}/build/stats-react.json`,
+        filename: `${packageDir}/build/stats.json`,
         json: true,
         gzipSize: true,
-      }),
-      visualizer({
-        filename: `${packageDir}/build/stats-solid.json`,
-        json: true,
-        gzipSize: true,
-      }),
+      })
     ],
   }
 }

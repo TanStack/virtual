@@ -31,7 +31,7 @@ yarn-error.log*
 .history
 size-plugin.json
 stats-hydration.json
-stats-react.json
+stats.json
 stats.html
 .vscode/settings.json
 
