@@ -51,6 +51,17 @@ export default function rollup(options: RollupOptions): RollupOptions[] {
         react: 'React',
       },
     }),
+    ...buildConfigs({
+      name: 'solid-virtual',
+      packageDir: 'packages/solid-virtual',
+      jsName: 'SolidVirtual',
+      outputFile: 'solid-virtual',
+      entryFile: 'src/index.tsx',
+      globals: {
+        'solid-js': 'Solid',
+        'solid-js/store': 'Solid/Store',
+      },
+    }),
   ]
 }
 
@@ -188,6 +199,11 @@ function umdProd({
       }),
       visualizer({
         filename: `${packageDir}/build/stats-react.json`,
+        json: true,
+        gzipSize: true,
+      }),
+      visualizer({
+        filename: `${packageDir}/build/stats-solid.json`,
         json: true,
         gzipSize: true,
       }),

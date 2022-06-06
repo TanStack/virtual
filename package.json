@@ -19,6 +19,7 @@
   "workspaces": [
     "./packages/virtual-core",
     "./packages/react-virtual",
+    "./packages/solid-virtual",
     "./examples/react/dynamic",
     "./examples/react/fixed",
     "./examples/react/infinite-scroll",
