@@ -20,6 +20,7 @@
     "./packages/virtual-core",
     "./packages/react-virtual",
     "./packages/solid-virtual",
+    "./packages/svelte-virtual",
     "./examples/react/dynamic",
     "./examples/react/fixed",
     "./examples/react/infinite-scroll",
