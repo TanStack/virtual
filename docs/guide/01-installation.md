@@ -6,31 +6,31 @@ Before we dig in to the API, let's get you set up!
 
 Install your TanStack Virtual adapter as a dependency using your favorite npm package manager
 
-## React Table
+## React Virtual
 
 ```bash
 $ npm install @tanstack/react-virtual@beta
 ```
 
-## Solid Table
+## Solid Virtual
 
 ```bash
 $ npm install @tanstack/solid-virtual@beta
 ```
 
-## Svelte Table
+## Svelte Virtual
 
 ```bash
 $ npm install @tanstack/svelte-virtual@beta
 ```
 
-## Vue Table
+## Vue Virtual
 
 ```bash
 $ npm install @tanstack/vue-virtual@beta
 ```
 
-## Table Core (no framework)
+## Virtual Core (no framework)
 
 ```bash
 $ npm install @tanstack/virtual-core@beta
