@@ -34,7 +34,7 @@ A function that returns the scrollable element for the virtualizer. It may retur
 estimateSize: (index: number) => number
 ```
 
-> 🧠 If you are dynamically measuring your elements, it's recommended to estimate the largest possible size (within comfort) of your elements. This will ensure features like smooth-scrolling will have a better chance at working correctly.
+> 🧠 If you are dynamically measuring your elements, it's recommended to estimate the largest possible size (width/height, within comfort) of your items. This will ensure features like smooth-scrolling will have a better chance at working correctly.
 
 This function is passed the index of each item and should return the actual size (or estimated size if you will be dynamically measuring items with `virtualItem.measureElement`) for each item. This measurement should return either the width or height depending on the orientation of your virtualizer.
 
