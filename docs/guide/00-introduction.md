@@ -20,7 +20,7 @@ function App() {
   // The virtualizer
   const rowVirtualizer = useVirtualizer({
     count: 10000,
-    getScrollElement: () => parentRef.current
+    getScrollElement: () => parentRef.current,
     estimateSize: () => 35,
   })
 
