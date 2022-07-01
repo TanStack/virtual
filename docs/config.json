@@ -8,8 +8,8 @@
     {
       "label": "Guide",
       "children": [
-        { "label": "Introduction", "to": "guide/00-introduction" },
-        { "label": "Installation", "to": "guide/01-installation" }
+        { "label": "Introduction", "to": "guide/introduction" },
+        { "label": "Installation", "to": "guide/installation" }
       ]
     },
     {
