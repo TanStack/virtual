@@ -96,6 +96,22 @@ paddingEnd?: number
 
 The padding to apply to the end of the virtualizer in pixels.
 
+### `scrollPaddingStart`
+
+```tsx
+scrollPaddingStart?: number
+```
+
+The padding to apply to the start of the virtualizer in pixels when scrolling to an element.
+
+### `scrollPaddingEnd`
+
+```tsx
+scrollPaddingEnd?: number
+```
+
+The padding to apply to the end of the virtualizer in pixels when scrolling to an element.
+
 ### `initialOffset`
 
 ```tsx
