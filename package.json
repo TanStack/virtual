@@ -72,5 +72,8 @@
     "ts-node": "^10.7.0",
     "typescript": "^4.7.0-beta",
     "vue": "^3.2.33"
+  },
+  "dependencies": {
+    "rollup-plugin-dts": "^4.2.2"
   }
 }

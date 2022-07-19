@@ -7,6 +7,7 @@ import replace from '@rollup/plugin-replace'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import path from 'path'
 import svelte from 'rollup-plugin-svelte'
+import dts from 'rollup-plugin-dts'
 
 type Options = {
   input: string
