@@ -7,7 +7,7 @@ export * from './utils'
 
 type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
-interface ScrollToOptions {
+export interface ScrollToOptions {
   align: ScrollAlignment
 }
 
