@@ -1,7 +1,7 @@
 {
   "name": "@tanstack/react-virtual",
   "author": "Tanner Linsley",
-  "version": "3.0.0-beta.8",
+  "version": "3.0.0-beta.9",
   "description": "Headless UI for virtualizing scrollable elements in React",
   "license": "MIT",
   "homepage": "https://github.com/tanstack/virtual#readme",
