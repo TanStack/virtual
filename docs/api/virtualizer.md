@@ -261,4 +261,4 @@ Returns the total size in pixels for the virtualized items. This measurement wil
 measure: () => void
 ```
 
-Recomputes the virtualizer and resets any item measurements. You should call this function when:
+Recomputes the virtualizer and resets any item measurements.
