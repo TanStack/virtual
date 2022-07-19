@@ -246,6 +246,10 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private scrollOffset: number
   private destinationOffset: undefined | number
   private scrollCheckFrame!: ReturnType<typeof setTimeout>
+  private measureElementCache: Record<
+    number,
+    (measurableItem: TItemElement | null) => void
+  > = {}
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
@@ -400,7 +404,46 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       this.options.measureElement,
     ],
     (indexes, measurements, measureElement) => {
+      const makeMeasureElement =
+        (index: number) => (measurableItem: TItemElement | null) => {
+          const item = this.measurementsCache[index]!
+
+          if (!measurableItem) {
+            return
+          }
+
+          const measuredItemSize = measureElement(measurableItem, this)
+          const itemSize = this.itemMeasurementsCache[item.key] ?? item.size
+
+          if (measuredItemSize !== itemSize) {
+            if (item.start < this.scrollOffset) {
+              if (
+                process.env.NODE_ENV === 'development' &&
+                this.options.debug
+              ) {
+                console.info('correction', measuredItemSize - itemSize)
+              }
+
+              if (!this.destinationOffset) {
+                this._scrollToOffset(
+                  this.scrollOffset + (measuredItemSize - itemSize),
+                  false,
+                )
+              }
+            }
+
+            this.pendingMeasuredCacheIndexes.push(index)
+            this.itemMeasurementsCache = {
+              ...this.itemMeasurementsCache,
+              [item.key]: measuredItemSize,
+            }
+            this.notify()
+          }
+        }
+
       const virtualItems: VirtualItem<TItemElement>[] = []
+
+      const currentMeasureElements: typeof this.measureElementCache = {}
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
@@ -408,39 +451,13 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
         const item = {
           ...measurement,
-          measureElement: (measurableItem: TItemElement | null) => {
-            if (measurableItem) {
-              const measuredItemSize = measureElement(measurableItem, this)
-
-              if (measuredItemSize !== item.size) {
-                if (item.start < this.scrollOffset) {
-                  if (
-                    process.env.NODE_ENV === 'development' &&
-                    this.options.debug
-                  )
-                    console.info('correction', measuredItemSize - item.size)
-
-                  if (!this.destinationOffset) {
-                    this._scrollToOffset(
-                      this.scrollOffset + (measuredItemSize - item.size),
-                      false,
-                    )
-                  }
-                }
-
-                this.pendingMeasuredCacheIndexes.push(i)
-                this.itemMeasurementsCache = {
-                  ...this.itemMeasurementsCache,
-                  [item.key]: measuredItemSize,
-                }
-                this.notify()
-              }
-            }
-          },
+          measureElement: (currentMeasureElements[i] =
+            this.measureElementCache[i] ?? makeMeasureElement(i)),
         }
-
         virtualItems.push(item)
       }
+
+      this.measureElementCache = currentMeasureElements
 
       return virtualItems
     },
