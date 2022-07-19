@@ -2,18 +2,17 @@
   "private": true,
   "repository": "https://github.com/tanstack/react-virtual.git",
   "scripts": {
-    "test": "(is-ci && yarn test:ci) || yarn test:dev",
+    "test": "(is-ci && npm run test:ci) || npm run test:dev",
     "test:ci": "jest",
     "test:dev": "jest --watch",
     "build": "rollup --config rollup.config.js && tsc -b",
-    "watch": "concurrently --kill-others \"rollup --config rollup.config.js -w\" \"tsc -b --watch\" \"yarn test\"",
-    "linkAll": "lerna exec 'yarn link' --parallel",
-    "unlinkAll": "lerna exec 'yarn unlink' --parallel",
-    "dev": "yarn watch",
+    "watch": "concurrently --kill-others \"rollup --config rollup.config.js -w\" \"tsc -b --watch\" \"npm run test\"",
+    "linkAll": "lerna exec 'npm link' --parallel",
+    "unlinkAll": "lerna exec 'npm unlink' --parallel",
+    "dev": "npm run watch",
     "prettier": "prettier \"packages/*/{src/**,examples/**/src/**}.{md,js,jsx,ts,tsx,json}\" --write",
     "visualize": "lerna exec 'open build/stats-html.html'",
-    "cipublish": "ts-node scripts/publish.ts",
-    "cipublishforce": "YARN_REGISTRY=https://registry.npmjs.org CI=true yarn cipublish"
+    "cipublish": "ts-node scripts/publish.ts"
   },
   "namespace": "@tanstack",
   "workspaces": [
