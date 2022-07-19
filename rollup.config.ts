@@ -101,7 +101,13 @@ function buildConfigs(opts: {
     globals: opts.globals,
   }
 
-  return [esm(options), cjs(options), umdDev(options), umdProd(options)]
+  return [
+    esm(options),
+    cjs(options),
+    umdDev(options),
+    umdProd(options),
+    types(options),
+  ]
 }
 
 function esm({ input, packageDir, external, banner }: Options): RollupOptions {
@@ -116,7 +122,11 @@ function esm({ input, packageDir, external, banner }: Options): RollupOptions {
       banner,
     },
     plugins: [
-      svelte(),
+      svelte({
+        compilerOptions: {
+          hydratable: true,
+        },
+      }),
       babelPlugin,
       nodeResolve({ extensions: ['.ts', '.tsx'] }),
     ],
@@ -206,7 +216,7 @@ function umdProd({
       }),
       size({}),
       visualizer({
-        filename: `${packageDir}/build/stats-html.html`,
+        filename: `${packageDir}/build/stats.html`,
         gzipSize: true,
       }),
       visualizer({
@@ -215,6 +225,25 @@ function umdProd({
         gzipSize: true,
       }),
     ],
+  }
+}
+
+function types({
+  input,
+  packageDir,
+  external,
+  banner,
+}: Options): RollupOptions {
+  return {
+    // TYPES
+    external,
+    input,
+    output: {
+      format: 'es',
+      file: `${packageDir}/build/types/index.d.ts`,
+      banner,
+    },
+    plugins: [dts()],
   }
 }
 
