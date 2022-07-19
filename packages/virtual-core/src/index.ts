@@ -288,6 +288,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private cleanup = () => {
     this.unsubs.filter(Boolean).forEach((d) => d!())
     this.unsubs = []
+    this.scrollElement = null
   }
 
   _didMount = () => {
