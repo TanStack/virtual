@@ -62,6 +62,18 @@ export default function rollup(options: RollupOptions): RollupOptions[] {
         'solid-js/store': 'Solid/Store',
       },
     }),
+    ...buildConfigs({
+      name: 'svelte-virtual',
+      packageDir: 'packages/svelte-virtual',
+      jsName: 'SvelteVirtual',
+      outputFile: 'svelte-virtual',
+      entryFile: 'src/index.ts',
+      globals: {
+        svelte: 'Svelte',
+        'svelte/internal': 'SvelteInternal',
+        'svelte/store': 'SvelteStore',
+      },
+    }),
   ]
 }
 
@@ -201,7 +213,7 @@ function umdProd({
         filename: `${packageDir}/build/stats.json`,
         json: true,
         gzipSize: true,
-      })
+      }),
     ],
   }
 }

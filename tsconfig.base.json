@@ -17,7 +17,8 @@
     "paths": {
       "@tanstack/virtual-core": ["packages/virtual-core"],
       "@tanstack/react-virtual": ["packages/react-virtual"],
-      "@tanstack/solid-virtual": ["packages/solid-virtual"]
+      "@tanstack/solid-virtual": ["packages/solid-virtual"],
+      "@tanstack/svelte-virtual": ["packages/svelte-virtual"]
     }
   }
 }
