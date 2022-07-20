@@ -9,33 +9,18 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 
 const queryClient = new QueryClient()
 
-// axios override to fake "get" a website
-// delete lines 9-36 if you are reusing this code outside of this demo
-Object.assign(axios, {
-  ...axios,
-  get: (url) => {
-    if (url.includes('demoapi.com')) {
-      const [d, limitStr = '0', pageStr = '0'] = url.match(
-        `_limit=([0-9]+)&_page=([0-9]+)`,
-      )
-      const limit = parseFloat(limitStr)
+async function fetchServerPage(
+  limit: number,
+  offset: number = 0,
+): Promise<{ rows: string[]; nextOffset: number }> {
+  const rows = new Array(limit)
+    .fill(0)
+    .map((e, i) => `Async loaded row #${i + offset * limit}`)
 
-      return new Promise((resolve) =>
-        setTimeout(() => {
-          const data = new Array(limit)
-            .fill(0)
-            .map(
-              (e, i) => `Async loaded row #${i + parseFloat(pageStr) * limit}`,
-            )
+  await new Promise((r) => setTimeout(r, 500))
 
-          return resolve({ data })
-        }),
-      )
-    }
-
-    return axios.get
-  },
-})
+  return { rows, nextOffset: offset + 1 }
+}
 
 function App() {
   const {
@@ -48,26 +33,21 @@ function App() {
     hasNextPage,
   } = useInfiniteQuery(
     'projects',
-    async (key, nextPage = 0) => {
-      const { data } = await axios.get(
-        'https://demoapi.com?_limit=10&_page=' + nextPage,
-      )
-      return data
-    },
+    (ctx) => fetchServerPage(10, ctx.pageParam),
     {
-      getNextPageParam: (lastGroup, groups) =>
-        lastGroup.length ? groups.length : false,
+      getNextPageParam: (_lastGroup, groups) => groups.length,
     },
   )
 
-  const flatPosts = data ? data.pages.flat(1) : []
+  const allRows = data ? data.pages.flatMap((d) => d.rows) : []
 
   const parentRef = React.useRef()
 
   const rowVirtualizer = useVirtualizer({
-    count: hasNextPage ? flatPosts.length + 1 : flatPosts.length,
+    count: hasNextPage ? allRows.length + 1 : allRows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 100,
+    overscan: 5,
   })
 
   React.useEffect(() => {
@@ -78,7 +58,7 @@ function App() {
     }
 
     if (
-      lastItem.index >= flatPosts.length - 1 &&
+      lastItem.index >= allRows.length - 1 &&
       hasNextPage &&
       !isFetchingNextPage
     ) {
@@ -87,7 +67,7 @@ function App() {
   }, [
     hasNextPage,
     fetchNextPage,
-    flatPosts.length,
+    allRows.length,
     isFetchingNextPage,
     rowVirtualizer.getVirtualItems(),
   ])
@@ -126,8 +106,8 @@ function App() {
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const isLoaderRow = virtualRow.index > flatPosts.length - 1
-              const post = flatPosts[virtualRow.index]
+              const isLoaderRow = virtualRow.index > allRows.length - 1
+              const post = allRows[virtualRow.index]
 
               return (
                 <div
