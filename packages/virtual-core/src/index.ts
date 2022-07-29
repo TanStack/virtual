@@ -8,8 +8,8 @@ export * from './utils'
 type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
 export interface ScrollToOptions {
-  align: ScrollAlignment
-  smoothScroll: boolean
+  align?: ScrollAlignment
+  smoothScroll?: boolean
 }
 
 type ScrollToOffsetOptions = ScrollToOptions
@@ -489,7 +489,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
   scrollToOffset = (
     toOffset: number,
-    { align, smoothScroll }: ScrollToOffsetOptions = { align: 'start', smoothScroll: this.options.enableSmoothScroll },
+    { align = 'start', smoothScroll = this.options.enableSmoothScroll }: ScrollToOffsetOptions = {},
   ) => {
     const attempt = () => {
       const offset = this.scrollOffset
@@ -522,7 +522,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
   scrollToIndex = (
     index: number,
-    { align, smoothScroll, ...rest }: ScrollToIndexOptions = { align: 'auto', smoothScroll: this.options.enableSmoothScroll },
+    { align = 'auto', smoothScroll = this.options.enableSmoothScroll, ...rest }: ScrollToIndexOptions = {},
   ) => {
     const measurements = this.getMeasurements()
     const offset = this.scrollOffset
