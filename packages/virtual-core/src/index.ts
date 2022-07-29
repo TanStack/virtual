@@ -9,6 +9,7 @@ type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
 export interface ScrollToOptions {
   align: ScrollAlignment
+  smoothScroll: boolean
 }
 
 type ScrollToOffsetOptions = ScrollToOptions
@@ -488,7 +489,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
   scrollToOffset = (
     toOffset: number,
-    { align }: ScrollToOffsetOptions = { align: 'start' },
+    { align, smoothScroll }: ScrollToOffsetOptions = { align: 'start', smoothScroll: this.options.enableSmoothScroll },
   ) => {
     const attempt = () => {
       const offset = this.scrollOffset
@@ -505,11 +506,11 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       }
 
       if (align === 'start') {
-        this._scrollToOffset(toOffset, true)
+        this._scrollToOffset(toOffset, smoothScroll)
       } else if (align === 'end') {
-        this._scrollToOffset(toOffset - size, true)
+        this._scrollToOffset(toOffset - size, smoothScroll)
       } else if (align === 'center') {
-        this._scrollToOffset(toOffset - size / 2, true)
+        this._scrollToOffset(toOffset - size / 2, smoothScroll)
       }
     }
 
@@ -521,7 +522,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
   scrollToIndex = (
     index: number,
-    { align, ...rest }: ScrollToIndexOptions = { align: 'auto' },
+    { align, smoothScroll, ...rest }: ScrollToIndexOptions = { align: 'auto', smoothScroll: this.options.enableSmoothScroll },
   ) => {
     const measurements = this.getMeasurements()
     const offset = this.scrollOffset
@@ -552,7 +553,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
         ? measurement.end + this.options.scrollPaddingEnd
         : measurement.start - this.options.scrollPaddingStart
 
-    this.scrollToOffset(toOffset, { align, ...rest })
+    this.scrollToOffset(toOffset, { align, smoothScroll, ...rest })
   }
 
   getTotalSize = () =>
@@ -565,7 +566,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     this.destinationOffset = offset
     this.options.scrollToFn(
       offset,
-      this.options.enableSmoothScroll && canSmooth,
+      canSmooth,
       this,
     )
 
