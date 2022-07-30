@@ -4,7 +4,6 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { useVirtualizer, Range } from '../src/index'
 
 let renderer: jest.Mock<undefined, []>
-let useDynamic = false
 
 interface ListProps {
   count?: number
@@ -13,6 +12,7 @@ interface ListProps {
   width?: number
   itemSize?: number
   rangeExtractor?: (range: Range) => number[]
+  dynamic?: boolean
 }
 
 function List({
@@ -22,6 +22,7 @@ function List({
   width = 200,
   itemSize,
   rangeExtractor,
+  dynamic,
 }: ListProps) {
   renderer()
 
@@ -35,7 +36,7 @@ function List({
     observeElementRect: (_, cb) => {
       cb({ height, width })
     },
-    measureElement: () => itemSize,
+    measureElement: () => itemSize ?? 0,
     rangeExtractor,
   })
 
@@ -56,7 +57,7 @@ function List({
           <div
             data-testid={`item-${virtualRow.key}`}
             key={virtualRow.key}
-            ref={useDynamic ? virtualRow.measureElement : undefined}
+            ref={(el) => (dynamic ? virtualRow.measureElement(el) : undefined)}
             style={{
               position: 'absolute',
               top: 0,
@@ -75,7 +76,6 @@ function List({
 }
 
 beforeEach(() => {
-  useDynamic = false
   renderer = jest.fn(() => undefined)
 })
 
@@ -99,40 +99,38 @@ test('should render with overscan', () => {
   expect(renderer).toHaveBeenCalledTimes(2)
 })
 
-test('should render given dynamic size', () => {
-  useDynamic = true
-
-  render(<List itemSize={25} />)
+test('should render given dynamic size', async () => {
+  render(<List itemSize={100} dynamic />)
 
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
-  expect(screen.queryByText('Row 8')).toBeInTheDocument()
-  expect(screen.queryByText('Row 9')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 1')).toBeInTheDocument()
+  expect(screen.queryByText('Row 2')).toBeInTheDocument()
+  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(5)
+  expect(renderer).toHaveBeenCalledTimes(3)
 })
 
-test('should render given dynamic size after scroll', () => {
-  useDynamic = true
-
-  render(<List itemSize={25} />)
+test.only('should render given dynamic size after scroll', () => {
+  render(<List itemSize={100} dynamic />)
 
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
-  expect(screen.queryByText('Row 8')).toBeInTheDocument()
-  expect(screen.queryByText('Row 9')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 1')).toBeInTheDocument()
+  expect(screen.queryByText('Row 2')).toBeInTheDocument()
+  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(5)
+  expect(renderer).toHaveBeenCalledTimes(3)
   renderer.mockReset()
 
   fireEvent.scroll(screen.getByTestId('scroller'), {
-    target: { scrollTop: 75 },
+    target: { scrollTop: 400 },
   })
 
-  expect(screen.queryByText('Row 1')).not.toBeInTheDocument()
-  expect(screen.queryByText('Row 2')).toBeInTheDocument()
-  expect(screen.queryByText('Row 11')).toBeInTheDocument()
-  expect(screen.queryByText('Row 12')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 4')).toBeInTheDocument()
+  expect(screen.queryByText('Row 9')).toBeInTheDocument()
+  expect(screen.queryByText('Row 10')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(3)
+  expect(renderer).toHaveBeenCalledTimes(2)
 })
 
 test('should use rangeExtractor', () => {

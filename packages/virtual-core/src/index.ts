@@ -193,7 +193,7 @@ export const windowScroll = (
   canSmooth: boolean,
   instance: Virtualizer<any, any>,
 ) => {
-  ;(instance.scrollElement as Window)?.scrollTo({
+  ;(instance.scrollElement as Window)?.scrollTo?.({
     [instance.options.horizontal ? 'left' : 'top']: offset,
     behavior: canSmooth ? 'smooth' : undefined,
   })
@@ -204,7 +204,7 @@ export const elementScroll = (
   canSmooth: boolean,
   instance: Virtualizer<any, any>,
 ) => {
-  ;(instance.scrollElement as Element)?.scrollTo({
+  ;(instance.scrollElement as Element)?.scrollTo?.({
     [instance.options.horizontal ? 'left' : 'top']: offset,
     behavior: canSmooth ? 'smooth' : undefined,
   })
@@ -269,7 +269,10 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     number,
     (measurableItem: TItemElement | null) => void
   > = {}
-  private range: { startIndex: number, endIndex: number } = { startIndex: 0, endIndex: 0 }
+  private range: { startIndex: number; endIndex: number } = {
+    startIndex: 0,
+    endIndex: 0,
+  }
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
@@ -379,7 +382,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       return measurements
     },
     {
-      key: process.env.NODE_ENV === 'development' && 'getMeasurements',
+      key: process.env.NODE_ENV !== 'production' && 'getMeasurements',
       debug: () => this.options.debug,
     },
   )
@@ -392,14 +395,17 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
         outerSize,
         scrollOffset,
       })
-      if (range.startIndex !== this.range.startIndex || range.endIndex !== this.range.endIndex) {
+      if (
+        range.startIndex !== this.range.startIndex ||
+        range.endIndex !== this.range.endIndex
+      ) {
         this.range = range
         this.notify()
       }
       return this.range
     },
     {
-      key: process.env.NODE_ENV === 'development' && 'calculateRange',
+      key: process.env.NODE_ENV !== 'production' && 'calculateRange',
       debug: () => this.options.debug,
     },
   )
@@ -419,7 +425,8 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       })
     },
     {
-      key: process.env.NODE_ENV === 'development' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      debug: () => this.options.debug,
     },
   )
 
@@ -443,10 +450,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
           if (measuredItemSize !== itemSize) {
             if (item.start < this.scrollOffset) {
-              if (
-                process.env.NODE_ENV === 'development' &&
-                this.options.debug
-              ) {
+              if (process.env.NODE_ENV !== 'production' && this.options.debug) {
                 console.info('correction', measuredItemSize - itemSize)
               }
 
@@ -488,7 +492,8 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       return virtualItems
     },
     {
-      key: process.env.NODE_ENV === 'development' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      debug: () => this.options.debug,
     },
   )
 
