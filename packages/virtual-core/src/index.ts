@@ -328,14 +328,14 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
           this.scrollRect = rect
-          this.notify()
+          this.calculateRange()
         }),
       )
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset) => {
           this.scrollOffset = offset
-          this.notify()
+          this.calculateRange()
         }),
       )
     }
@@ -394,6 +394,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       })
       if (range.startIndex !== this.range.startIndex || range.endIndex !== this.range.endIndex) {
         this.range = range
+        this.notify()
       }
       return this.range
     },
@@ -406,7 +407,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private getIndexes = memo(
     () => [
       this.options.rangeExtractor,
-      this.calculateRange(),
+      this.range,
       this.options.overscan,
       this.options.count,
     ],
