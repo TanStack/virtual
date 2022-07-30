@@ -2211,29 +2211,29 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@tanstack/react-virtual@3.0.0-beta.12", "@tanstack/react-virtual@file:/home/runner/work/virtual/virtual/packages/react-virtual":
+"@tanstack/react-virtual@3.0.0-beta.13", "@tanstack/react-virtual@file:/home/runner/work/virtual/virtual/packages/react-virtual":
   "resolved" "file:packages/react-virtual"
-  "version" "3.0.0-beta.12"
+  "version" "3.0.0-beta.13"
   dependencies:
     "@reach/observe-rect" "^1.1.0"
-    "@tanstack/virtual-core" "3.0.0-beta.10"
+    "@tanstack/virtual-core" "3.0.0-beta.12"
 
 "@tanstack/solid-virtual@file:/home/runner/work/virtual/virtual/packages/solid-virtual":
   "resolved" "file:packages/solid-virtual"
-  "version" "3.0.0-beta.12"
+  "version" "3.0.0-beta.13"
   dependencies:
     "@reach/observe-rect" "^1.1.0"
-    "@tanstack/virtual-core" "3.0.0-beta.10"
+    "@tanstack/virtual-core" "3.0.0-beta.12"
 
 "@tanstack/svelte-virtual@file:/home/runner/work/virtual/virtual/packages/svelte-virtual":
   "resolved" "file:packages/svelte-virtual"
-  "version" "3.0.0-beta.12"
+  "version" "3.0.0-beta.13"
   dependencies:
     "@reach/observe-rect" "^1.1.0"
 
-"@tanstack/virtual-core@3.0.0-beta.12", "@tanstack/virtual-core@file:/home/runner/work/virtual/virtual/packages/virtual-core":
+"@tanstack/virtual-core@3.0.0-beta.13", "@tanstack/virtual-core@file:/home/runner/work/virtual/virtual/packages/virtual-core":
   "resolved" "file:packages/virtual-core"
-  "version" "3.0.0-beta.12"
+  "version" "3.0.0-beta.13"
   dependencies:
     "@reach/observe-rect" "^1.1.0"
 
@@ -7679,7 +7679,7 @@
   "resolved" "file:examples/react/dynamic"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.10"
+    "@tanstack/react-virtual" "3.0.0-beta.12"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
@@ -7687,7 +7687,7 @@
   "resolved" "file:examples/react/fixed"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.10"
+    "@tanstack/react-virtual" "3.0.0-beta.12"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
@@ -7695,7 +7695,7 @@
   "resolved" "file:examples/react/infinite-scroll"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.10"
+    "@tanstack/react-virtual" "3.0.0-beta.12"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
     "react-query" "^3.39.1"
@@ -7704,7 +7704,7 @@
   "resolved" "file:examples/react/padding"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.10"
+    "@tanstack/react-virtual" "3.0.0-beta.12"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
@@ -7713,7 +7713,7 @@
   "version" "0.0.0"
   dependencies:
     "@react-hookz/web" "^14.2.2"
-    "@tanstack/react-virtual" "3.0.0-beta.10"
+    "@tanstack/react-virtual" "3.0.0-beta.12"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
@@ -7721,7 +7721,7 @@
   "resolved" "file:examples/react/smooth-scroll"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.10"
+    "@tanstack/react-virtual" "3.0.0-beta.12"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
@@ -7730,7 +7730,7 @@
   "version" "0.0.0"
   dependencies:
     "@faker-js/faker" "^7.1.0"
-    "@tanstack/react-virtual" "3.0.0-beta.10"
+    "@tanstack/react-virtual" "3.0.0-beta.12"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
@@ -7738,7 +7738,7 @@
   "resolved" "file:examples/react/variable"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.10"
+    "@tanstack/react-virtual" "3.0.0-beta.12"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
