@@ -496,33 +496,26 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     toOffset: number,
     { align }: ScrollToOffsetOptions = { align: 'start' },
   ) => {
-    const attempt = () => {
-      const offset = this.scrollOffset
-      const size = this.getSize()
+    const offset = this.scrollOffset
+    const size = this.getSize()
 
-      if (align === 'auto') {
-        if (toOffset <= offset) {
-          align = 'start'
-        } else if (toOffset >= offset + size) {
-          align = 'end'
-        } else {
-          align = 'start'
-        }
-      }
-
-      if (align === 'start') {
-        this._scrollToOffset(toOffset, true)
-      } else if (align === 'end') {
-        this._scrollToOffset(toOffset - size, true)
-      } else if (align === 'center') {
-        this._scrollToOffset(toOffset - size / 2, true)
+    if (align === 'auto') {
+      if (toOffset <= offset) {
+        align = 'start'
+      } else if (toOffset >= offset + size) {
+        align = 'end'
+      } else {
+        align = 'start'
       }
     }
 
-    attempt()
-    requestAnimationFrame(() => {
-      attempt()
-    })
+    if (align === 'start') {
+      this._scrollToOffset(toOffset, true)
+    } else if (align === 'end') {
+      this._scrollToOffset(toOffset - size, true)
+    } else if (align === 'center') {
+      this._scrollToOffset(toOffset - size / 2, true)
+    }
   }
 
   scrollToIndex = (
