@@ -269,6 +269,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     number,
     (measurableItem: TItemElement | null) => void
   > = {}
+  private range: { startIndex: number, endIndex: number } = { startIndex: 0, endIndex: 0 }
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
@@ -327,14 +328,14 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
           this.scrollRect = rect
-          this.notify()
+          this.calculateRange()
         }),
       )
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset) => {
           this.scrollOffset = offset
-          this.notify()
+          this.calculateRange()
         }),
       )
     }
@@ -386,11 +387,16 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private calculateRange = memo(
     () => [this.getMeasurements(), this.getSize(), this.scrollOffset],
     (measurements, outerSize, scrollOffset) => {
-      return calculateRange({
+      const range = calculateRange({
         measurements,
         outerSize,
         scrollOffset,
       })
+      if (range.startIndex !== this.range.startIndex || range.endIndex !== this.range.endIndex) {
+        this.range = range
+        this.notify()
+      }
+      return this.range
     },
     {
       key: process.env.NODE_ENV === 'development' && 'calculateRange',
@@ -401,7 +407,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private getIndexes = memo(
     () => [
       this.options.rangeExtractor,
-      this.calculateRange(),
+      this.range,
       this.options.overscan,
       this.options.count,
     ],
