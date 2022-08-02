@@ -1246,10 +1246,18 @@
   "resolved" "https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.0.7.tgz"
   "version" "3.0.7"
 
-"@jridgewell/set-array@^1.0.0":
+"@jridgewell/set-array@^1.0.0", "@jridgewell/set-array@^1.0.1":
   "integrity" "sha512-Ct5MqZkLGEXTVmQYbGtx9SVqD2fqwvdubdps5D3djjAkgkKwT918VNOz65pEHFaYTeWcukmJmH5SwsA9Tn2ObQ=="
   "resolved" "https://registry.npmjs.org/@jridgewell/set-array/-/set-array-1.1.1.tgz"
   "version" "1.1.1"
+
+"@jridgewell/source-map@^0.3.2":
+  "integrity" "sha512-m7O9o2uR8k2ObDysZYzdfhb08VuEml5oWGiosa1VdaPZ/A6QyPkAJuwN0Q1lhULOf6B7MtQmHENS743hWtCrgw=="
+  "resolved" "https://registry.npmjs.org/@jridgewell/source-map/-/source-map-0.3.2.tgz"
+  "version" "0.3.2"
+  dependencies:
+    "@jridgewell/gen-mapping" "^0.3.0"
+    "@jridgewell/trace-mapping" "^0.3.9"
 
 "@jridgewell/sourcemap-codec@^1.4.10":
   "integrity" "sha512-GryiOJmNcWbovBxTfZSF71V/mXbgcV3MewDe3kIMCLyIh5e7SKAeUZs+rMnJ8jkMolZ/4/VsdBmMrw3l+VdZ3w=="
@@ -2135,11 +2143,6 @@
   dependencies:
     "@octokit/openapi-types" "^11.2.0"
 
-"@reach/observe-rect@^1.1.0":
-  "integrity" "sha512-Ba7HmkFgfQxZqqaeIWWkNK0rEhpxVQHIoVyW1YDSkGsGIXzcaW4deC8B0pZrNSSyLTdIk7y+5olKt5+g0GmFIQ=="
-  "resolved" "https://registry.npmjs.org/@reach/observe-rect/-/observe-rect-1.2.0.tgz"
-  "version" "1.2.0"
-
 "@react-hookz/deep-equal@^1.0.2":
   "integrity" "sha512-cM5kPFb6EFH5q52WzRxfRX9+8g5kq78McWOYs6e1seo+nK6NpfLupT5uOCIJp37jU8ayd4Su8ni3HRFTN2C2kg=="
   "resolved" "https://registry.npmjs.org/@react-hookz/deep-equal/-/deep-equal-1.0.2.tgz"
@@ -2211,31 +2214,25 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@tanstack/react-virtual@3.0.0-beta.13", "@tanstack/react-virtual@file:/home/runner/work/virtual/virtual/packages/react-virtual":
+"@tanstack/react-virtual@3.0.0-beta.14", "@tanstack/react-virtual@file:/Users/christiankaindl/code/@TanStack/virtual/packages/react-virtual":
   "resolved" "file:packages/react-virtual"
-  "version" "3.0.0-beta.13"
+  "version" "3.0.0-beta.14"
   dependencies:
-    "@reach/observe-rect" "^1.1.0"
-    "@tanstack/virtual-core" "3.0.0-beta.12"
+    "@tanstack/virtual-core" "3.0.0-beta.14"
 
-"@tanstack/solid-virtual@file:/home/runner/work/virtual/virtual/packages/solid-virtual":
+"@tanstack/solid-virtual@file:/Users/christiankaindl/code/@TanStack/virtual/packages/solid-virtual":
   "resolved" "file:packages/solid-virtual"
-  "version" "3.0.0-beta.13"
+  "version" "3.0.0-beta.14"
   dependencies:
-    "@reach/observe-rect" "^1.1.0"
-    "@tanstack/virtual-core" "3.0.0-beta.12"
+    "@tanstack/virtual-core" "3.0.0-beta.14"
 
-"@tanstack/svelte-virtual@file:/home/runner/work/virtual/virtual/packages/svelte-virtual":
+"@tanstack/svelte-virtual@file:/Users/christiankaindl/code/@TanStack/virtual/packages/svelte-virtual":
   "resolved" "file:packages/svelte-virtual"
-  "version" "3.0.0-beta.13"
-  dependencies:
-    "@reach/observe-rect" "^1.1.0"
+  "version" "3.0.0-beta.14"
 
-"@tanstack/virtual-core@3.0.0-beta.13", "@tanstack/virtual-core@file:/home/runner/work/virtual/virtual/packages/virtual-core":
+"@tanstack/virtual-core@3.0.0-beta.14", "@tanstack/virtual-core@file:/Users/christiankaindl/code/@TanStack/virtual/packages/virtual-core":
   "resolved" "file:packages/virtual-core"
-  "version" "3.0.0-beta.13"
-  dependencies:
-    "@reach/observe-rect" "^1.1.0"
+  "version" "3.0.0-beta.14"
 
 "@testing-library/dom@^8.0.0":
   "integrity" "sha512-rab7vpf1uGig5efWwsCOn9j4/doy+W3VBoUyzX7C4y77u0wAckwc7R8nyH6e2rw0rRzKJR+gWPiAg8zhiFbxWQ=="
@@ -2628,7 +2625,7 @@
   "resolved" "https://registry.npmjs.org/acorn/-/acorn-7.4.1.tgz"
   "version" "7.4.1"
 
-"acorn@^8.2.4", "acorn@^8.4.1":
+"acorn@^8.2.4", "acorn@^8.4.1", "acorn@^8.5.0":
   "integrity" "sha512-U1riIR+lBSNi3IbxtaHOIKdH8sLFv3NYfNv8sg7ZsNhcfl4HF2++BfqqrNAxoCLQW1iiylOj76ecnaUxz+z9yw=="
   "resolved" "https://registry.npmjs.org/acorn/-/acorn-8.6.0.tgz"
   "version" "8.6.0"
@@ -3772,7 +3769,7 @@
   "resolved" "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz"
   "version" "8.0.0"
 
-"encoding@^0.1.12":
+"encoding@^0.1.0", "encoding@^0.1.12":
   "integrity" "sha512-ETBauow1T35Y/WZMkio9jiM0Z5xjHHmJ4XmjZOq1l/dXz3lr2sRn87nJy20RupqSh1F2m3HHPSp8ShIPQJrJ3A=="
   "resolved" "https://registry.npmjs.org/encoding/-/encoding-0.1.13.tgz"
   "version" "0.1.13"
@@ -3836,9 +3833,9 @@
     "is-date-object" "^1.0.1"
     "is-symbol" "^1.0.2"
 
-"esbuild-linux-64@0.14.42":
-  "integrity" "sha512-2L0HbzQfbTuemUWfVqNIjOfaTRt9zsvjnme6lnr7/MO9toz/MJ5tZhjqrG6uDWDxhsaHI2/nsDgrv8uEEN2eoA=="
-  "resolved" "https://registry.npmjs.org/esbuild-linux-64/-/esbuild-linux-64-0.14.42.tgz"
+"esbuild-darwin-64@0.14.42":
+  "integrity" "sha512-ipiBdCA3ZjYgRfRLdQwP82rTiv/YVMtW36hTvAN5ZKAIfxBOyPXY7Cejp3bMXWgzKD8B6O+zoMzh01GZsCuEIA=="
+  "resolved" "https://registry.npmjs.org/esbuild-darwin-64/-/esbuild-darwin-64-0.14.42.tgz"
   "version" "0.14.42"
 
 "esbuild@^0.14.27":
@@ -4149,6 +4146,11 @@
   "integrity" "sha1-FQStJSMVjKpA20onh8sBQRmU6k8= sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw=="
   "resolved" "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"
   "version" "1.0.0"
+
+"fsevents@^2.3.2", "fsevents@~2.3.2":
+  "integrity" "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA=="
+  "resolved" "https://registry.npmjs.org/fsevents/-/fsevents-2.3.2.tgz"
+  "version" "2.3.2"
 
 "function-bind@^1.1.1":
   "integrity" "sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A=="
@@ -5381,10 +5383,10 @@
   "resolved" "https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz"
   "version" "0.4.1"
 
-"json-schema@0.2.3":
-  "integrity" "sha1-tIDIkuWaLwWVTOcnvT8qTogvnhM= sha512-a3xHnILGMtk+hDOqNwHzF6e2fNbiMrXZvxKQiEv2MlgQP+pjIOzqAmKYD2mDpXYE/44M7g+n9p2bKkYWDUcXCQ=="
-  "resolved" "https://registry.npmjs.org/json-schema/-/json-schema-0.2.3.tgz"
-  "version" "0.2.3"
+"json-schema@0.4.0":
+  "integrity" "sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA=="
+  "resolved" "https://registry.npmjs.org/json-schema/-/json-schema-0.4.0.tgz"
+  "version" "0.4.0"
 
 "json-stringify-safe@^5.0.1", "json-stringify-safe@~5.0.1":
   "integrity" "sha1-Epai1Y/UXxmg9s4B1lcB4sc1tus= sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA=="
@@ -5426,13 +5428,13 @@
     "through" ">=2.2.7 <3"
 
 "jsprim@^1.2.2":
-  "integrity" "sha1-MT5mvB5cwG5Di8G3SZwuXFastqI= sha512-4Dj8Rf+fQ+/Pn7C5qeEX02op1WfOss3PKTE9Nsop3Dx+6UPxlm1dr/og7o2cRa5hNN07CACr4NFzRLtj/rjWog=="
-  "resolved" "https://registry.npmjs.org/jsprim/-/jsprim-1.4.1.tgz"
-  "version" "1.4.1"
+  "integrity" "sha512-P2bSOMAc/ciLz6DzgjVlGJP9+BrJWu5UDGK70C2iweC5QBIeFf0ZXRvGjEj2uYgrY2MkAAhsSWHDWlFtEroZWw=="
+  "resolved" "https://registry.npmjs.org/jsprim/-/jsprim-1.4.2.tgz"
+  "version" "1.4.2"
   dependencies:
     "assert-plus" "1.0.0"
     "extsprintf" "1.3.0"
-    "json-schema" "0.2.3"
+    "json-schema" "0.4.0"
     "verror" "1.10.0"
 
 "kind-of@^6.0.2", "kind-of@^6.0.3":
@@ -5791,9 +5793,9 @@
     "kind-of" "^6.0.3"
 
 "minimist@^1.2.0", "minimist@^1.2.5":
-  "integrity" "sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw=="
-  "resolved" "https://registry.npmjs.org/minimist/-/minimist-1.2.5.tgz"
-  "version" "1.2.5"
+  "integrity" "sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q=="
+  "resolved" "https://registry.npmjs.org/minimist/-/minimist-1.2.6.tgz"
+  "version" "1.2.6"
 
 "minipass-collect@^1.0.2":
   "integrity" "sha512-6T6lH0H8OG9kITm/Jm6tdooIbogG9e0tLgpY6mphXSm/A9u8Nq1ryBG+Qspiub9LjWlBPsPS3tWQ/Botq4FdxA=="
@@ -5952,9 +5954,9 @@
   "version" "2.6.2"
 
 "node-fetch@^2.6.1":
-  "integrity" "sha512-mmlIVHJEu5rnIxgEgez6b9GgWXbkZj5YZ7fx+2r94a2E+Uirsp6HsPTPlomfdHtpt/B0cdKviwkoaM6pyvUOpQ=="
-  "resolved" "https://registry.npmjs.org/node-fetch/-/node-fetch-2.6.5.tgz"
-  "version" "2.6.5"
+  "integrity" "sha512-ZjMPFEfVx5j+y2yF35Kzx5sF7kDzxuDj6ziH4FFbOp87zKDZNx8yExJIb05OGF4Nlt9IHFIMBkRl41VdvcNdbQ=="
+  "resolved" "https://registry.npmjs.org/node-fetch/-/node-fetch-2.6.7.tgz"
+  "version" "2.6.7"
   dependencies:
     "whatwg-url" "^5.0.0"
 
@@ -6423,9 +6425,9 @@
     "lines-and-columns" "^1.1.6"
 
 "parse-path@^4.0.0":
-  "integrity" "sha512-9Cepbp2asKnWTJ9x2kpw6Fe8y9JDbqwahGCTvklzd/cEq5C5JC59x2Xb0Kx+x0QZ8bvNquGO8/BWP0cwBHzSAA=="
-  "resolved" "https://registry.npmjs.org/parse-path/-/parse-path-4.0.3.tgz"
-  "version" "4.0.3"
+  "integrity" "sha512-Z2lWUis7jlmXC1jeOG9giRO2+FsuyNipeQ43HAjqAZjwSe3SEf+q/84FGPHoso3kyntbxa4c4i77t3m6fGf8cw=="
+  "resolved" "https://registry.npmjs.org/parse-path/-/parse-path-4.0.4.tgz"
+  "version" "4.0.4"
   dependencies:
     "is-ssh" "^1.3.0"
     "protocols" "^1.4.0"
@@ -6433,9 +6435,9 @@
     "query-string" "^6.13.8"
 
 "parse-url@^6.0.0":
-  "integrity" "sha512-cYyojeX7yIIwuJzledIHeLUBVJ6COVLeT4eF+2P6aKVzwvgKQPndCBv3+yQ7pcWjqToYwaligxzSYNNmGoMAvw=="
-  "resolved" "https://registry.npmjs.org/parse-url/-/parse-url-6.0.0.tgz"
-  "version" "6.0.0"
+  "integrity" "sha512-e35AeLTSIlkw/5GFq70IN7po8fmDUjpDPY1rIK+VubRfsUvBonjQ+PBZG+vWMACnQSmNlvl524IucoDmcioMxA=="
+  "resolved" "https://registry.npmjs.org/parse-url/-/parse-url-6.0.5.tgz"
+  "version" "6.0.5"
   dependencies:
     "is-ssh" "^1.3.0"
     "normalize-url" "^6.1.0"
@@ -7380,11 +7382,6 @@
   "resolved" "https://registry.npmjs.org/source-map/-/source-map-0.7.3.tgz"
   "version" "0.7.3"
 
-"source-map@~0.7.2":
-  "integrity" "sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ=="
-  "resolved" "https://registry.npmjs.org/source-map/-/source-map-0.7.3.tgz"
-  "version" "0.7.3"
-
 "sourcemap-codec@^1.4.4", "sourcemap-codec@^1.4.8":
   "integrity" "sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA=="
   "resolved" "https://registry.npmjs.org/sourcemap-codec/-/sourcemap-codec-1.4.8.tgz"
@@ -7666,79 +7663,79 @@
   "version" "1.0.0"
 
 "svelte@^3.48.0", "svelte@>=3.5.0":
-  "integrity" "sha512-fN2YRm/bGumvjUpu6yI3BpvZnpIm9I6A7HR4oUNYd7ggYyIwSA/BX7DJ+UXXffLp6XNcUijyLvttbPVCYa/3xQ=="
-  "resolved" "https://registry.npmjs.org/svelte/-/svelte-3.48.0.tgz"
-  "version" "3.48.0"
+  "integrity" "sha512-+lmjic1pApJWDfPCpUUTc1m8azDqYCG1JN9YEngrx/hUyIcFJo6VZhj0A1Ai0wqoHcEIuQy+e9tk+4uDgdtsFA=="
+  "resolved" "https://registry.npmjs.org/svelte/-/svelte-3.49.0.tgz"
+  "version" "3.49.0"
 
 "symbol-tree@^3.2.4":
   "integrity" "sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw=="
   "resolved" "https://registry.npmjs.org/symbol-tree/-/symbol-tree-3.2.4.tgz"
   "version" "3.2.4"
 
-"tanstack-react-virtual-example-dynamic@file:/home/runner/work/virtual/virtual/examples/react/dynamic":
+"tanstack-react-virtual-example-dynamic@file:/Users/christiankaindl/code/@TanStack/virtual/examples/react/dynamic":
   "resolved" "file:examples/react/dynamic"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.12"
+    "@tanstack/react-virtual" "3.0.0-beta.14"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
-"tanstack-react-virtual-example-fixed@file:/home/runner/work/virtual/virtual/examples/react/fixed":
+"tanstack-react-virtual-example-fixed@file:/Users/christiankaindl/code/@TanStack/virtual/examples/react/fixed":
   "resolved" "file:examples/react/fixed"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.12"
+    "@tanstack/react-virtual" "3.0.0-beta.14"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
-"tanstack-react-virtual-example-infinite-scroll@file:/home/runner/work/virtual/virtual/examples/react/infinite-scroll":
+"tanstack-react-virtual-example-infinite-scroll@file:/Users/christiankaindl/code/@TanStack/virtual/examples/react/infinite-scroll":
   "resolved" "file:examples/react/infinite-scroll"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.12"
+    "@tanstack/react-virtual" "3.0.0-beta.14"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
     "react-query" "^3.39.1"
 
-"tanstack-react-virtual-example-padding@file:/home/runner/work/virtual/virtual/examples/react/padding":
+"tanstack-react-virtual-example-padding@file:/Users/christiankaindl/code/@TanStack/virtual/examples/react/padding":
   "resolved" "file:examples/react/padding"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.12"
+    "@tanstack/react-virtual" "3.0.0-beta.14"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
-"tanstack-react-virtual-example-scroll-padding@file:/home/runner/work/virtual/virtual/examples/react/scroll-padding":
+"tanstack-react-virtual-example-scroll-padding@file:/Users/christiankaindl/code/@TanStack/virtual/examples/react/scroll-padding":
   "resolved" "file:examples/react/scroll-padding"
   "version" "0.0.0"
   dependencies:
     "@react-hookz/web" "^14.2.2"
-    "@tanstack/react-virtual" "3.0.0-beta.12"
+    "@tanstack/react-virtual" "3.0.0-beta.14"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
-"tanstack-react-virtual-example-smooth-scroll@file:/home/runner/work/virtual/virtual/examples/react/smooth-scroll":
+"tanstack-react-virtual-example-smooth-scroll@file:/Users/christiankaindl/code/@TanStack/virtual/examples/react/smooth-scroll":
   "resolved" "file:examples/react/smooth-scroll"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.12"
+    "@tanstack/react-virtual" "3.0.0-beta.14"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
-"tanstack-react-virtual-example-sticky@file:/home/runner/work/virtual/virtual/examples/react/sticky":
+"tanstack-react-virtual-example-sticky@file:/Users/christiankaindl/code/@TanStack/virtual/examples/react/sticky":
   "resolved" "file:examples/react/sticky"
   "version" "0.0.0"
   dependencies:
     "@faker-js/faker" "^7.1.0"
-    "@tanstack/react-virtual" "3.0.0-beta.12"
+    "@tanstack/react-virtual" "3.0.0-beta.14"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
-"tanstack-react-virtual-example-variable@file:/home/runner/work/virtual/virtual/examples/react/variable":
+"tanstack-react-virtual-example-variable@file:/Users/christiankaindl/code/@TanStack/virtual/examples/react/variable":
   "resolved" "file:examples/react/variable"
   "version" "0.0.0"
   dependencies:
-    "@tanstack/react-virtual" "3.0.0-beta.12"
+    "@tanstack/react-virtual" "3.0.0-beta.14"
     "react" "^17.0.2"
     "react-dom" "^17.0.2"
 
@@ -7792,12 +7789,13 @@
     "supports-hyperlinks" "^2.0.0"
 
 "terser@^5.0.0":
-  "integrity" "sha512-h5hxa23sCdpzcye/7b8YqbE5OwKca/ni0RQz1uRX3tGh8haaGHqcuSqbGRybuAKNdntZ0mDgFNXPJ48xQ2RXKQ=="
-  "resolved" "https://registry.npmjs.org/terser/-/terser-5.9.0.tgz"
-  "version" "5.9.0"
+  "integrity" "sha512-oL0rGeM/WFQCUd0y2QrWxYnq7tfSuKBiqTjRPWrRgB46WD/kiwHwF8T23z78H6Q6kGCuuHcPB+KULHRdxvVGQA=="
+  "resolved" "https://registry.npmjs.org/terser/-/terser-5.14.2.tgz"
+  "version" "5.14.2"
   dependencies:
+    "@jridgewell/source-map" "^0.3.2"
+    "acorn" "^8.5.0"
     "commander" "^2.20.0"
-    "source-map" "~0.7.2"
     "source-map-support" "~0.5.20"
 
 "test-exclude@^6.0.0":

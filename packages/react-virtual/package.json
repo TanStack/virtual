@@ -37,7 +37,6 @@
     "src"
   ],
   "dependencies": {
-    "@reach/observe-rect": "^1.1.0",
     "@tanstack/virtual-core": "3.0.0-beta.14"
   },
   "peerDependencies": {
