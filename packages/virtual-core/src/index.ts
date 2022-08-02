@@ -1,4 +1,3 @@
-import observeRect from '@reach/observe-rect'
 import { memo } from './utils'
 
 export * from './utils'
@@ -81,22 +80,23 @@ export const observeElementRect = (
   instance: Virtualizer<any, any>,
   cb: (rect: Rect) => void,
 ) => {
-  const onResize = memoRectCallback(instance, cb)
-
-  const observer = observeRect(instance.scrollElement as Element, (rect) => {
-    onResize(rect)
+  const observer = new ResizeObserver((entries) => {
+    cb({
+      width: entries[0]?.contentRect.width as number,
+      height: entries[0]?.contentRect.height as number
+    })
   })
 
   if (!instance.scrollElement) {
     return
   }
 
-  onResize(instance.scrollElement.getBoundingClientRect())
+  cb(instance.scrollElement.getBoundingClientRect())
 
-  observer.observe()
+  observer.observe(instance.scrollElement)
 
   return () => {
-    observer.unobserve()
+    observer.unobserve(instance.scrollElement)
   }
 }
 
