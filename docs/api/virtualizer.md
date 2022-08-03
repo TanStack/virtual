@@ -227,7 +227,8 @@ Returns the virtual items for the current state of the virtualizer.
 scrollToOffset: (
   toOffset: number,
   options?: {
-    align?: 'start' | 'center' | 'end' | 'auto'
+    align?: 'start' | 'center' | 'end' | 'auto',
+    smoothScroll?: boolean
   }
 ) => void
 ```
@@ -239,8 +240,9 @@ Scrolls the virtualizer to the pixel offset provided. You can optionally pass an
 ```tsx
 scrollToIndex: (
   index: number,
-  options: {
-    align?: 'start' | 'center' | 'end' | 'auto'
+  options?: {
+    align?: 'start' | 'center' | 'end' | 'auto',
+    smoothScroll?: boolean
   }
 ) => void
 ```
