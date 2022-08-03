@@ -1,4 +1,3 @@
-import observeRect from '@reach/observe-rect'
 import { memo } from './utils'
 
 export * from './utils'
@@ -82,22 +81,23 @@ export const observeElementRect = (
   instance: Virtualizer<any, any>,
   cb: (rect: Rect) => void,
 ) => {
-  const onResize = memoRectCallback(instance, cb)
-
-  const observer = observeRect(instance.scrollElement as Element, (rect) => {
-    onResize(rect)
+  const observer = new ResizeObserver((entries) => {
+    cb({
+      width: entries[0]?.contentRect.width as number,
+      height: entries[0]?.contentRect.height as number
+    })
   })
 
   if (!instance.scrollElement) {
     return
   }
 
-  onResize(instance.scrollElement.getBoundingClientRect())
+  cb(instance.scrollElement.getBoundingClientRect())
 
-  observer.observe()
+  observer.observe(instance.scrollElement)
 
   return () => {
-    observer.unobserve()
+    observer.unobserve(instance.scrollElement)
   }
 }
 
@@ -194,7 +194,7 @@ export const windowScroll = (
   canSmooth: boolean,
   instance: Virtualizer<any, any>,
 ) => {
-  ;(instance.scrollElement as Window)?.scrollTo({
+  ;(instance.scrollElement as Window)?.scrollTo?.({
     [instance.options.horizontal ? 'left' : 'top']: offset,
     behavior: canSmooth ? 'smooth' : undefined,
   })
@@ -205,7 +205,7 @@ export const elementScroll = (
   canSmooth: boolean,
   instance: Virtualizer<any, any>,
 ) => {
-  ;(instance.scrollElement as Element)?.scrollTo({
+  ;(instance.scrollElement as Element)?.scrollTo?.({
     [instance.options.horizontal ? 'left' : 'top']: offset,
     behavior: canSmooth ? 'smooth' : undefined,
   })
@@ -270,6 +270,10 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     number,
     (measurableItem: TItemElement | null) => void
   > = {}
+  private range: { startIndex: number; endIndex: number } = {
+    startIndex: 0,
+    endIndex: 0,
+  }
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
@@ -328,14 +332,14 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
           this.scrollRect = rect
-          this.notify()
+          this.calculateRange()
         }),
       )
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset) => {
           this.scrollOffset = offset
-          this.notify()
+          this.calculateRange()
         }),
       )
     }
@@ -379,7 +383,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       return measurements
     },
     {
-      key: process.env.NODE_ENV === 'development' && 'getMeasurements',
+      key: process.env.NODE_ENV !== 'production' && 'getMeasurements',
       debug: () => this.options.debug,
     },
   )
@@ -387,14 +391,22 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private calculateRange = memo(
     () => [this.getMeasurements(), this.getSize(), this.scrollOffset],
     (measurements, outerSize, scrollOffset) => {
-      return calculateRange({
+      const range = calculateRange({
         measurements,
         outerSize,
         scrollOffset,
       })
+      if (
+        range.startIndex !== this.range.startIndex ||
+        range.endIndex !== this.range.endIndex
+      ) {
+        this.range = range
+        this.notify()
+      }
+      return this.range
     },
     {
-      key: process.env.NODE_ENV === 'development' && 'calculateRange',
+      key: process.env.NODE_ENV !== 'production' && 'calculateRange',
       debug: () => this.options.debug,
     },
   )
@@ -402,7 +414,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private getIndexes = memo(
     () => [
       this.options.rangeExtractor,
-      this.calculateRange(),
+      this.range,
       this.options.overscan,
       this.options.count,
     ],
@@ -414,7 +426,8 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       })
     },
     {
-      key: process.env.NODE_ENV === 'development' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      debug: () => this.options.debug,
     },
   )
 
@@ -438,10 +451,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
           if (measuredItemSize !== itemSize) {
             if (item.start < this.scrollOffset) {
-              if (
-                process.env.NODE_ENV === 'development' &&
-                this.options.debug
-              ) {
+              if (process.env.NODE_ENV !== 'production' && this.options.debug) {
                 console.info('correction', measuredItemSize - itemSize)
               }
 
@@ -483,7 +493,8 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       return virtualItems
     },
     {
-      key: process.env.NODE_ENV === 'development' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      debug: () => this.options.debug,
     },
   )
 
@@ -491,33 +502,26 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     toOffset: number,
     { align = 'start', smoothScroll = this.options.enableSmoothScroll }: ScrollToOffsetOptions = {},
   ) => {
-    const attempt = () => {
-      const offset = this.scrollOffset
-      const size = this.getSize()
+    const offset = this.scrollOffset
+    const size = this.getSize()
 
-      if (align === 'auto') {
-        if (toOffset <= offset) {
-          align = 'start'
-        } else if (toOffset >= offset + size) {
-          align = 'end'
-        } else {
-          align = 'start'
-        }
+    if (align === 'auto') {
+      if (toOffset <= offset) {
+        align = 'start'
+      } else if (toOffset >= offset + size) {
+        align = 'end'
+      } else {
+        align = 'start'
       }
+    }
 
-      if (align === 'start') {
+    if (align === 'start') {
         this._scrollToOffset(toOffset, smoothScroll)
       } else if (align === 'end') {
         this._scrollToOffset(toOffset - size, smoothScroll)
       } else if (align === 'center') {
         this._scrollToOffset(toOffset - size / 2, smoothScroll)
-      }
     }
-
-    attempt()
-    requestAnimationFrame(() => {
-      attempt()
-    })
   }
 
   scrollToIndex = (
