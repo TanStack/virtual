@@ -278,6 +278,8 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     this.setOptions(opts)
     this.scrollRect = this.options.initialRect
     this.scrollOffset = this.options.initialOffset
+
+    this.calculateRange()
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement>) => {
