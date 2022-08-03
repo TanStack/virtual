@@ -2214,25 +2214,25 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@tanstack/react-virtual@3.0.0-beta.14", "@tanstack/react-virtual@file:/home/runner/work/virtual/virtual/packages/react-virtual":
+"@tanstack/react-virtual@3.0.0-beta.15", "@tanstack/react-virtual@file:/home/runner/work/virtual/virtual/packages/react-virtual":
   "resolved" "file:packages/react-virtual"
-  "version" "3.0.0-beta.14"
+  "version" "3.0.0-beta.15"
   dependencies:
     "@tanstack/virtual-core" "3.0.0-beta.14"
 
 "@tanstack/solid-virtual@file:/home/runner/work/virtual/virtual/packages/solid-virtual":
   "resolved" "file:packages/solid-virtual"
-  "version" "3.0.0-beta.14"
+  "version" "3.0.0-beta.15"
   dependencies:
     "@tanstack/virtual-core" "3.0.0-beta.14"
 
 "@tanstack/svelte-virtual@file:/home/runner/work/virtual/virtual/packages/svelte-virtual":
   "resolved" "file:packages/svelte-virtual"
-  "version" "3.0.0-beta.14"
+  "version" "3.0.0-beta.15"
 
-"@tanstack/virtual-core@3.0.0-beta.14", "@tanstack/virtual-core@file:/home/runner/work/virtual/virtual/packages/virtual-core":
+"@tanstack/virtual-core@3.0.0-beta.15", "@tanstack/virtual-core@file:/home/runner/work/virtual/virtual/packages/virtual-core":
   "resolved" "file:packages/virtual-core"
-  "version" "3.0.0-beta.14"
+  "version" "3.0.0-beta.15"
 
 "@testing-library/dom@^8.0.0":
   "integrity" "sha512-rab7vpf1uGig5efWwsCOn9j4/doy+W3VBoUyzX7C4y77u0wAckwc7R8nyH6e2rw0rRzKJR+gWPiAg8zhiFbxWQ=="
