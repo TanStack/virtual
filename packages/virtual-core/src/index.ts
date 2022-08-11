@@ -257,7 +257,7 @@ export interface VirtualizerOptions<
 
 export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private unsubs: (void | (() => void))[] = []
-  options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
+  options!: Required<Omit<VirtualizerOptions<TScrollElement, TItemElement>, 'initialOffset' | 'initialRect'>>
   scrollElement: TScrollElement | null = null
   private measurementsCache: Item[] = []
   private itemMeasurementsCache: Record<Key, number> = {}
@@ -276,11 +276,9 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   }
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
+    this.scrollRect = opts.initialRect || { width: 0, height: 0 }
+    this.scrollOffset = opts.initialOffset || 0
     this.setOptions(opts)
-    this.scrollRect = this.options.initialRect
-    this.scrollOffset = this.options.initialOffset
-
-    this.calculateRange()
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement>) => {
@@ -290,7 +288,6 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
     this.options = {
       debug: false,
-      initialOffset: 0,
       overscan: 1,
       paddingStart: 0,
       paddingEnd: 0,
@@ -302,9 +299,10 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       enableSmoothScroll: true,
       onChange: () => {},
       measureElement,
-      initialRect: { width: 0, height: 0 },
       ...opts,
     }
+
+    this.calculateRange()
   }
 
   private notify = () => {
