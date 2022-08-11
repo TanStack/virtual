@@ -330,6 +330,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       this.cleanup()
 
       this.scrollElement = scrollElement
+      this._scrollToOffset(this.scrollOffset, false)
 
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
