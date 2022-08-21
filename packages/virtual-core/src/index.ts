@@ -600,6 +600,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
   measure = () => {
     this.itemMeasurementsCache = {}
+    this.measureElementCache = {}
     this.notify()
   }
 }
