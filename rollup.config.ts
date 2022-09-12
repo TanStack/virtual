@@ -75,6 +75,16 @@ export default function rollup(options: RollupOptions): RollupOptions[] {
         'svelte/store': 'SvelteStore',
       },
     }),
+    ...buildConfigs({
+      name: 'vue-virtual',
+      packageDir: 'packages/vue-virtual',
+      jsName: 'vueVirtual',
+      outputFile: 'vue-virtual',
+      entryFile: 'src/index.ts',
+      globals: {
+        vue: 'Vue',
+      },
+    }),
   ]
 }
 

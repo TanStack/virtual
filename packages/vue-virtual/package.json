@@ -1,0 +1,45 @@
+{
+  "name": "@tanstack/vue-virtual",
+  "author": "Tanner Linsley",
+  "version": "3.0.0-beta.18",
+  "description": "Headless UI for virtualizing scrollable elements in Solid",
+  "license": "MIT",
+  "homepage": "https://github.com/tanstack/virtual#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tanstack/virtual.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "react",
+    "vue",
+    "solid",
+    "virtual",
+    "virtual-core",
+    "datagrid"
+  ],
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "module": "build/esm/index.js",
+  "main": "build/cjs/vue-virtual/src/index.js",
+  "browser": "build/umd/index.production.js",
+  "types": "build/types/index.d.ts",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=12"
+  },
+  "files": [
+    "build/**",
+    "src"
+  ],
+  "dependencies": {
+    "@tanstack/virtual-core": "3.0.0-beta.18"
+  },
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  }
+}
