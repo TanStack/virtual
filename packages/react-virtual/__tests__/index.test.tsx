@@ -125,12 +125,13 @@ test.only('should render given dynamic size after scroll', () => {
     target: { scrollTop: 400 },
   })
 
-  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
-  expect(screen.queryByText('Row 4')).toBeInTheDocument()
-  expect(screen.queryByText('Row 9')).toBeInTheDocument()
-  expect(screen.queryByText('Row 10')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 3')).toBeInTheDocument()
+  expect(screen.queryByText('Row 6')).toBeInTheDocument()
+  expect(screen.queryByText('Row 7')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(2)
+  // The component is rendered multiple times, because the range changes after each render when the `estimateSize()` estimate is replaced by the items' actual size
+  expect(renderer).toHaveBeenCalledTimes(5)
 })
 
 test('should use rangeExtractor', () => {
