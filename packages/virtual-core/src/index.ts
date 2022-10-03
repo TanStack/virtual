@@ -158,14 +158,14 @@ const createOffsetObserver = (mode: ObserverMode) => {
       const scrollX = target[propX]
       const scrollY = target[propY]
 
-      let scroll;
+      let shouldScroll;
       if (instance.options.horizontal) {
-        scroll = instance.options.reverse ? scrollX - prevX : prevX - scrollX;
+        shouldScroll = instance.options.reverse ? scrollX - prevX : prevX - scrollX;
       } else {
-        scroll = instance.options.reverse ? scrollY - prevY : prevY - scrollY;
+        shouldScroll = instance.options.reverse ? scrollY - prevY : prevY - scrollY;
       }
 
-      if (scroll) {
+      if (shouldScroll) {
         scroll()
       }
 
@@ -395,19 +395,20 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
         const measuredSize = measurementsCache[key]
-        const start = measurements[i - 1]
+        let start = measurements[i - 1]
           ? measurements[i - 1]!.end
           : paddingStart
+
+        if (reverse) {
+          start *= -1;
+        }
+
         const size =
           typeof measuredSize === 'number'
             ? measuredSize
             : this.options.estimateSize(i)
-        const end = start + size
 
-        if (reverse) {
-          start *= -1;
-          end *= -1;
-        }
+        const end = start + size
 
         measurements[i] = { index: i, start, size, end, key }
       }
