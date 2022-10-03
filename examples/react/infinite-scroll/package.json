@@ -9,7 +9,7 @@
     "start": "vite"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "3.0.0-beta.17",
+    "@tanstack/react-virtual": "https://github.com/bradley/virtual#add-virtual-support",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-query": "^3.39.1"

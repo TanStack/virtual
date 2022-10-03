@@ -158,7 +158,14 @@ const createOffsetObserver = (mode: ObserverMode) => {
       const scrollX = target[propX]
       const scrollY = target[propY]
 
-      if (instance.options.horizontal ? prevX - scrollX : prevY - scrollY) {
+      let scroll;
+      if (instance.options.horizontal) {
+        scroll = instance.options.reverse ? scrollX - prevX : prevX - scrollX;
+      } else {
+        scroll = instance.options.reverse ? scrollY - prevY : prevY - scrollY;
+      }
+
+      if (scroll) {
         scroll()
       }
 
@@ -194,8 +201,15 @@ export const windowScroll = (
   canSmooth: boolean,
   instance: Virtualizer<any, any>,
 ) => {
+  let anchor;
+  if (instance.options.horizontal) {
+    anchor = instance.options.reverse ? 'right' : 'left';
+  } else {
+    anchor = instance.options.reverse ? 'bottom' : 'top';
+  }
+
   ;(instance.scrollElement as Window)?.scrollTo?.({
-    [instance.options.horizontal ? 'left' : 'top']: offset,
+    [anchor]: offset,
     behavior: canSmooth ? 'smooth' : undefined,
   })
 }
@@ -205,8 +219,15 @@ export const elementScroll = (
   canSmooth: boolean,
   instance: Virtualizer<any, any>,
 ) => {
+  let anchor;
+  if (instance.options.horizontal) {
+    anchor = instance.options.reverse ? 'right' : 'left';
+  } else {
+    anchor = instance.options.reverse ? 'bottom' : 'top';
+  }
+
   ;(instance.scrollElement as Element)?.scrollTo?.({
-    [instance.options.horizontal ? 'left' : 'top']: offset,
+    [anchor]: offset,
     behavior: canSmooth ? 'smooth' : undefined,
   })
 }
@@ -245,6 +266,7 @@ export interface VirtualizerOptions<
   ) => number
   overscan?: number
   horizontal?: boolean
+  reverse?: boolean
   paddingStart?: number
   paddingEnd?: number
   scrollPaddingStart?: number
@@ -297,6 +319,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       scrollPaddingStart: 0,
       scrollPaddingEnd: 0,
       horizontal: false,
+      reverse: false,
       getItemKey: defaultKeyExtractor,
       rangeExtractor: defaultRangeExtractor,
       enableSmoothScroll: true,
@@ -356,10 +379,11 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     () => [
       this.options.count,
       this.options.paddingStart,
+      this.options.reverse,
       this.options.getItemKey,
       this.itemMeasurementsCache,
     ],
-    (count, paddingStart, getItemKey, measurementsCache) => {
+    (count, paddingStart, reverse, getItemKey, measurementsCache) => {
       const min =
         this.pendingMeasuredCacheIndexes.length > 0
           ? Math.min(...this.pendingMeasuredCacheIndexes)
@@ -379,6 +403,12 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
             ? measuredSize
             : this.options.estimateSize(i)
         const end = start + size
+
+        if (reverse) {
+          start *= -1;
+          end *= -1;
+        }
+
         measurements[i] = { index: i, start, size, end, key }
       }
 
