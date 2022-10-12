@@ -36,7 +36,7 @@ function List({
     observeElementRect: (_, cb) => {
       cb({ height, width })
     },
-    measureElement: () => itemSize ?? 0,
+    measureElement: React.useCallback(() => itemSize ?? 0, [itemSize]),
     rangeExtractor,
   })
 
