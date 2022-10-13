@@ -261,12 +261,15 @@ export interface VirtualizerOptions<
   rangeExtractor?: (range: Range) => number[]
   enableSmoothScroll?: boolean
   scrollMargin?: number
+  scrollingDelay?: number
 }
 
 export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private unsubs: (void | (() => void))[] = []
   options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
   scrollElement: TScrollElement | null = null
+  isScrolling: boolean = false
+  private isScrollingTimeoutId: ReturnType<typeof setTimeout> | null = null
   private measurementsCache: Item[] = []
   private itemMeasurementsCache: Record<Key, number> = {}
   private pendingMeasuredCacheIndexes: number[] = []
@@ -278,7 +281,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     number,
     (measurableItem: TItemElement | null) => void
   > = {}
-  private range: { startIndex: number; endIndex: number } = {
+  range: { startIndex: number; endIndex: number } = {
     startIndex: 0,
     endIndex: 0,
   }
@@ -312,6 +315,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       measureElement,
       initialRect: { width: 0, height: 0 },
       scrollMargin: 0,
+      scrollingDelay: 150,
       ...opts,
     }
   }
@@ -353,10 +357,30 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset) => {
-          this.scrollOffset = offset
+          if (this.isScrollingTimeoutId !== null) {
+            clearTimeout(this.isScrollingTimeoutId)
+            this.isScrollingTimeoutId = null
+          }
+
+          if (this.scrollOffset !== offset) {
+            this.isScrolling = true
+            this.scrollOffset = offset
+
+            this.isScrollingTimeoutId = setTimeout(() => {
+              this.isScrollingTimeoutId = null
+              this.isScrolling = false
+
+              this.notify()
+            }, this.options.scrollingDelay)
+          } else {
+            this.isScrolling = false
+          }
+
           this.calculateRange()
         }),
       )
+    } else if (!this.isScrolling) {
+      this.calculateRange()
     }
   }
 
@@ -403,7 +427,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     },
   )
 
-  private calculateRange = memo(
+  calculateRange = memo(
     () => [this.getMeasurements(), this.getSize(), this.scrollOffset],
     (measurements, outerSize, scrollOffset) => {
       const range = calculateRange({
@@ -591,12 +615,12 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
   private _scrollToOffset = (
     offset: number,
-    { canSmooth, sync }: { canSmooth: boolean; sync: boolean },
+    options: { canSmooth: boolean; sync: boolean },
   ) => {
     clearTimeout(this.scrollCheckFrame)
 
     this.destinationOffset = offset
-    this.options.scrollToFn(offset, { canSmooth, sync }, this)
+    this.options.scrollToFn(offset, options, this)
 
     let scrollCheckFrame: ReturnType<typeof setTimeout>
 
