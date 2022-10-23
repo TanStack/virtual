@@ -9,9 +9,9 @@ import {
   type PartialKeys,
   type VirtualizerOptions,
 } from '@tanstack/virtual-core'
+import { pauseTracking, resetTracking } from '@vue/reactivity'
 import {
   computed,
-  nextTick,
   shallowRef,
   triggerRef,
   unref,
@@ -35,20 +35,21 @@ function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
     opts.estimateSize(0)
 
     // We don't want to track state here
-    nextTick(() => {
-      virtualizer.setOptions({
-        ...opts,
-        onChange: (instance: Virtualizer<TScrollElement, TItemElement>) => {
-          // Force an update event
-          triggerRef(state)
-          opts.onChange?.(instance)
-        },
-      })
+    pauseTracking()
 
-      virtualizer._willUpdate()
+    virtualizer.setOptions({
+      ...opts,
+      onChange: (instance: Virtualizer<TScrollElement, TItemElement>) => {
+        // Force an update event
+        triggerRef(state)
+        opts.onChange?.(instance)
+      },
     })
 
+    virtualizer._willUpdate()
     onCleanup(virtualizer._didMount())
+
+    resetTracking()
   })
 
   return state
