@@ -41,6 +41,7 @@ function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
       })
 
       virtualizer._willUpdate()
+      virtualizer.measure()
       doClean = virtualizer._didMount()
     }
   })()
