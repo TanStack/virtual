@@ -9,13 +9,12 @@ import {
   type PartialKeys,
   type VirtualizerOptions,
 } from '@tanstack/virtual-core'
-import { pauseTracking, resetTracking } from '@vue/reactivity'
 import {
   computed,
   shallowRef,
   triggerRef,
   unref,
-  watchEffect,
+  watch,
   type Ref,
 } from 'vue'
 
@@ -24,33 +23,43 @@ type MaybeRef<T> = T | Ref<T>
 function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
   options: MaybeRef<VirtualizerOptions<TScrollElement, TItemElement>>,
 ): Ref<Virtualizer<TScrollElement, TItemElement>> {
-  const virtualizer = new Virtualizer(unref(options))
+  const opts = unref(options)
+  const virtualizer = new Virtualizer(opts)
   const state = shallowRef(virtualizer)
 
-  watchEffect((onCleanup) => {
-    const opts = unref(options)
+  const applyOptions = (() => {
+    let doClean: (() => void) | undefined
+    return (options: VirtualizerOptions<TScrollElement, TItemElement>) => {
+      doClean?.()
+      virtualizer.setOptions({
+        ...options,
+        onChange: (instance) => {
+          // Force an update event
+          triggerRef(state)
+          options.onChange?.(instance)
+        }
+      })
 
-    // If those functions use refs, we need to track them.
-    opts.getScrollElement()
-    opts.estimateSize(0)
+      virtualizer._willUpdate()
+      virtualizer.measure()
+      doClean = virtualizer._didMount()
+    }
+  })()
 
-    // We don't want to track state here
-    pauseTracking()
-
-    virtualizer.setOptions({
-      ...opts,
-      onChange: (instance: Virtualizer<TScrollElement, TItemElement>) => {
-        // Force an update event
-        triggerRef(state)
-        opts.onChange?.(instance)
-      },
-    })
-
-    virtualizer._willUpdate()
-    onCleanup(virtualizer._didMount())
-
-    resetTracking()
-  })
+  applyOptions(opts);
+  watch(
+    () => {
+      const opts = unref(options)
+      // If those functions use refs, we need to track them.
+      opts.getScrollElement()
+      opts.estimateSize(0)
+      return opts
+    },
+    applyOptions,
+    {
+      flush: "pre"
+    }
+  )
 
   return state
 }
