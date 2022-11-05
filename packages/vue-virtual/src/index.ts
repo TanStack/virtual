@@ -9,14 +9,7 @@ import {
   type PartialKeys,
   type VirtualizerOptions,
 } from '@tanstack/virtual-core'
-import {
-  computed,
-  shallowRef,
-  triggerRef,
-  unref,
-  watch,
-  type Ref,
-} from 'vue'
+import { computed, shallowRef, triggerRef, unref, watch, type Ref } from 'vue'
 
 type MaybeRef<T> = T | Ref<T>
 
@@ -37,7 +30,7 @@ function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
           // Force an update event
           triggerRef(state)
           options.onChange?.(instance)
-        }
+        },
       })
 
       virtualizer._willUpdate()
@@ -46,7 +39,7 @@ function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
     }
   })()
 
-  applyOptions(opts);
+  applyOptions(opts)
   watch(
     () => {
       const opts = unref(options)
@@ -57,8 +50,8 @@ function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
     },
     applyOptions,
     {
-      flush: "pre"
-    }
+      deep: true,
+    },
   )
 
   return state
