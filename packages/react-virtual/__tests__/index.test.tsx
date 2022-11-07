@@ -57,14 +57,17 @@ function List({
           <div
             data-testid={`item-${virtualRow.key}`}
             key={virtualRow.key}
-            ref={(el) => (dynamic ? virtualRow.measureElement(el) : undefined)}
+            data-index={virtualRow.index}
+            ref={(el) =>
+              dynamic ? rowVirtualizer.measureElement(el) : undefined
+            }
             style={{
               position: 'absolute',
               top: 0,
               left: 0,
               width: '100%',
               transform: `translateY(${virtualRow.start}px)`,
-              height: virtualRow.size,
+              height: itemSize,
             }}
           >
             Row {virtualRow.index}

@@ -24,7 +24,7 @@ export interface Range {
 
 type Key = number | string
 
-interface Item {
+export interface VirtualItem {
   key: Key
   index: number
   start: number
@@ -35,10 +35,6 @@ interface Item {
 interface Rect {
   width: number
   height: number
-}
-
-export interface VirtualItem<TItemElement> extends Item {
-  measureElement: (el: TItemElement | null) => void
 }
 
 //
@@ -183,13 +179,15 @@ const createOffsetObserver = (mode: ObserverMode) => {
 export const observeElementOffset = createOffsetObserver('element')
 export const observeWindowOffset = createOffsetObserver('window')
 
-export const measureElement = (
-  element: unknown,
-  instance: Virtualizer<any, any>,
+export const measureElement = <TItemElement extends Element>(
+  element: TItemElement,
+  instance: Virtualizer<any, TItemElement>,
 ) => {
-  return (element as Element).getBoundingClientRect()[
-    instance.options.horizontal ? 'width' : 'height'
-  ]
+  return Math.round(
+    element.getBoundingClientRect()[
+      instance.options.horizontal ? 'width' : 'height'
+    ],
+  )
 }
 
 export const windowScroll = (
@@ -219,12 +217,12 @@ export const elementScroll = (
 }
 
 export interface VirtualizerOptions<
-  TScrollElement = unknown,
-  TItemElement = unknown,
+  TScrollElement extends unknown,
+  TItemElement extends Element,
 > {
   // Required from the user
   count: number
-  getScrollElement: () => TScrollElement
+  getScrollElement: () => TScrollElement | null
   estimateSize: (index: number) => number
 
   // Required from the framework adapter (but can be overridden)
@@ -262,15 +260,19 @@ export interface VirtualizerOptions<
   enableSmoothScroll?: boolean
   scrollMargin?: number
   scrollingDelay?: number
+  indexAttribute?: string
 }
 
-export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
+export class Virtualizer<
+  TScrollElement extends unknown,
+  TItemElement extends Element,
+> {
   private unsubs: (void | (() => void))[] = []
   options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
   scrollElement: TScrollElement | null = null
   isScrolling: boolean = false
   private isScrollingTimeoutId: ReturnType<typeof setTimeout> | null = null
-  private measurementsCache: Item[] = []
+  measurementsCache: VirtualItem[] = []
   private itemMeasurementsCache: Record<Key, number> = {}
   private pendingMeasuredCacheIndexes: number[] = []
   private scrollRect: Rect
@@ -278,10 +280,12 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
   private scrollDelta: number = 0
   private destinationOffset: undefined | number
   private scrollCheckFrame!: ReturnType<typeof setTimeout>
-  private measureElementCache: Record<
-    number,
-    (measurableItem: TItemElement | null) => void
-  > = {}
+  private measureElementCache: Record<string, TItemElement> = {}
+  private ro = new ResizeObserver((entries) => {
+    entries.forEach((entry) => {
+      this._measureElement(entry.target as TItemElement, false)
+    })
+  })
   range: { startIndex: number; endIndex: number } = {
     startIndex: 0,
     endIndex: 0,
@@ -317,6 +321,7 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
       initialRect: { width: 0, height: 0 },
       scrollMargin: 0,
       scrollingDelay: 150,
+      indexAttribute: 'data-index',
       ...opts,
     }
   }
@@ -333,6 +338,9 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
 
   _didMount = () => {
     return () => {
+      this.ro.disconnect()
+      this.measureElementCache = {}
+
       this.cleanup()
     }
   }
@@ -474,67 +482,96 @@ export class Virtualizer<TScrollElement = unknown, TItemElement = unknown> {
     },
   )
 
-  getVirtualItems = memo(
-    () => [
-      this.getIndexes(),
-      this.getMeasurements(),
-      this.options.measureElement,
-    ],
-    (indexes, measurements, measureElement) => {
-      const makeMeasureElement =
-        (index: number) => (measurableItem: TItemElement | null) => {
-          const item = this.measurementsCache[index]!
+  indexFromElement = (node: TItemElement) => {
+    const attributeName = this.options.indexAttribute
+    const indexStr = node.getAttribute(attributeName)
 
-          if (!measurableItem) {
-            return
-          }
+    if (!indexStr) {
+      console.warn(
+        `Missing attribute name '${attributeName}={index}' on measured element.`,
+      )
+      return -1
+    }
 
-          const measuredItemSize = measureElement(measurableItem, this)
-          const itemSize = this.itemMeasurementsCache[item.key] ?? item.size
+    return parseInt(indexStr, 10)
+  }
 
-          if (measuredItemSize !== itemSize) {
-            if (item.start < this.scrollOffset) {
-              if (process.env.NODE_ENV !== 'production' && this.options.debug) {
-                console.info('correction', measuredItemSize - itemSize)
-              }
+  _measureElement = (node: TItemElement, _sync: boolean) => {
+    const index = this.indexFromElement(node)
 
-              if (this.destinationOffset === undefined) {
-                this.scrollDelta += measuredItemSize - itemSize
+    const item = this.measurementsCache[index]
+    if (!item) {
+      return
+    }
+    const key = String(item.key)
 
-                this._scrollToOffset(this.scrollOffset + this.scrollDelta, {
-                  canSmooth: false,
-                  sync: false,
-                  requested: false,
-                })
-              }
-            }
+    const prevNode = this.measureElementCache[key]
 
-            this.pendingMeasuredCacheIndexes.push(index)
-            this.itemMeasurementsCache = {
-              ...this.itemMeasurementsCache,
-              [item.key]: measuredItemSize,
-            }
-            this.notify()
-          }
+    if (!node.isConnected) {
+      if (prevNode) {
+        this.ro.unobserve(prevNode)
+        delete this.measureElementCache[key]
+      }
+      return
+    }
+
+    if (!prevNode || prevNode !== node) {
+      if (prevNode) {
+        this.ro.unobserve(prevNode)
+      }
+      this.measureElementCache[key] = node
+      this.ro.observe(node)
+    }
+
+    const measuredItemSize = this.options.measureElement(node, this)
+
+    const itemSize = this.itemMeasurementsCache[item.key] ?? item.size
+
+    if (measuredItemSize !== itemSize) {
+      if (item.start < this.scrollOffset) {
+        if (process.env.NODE_ENV !== 'production' && this.options.debug) {
+          console.info('correction', measuredItemSize - itemSize)
         }
 
-      const virtualItems: VirtualItem<TItemElement>[] = []
+        if (this.destinationOffset === undefined) {
+          this.scrollDelta += measuredItemSize - itemSize
 
-      const currentMeasureElements: typeof this.measureElementCache = {}
+          this._scrollToOffset(this.scrollOffset + this.scrollDelta, {
+            canSmooth: false,
+            sync: false,
+            requested: false,
+          })
+        }
+      }
+
+      this.pendingMeasuredCacheIndexes.push(index)
+      this.itemMeasurementsCache = {
+        ...this.itemMeasurementsCache,
+        [item.key]: measuredItemSize,
+      }
+      this.notify()
+    }
+  }
+
+  measureElement = (node: TItemElement | null) => {
+    if (!node) {
+      return
+    }
+
+    this._measureElement(node, true)
+  }
+
+  getVirtualItems = memo(
+    () => [this.getIndexes(), this.getMeasurements()],
+    (indexes, measurements) => {
+      const virtualItems: VirtualItem[] = []
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
         const measurement = measurements[i]!
 
-        const item = {
-          ...measurement,
-          measureElement: (currentMeasureElements[i] =
-            this.measureElementCache[i] ?? makeMeasureElement(i)),
-        }
-        virtualItems.push(item)
+        virtualItems.push(measurement)
       }
-
-      this.measureElementCache = currentMeasureElements
 
       return virtualItems
     },
@@ -695,7 +732,7 @@ function calculateRange({
   outerSize,
   scrollOffset,
 }: {
-  measurements: Item[]
+  measurements: VirtualItem[]
   outerSize: number
   scrollOffset: number
 }) {

@@ -61,6 +61,7 @@
     "prettier": "^2.6.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "resize-observer-polyfill": "^1.5.1",
     "rollup": "^2.70.2",
     "rollup-plugin-size": "^0.2.2",
     "rollup-plugin-svelte": "^7.1.0",
