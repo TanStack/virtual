@@ -280,12 +280,24 @@ export class Virtualizer<
   private scrollDelta: number = 0
   private destinationOffset: undefined | number
   private scrollCheckFrame!: ReturnType<typeof setTimeout>
-  private measureElementCache: Record<string, TItemElement> = {}
-  private ro = new ResizeObserver((entries) => {
-    entries.forEach((entry) => {
-      this._measureElement(entry.target as TItemElement, false)
-    })
-  })
+  private measureElementCache: Record<Key, TItemElement> = {}
+  private getResizeObserver = (() => {
+    let _ro: ResizeObserver | null = null
+
+    return () => {
+      if (_ro) {
+        return _ro
+      } else if (typeof ResizeObserver !== 'undefined') {
+        return (_ro = new ResizeObserver((entries) => {
+          entries.forEach((entry) => {
+            this._measureElement(entry.target as TItemElement, false)
+          })
+        }))
+      } else {
+        return null
+      }
+    }
+  })()
   range: { startIndex: number; endIndex: number } = {
     startIndex: 0,
     endIndex: 0,
@@ -338,7 +350,7 @@ export class Virtualizer<
 
   _didMount = () => {
     return () => {
-      this.ro.disconnect()
+      this.getResizeObserver()?.disconnect()
       this.measureElementCache = {}
 
       this.cleanup()
@@ -496,31 +508,32 @@ export class Virtualizer<
     return parseInt(indexStr, 10)
   }
 
-  _measureElement = (node: TItemElement, _sync: boolean) => {
+  private _measureElement = (node: TItemElement, _sync: boolean) => {
     const index = this.indexFromElement(node)
 
     const item = this.measurementsCache[index]
     if (!item) {
       return
     }
-    const key = String(item.key)
 
-    const prevNode = this.measureElementCache[key]
+    const prevNode = this.measureElementCache[item.key]
+
+    const ro = this.getResizeObserver()
 
     if (!node.isConnected) {
       if (prevNode) {
-        this.ro.unobserve(prevNode)
-        delete this.measureElementCache[key]
+        ro?.unobserve(prevNode)
+        delete this.measureElementCache[item.key]
       }
       return
     }
 
     if (!prevNode || prevNode !== node) {
       if (prevNode) {
-        this.ro.unobserve(prevNode)
+        ro?.unobserve(prevNode)
       }
-      this.measureElementCache[key] = node
-      this.ro.observe(node)
+      this.measureElementCache[item.key] = node
+      ro?.observe(node)
     }
 
     const measuredItemSize = this.options.measureElement(node, this)
