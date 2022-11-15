@@ -540,21 +540,24 @@ export class Virtualizer<
 
     const itemSize = this.itemMeasurementsCache[item.key] ?? item.size
 
-    if (measuredItemSize !== itemSize) {
-      if (item.start < this.scrollOffset) {
+    const delta = measuredItemSize - itemSize
+
+    if (delta !== 0) {
+      if (
+        item.start < this.scrollOffset &&
+        this.isScrolling &&
+        this.destinationOffset === undefined
+      ) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
-          console.info('correction', measuredItemSize - itemSize)
+          console.info('correction', delta)
         }
+        this.scrollDelta += delta
 
-        if (this.destinationOffset === undefined) {
-          this.scrollDelta += measuredItemSize - itemSize
-
-          this._scrollToOffset(this.scrollOffset + this.scrollDelta, {
-            canSmooth: false,
-            sync: false,
-            requested: false,
-          })
-        }
+        this._scrollToOffset(this.scrollOffset + this.scrollDelta, {
+          canSmooth: false,
+          sync: false,
+          requested: false,
+        })
       }
 
       this.pendingMeasuredCacheIndexes.push(index)
