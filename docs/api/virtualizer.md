@@ -216,7 +216,7 @@ The current scrollElement for the virtualizer. This property is updated via your
 ### `getVirtualItems`
 
 ```tsx
-type getVirtualItems = () => VirtualItem<TItemElement>[]
+type getVirtualItems = () => VirtualItem[]
 ```
 
 Returns the virtual items for the current state of the virtualizer.
@@ -263,4 +263,23 @@ Returns the total size in pixels for the virtualized items. This measurement wil
 measure: () => void
 ```
 
-Recomputes the virtualizer and resets any item measurements.
+Resets any prev item measurements.
+
+### `measureElement`
+
+```tsx
+measureElement: (el: TItemElement | null) => void
+```
+
+Measures the element using your configured `measureElement` virtualizer option. You are repsonsible for calling this in your virtualizer markup when the component is rendered (eg. using something like React's ref callback prop) also adding `data-index`
+
+```tsx
+ <div
+  key={virtualRow.key}
+  data-index={virtualRow.index}
+  ref={virtualizer.measureElement}
+  style={...}
+>...</div>
+```
+
+By default the `measureElement` virtualizer option is configured to measure elements with `getBoundingClientRect()`.

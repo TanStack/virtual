@@ -13,7 +13,7 @@ export * from '@tanstack/virtual-core'
 
 import { readable, Readable } from 'svelte/store'
 
-function createVirtualizerBase<TScrollElement, TItemElement = unknown>(
+function createVirtualizerBase<TScrollElement, TItemElement extends Element>(
   options: VirtualizerOptions<TScrollElement, TItemElement>,
 ): Readable<Virtualizer<TScrollElement, TItemElement>> {
   const virtualizer = new Virtualizer(options)
@@ -33,7 +33,7 @@ function createVirtualizerBase<TScrollElement, TItemElement = unknown>(
   })
 }
 
-export function createVirtualizer<TScrollElement, TItemElement = unknown>(
+export function createVirtualizer<TScrollElement, TItemElement extends Element>(
   options: PartialKeys<
     VirtualizerOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
@@ -47,7 +47,7 @@ export function createVirtualizer<TScrollElement, TItemElement = unknown>(
   })
 }
 
-export function createWindowVirtualizer<TItemElement = unknown>(
+export function createWindowVirtualizer<TItemElement extends Element>(
   options: PartialKeys<
     VirtualizerOptions<Window, TItemElement>,
     | 'getScrollElement'

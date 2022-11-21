@@ -14,7 +14,7 @@ export * from '@tanstack/virtual-core';
 import { createSignal, onMount, onCleanup, createComputed, mergeProps } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 
-function createVirtualizerBase<TScrollElement, TItemElement = unknown>(
+function createVirtualizerBase<TScrollElement, TItemElement extends Element>(
   options: VirtualizerOptions<TScrollElement, TItemElement>
 ): Virtualizer<TScrollElement, TItemElement> {
   const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = mergeProps(options);
@@ -71,7 +71,7 @@ function createVirtualizerBase<TScrollElement, TItemElement = unknown>(
   return virtualizer;
 }
 
-export function createVirtualizer<TScrollElement, TItemElement = unknown>(
+export function createVirtualizer<TScrollElement, TItemElement extends Element>(
   options: PartialKeys<
     VirtualizerOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
@@ -85,7 +85,7 @@ export function createVirtualizer<TScrollElement, TItemElement = unknown>(
   }, options));
 }
 
-export function createWindowVirtualizer<TItemElement = unknown>(
+export function createWindowVirtualizer<TItemElement extends Element>(
   options: PartialKeys<
     VirtualizerOptions<Window, TItemElement>,
     | 'getScrollElement'

@@ -1,103 +1,122 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
+import { faker } from '@faker-js/faker'
+
+import { useVirtualizer, useWindowVirtualizer } from '@tanstack/react-virtual'
 
 import './index.css'
 
-import { useVirtualizer } from '@tanstack/react-virtual'
+const randomNumber = (min: number, max: number) =>
+  faker.datatype.number({ min, max })
 
-const rows = new Array(10000)
+const sentences = new Array(10000)
   .fill(true)
-  .map(() => 25 + Math.round(Math.random() * 100))
+  .map(() => faker.lorem.sentence(randomNumber(20, 70)))
 
-const columns = new Array(10000)
-  .fill(true)
-  .map(() => 75 + Math.round(Math.random() * 100))
+function RowVirtualizerDynamic() {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
-function App() {
+  const virtualizer = useVirtualizer({
+    count: sentences.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 45,
+  })
+
   return (
-    <div>
-      <p>
-        These components are using <strong>dynamic</strong> sizes. This means
-        that each element's exact dimensions are unknown when rendered. An
-        estimated dimension is used to get an a initial measurement, then this
-        measurement is readjusted on the fly as each element is rendered.
-      </p>
-      <br />
-      <br />
-
-      <h3>Rows</h3>
-      <RowVirtualizerDynamic rows={rows} />
-      <br />
-      <br />
-      <h3>Columns</h3>
-      <ColumnVirtualizerDynamic columns={columns} />
-      <br />
-      <br />
-      <h3>Grid</h3>
-      <GridVirtualizerDynamic rows={rows} columns={columns} />
+    <div
+      ref={parentRef}
+      className="List"
+      style={{ height: 400, width: 400, overflowX: 'auto' }}
+    >
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualRow) => (
+          <div
+            key={virtualRow.key}
+            data-index={virtualRow.index}
+            ref={virtualizer.measureElement}
+            className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualRow.start}px)`,
+            }}
+          >
+            <div>
+              <div>Row {virtualRow.index}</div>
+              <p>{sentences[virtualRow.index]}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-function RowVirtualizerDynamic({ rows }) {
+const RowVirtualizerDynamicWindow = () => {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 125,
+  const parentOffsetRef = React.useRef(0)
+
+  React.useLayoutEffect(() => {
+    parentOffsetRef.current = parentRef.current?.offsetTop ?? 0
+  }, [])
+
+  const virtualizer = useWindowVirtualizer({
+    count: sentences.length,
+    estimateSize: () => 45,
+    scrollMargin: parentOffsetRef.current,
   })
 
   return (
-    <>
+    <div ref={parentRef} className="List">
       <div
-        ref={parentRef}
-        className="List"
         style={{
-          height: `200px`,
-          width: `400px`,
-          overflow: 'auto',
+          height: virtualizer.getTotalSize(),
+          width: '100%',
+          position: 'relative',
         }}
       >
-        <div
-          style={{
-            height: rowVirtualizer.getTotalSize(),
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-            <div
-              key={virtualRow.index}
-              ref={virtualRow.measureElement}
-              className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              <div style={{ height: rows[virtualRow.index] }}>
-                Row {virtualRow.index}
-              </div>
+        {virtualizer.getVirtualItems().map((virtualRow) => (
+          <div
+            key={virtualRow.key}
+            data-index={virtualRow.index}
+            ref={virtualizer.measureElement}
+            className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualRow.start}px)`,
+            }}
+          >
+            <div>
+              <div>Row {virtualRow.index}</div>
+              <p>{sentences[virtualRow.index]}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </>
+    </div>
   )
 }
 
-function ColumnVirtualizerDynamic({ columns }) {
-  const parentRef = React.useRef()
+function ColumnVirtualizerDynamic() {
+  const parentRef = React.useRef<HTMLDivElement | null>(null)
 
-  const columnVirtualizer = useVirtualizer({
+  const virtualizer = useVirtualizer({
     horizontal: true,
-    count: columns.length,
+    count: sentences.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 125,
+    estimateSize: () => 45,
   })
 
   return (
@@ -105,23 +124,20 @@ function ColumnVirtualizerDynamic({ columns }) {
       <div
         ref={parentRef}
         className="List"
-        style={{
-          width: `400px`,
-          height: `100px`,
-          overflow: 'auto',
-        }}
+        style={{ width: 400, height: 400, overflowY: 'auto' }}
       >
         <div
           style={{
-            width: columnVirtualizer.getTotalSize(),
+            width: virtualizer.getTotalSize(),
             height: '100%',
             position: 'relative',
           }}
         >
-          {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
+          {virtualizer.getVirtualItems().map((virtualColumn) => (
             <div
               key={virtualColumn.key}
-              ref={virtualColumn.measureElement}
+              data-index={virtualColumn.index}
+              ref={virtualizer.measureElement}
               className={
                 virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'
               }
@@ -133,8 +149,9 @@ function ColumnVirtualizerDynamic({ columns }) {
                 transform: `translateX(${virtualColumn.start}px)`,
               }}
             >
-              <div style={{ width: columns[virtualColumn.index] }}>
-                Column {virtualColumn.index}
+              <div style={{ width: sentences[virtualColumn.index].length }}>
+                <div>Column {virtualColumn.index}</div>
+                <p>{sentences[virtualColumn.index]}</p>
               </div>
             </div>
           ))}
@@ -144,94 +161,175 @@ function ColumnVirtualizerDynamic({ columns }) {
   )
 }
 
-function GridVirtualizerDynamic({ rows, columns }) {
-  const parentRef = React.useRef()
+interface Column {
+  key: string
+  name: string
+  width: number
+}
 
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 125,
+function GridVirtualizerDynamic({
+  columns,
+  data,
+}: {
+  data: string[][]
+  columns: Column[]
+}) {
+  const parentRef = React.useRef<HTMLDivElement | null>(null)
+
+  const parentOffsetRef = React.useRef(0)
+
+  React.useLayoutEffect(() => {
+    parentOffsetRef.current = parentRef.current?.offsetTop ?? 0
+  }, [])
+
+  const getColumnWidth = (index: number) => columns[index].width
+
+  const virtualizer = useWindowVirtualizer({
+    count: data.length,
+    estimateSize: () => 350,
+    overscan: 5,
+    scrollMargin: parentOffsetRef.current,
   })
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
     count: columns.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 125,
+    estimateSize: getColumnWidth,
+    overscan: 5,
   })
-
-  const [show, setShow] = React.useState(true)
-
-  const halfWay = Math.floor(rows.length / 2)
+  const columnItems = columnVirtualizer.getVirtualItems()
+  const [before, after] =
+    columnItems.length > 0
+      ? [
+          columnItems[0].start,
+          columnVirtualizer.getTotalSize() -
+            columnItems[columnItems.length - 1].end,
+        ]
+      : [0, 0]
 
   return (
-    <>
-      <div className="py-2 flex gap-2">
-        <button onClick={() => setShow((old) => !old)}>Toggle</button>
-        <button onClick={() => rowVirtualizer.scrollToIndex(halfWay)}>
-          Scroll to index {halfWay}
-        </button>
-        <button onClick={() => rowVirtualizer.scrollToIndex(rows.length - 1)}>
-          Scroll to index {rows.length - 1}
-        </button>
-      </div>
-      {show ? (
-        <div
-          ref={parentRef}
-          className="List"
-          style={{
-            height: `400px`,
-            width: `500px`,
-            overflow: 'auto',
-          }}
-        >
-          <div
-            style={{
-              height: rowVirtualizer.getTotalSize(),
-              width: columnVirtualizer.getTotalSize(),
-              position: 'relative',
-            }}
-          >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-              <React.Fragment key={virtualRow.key}>
-                {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
+    <div
+      ref={parentRef}
+      style={{ overflowY: 'auto', border: '1px solid #c8c8c8' }}
+    >
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((row) => {
+          return (
+            <div
+              key={row.key}
+              data-index={row.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                transform: `translateY(${row.start}px)`,
+                display: 'flex',
+              }}
+            >
+              <div style={{ width: `${before}px` }} />
+              {columnItems.map((column) => {
+                return (
                   <div
-                    key={virtualColumn.key}
-                    ref={(el) => {
-                      virtualRow.measureElement(el)
-                      virtualColumn.measureElement(el)
-                    }}
-                    className={
-                      virtualColumn.index % 2
-                        ? virtualRow.index % 2 === 0
-                          ? 'ListItemOdd'
-                          : 'ListItemEven'
-                        : virtualRow.index % 2
-                        ? 'ListItemOdd'
-                        : 'ListItemEven'
-                    }
+                    key={column.key}
                     style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      transform: `translateX(${virtualColumn.start}px) translateY(${virtualRow.start}px)`,
+                      minHeight: row.index === 0 ? 50 : row.size,
+                      width: getColumnWidth(column.index),
+                      borderBottom: '1px solid #c8c8c8',
+                      borderRight: '1px solid #c8c8c8',
+                      padding: '7px 12px',
                     }}
                   >
-                    <div
-                      style={{
-                        height: rows[virtualRow.index],
-                        width: columns[virtualColumn.index],
-                      }}
-                    >
-                      Cell {virtualRow.index}, {virtualColumn.index}
-                    </div>
+                    {row.index === 0 ? (
+                      <div>{columns[column.index].name}</div>
+                    ) : (
+                      <div>{data[row.index][column.index]}</div>
+                    )}
                   </div>
-                ))}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      ) : null}
+                )
+              })}
+              <div style={{ width: `${after}px` }} />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const generateColumns = (count: number) => {
+  return new Array(count).fill(0).map((_, i) => {
+    const key: string = i.toString()
+    return {
+      key,
+      name: `Column ${i}`,
+      width: randomNumber(75, 300),
+    }
+  })
+}
+
+const generateData = (columns: Column[], count = 300) => {
+  return new Array(count).fill(0).map((_, rowIndex) =>
+    columns.reduce<string[]>((acc, _curr, colIndex) => {
+      // simulate dynamic size cells
+      const val = faker.lorem.lines(((rowIndex + colIndex) % 10) + 1)
+
+      acc.push(val)
+
+      return acc
+    }, []),
+  )
+}
+
+function App() {
+  const pathname = location.pathname
+  return (
+    <div>
+      <p>
+        These components are using <strong>dynamic</strong> sizes. This means
+        that each element's exact dimensions are unknown when rendered. An
+        estimated dimension is used to get an a initial measurement, then this
+        measurement is readjusted on the fly as each element is rendered.
+      </p>
+      <nav>
+        <ul>
+          <li>
+            <a href="/">List</a>
+          </li>
+          <li>
+            <a href="/window-list">List - window as scroller</a>
+          </li>
+          <li>
+            <a href="/columns">Column</a>
+          </li>
+          <li>
+            <a href="/grid">Grid</a>
+          </li>
+        </ul>
+      </nav>
+      {(() => {
+        switch (pathname) {
+          case '/':
+            return <RowVirtualizerDynamic />
+          case '/columns':
+            return <ColumnVirtualizerDynamic />
+          case '/window-list':
+            return <RowVirtualizerDynamicWindow />
+          case '/grid': {
+            const columns = generateColumns(30)
+            const data = generateData(columns)
+            return <GridVirtualizerDynamic columns={columns} data={data} />
+          }
+          default:
+            return <div>Not found</div>
+        }
+      })()}
       <br />
       <br />
       {process.env.NODE_ENV === 'development' ? (
@@ -241,13 +339,10 @@ function GridVirtualizerDynamic({ rows, columns }) {
           until this application is build for production.
         </p>
       ) : null}
-    </>
+    </div>
   )
 }
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root'),
-)
+const container = document.getElementById('root')
+const root = createRoot(container!)
+root.render(<App />)

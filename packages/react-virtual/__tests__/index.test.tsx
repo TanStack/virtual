@@ -57,14 +57,17 @@ function List({
           <div
             data-testid={`item-${virtualRow.key}`}
             key={virtualRow.key}
-            ref={(el) => (dynamic ? virtualRow.measureElement(el) : undefined)}
+            data-index={virtualRow.index}
+            ref={(el) =>
+              dynamic ? rowVirtualizer.measureElement(el) : undefined
+            }
             style={{
               position: 'absolute',
               top: 0,
               left: 0,
               width: '100%',
               transform: `translateY(${virtualRow.start}px)`,
-              height: virtualRow.size,
+              height: itemSize,
             }}
           >
             Row {virtualRow.index}
@@ -110,7 +113,7 @@ test('should render given dynamic size', async () => {
   expect(renderer).toHaveBeenCalledTimes(3)
 })
 
-test.only('should render given dynamic size after scroll', () => {
+test('should render given dynamic size after scroll', () => {
   render(<List itemSize={100} dynamic />)
 
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
@@ -139,4 +142,18 @@ test('should use rangeExtractor', () => {
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
   expect(screen.queryByText('Row 1')).toBeInTheDocument()
   expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+})
+
+test('should handle count change', () => {
+  const { rerender } = render(<List count={2} />)
+
+  expect(screen.queryByText('Row 0')).toBeInTheDocument()
+  expect(screen.queryByText('Row 1')).toBeInTheDocument()
+  expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+
+  rerender(<List count={10} />)
+
+  expect(screen.queryByText('Row 2')).toBeInTheDocument()
+  expect(screen.queryByText('Row 4')).toBeInTheDocument()
+  expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
 })

@@ -9,13 +9,15 @@
     "start": "vite"
   },
   "dependencies": {
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "@tanstack/react-virtual": "3.0.0-beta.18"
+    "@faker-js/faker": "7.6.0",
+    "@tanstack/react-virtual": "3.0.0-beta.23",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@rollup/plugin-replace": "^4.0.0",
-    "@vitejs/plugin-react": "^1.2.0",
-    "vite": "^2.8.6"
+    "@types/react": "^18.0.25",
+    "@types/react-dom": "^18.0.8",
+    "@vitejs/plugin-react": "^2.2.0",
+    "vite": "^3.2.3"
   }
 }
