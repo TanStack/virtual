@@ -13,7 +13,7 @@ import { computed, shallowRef, triggerRef, unref, watch, type Ref } from 'vue'
 
 type MaybeRef<T> = T | Ref<T>
 
-function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
+function useVirtualizerBase<TScrollElement, TItemElement extends Element>(
   options: MaybeRef<VirtualizerOptions<TScrollElement, TItemElement>>,
 ): Ref<Virtualizer<TScrollElement, TItemElement>> {
   const opts = unref(options)
@@ -57,7 +57,7 @@ function useVirtualizerBase<TScrollElement, TItemElement = unknown>(
   return state
 }
 
-export function useVirtualizer<TScrollElement, TItemElement = unknown>(
+export function useVirtualizer<TScrollElement, TItemElement extends Element>(
   options: MaybeRef<
     PartialKeys<
       VirtualizerOptions<TScrollElement, TItemElement>,
@@ -75,14 +75,14 @@ export function useVirtualizer<TScrollElement, TItemElement = unknown>(
   )
 }
 
-export function useWindowVirtualizer<TItemElement = unknown>(
+export function useWindowVirtualizer<TItemElement extends Element>(
   options: MaybeRef<
     PartialKeys<
       VirtualizerOptions<Window, TItemElement>,
+      | 'getScrollElement'
       | 'observeElementRect'
       | 'observeElementOffset'
       | 'scrollToFn'
-      | 'getScrollElement'
     >
   >,
 ): Ref<Virtualizer<Window, TItemElement>> {
