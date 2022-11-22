@@ -9,7 +9,15 @@ import {
   type PartialKeys,
   type VirtualizerOptions,
 } from '@tanstack/virtual-core'
-import { computed, shallowRef, triggerRef, unref, watch, type Ref } from 'vue'
+import {
+  computed,
+  shallowRef,
+  triggerRef,
+  unref,
+  watch,
+  onUnmounted,
+  type Ref,
+} from 'vue'
 
 type MaybeRef<T> = T | Ref<T>
 
@@ -19,25 +27,25 @@ function useVirtualizerBase<TScrollElement, TItemElement extends Element>(
   const opts = unref(options)
   const virtualizer = new Virtualizer(opts)
   const state = shallowRef(virtualizer)
+  let doClean: (() => void) | undefined
 
-  const applyOptions = (() => {
-    let doClean: (() => void) | undefined
-    return (options: VirtualizerOptions<TScrollElement, TItemElement>) => {
-      doClean?.()
-      virtualizer.setOptions({
-        ...options,
-        onChange: (instance) => {
-          // Force an update event
-          triggerRef(state)
-          options.onChange?.(instance)
-        },
-      })
+  const applyOptions = (
+    options: VirtualizerOptions<TScrollElement, TItemElement>,
+  ) => {
+    doClean?.()
+    virtualizer.setOptions({
+      ...options,
+      onChange: (instance) => {
+        // Force an update event
+        triggerRef(state)
+        options.onChange?.(instance)
+      },
+    })
 
-      virtualizer._willUpdate()
-      virtualizer.measure()
-      doClean = virtualizer._didMount()
-    }
-  })()
+    virtualizer._willUpdate()
+    virtualizer.measure()
+    doClean = virtualizer._didMount()
+  }
 
   applyOptions(opts)
   watch(
@@ -53,6 +61,10 @@ function useVirtualizerBase<TScrollElement, TItemElement extends Element>(
       deep: true,
     },
   )
+
+  onUnmounted(() => {
+    doClean?.()
+  })
 
   return state
 }
