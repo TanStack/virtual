@@ -26,6 +26,12 @@ export const packages: Package[] = [
     srcDir: 'src',
     dependencies: ['@tanstack/virtual-core'],
   },
+  {
+    name: '@tanstack/vue-virtual',
+    packageDir: 'vue-virtual',
+    srcDir: 'src',
+    dependencies: ['@tanstack/virtual-core'],
+  }
 ]
 
 export const latestBranch = 'main'
