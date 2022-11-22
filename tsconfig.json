@@ -4,7 +4,8 @@
     { "path": "packages/virtual-core" },
     { "path": "packages/react-virtual" },
     { "path": "packages/solid-virtual" },
-    { "path": "packages/svelte-virtual" }
+    { "path": "packages/svelte-virtual" },
+    { "path": "packages/vue-virtual" }
     // { "path": "examples/react/basic/tsconfig.dev.json" },
   ]
   // "exclude": ["node_modules"]
