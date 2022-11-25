@@ -6,6 +6,11 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": false,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noUncheckedIndexedAccess": true,
     "strictNullChecks": true,
     "jsx": "react",
@@ -15,10 +20,10 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@tanstack/virtual-core": ["packages/virtual-core"],
-      "@tanstack/react-virtual": ["packages/react-virtual"],
-      "@tanstack/solid-virtual": ["packages/solid-virtual"],
-      "@tanstack/svelte-virtual": ["packages/svelte-virtual"]
+      "@tanstack/react-virtual": ["packages/react-virtual/src"],
+      "@tanstack/solid-virtual": ["packages/solid-virtual/src"],
+      "@tanstack/svelte-virtual": ["packages/svelte-virtual/src"],
+      "@tanstack/virtual-core": ["packages/virtual-core/src"]
     }
   }
 }

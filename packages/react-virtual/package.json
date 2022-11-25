@@ -24,18 +24,31 @@
     "type": "github",
     "url": "https://github.com/sponsors/tannerlinsley"
   },
-  "module": "build/esm/index.js",
-  "main": "build/cjs/react-virtual/src/index.js",
-  "browser": "build/umd/index.production.js",
-  "types": "build/types/index.d.ts",
-  "sideEffects": false,
-  "engines": {
-    "node": ">=12"
+  "types": "build/lib/index.d.ts",
+  "main": "build/lib/index.js",
+  "module": "build/lib/index.esm.js",
+  "exports": {
+    ".": {
+      "types": "./build/lib/index.d.ts",
+      "import": "./build/lib/index.mjs",
+      "default": "./build/lib/index.js"
+    },
+    "./package.json": "./package.json"
   },
+  "sideEffects": false,
   "files": [
-    "build/**",
+    "build/lib/*",
+    "build/umd/*",
     "src"
   ],
+  "devDependencies": {
+    "@testing-library/react": "^12.1.2",
+    "@types/react": "17.0.45",
+    "@types/react-dom": "17.0.17",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "resize-observer-polyfill": "^1.5.1"
+  },
   "dependencies": {
     "@tanstack/virtual-core": "3.0.0-beta.23"
   },
