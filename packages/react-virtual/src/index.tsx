@@ -17,7 +17,10 @@ export * from '@tanstack/virtual-core'
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect
 
-function useVirtualizerBase<TScrollElement, TItemElement extends Element>(
+function useVirtualizerBase<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+>(
   options: VirtualizerOptions<TScrollElement, TItemElement>,
 ): Virtualizer<TScrollElement, TItemElement> {
   const rerender = React.useReducer(() => ({}), {})[1]
@@ -47,7 +50,10 @@ function useVirtualizerBase<TScrollElement, TItemElement extends Element>(
   return instance
 }
 
-export function useVirtualizer<TScrollElement, TItemElement extends Element>(
+export function useVirtualizer<
+  TScrollElement extends Element,
+  TItemElement extends Element,
+>(
   options: PartialKeys<
     VirtualizerOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
