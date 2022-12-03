@@ -4,19 +4,19 @@ import {
   observeElementRect,
   observeWindowOffset,
   observeWindowRect,
+  PartialKeys,
   Virtualizer,
+  VirtualizerOptions,
   windowScroll,
-  type PartialKeys,
-  type VirtualizerOptions,
 } from '@tanstack/virtual-core'
 import {
   computed,
+  onScopeDispose,
+  Ref,
   shallowRef,
   triggerRef,
   unref,
   watch,
-  onUnmounted,
-  type Ref,
 } from 'vue'
 
 type MaybeRef<T> = T | Ref<T>
@@ -24,47 +24,42 @@ type MaybeRef<T> = T | Ref<T>
 function useVirtualizerBase<TScrollElement, TItemElement extends Element>(
   options: MaybeRef<VirtualizerOptions<TScrollElement, TItemElement>>,
 ): Ref<Virtualizer<TScrollElement, TItemElement>> {
-  const opts = unref(options)
-  const virtualizer = new Virtualizer(opts)
+  const virtualizer = new Virtualizer(unref(options))
   const state = shallowRef(virtualizer)
-  let doClean: (() => void) | undefined
 
-  const applyOptions = (
-    options: VirtualizerOptions<TScrollElement, TItemElement>,
-  ) => {
-    doClean?.()
-    virtualizer.setOptions({
-      ...options,
-      onChange: (instance) => {
-        // Force an update event
-        triggerRef(state)
-        options.onChange?.(instance)
-      },
-    })
+  const cleanup = virtualizer._didMount()
 
-    virtualizer._willUpdate()
-    virtualizer.measure()
-    doClean = virtualizer._didMount()
-  }
-
-  applyOptions(opts)
   watch(
-    () => {
-      const opts = unref(options)
-      // If those functions use refs, we need to track them.
-      opts.getScrollElement()
-      opts.estimateSize(0)
-      return opts
+    () => unref(options).getScrollElement(),
+    (el) => {
+      if (el) {
+        virtualizer._willUpdate()
+      }
     },
-    applyOptions,
     {
-      deep: true,
+      immediate: true,
     },
   )
 
-  onUnmounted(() => {
-    doClean?.()
-  })
+  watch(
+    () => unref(options),
+    (options) => {
+      virtualizer.setOptions({
+        ...options,
+        onChange: (instance) => {
+          triggerRef(state)
+          options.onChange?.(instance)
+        },
+      })
+
+      virtualizer._willUpdate()
+    },
+    {
+      immediate: true,
+    },
+  )
+
+  onScopeDispose(cleanup)
 
   return state
 }
@@ -91,10 +86,10 @@ export function useWindowVirtualizer<TItemElement extends Element>(
   options: MaybeRef<
     PartialKeys<
       VirtualizerOptions<Window, TItemElement>,
-      | 'getScrollElement'
       | 'observeElementRect'
       | 'observeElementOffset'
       | 'scrollToFn'
+      | 'getScrollElement'
     >
   >,
 ): Ref<Virtualizer<Window, TItemElement>> {
