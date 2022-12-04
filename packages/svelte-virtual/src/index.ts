@@ -11,29 +11,53 @@ import {
 } from '@tanstack/virtual-core'
 export * from '@tanstack/virtual-core'
 
-import { readable, Readable } from 'svelte/store'
+import { derived, Readable, writable, Writable } from 'svelte/store'
+
+export type SvelteVirtualizer<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+> = Omit<Virtualizer<TScrollElement, TItemElement>, 'setOptions'> & {
+  setOptions: (
+    options: Partial<VirtualizerOptions<TScrollElement, TItemElement>>,
+  ) => void
+}
 
 function createVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 >(
   options: VirtualizerOptions<TScrollElement, TItemElement>,
-): Readable<Virtualizer<TScrollElement, TItemElement>> {
-  const virtualizer = new Virtualizer(options)
+): Readable<SvelteVirtualizer<TScrollElement, TItemElement>> {
+  let originalOnChange = options.onChange
 
-  return readable(virtualizer, (set) => {
-    const cleanup = virtualizer._didMount()
-    virtualizer._willUpdate()
-    virtualizer.setOptions({
+  const virtualizer = new Virtualizer(options)
+  const originalSetOptions = virtualizer.setOptions
+
+  let virtualizerWritable: Writable<Virtualizer<TScrollElement, TItemElement>>
+
+  const setOptions = (
+    options: Partial<VirtualizerOptions<TScrollElement, TItemElement>>,
+  ) => {
+    originalOnChange = options.onChange || originalOnChange
+    originalSetOptions({
+      ...virtualizer.options,
       ...options,
       onChange: (instance: Virtualizer<TScrollElement, TItemElement>) => {
-        set(instance)
-        options.onChange?.(instance)
+        virtualizerWritable.set(instance)
+        originalOnChange?.(instance)
       },
     })
+    virtualizer._willUpdate()
+  }
 
-    return () => cleanup()
+  virtualizerWritable = writable(virtualizer, () => {
+    setOptions(options)
+    return virtualizer._didMount()
   })
+
+  return derived(virtualizerWritable, (instance) =>
+    Object.assign(instance, { setOptions }),
+  )
 }
 
 export function createVirtualizer<
@@ -44,7 +68,7 @@ export function createVirtualizer<
     VirtualizerOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
   >,
-): Readable<Virtualizer<TScrollElement, TItemElement>> {
+): Readable<SvelteVirtualizer<TScrollElement, TItemElement>> {
   return createVirtualizerBase<TScrollElement, TItemElement>({
     observeElementRect: observeElementRect,
     observeElementOffset: observeElementOffset,
@@ -61,7 +85,7 @@ export function createWindowVirtualizer<TItemElement extends Element>(
     | 'observeElementOffset'
     | 'scrollToFn'
   >,
-): Readable<Virtualizer<Window, TItemElement>> {
+): Readable<SvelteVirtualizer<Window, TItemElement>> {
   return createVirtualizerBase<Window, TItemElement>({
     getScrollElement: () => (typeof window !== 'undefined' ? window : null!),
     observeElementRect: observeWindowRect,
