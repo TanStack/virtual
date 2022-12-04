@@ -86,10 +86,11 @@ export default function rollup(options: RollupOptions): RollupOptions[] {
     ...buildConfigs({
       name: 'vue-virtual',
       packageDir: 'packages/vue-virtual',
-      jsName: 'vueVirtual',
-      outputFile: 'vue-virtual',
+      jsName: 'VueVirtual',
+      outputFile: 'index',
       entryFile: 'src/index.ts',
       globals: {
+        '@tanstack/virtual-core': 'VirtualCore',
         vue: 'Vue',
       },
     }),
