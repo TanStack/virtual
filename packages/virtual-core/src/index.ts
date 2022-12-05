@@ -360,9 +360,11 @@ export class Virtualizer<
   }
 
   _didMount = () => {
+    const ro = this.getResizeObserver()
+    Object.values(this.measureElementCache).forEach((node) => ro?.observe(node))
+
     return () => {
-      this.getResizeObserver()?.disconnect()
-      this.measureElementCache = {}
+      ro?.disconnect()
 
       this.cleanup()
     }

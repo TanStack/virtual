@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 import { faker } from '@faker-js/faker'
 
@@ -26,7 +26,7 @@ function RowVirtualizerDynamic() {
     <div
       ref={parentRef}
       className="List"
-      style={{ height: 400, width: 400, overflowX: 'auto' }}
+      style={{ height: 400, width: 400, overflowY: 'auto' }}
     >
       <div
         style={{
@@ -345,4 +345,10 @@ function App() {
 
 const container = document.getElementById('root')
 const root = createRoot(container!)
-root.render(<App />)
+const { StrictMode } = React
+
+root.render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
