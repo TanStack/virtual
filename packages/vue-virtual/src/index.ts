@@ -21,7 +21,10 @@ import {
 
 type MaybeRef<T> = T | Ref<T>
 
-function useVirtualizerBase<TScrollElement, TItemElement extends Element>(
+function useVirtualizerBase<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+>(
   options: MaybeRef<VirtualizerOptions<TScrollElement, TItemElement>>,
 ): Ref<Virtualizer<TScrollElement, TItemElement>> {
   const virtualizer = new Virtualizer(unref(options))
@@ -64,7 +67,10 @@ function useVirtualizerBase<TScrollElement, TItemElement extends Element>(
   return state
 }
 
-export function useVirtualizer<TScrollElement, TItemElement extends Element>(
+export function useVirtualizer<
+  TScrollElement extends Element,
+  TItemElement extends Element,
+>(
   options: MaybeRef<
     PartialKeys<
       VirtualizerOptions<TScrollElement, TItemElement>,
