@@ -292,6 +292,7 @@ export class Virtualizer<
   private scrollOffset: number
   private scrollAdjustments: number = 0
   private measureElementCache: Record<Key, TItemElement> = {}
+  private pendingScrollToIndexCallback: (() => void) | null = null
   private getResizeObserver = (() => {
     let _ro: ResizeObserver | null = null
 
@@ -368,6 +369,8 @@ export class Virtualizer<
   }
 
   _willUpdate = () => {
+    this.pendingScrollToIndexCallback?.()
+
     const scrollElement = this.options.getScrollElement()
 
     if (this.scrollElement !== scrollElement) {
@@ -638,6 +641,8 @@ export class Virtualizer<
     index: number,
     { align = 'auto', ...rest }: ScrollToIndexOptions = {},
   ) => {
+    this.pendingScrollToIndexCallback = null
+
     const measurements = this.getMeasurements()
     const offset = this.scrollOffset
     const size = this.getSize()
@@ -668,6 +673,23 @@ export class Virtualizer<
         : measurement.start - this.options.scrollPaddingStart
 
     this.scrollToOffset(toOffset, { align, ...rest })
+
+    const isDynamic = Object.keys(this.measureElementCache).length > 0
+
+    if (isDynamic) {
+      const didSeen = () =>
+        typeof this.itemMeasurementsCache[this.options.getItemKey(index)] ===
+        'number'
+
+      if (!didSeen()) {
+        this.pendingScrollToIndexCallback = () => {
+          if (didSeen()) {
+            this.pendingScrollToIndexCallback = null
+            this.scrollToIndex(index, { align, ...rest })
+          }
+        }
+      }
+    }
   }
 
   getTotalSize = () =>
