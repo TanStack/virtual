@@ -400,23 +400,26 @@ export class Virtualizer<
             this.isScrollingTimeoutId = null
           }
 
+          const onIsScrollingChange = (isScrolling: boolean) => {
+            if (this.isScrolling !== isScrolling) {
+              this.isScrolling = isScrolling
+              this.notify()
+            }
+          }
+
+          this.scrollAdjustments = 0
+
           if (this.scrollOffset !== offset) {
             this.scrollOffset = offset
-            this.isScrolling = true
-            this.scrollAdjustments = 0
-
-            this.isScrollingTimeoutId = setTimeout(() => {
-              this.isScrollingTimeoutId = null
-              this.isScrolling = false
-
-              this.notify()
-            }, this.options.scrollingDelay)
-          } else {
-            this.isScrolling = false
-            this.scrollAdjustments = 0
+            onIsScrollingChange(true)
           }
 
           this.calculateRange()
+
+          this.isScrollingTimeoutId = setTimeout(() => {
+            this.isScrollingTimeoutId = null
+            onIsScrollingChange(false)
+          }, this.options.scrollingDelay)
         }),
       )
     } else if (!this.isScrolling) {
