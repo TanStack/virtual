@@ -289,7 +289,7 @@ export class Virtualizer<
   private itemMeasurementsCache: Record<Key, number> = {}
   private pendingMeasuredCacheIndexes: number[] = []
   private scrollRect: Rect
-  private scrollOffset: number
+  scrollOffset: number
   private scrollAdjustments: number = 0
   private measureElementCache: Record<Key, TItemElement> = {}
   private pendingScrollToIndexCallback: (() => void) | null = null
