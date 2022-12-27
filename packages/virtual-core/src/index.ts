@@ -697,6 +697,14 @@ export class Virtualizer<
     }
   }
 
+  scrollBy = (adjustments: number, options?: { behavior: ScrollBehavior }) => {
+    this._scrollToOffset(this.scrollOffset, {
+      adjustments,
+      behavior: options?.behavior,
+      sync: false,
+    })
+  }
+
   getTotalSize = () =>
     (this.getMeasurements()[this.options.count - 1]?.end ||
       this.options.paddingStart) + this.options.paddingEnd
