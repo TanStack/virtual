@@ -611,10 +611,7 @@ export class Virtualizer<
     },
   )
 
-  scrollToOffset = (
-    toOffset: number,
-    { align = 'start', behavior }: ScrollToOffsetOptions = {},
-  ) => {
+  getOffsetForAlignment = (toOffset: number, align: ScrollAlignment) => {
     const offset = this.scrollOffset
     const size = this.getSize()
 
@@ -628,35 +625,43 @@ export class Virtualizer<
       }
     }
 
+    if (align === 'start') {
+      return toOffset
+    } else if (align === 'end') {
+      return toOffset - size
+    } else if (align === 'center') {
+      return toOffset - size / 2
+    }
+    return toOffset
+  }
+
+  scrollToOffset = (
+    toOffset: number,
+    { align = 'start', behavior }: ScrollToOffsetOptions = {},
+  ) => {
     const options = {
       adjustments: undefined,
       behavior,
       sync: false,
     }
-    if (align === 'start') {
-      this._scrollToOffset(toOffset, options)
-    } else if (align === 'end') {
-      this._scrollToOffset(toOffset - size, options)
-    } else if (align === 'center') {
-      this._scrollToOffset(toOffset - size / 2, options)
-    }
+    this._scrollToOffset(this.getOffsetForAlignment(toOffset, align), options)
   }
 
   scrollToIndex = (
     index: number,
-    { align = 'auto', ...rest }: ScrollToIndexOptions = {},
+    { align = 'auto', behavior }: ScrollToIndexOptions = {},
   ) => {
     this.pendingScrollToIndexCallback = null
 
-    const measurements = this.getMeasurements()
     const offset = this.scrollOffset
     const size = this.getSize()
     const { count } = this.options
 
+    const measurements = this.getMeasurements()
     const measurement = measurements[Math.max(0, Math.min(index, count - 1))]
 
     if (!measurement) {
-      return
+      throw new Error(`VirtualItem not found for index = ${index}`)
     }
 
     if (align === 'auto') {
@@ -672,27 +677,33 @@ export class Virtualizer<
       }
     }
 
-    const toOffset =
-      align === 'end'
-        ? measurement.end + this.options.scrollPaddingEnd
-        : measurement.start - this.options.scrollPaddingStart
+    const getOffsetForIndexAndAlignment = (measurement: VirtualItem) => {
+      const toOffset =
+        align === 'end'
+          ? measurement.end + this.options.scrollPaddingEnd
+          : measurement.start - this.options.scrollPaddingStart
 
-    this.scrollToOffset(toOffset, { align, ...rest })
+      return this.getOffsetForAlignment(toOffset, align)
+    }
+
+    const toOffset = getOffsetForIndexAndAlignment(measurement)
+
+    if (toOffset === offset) {
+      return
+    }
+
+    const options = {
+      adjustments: undefined,
+      behavior,
+      sync: false,
+    }
+    this._scrollToOffset(toOffset, options)
 
     const isDynamic = Object.keys(this.measureElementCache).length > 0
 
     if (isDynamic) {
-      const didSeen = () =>
-        typeof this.itemMeasurementsCache[this.options.getItemKey(index)] ===
-        'number'
-
-      if (!didSeen()) {
-        this.pendingScrollToIndexCallback = () => {
-          if (didSeen()) {
-            this.pendingScrollToIndexCallback = null
-            this.scrollToIndex(index, { align, ...rest })
-          }
-        }
+      this.pendingScrollToIndexCallback = () => {
+        this.scrollToIndex(index, { align, behavior })
       }
     }
   }
