@@ -21,6 +21,7 @@ function RowVirtualizerDynamic() {
     getScrollElement: () => parentRef.current,
     estimateSize: () => 45,
   })
+  const items = virtualizer.getVirtualItems()
 
   return (
     <div
@@ -35,26 +36,29 @@ function RowVirtualizerDynamic() {
           position: 'relative',
         }}
       >
-        {virtualizer.getVirtualItems().map((virtualRow) => (
-          <div
-            key={virtualRow.key}
-            data-index={virtualRow.index}
-            ref={virtualizer.measureElement}
-            className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualRow.start}px)`,
-            }}
-          >
-            <div>
-              <div>Row {virtualRow.index}</div>
-              <p>{sentences[virtualRow.index]}</p>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            transform: `translateY(${items[0].start}px)`,
+          }}
+        >
+          {items.map((virtualRow) => (
+            <div
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
+              className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+            >
+              <div style={{ padding: '10px 0' }}>
+                <div>Row {virtualRow.index}</div>
+                <div>{sentences[virtualRow.index]}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -74,6 +78,7 @@ const RowVirtualizerDynamicWindow = () => {
     estimateSize: () => 45,
     scrollMargin: parentOffsetRef.current,
   })
+  const items = virtualizer.getVirtualItems()
 
   return (
     <div ref={parentRef} className="List">
@@ -84,26 +89,31 @@ const RowVirtualizerDynamicWindow = () => {
           position: 'relative',
         }}
       >
-        {virtualizer.getVirtualItems().map((virtualRow) => (
-          <div
-            key={virtualRow.key}
-            data-index={virtualRow.index}
-            ref={virtualizer.measureElement}
-            className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualRow.start}px)`,
-            }}
-          >
-            <div>
-              <div>Row {virtualRow.index}</div>
-              <p>{sentences[virtualRow.index]}</p>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            transform: `translateY(${
+              items[0].start - virtualizer.options.scrollMargin
+            }px)`,
+          }}
+        >
+          {items.map((virtualRow) => (
+            <div
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
+              className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+            >
+              <div style={{ padding: '10px 0' }}>
+                <div>Row {virtualRow.index}</div>
+                <div>{sentences[virtualRow.index]}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -151,7 +161,7 @@ function ColumnVirtualizerDynamic() {
             >
               <div style={{ width: sentences[virtualColumn.index].length }}>
                 <div>Column {virtualColumn.index}</div>
-                <p>{sentences[virtualColumn.index]}</p>
+                <div>{sentences[virtualColumn.index]}</div>
               </div>
             </div>
           ))}
@@ -229,7 +239,9 @@ function GridVirtualizerDynamic({
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                transform: `translateY(${row.start}px)`,
+                transform: `translateY(${
+                  row.start - virtualizer.options.scrollMargin
+                }px)`,
                 display: 'flex',
               }}
             >
