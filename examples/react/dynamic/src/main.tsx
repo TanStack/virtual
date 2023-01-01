@@ -21,6 +21,7 @@ function RowVirtualizerDynamic() {
     getScrollElement: () => parentRef.current,
     estimateSize: () => 45,
   })
+
   const items = virtualizer.getVirtualItems()
 
   return (
