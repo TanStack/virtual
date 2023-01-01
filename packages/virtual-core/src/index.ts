@@ -4,6 +4,8 @@ export * from './utils'
 
 //
 
+type ScrollDirection = 'forward' | 'backward'
+
 type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
 type ScrollBehavior = 'auto' | 'smooth'
@@ -149,7 +151,7 @@ const createOffsetObserver = (mode: ObserverMode) => {
       const offset =
         instance.scrollElement[instance.options.horizontal ? propX : propY]
 
-      cb(Math.max(0, offset - instance.options.scrollMargin))
+      cb(offset)
     }
 
     scroll()
@@ -195,15 +197,12 @@ export const measureElement = <TItemElement extends Element>(
 export const windowScroll = <T extends Window>(
   offset: number,
   {
-    adjustments,
+    adjustments = 0,
     behavior,
-    sync,
-  }: { adjustments?: number; behavior?: ScrollBehavior; sync: boolean },
+  }: { adjustments?: number; behavior?: ScrollBehavior },
   instance: Virtualizer<T, any>,
 ) => {
-  const toOffset =
-    (sync ? offset : offset + instance.options.scrollMargin) +
-    (adjustments ?? 0)
+  const toOffset = offset + adjustments
 
   instance.scrollElement?.scrollTo?.({
     [instance.options.horizontal ? 'left' : 'top']: toOffset,
@@ -214,15 +213,12 @@ export const windowScroll = <T extends Window>(
 export const elementScroll = <T extends Element>(
   offset: number,
   {
-    adjustments,
+    adjustments = 0,
     behavior,
-    sync,
-  }: { adjustments?: number; behavior?: ScrollBehavior; sync: boolean },
+  }: { adjustments?: number; behavior?: ScrollBehavior },
   instance: Virtualizer<T, any>,
 ) => {
-  const toOffset =
-    (sync ? offset : offset + instance.options.scrollMargin) +
-    (adjustments ?? 0)
+  const toOffset = offset + adjustments
 
   instance.scrollElement?.scrollTo?.({
     [instance.options.horizontal ? 'left' : 'top']: toOffset,
@@ -242,7 +238,7 @@ export interface VirtualizerOptions<
   // Required from the framework adapter (but can be overridden)
   scrollToFn: (
     offset: number,
-    options: { adjustments?: number; behavior?: ScrollBehavior; sync: boolean },
+    options: { adjustments?: number; behavior?: ScrollBehavior },
     instance: Virtualizer<TScrollElement, TItemElement>,
   ) => void
   observeElementRect: (
@@ -274,6 +270,7 @@ export interface VirtualizerOptions<
   scrollMargin?: number
   scrollingDelay?: number
   indexAttribute?: string
+  initialMeasurementsCache?: VirtualItem[]
 }
 
 export class Virtualizer<
@@ -286,10 +283,11 @@ export class Virtualizer<
   isScrolling: boolean = false
   private isScrollingTimeoutId: ReturnType<typeof setTimeout> | null = null
   measurementsCache: VirtualItem[] = []
-  private itemMeasurementsCache: Record<Key, number> = {}
+  private itemSizeCache: Record<Key, number> = {}
   private pendingMeasuredCacheIndexes: number[] = []
   private scrollRect: Rect
   scrollOffset: number
+  scrollDirection: ScrollDirection | null = null
   private scrollAdjustments: number = 0
   private measureElementCache: Record<Key, TItemElement> = {}
   private pendingScrollToIndexCallback: (() => void) | null = null
@@ -319,6 +317,10 @@ export class Virtualizer<
     this.setOptions(opts)
     this.scrollRect = this.options.initialRect
     this.scrollOffset = this.options.initialOffset
+    this.measurementsCache = this.options.initialMeasurementsCache
+    this.measurementsCache.forEach((item) => {
+      this.itemSizeCache[item.key] = item.size
+    })
 
     this.calculateRange()
   }
@@ -345,6 +347,7 @@ export class Virtualizer<
       scrollMargin: 0,
       scrollingDelay: 150,
       indexAttribute: 'data-index',
+      initialMeasurementsCache: [],
       ...opts,
     }
   }
@@ -383,7 +386,6 @@ export class Virtualizer<
       this._scrollToOffset(this.scrollOffset, {
         adjustments: undefined,
         behavior: undefined,
-        sync: true,
       })
 
       this.unsubs.push(
@@ -395,6 +397,12 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset) => {
+          this.scrollAdjustments = 0
+
+          if (this.scrollOffset === offset) {
+            return
+          }
+
           if (this.isScrollingTimeoutId !== null) {
             clearTimeout(this.isScrollingTimeoutId)
             this.isScrollingTimeoutId = null
@@ -407,17 +415,18 @@ export class Virtualizer<
             }
           }
 
-          this.scrollAdjustments = 0
+          this.scrollDirection =
+            this.scrollOffset < offset ? 'forward' : 'backward'
 
-          if (this.scrollOffset !== offset) {
-            this.scrollOffset = offset
-            onIsScrollingChange(true)
-          }
+          this.scrollOffset = offset
 
           this.calculateRange()
 
+          onIsScrollingChange(true)
+
           this.isScrollingTimeoutId = setTimeout(() => {
             this.isScrollingTimeoutId = null
+            this.scrollDirection = null
             onIsScrollingChange(false)
           }, this.options.scrollingDelay)
         }),
@@ -435,10 +444,11 @@ export class Virtualizer<
     () => [
       this.options.count,
       this.options.paddingStart,
+      this.options.scrollMargin,
       this.options.getItemKey,
-      this.itemMeasurementsCache,
+      this.itemSizeCache,
     ],
-    (count, paddingStart, getItemKey, measurementsCache) => {
+    (count, paddingStart, scrollMargin, getItemKey, itemSizeCache) => {
       const min =
         this.pendingMeasuredCacheIndexes.length > 0
           ? Math.min(...this.pendingMeasuredCacheIndexes)
@@ -449,10 +459,10 @@ export class Virtualizer<
 
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
-        const measuredSize = measurementsCache[key]
+        const measuredSize = itemSizeCache[key]
         const start = measurements[i - 1]
           ? measurements[i - 1]!.end
-          : paddingStart
+          : paddingStart + scrollMargin
         const size =
           typeof measuredSize === 'number'
             ? measuredSize
@@ -462,6 +472,7 @@ export class Virtualizer<
       }
 
       this.measurementsCache = measurements
+
       return measurements
     },
     {
@@ -557,12 +568,16 @@ export class Virtualizer<
 
     const measuredItemSize = this.options.measureElement(node, this)
 
-    const itemSize = this.itemMeasurementsCache[item.key] ?? item.size
+    const itemSize = this.itemSizeCache[item.key] ?? item.size
 
     const delta = measuredItemSize - itemSize
 
     if (delta !== 0) {
-      if (item.start < this.scrollOffset && this.isScrolling) {
+      if (
+        item.start < this.scrollOffset &&
+        this.isScrolling &&
+        this.scrollDirection === 'backward'
+      ) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
         }
@@ -570,13 +585,12 @@ export class Virtualizer<
         this._scrollToOffset(this.scrollOffset, {
           adjustments: (this.scrollAdjustments += delta),
           behavior: undefined,
-          sync: false,
         })
       }
 
       this.pendingMeasuredCacheIndexes.push(index)
-      this.itemMeasurementsCache = {
-        ...this.itemMeasurementsCache,
+      this.itemSizeCache = {
+        ...this.itemSizeCache,
         [item.key]: measuredItemSize,
       }
       this.notify()
@@ -695,7 +709,6 @@ export class Virtualizer<
     const options = {
       adjustments: undefined,
       behavior,
-      sync: false,
     }
     this._scrollToOffset(toOffset, options)
 
@@ -712,31 +725,30 @@ export class Virtualizer<
     this._scrollToOffset(this.scrollOffset, {
       adjustments,
       behavior: options?.behavior,
-      sync: false,
     })
   }
 
   getTotalSize = () =>
     (this.getMeasurements()[this.options.count - 1]?.end ||
-      this.options.paddingStart) + this.options.paddingEnd
+      this.options.paddingStart) -
+    this.options.scrollMargin +
+    this.options.paddingEnd
 
   private _scrollToOffset = (
     offset: number,
     {
       adjustments,
       behavior,
-      sync,
     }: {
       adjustments: number | undefined
       behavior: ScrollBehavior | undefined
-      sync: boolean
     },
   ) => {
-    this.options.scrollToFn(offset, { behavior, sync, adjustments }, this)
+    this.options.scrollToFn(offset, { behavior, adjustments }, this)
   }
 
   measure = () => {
-    this.itemMeasurementsCache = {}
+    this.itemSizeCache = {}
     this.notify()
   }
 }
