@@ -702,7 +702,7 @@ export class Virtualizer<
 
     const toOffset = getOffsetForIndexAndAlignment(measurement)
 
-    if (toOffset === offset) {
+    if (Math.round(toOffset) === Math.round(offset)) {
       return
     }
 
