@@ -16,8 +16,9 @@ const sentences = new Array(10000)
 function RowVirtualizerDynamic() {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
+  const count = sentences.length
   const virtualizer = useVirtualizer({
-    count: sentences.length,
+    count,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 45,
   })
@@ -25,40 +26,65 @@ function RowVirtualizerDynamic() {
   const items = virtualizer.getVirtualItems()
 
   return (
-    <div
-      ref={parentRef}
-      className="List"
-      style={{ height: 400, width: 400, overflowY: 'auto' }}
-    >
+    <div>
+      <button
+        onClick={() => {
+          virtualizer.scrollToIndex(count / 2)
+        }}
+      >
+        scroll to the middle
+      </button>
+      <span style={{ padding: '0 4px' }} />
+      <button
+        onClick={() => {
+          virtualizer.scrollToIndex(count - 1)
+        }}
+      >
+        scroll to the last
+      </button>
+      <hr />
       <div
+        ref={parentRef}
+        className="List"
         style={{
-          height: virtualizer.getTotalSize(),
-          width: '100%',
-          position: 'relative',
+          height: 400,
+          width: 400,
+          overflowY: 'auto',
+          contain: 'strict',
         }}
       >
         <div
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
+            height: virtualizer.getTotalSize(),
             width: '100%',
-            transform: `translateY(${items[0].start}px)`,
+            position: 'relative',
           }}
         >
-          {items.map((virtualRow) => (
-            <div
-              key={virtualRow.key}
-              data-index={virtualRow.index}
-              ref={virtualizer.measureElement}
-              className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
-            >
-              <div style={{ padding: '10px 0' }}>
-                <div>Row {virtualRow.index}</div>
-                <div>{sentences[virtualRow.index]}</div>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${items[0].start}px)`,
+            }}
+          >
+            {items.map((virtualRow) => (
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className={
+                  virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'
+                }
+              >
+                <div style={{ padding: '10px 0' }}>
+                  <div>Row {virtualRow.index}</div>
+                  <div>{sentences[virtualRow.index]}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

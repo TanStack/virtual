@@ -40,6 +40,8 @@ function List({
     rangeExtractor,
   })
 
+  const measureElement = dynamic ? rowVirtualizer.measureElement : undefined
+
   return (
     <div
       ref={parentRef}
@@ -58,9 +60,7 @@ function List({
             data-testid={`item-${virtualRow.key}`}
             key={virtualRow.key}
             data-index={virtualRow.index}
-            ref={(el) =>
-              dynamic ? rowVirtualizer.measureElement(el) : undefined
-            }
+            ref={measureElement}
             style={{
               position: 'absolute',
               top: 0,
