@@ -82,10 +82,16 @@ export const observeElementRect = (
   cb: (rect: Rect) => void,
 ) => {
   const observer = new ResizeObserver((entries) => {
-    cb({
-      width: entries[0]?.contentRect.width as number,
-      height: entries[0]?.contentRect.height as number,
-    })
+    const entry = entries[0]
+    if (entry) {
+      const { width, height } = entry.contentRect
+      cb({
+        width: Math.round(width),
+        height: Math.round(height),
+      })
+    } else {
+      cb({ width: 0, height: 0 })
+    }
   })
 
   if (!instance.scrollElement) {
@@ -702,7 +708,7 @@ export class Virtualizer<
 
     const toOffset = getOffsetForIndexAndAlignment(measurement)
 
-    if (Math.round(toOffset) === Math.round(offset)) {
+    if (toOffset === offset) {
       return
     }
 
