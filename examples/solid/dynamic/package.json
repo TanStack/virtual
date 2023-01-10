@@ -1,0 +1,20 @@
+{
+  "name": "tanstack-solid-virtual-example-dynamic",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview --port 3001",
+    "start": "vite"
+  },
+  "dependencies": {
+    "@faker-js/faker": "7.6.0",
+    "@tanstack/solid-virtual": "3.0.0-beta.35",
+    "solid-js": "^1.6.8"
+  },
+  "devDependencies": {
+    "vite": "^3.2.3",
+    "vite-plugin-solid": "^2.5.0"
+  }
+}

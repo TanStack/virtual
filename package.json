@@ -31,7 +31,8 @@
     "./examples/react/scroll-padding",
     "./examples/react/smooth-scroll",
     "./examples/react/sticky",
-    "./examples/react/variable"
+    "./examples/react/variable",
+    "./examples/solid/dynamic"
   ],
   "devDependencies": {
     "@babel/core": "^7.20.2",
