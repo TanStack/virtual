@@ -1,7 +1,7 @@
 {
   "name": "@tanstack/svelte-virtual",
   "author": "Tanner Linsley",
-  "version": "3.0.0-beta.35",
+  "version": "3.0.0-beta.36",
   "description": "Headless UI for virtualizing scrollable elements in Svelte",
   "license": "MIT",
   "homepage": "https://github.com/tanstack/virtual#readme",
@@ -46,7 +46,7 @@
     "svelte": "^3.48.0"
   },
   "dependencies": {
-    "@tanstack/virtual-core": "3.0.0-beta.35"
+    "@tanstack/virtual-core": "3.0.0-beta.36"
   },
   "peerDependencies": {
     "svelte": "^3.48.0"
