@@ -26,11 +26,11 @@ function createVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 >(
-  options: VirtualizerOptions<TScrollElement, TItemElement>,
+  initialOptions: VirtualizerOptions<TScrollElement, TItemElement>,
 ): Readable<SvelteVirtualizer<TScrollElement, TItemElement>> {
-  let originalOnChange = options.onChange
+  let originalOnChange = initialOptions.onChange
 
-  const virtualizer = new Virtualizer(options)
+  const virtualizer = new Virtualizer(initialOptions)
   const originalSetOptions = virtualizer.setOptions
 
   let virtualizerWritable: Writable<Virtualizer<TScrollElement, TItemElement>>
@@ -51,7 +51,7 @@ function createVirtualizerBase<
   }
 
   virtualizerWritable = writable(virtualizer, () => {
-    setOptions(options)
+    setOptions(initialOptions)
     return virtualizer._didMount()
   })
 
