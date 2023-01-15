@@ -28,8 +28,6 @@ function createVirtualizerBase<
 >(
   initialOptions: VirtualizerOptions<TScrollElement, TItemElement>,
 ): Readable<SvelteVirtualizer<TScrollElement, TItemElement>> {
-  let originalOnChange = initialOptions.onChange
-
   const virtualizer = new Virtualizer(initialOptions)
   const originalSetOptions = virtualizer.setOptions
 
@@ -38,13 +36,15 @@ function createVirtualizerBase<
   const setOptions = (
     options: Partial<VirtualizerOptions<TScrollElement, TItemElement>>,
   ) => {
-    originalOnChange = options.onChange || originalOnChange
-    originalSetOptions({
+    const resolvedOptions = {
       ...virtualizer.options,
       ...options,
+    }
+    originalSetOptions({
+      ...resolvedOptions,
       onChange: (instance: Virtualizer<TScrollElement, TItemElement>) => {
         virtualizerWritable.set(instance)
-        originalOnChange?.(instance)
+        resolvedOptions.onChange?.(instance)
       },
     })
     virtualizer._willUpdate()
