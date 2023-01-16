@@ -23,6 +23,7 @@
       "@tanstack/react-virtual": ["packages/react-virtual/src"],
       "@tanstack/solid-virtual": ["packages/solid-virtual/src"],
       "@tanstack/svelte-virtual": ["packages/svelte-virtual/src"],
+      "@tanstack/vue-virtual": ["packages/vue-virtual/src"],
       "@tanstack/virtual-core": ["packages/virtual-core/src"]
     }
   }

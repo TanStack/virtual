@@ -4,6 +4,7 @@
     { "path": "packages/react-virtual" },
     { "path": "packages/solid-virtual" },
     { "path": "packages/svelte-virtual" },
+    { "path": "packages/vue-virtual" },
     { "path": "packages/virtual-core" }
   ]
 }

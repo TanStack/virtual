@@ -189,7 +189,7 @@ async function run() {
   })
 
   if (!process.env.TAG) {
-    if (recommendedReleaseLevel === 2) {
+    if (recommendedReleaseLevel === 2 && !range.includes('beta')) {
       console.info(
         `Major versions releases must be tagged and released manually.`,
       )

@@ -1,8 +1,8 @@
 {
-  "name": "@tanstack/react-virtual",
+  "name": "@tanstack/vue-virtual",
   "author": "Tanner Linsley",
   "version": "3.0.0-beta.36",
-  "description": "Headless UI for virtualizing scrollable elements in React",
+  "description": "Headless UI for virtualizing scrollable elements in Solid",
   "license": "MIT",
   "homepage": "https://github.com/tanstack/virtual#readme",
   "repository": {
@@ -16,6 +16,7 @@
     "react",
     "vue",
     "solid",
+    "svelte",
     "virtual",
     "virtual-core",
     "datagrid"
@@ -42,17 +43,12 @@
     "src"
   ],
   "devDependencies": {
-    "@testing-library/react": "^12.1.2",
-    "@types/react": "17.0.45",
-    "@types/react-dom": "17.0.17",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "resize-observer-polyfill": "^1.5.1"
+    "vue": "^3.2.45"
   },
   "dependencies": {
     "@tanstack/virtual-core": "3.0.0-beta.36"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "vue": "^3.0.0"
   }
 }
