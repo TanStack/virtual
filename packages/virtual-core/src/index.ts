@@ -519,7 +519,7 @@ export class Virtualizer<
       return rangeExtractor({
         ...range,
         overscan,
-        count: count,
+        count,
       })
     },
     {
@@ -626,13 +626,12 @@ export class Virtualizer<
   )
 
   getOffsetForAlignment = (toOffset: number, align: ScrollAlignment) => {
-    const offset = this.scrollOffset
     const size = this.getSize()
 
     if (align === 'auto') {
-      if (toOffset <= offset) {
+      if (toOffset <= this.scrollOffset) {
         align = 'start'
-      } else if (toOffset >= offset + size) {
+      } else if (toOffset >= this.scrollOffset + size) {
         align = 'end'
       } else {
         align = 'start'
@@ -640,13 +639,25 @@ export class Virtualizer<
     }
 
     if (align === 'start') {
-      return toOffset
+      toOffset = toOffset
     } else if (align === 'end') {
-      return toOffset - size
+      toOffset = toOffset - size
     } else if (align === 'center') {
-      return toOffset - size / 2
+      toOffset = toOffset - size / 2
     }
-    return toOffset
+
+    const scrollSizeProp = this.options.horizontal
+      ? 'scrollWidth'
+      : 'scrollHeight'
+    const scrollSize = this.scrollElement
+      ? 'document' in this.scrollElement
+        ? this.scrollElement.document.documentElement[scrollSizeProp]
+        : this.scrollElement[scrollSizeProp]
+      : 0
+
+    const maxOffset = scrollSize - this.getSize()
+
+    return Math.max(Math.min(maxOffset, toOffset), 0)
   }
 
   scrollToOffset = (
@@ -724,16 +735,7 @@ export class Virtualizer<
           ? measurement.end + this.options.scrollPaddingEnd
           : measurement.start - this.options.scrollPaddingStart
 
-      const sizeProp = this.options.horizontal ? 'scrollWidth' : 'scrollHeight'
-      const scrollSize = this.scrollElement
-        ? 'document' in this.scrollElement
-          ? this.scrollElement.document.documentElement[sizeProp]
-          : this.scrollElement[sizeProp]
-        : 0
-
-      const maxOffset = scrollSize - this.getSize()
-
-      return Math.min(maxOffset, this.getOffsetForAlignment(toOffset, align))
+      return this.getOffsetForAlignment(toOffset, align)
     }
 
     const toOffset = getOffsetForIndexAndAlignment(measurement)

@@ -29,6 +29,14 @@ function RowVirtualizerDynamic() {
     <div>
       <button
         onClick={() => {
+          virtualizer.scrollToIndex(0)
+        }}
+      >
+        scroll to the top
+      </button>
+      <span style={{ padding: '0 4px' }} />
+      <button
+        onClick={() => {
           virtualizer.scrollToIndex(count / 2)
         }}
       >
@@ -40,7 +48,7 @@ function RowVirtualizerDynamic() {
           virtualizer.scrollToIndex(count - 1)
         }}
       >
-        scroll to the last
+        scroll to the end
       </button>
       <hr />
       <div
