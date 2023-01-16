@@ -42,11 +42,11 @@
     "src"
   ],
   "devDependencies": {
-    "@testing-library/react": "^12.1.2",
-    "@types/react": "17.0.45",
-    "@types/react-dom": "17.0.17",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
+    "@testing-library/react": "^13.4.0",
+    "@types/react": "18.0.26",
+    "@types/react-dom": "18.0.10",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "resize-observer-polyfill": "^1.5.1"
   },
   "dependencies": {
