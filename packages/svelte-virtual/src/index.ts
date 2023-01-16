@@ -39,6 +39,7 @@ function createVirtualizerBase<
     const resolvedOptions = {
       ...virtualizer.options,
       ...options,
+      onChange: options.onChange,
     }
     originalSetOptions({
       ...resolvedOptions,
