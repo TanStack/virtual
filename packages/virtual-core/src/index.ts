@@ -296,7 +296,10 @@ export class Virtualizer<
   scrollOffset: number
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments: number = 0
-  private measureElementCache: Record<Key, TItemElement> = {}
+  private measureElementCache: Record<
+    Key,
+    TItemElement & { __virtualizerSkipFirstNotSync?: boolean }
+  > = {}
   private getResizeObserver = (() => {
     let _ro: ResizeObserver | null = null
 
@@ -542,7 +545,7 @@ export class Virtualizer<
     return parseInt(indexStr, 10)
   }
 
-  private _measureElement = (node: TItemElement, _sync: boolean) => {
+  private _measureElement = (node: TItemElement, sync: boolean) => {
     const index = this.indexFromElement(node)
 
     const item = this.measurementsCache[index]
@@ -555,19 +558,24 @@ export class Virtualizer<
     const ro = this.getResizeObserver()
 
     if (!node.isConnected) {
-      if (prevNode) {
-        ro?.unobserve(prevNode)
+      ro?.unobserve(node)
+      if (node === prevNode) {
         delete this.measureElementCache[item.key]
       }
       return
     }
 
-    if (!prevNode || prevNode !== node) {
+    if (prevNode !== node) {
       if (prevNode) {
         ro?.unobserve(prevNode)
       }
-      this.measureElementCache[item.key] = node
       ro?.observe(node)
+      this.measureElementCache[item.key] = node
+    } else {
+      if (!sync && !prevNode.__virtualizerSkipFirstNotSync) {
+        prevNode.__virtualizerSkipFirstNotSync = true
+        return
+      }
     }
 
     const measuredItemSize = this.options.measureElement(node, this)
