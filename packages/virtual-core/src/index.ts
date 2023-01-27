@@ -514,7 +514,7 @@ export class Virtualizer<
   private getIndexes = memo(
     () => [
       this.options.rangeExtractor,
-      this.range,
+      this.calculateRange(),
       this.options.overscan,
       this.options.count,
     ],
