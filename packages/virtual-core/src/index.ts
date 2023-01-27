@@ -438,8 +438,6 @@ export class Virtualizer<
           }, this.options.scrollingDelay)
         }),
       )
-    } else if (!this.isScrolling) {
-      this.calculateRange()
     }
   }
 
@@ -490,7 +488,7 @@ export class Virtualizer<
 
   calculateRange = memo(
     () => [this.getMeasurements(), this.getSize(), this.scrollOffset],
-    (measurements, outerSize, scrollOffset) => {
+    (measurements, outerSize, scrollOffset, [flush = true]: [boolean?]) => {
       const range = calculateRange({
         measurements,
         outerSize,
@@ -501,7 +499,9 @@ export class Virtualizer<
         range.endIndex !== this.range.endIndex
       ) {
         this.range = range
-        this.notify()
+        if (flush) {
+          this.notify()
+        }
       }
       return this.range
     },
@@ -514,7 +514,7 @@ export class Virtualizer<
   private getIndexes = memo(
     () => [
       this.options.rangeExtractor,
-      this.range,
+      this.calculateRange(false),
       this.options.overscan,
       this.options.count,
     ],

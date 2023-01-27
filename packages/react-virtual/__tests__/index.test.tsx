@@ -42,6 +42,8 @@ function List({
 
   const measureElement = dynamic ? rowVirtualizer.measureElement : undefined
 
+  const items = rowVirtualizer.getVirtualItems()
+
   return (
     <div
       ref={parentRef}
@@ -55,7 +57,7 @@ function List({
           position: 'relative',
         }}
       >
-        {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+        {items.map((virtualRow) => (
           <div
             data-testid={`item-${virtualRow.key}`}
             key={virtualRow.key}
@@ -128,12 +130,12 @@ test('should render given dynamic size after scroll', () => {
     target: { scrollTop: 400 },
   })
 
-  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
-  expect(screen.queryByText('Row 4')).toBeInTheDocument()
-  expect(screen.queryByText('Row 9')).toBeInTheDocument()
-  expect(screen.queryByText('Row 10')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 3')).toBeInTheDocument()
+  expect(screen.queryByText('Row 6')).toBeInTheDocument()
+  expect(screen.queryByText('Row 7')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(2)
+  expect(renderer).toHaveBeenCalledTimes(3)
 })
 
 test('should use rangeExtractor', () => {
