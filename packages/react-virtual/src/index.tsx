@@ -38,7 +38,6 @@ function useVirtualizerBase<
   )
 
   instance.setOptions(resolvedOptions)
-  instance.calculateRange()
 
   React.useEffect(() => {
     return instance._didMount()
