@@ -2,19 +2,23 @@ export type NoInfer<A extends any> = [A][A extends any ? 0 : never]
 
 export type PartialKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
-export function memo<TDeps extends readonly any[], TResult>(
+export function memo<
+  TDeps extends readonly any[],
+  TResult,
+  FArgs extends readonly any[],
+>(
   getDeps: () => [...TDeps],
-  fn: (...args: NoInfer<[...TDeps]>) => TResult,
+  fn: (...args: [...TDeps, FArgs]) => TResult,
   opts: {
     key: any
     debug?: () => any
     onChange?: (result: TResult) => void
   },
-): () => TResult {
+) {
   let deps: any[] = []
   let result: TResult | undefined
 
-  return () => {
+  return (...fArgs: FArgs): TResult => {
     let depTime: number
     if (opts.key && opts.debug?.()) depTime = Date.now()
 
@@ -33,7 +37,7 @@ export function memo<TDeps extends readonly any[], TResult>(
     let resultTime: number
     if (opts.key && opts.debug?.()) resultTime = Date.now()
 
-    result = fn(...newDeps)
+    result = fn(...newDeps, fArgs)
     opts?.onChange?.(result)
 
     if (opts.key && opts.debug?.()) {
