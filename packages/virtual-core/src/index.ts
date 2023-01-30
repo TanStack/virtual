@@ -268,8 +268,8 @@ export interface VirtualizerOptions<
   horizontal?: boolean
   paddingStart?: number
   paddingEnd?: number
-  scrollPaddingStart?: number
-  scrollPaddingEnd?: number
+  scrollPaddingStart?: number | (() => number)
+  scrollPaddingEnd?: number | (() => number)
   initialOffset?: number
   getItemKey?: (index: number) => Key
   rangeExtractor?: (range: Range) => number[]
@@ -724,12 +724,12 @@ export class Virtualizer<
     if (align === 'auto') {
       if (
         measurement.end >=
-        this.scrollOffset + this.getSize() - this.options.scrollPaddingEnd
+        this.scrollOffset + this.getSize() - valueOrCallback(this.options.scrollPaddingEnd)
       ) {
         align = 'end'
       } else if (
         measurement.start <=
-        this.scrollOffset + this.options.scrollPaddingStart
+        this.scrollOffset + valueOrCallback(this.options.scrollPaddingStart)
       ) {
         align = 'start'
       } else {
@@ -740,8 +740,8 @@ export class Virtualizer<
     const getOffsetForIndexAndAlignment = (measurement: VirtualItem) => {
       const toOffset =
         align === 'end'
-          ? measurement.end + this.options.scrollPaddingEnd
-          : measurement.start - this.options.scrollPaddingStart
+          ? measurement.end + valueOrCallback(this.options.scrollPaddingEnd)
+          : measurement.start - valueOrCallback(this.options.scrollPaddingStart)
 
       return this.getOffsetForAlignment(toOffset, align)
     }
@@ -866,4 +866,13 @@ function calculateRange({
   }
 
   return { startIndex, endIndex }
+}
+
+type NotAFunction<ValueType> = ValueType extends Function ? never : ValueType
+function valueOrCallback<ValueType>(value: NotAFunction<ValueType> | (() => NotAFunction<ValueType>)): ValueType {
+  if (typeof value === 'function') {
+    return value()
+  } else {
+    return value
+  }
 }
