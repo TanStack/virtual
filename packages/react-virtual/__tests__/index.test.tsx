@@ -3,6 +3,19 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 import { useVirtualizer, Range } from '../src/index'
 
+beforeEach(() => {
+  Object.defineProperties(HTMLElement.prototype, {
+    scrollHeight: {
+      configurable: true,
+      get: () => Number.MAX_SAFE_INTEGER,
+    },
+    scrollWidth: {
+      configurable: true,
+      get: () => Number.MAX_SAFE_INTEGER,
+    },
+  })
+})
+
 let renderer: jest.Mock<undefined, []>
 
 interface ListProps {
