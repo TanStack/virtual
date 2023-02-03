@@ -69,3 +69,13 @@ export function memo<
     return result!
   }
 }
+
+export function notUndefined<T>(value: T | undefined, msg?: string): T {
+  if (value === undefined) {
+    throw new Error(`Unexpected undefined${msg ? `: ${msg}` : ''}`)
+  } else {
+    return value
+  }
+}
+
+export const approxEqual = (a: number, b: number) => Math.abs(a - b) < 1

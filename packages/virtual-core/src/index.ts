@@ -1,4 +1,4 @@
-import { memo } from './utils'
+import { approxEqual, memo, notUndefined } from './utils'
 
 export * from './utils'
 
@@ -693,6 +693,8 @@ export class Virtualizer<
     index: number,
     { align = 'auto', behavior }: ScrollToIndexOptions = {},
   ) => {
+    index = Math.max(0, Math.min(index, this.options.count - 1))
+
     if (this.scrollToIndexTimeoutId !== null) {
       clearTimeout(this.scrollToIndexTimeoutId)
       this.scrollToIndexTimeoutId = null
@@ -707,19 +709,7 @@ export class Virtualizer<
       return
     }
 
-    const getMeasurement = () => {
-      const measurements = this.getMeasurements()
-      const measurement =
-        measurements[Math.max(0, Math.min(index, this.options.count - 1))]
-
-      if (!measurement) {
-        throw new Error(`VirtualItem not found for index = ${index}`)
-      }
-
-      return measurement
-    }
-
-    const measurement = getMeasurement()
+    const measurement = notUndefined(this.getMeasurements()[index])
 
     if (align === 'auto') {
       if (
@@ -754,8 +744,6 @@ export class Virtualizer<
     }
     this._scrollToOffset(toOffset, options)
 
-    const approxEqual = (a: number, b: number) => Math.abs(a - b) < 1
-
     if (isDynamic) {
       this.scrollToIndexTimeoutId = setTimeout(() => {
         this.scrollToIndexTimeoutId = null
@@ -764,7 +752,9 @@ export class Virtualizer<
           !!this.measureElementCache[this.options.getItemKey(index)]
 
         if (elementInDOM) {
-          const toOffset = getOffsetForIndexAndAlignment(getMeasurement())
+          const toOffset = getOffsetForIndexAndAlignment(
+            notUndefined(this.getMeasurements()[index]),
+          )
 
           if (!approxEqual(toOffset, this.scrollOffset)) {
             this.scrollToIndex(index, { align, behavior })
