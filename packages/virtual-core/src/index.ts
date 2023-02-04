@@ -331,7 +331,7 @@ export class Virtualizer<
       this.itemSizeCache[item.key] = item.size
     })
 
-    this.calculateRange()
+    this.maybeNotify()
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement>) => {
@@ -398,7 +398,7 @@ export class Virtualizer<
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
           this.scrollRect = rect
-          this.calculateRange()
+          this.maybeNotify()
         }),
       )
 
@@ -415,26 +415,19 @@ export class Virtualizer<
             this.isScrollingTimeoutId = null
           }
 
-          const onIsScrollingChange = (isScrolling: boolean) => {
-            if (this.isScrolling !== isScrolling) {
-              this.isScrolling = isScrolling
-              this.notify()
-            }
-          }
-
+          this.isScrolling = true
           this.scrollDirection =
             this.scrollOffset < offset ? 'forward' : 'backward'
-
           this.scrollOffset = offset
 
-          this.calculateRange()
-
-          onIsScrollingChange(true)
+          this.maybeNotify()
 
           this.isScrollingTimeoutId = setTimeout(() => {
             this.isScrollingTimeoutId = null
+            this.isScrolling = false
             this.scrollDirection = null
-            onIsScrollingChange(false)
+
+            this.maybeNotify()
           }, this.options.scrollingDelay)
         }),
       )
@@ -488,22 +481,12 @@ export class Virtualizer<
 
   calculateRange = memo(
     () => [this.getMeasurements(), this.getSize(), this.scrollOffset],
-    (measurements, outerSize, scrollOffset, [flush = true]: [boolean?]) => {
-      const range = calculateRange({
+    (measurements, outerSize, scrollOffset) => {
+      return (this.range = calculateRange({
         measurements,
         outerSize,
         scrollOffset,
-      })
-      if (
-        range.startIndex !== this.range.startIndex ||
-        range.endIndex !== this.range.endIndex
-      ) {
-        this.range = range
-        if (flush) {
-          this.notify()
-        }
-      }
-      return this.range
+      }))
     },
     {
       key: process.env.NODE_ENV !== 'production' && 'calculateRange',
@@ -511,10 +494,22 @@ export class Virtualizer<
     },
   )
 
+  private maybeNotify = memo(
+    () => [...Object.values(this.calculateRange()), this.isScrolling],
+    () => {
+      this.notify()
+    },
+    {
+      key: process.env.NODE_ENV !== 'production' && 'maybeNotify',
+      debug: () => this.options.debug,
+      initialDeps: [...Object.values(this.range), this.isScrolling],
+    },
+  )
+
   private getIndexes = memo(
     () => [
       this.options.rangeExtractor,
-      this.calculateRange(false),
+      this.calculateRange(),
       this.options.overscan,
       this.options.count,
     ],
