@@ -663,46 +663,8 @@ export class Virtualizer<
     return Math.max(Math.min(maxOffset, toOffset), 0)
   }
 
-  scrollToOffset = (
-    toOffset: number,
-    { align = 'start', behavior }: ScrollToOffsetOptions = {},
-  ) => {
-    const isDynamic = Object.keys(this.measureElementCache).length > 0
-
-    if (isDynamic && behavior === 'smooth') {
-      console.warn(
-        'The `smooth` scroll behavior is not supported with dynamic size.',
-      )
-      return
-    }
-
-    const options = {
-      adjustments: undefined,
-      behavior,
-      sync: false,
-    }
-    this._scrollToOffset(this.getOffsetForAlignment(toOffset, align), options)
-  }
-
-  scrollToIndex = (
-    index: number,
-    { align = 'auto', behavior }: ScrollToIndexOptions = {},
-  ) => {
+  getOffsetForIndex = (index: number, align: ScrollAlignment = 'auto') => {
     index = Math.max(0, Math.min(index, this.options.count - 1))
-
-    if (this.scrollToIndexTimeoutId !== null) {
-      clearTimeout(this.scrollToIndexTimeoutId)
-      this.scrollToIndexTimeoutId = null
-    }
-
-    const isDynamic = Object.keys(this.measureElementCache).length > 0
-
-    if (isDynamic && behavior === 'smooth') {
-      console.warn(
-        'The `smooth` scroll behavior is not supported with dynamic size.',
-      )
-      return
-    }
 
     const measurement = notUndefined(this.getMeasurements()[index])
 
@@ -718,28 +680,64 @@ export class Virtualizer<
       ) {
         align = 'start'
       } else {
-        return
+        return [this.scrollOffset, align] as const
       }
     }
 
-    const getOffsetForIndexAndAlignment = (measurement: VirtualItem) => {
-      const toOffset =
-        align === 'end'
-          ? measurement.end + this.options.scrollPaddingEnd
-          : measurement.start - this.options.scrollPaddingStart
+    const toOffset =
+      align === 'end'
+        ? measurement.end + this.options.scrollPaddingEnd
+        : measurement.start - this.options.scrollPaddingStart
 
-      return this.getOffsetForAlignment(toOffset, align)
+    return [this.getOffsetForAlignment(toOffset, align), align] as const
+  }
+
+  private isDynamicMode = () => Object.keys(this.measureElementCache).length > 0
+
+  private cancelScrollToIndex = () => {
+    if (this.scrollToIndexTimeoutId !== null) {
+      clearTimeout(this.scrollToIndexTimeoutId)
+      this.scrollToIndexTimeoutId = null
+    }
+  }
+
+  scrollToOffset = (
+    toOffset: number,
+    { align = 'start', behavior }: ScrollToOffsetOptions = {},
+  ) => {
+    this.cancelScrollToIndex()
+
+    if (behavior === 'smooth' && this.isDynamicMode()) {
+      console.warn(
+        'The `smooth` scroll behavior is not fully supported with dynamic size.',
+      )
     }
 
-    const toOffset = getOffsetForIndexAndAlignment(measurement)
-
-    const options = {
+    this._scrollToOffset(this.getOffsetForAlignment(toOffset, align), {
       adjustments: undefined,
       behavior,
-    }
-    this._scrollToOffset(toOffset, options)
+    })
+  }
 
-    if (isDynamic) {
+  scrollToIndex = (
+    index: number,
+    { align: initialAlign = 'auto', behavior }: ScrollToIndexOptions = {},
+  ) => {
+    index = Math.max(0, Math.min(index, this.options.count - 1))
+
+    this.cancelScrollToIndex()
+
+    if (behavior === 'smooth' && this.isDynamicMode()) {
+      console.warn(
+        'The `smooth` scroll behavior is not fully supported with dynamic size.',
+      )
+    }
+
+    const [toOffset, align] = this.getOffsetForIndex(index, initialAlign)
+
+    this._scrollToOffset(toOffset, { adjustments: undefined, behavior })
+
+    if (behavior !== 'smooth' && this.isDynamicMode()) {
       this.scrollToIndexTimeoutId = setTimeout(() => {
         this.scrollToIndexTimeoutId = null
 
@@ -747,9 +745,7 @@ export class Virtualizer<
           !!this.measureElementCache[this.options.getItemKey(index)]
 
         if (elementInDOM) {
-          const toOffset = getOffsetForIndexAndAlignment(
-            notUndefined(this.getMeasurements()[index]),
-          )
+          const [toOffset] = this.getOffsetForIndex(index, align)
 
           if (!approxEqual(toOffset, this.scrollOffset)) {
             this.scrollToIndex(index, { align, behavior })
@@ -762,13 +758,12 @@ export class Virtualizer<
   }
 
   scrollBy = (delta: number, { behavior }: ScrollToOffsetOptions = {}) => {
-    const isDynamic = Object.keys(this.measureElementCache).length > 0
+    this.cancelScrollToIndex()
 
-    if (isDynamic && behavior === 'smooth') {
+    if (behavior === 'smooth' && this.isDynamicMode()) {
       console.warn(
-        'The `smooth` scroll behavior is not supported with dynamic size.',
+        'The `smooth` scroll behavior is not fully supported with dynamic size.',
       )
-      return
     }
 
     this._scrollToOffset(this.scrollOffset + delta, {
