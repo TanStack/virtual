@@ -49,6 +49,6 @@
     "@tanstack/virtual-core": "3.0.0-beta.45"
   },
   "peerDependencies": {
-    "vue": "^3.0.0"
+    "vue": "^2.7.0"
   }
 }
