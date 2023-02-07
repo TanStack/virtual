@@ -58,136 +58,100 @@ export const defaultRangeExtractor = (range: Range) => {
   return arr
 }
 
-const memoRectCallback = (
-  instance: Virtualizer<any, any>,
+export const observeElementRect = <T extends Element>(
+  instance: Virtualizer<T, any>,
   cb: (rect: Rect) => void,
 ) => {
-  let prev: Rect = { height: -1, width: -1 }
-
-  return (rect: Rect) => {
-    if (
-      instance.options.horizontal
-        ? rect.width !== prev.width
-        : rect.height !== prev.height
-    ) {
-      cb(rect)
-    }
-
-    prev = rect
-  }
-}
-
-export const observeElementRect = (
-  instance: Virtualizer<any, any>,
-  cb: (rect: Rect) => void,
-) => {
-  const observer = new ResizeObserver((entries) => {
-    const entry = entries[0]
-    if (entry) {
-      const { width, height } = entry.contentRect
-      cb({
-        width: Math.round(width),
-        height: Math.round(height),
-      })
-    } else {
-      cb({ width: 0, height: 0 })
-    }
-  })
-
-  if (!instance.scrollElement) {
+  const element = instance.scrollElement
+  if (!element) {
     return
   }
 
-  cb(instance.scrollElement.getBoundingClientRect())
+  const handler = () => {
+    const { width, height } = element.getBoundingClientRect()
+    cb({ width: Math.round(width), height: Math.round(height) })
+  }
+  handler()
 
-  observer.observe(instance.scrollElement)
+  const observer = new ResizeObserver(() => {
+    handler()
+  })
+
+  observer.observe(element)
 
   return () => {
-    observer.unobserve(instance.scrollElement)
+    observer.unobserve(element)
   }
 }
 
 export const observeWindowRect = (
-  instance: Virtualizer<any, any>,
+  instance: Virtualizer<Window, any>,
   cb: (rect: Rect) => void,
 ) => {
-  const memoizedCallback = memoRectCallback(instance, cb)
-  const onResize = () =>
-    memoizedCallback({
-      width: instance.scrollElement.innerWidth,
-      height: instance.scrollElement.innerHeight,
-    })
-
-  if (!instance.scrollElement) {
+  const element = instance.scrollElement
+  if (!element) {
     return
   }
 
-  onResize()
+  const handler = () => {
+    cb({ width: element.innerWidth, height: element.innerHeight })
+  }
+  handler()
 
-  instance.scrollElement.addEventListener('resize', onResize, {
-    capture: false,
+  element.addEventListener('resize', handler, {
     passive: true,
   })
 
   return () => {
-    instance.scrollElement.removeEventListener('resize', onResize)
+    element.removeEventListener('resize', handler)
   }
 }
 
-type ObserverMode = 'element' | 'window'
+export const observeElementOffset = <T extends Element>(
+  instance: Virtualizer<T, any>,
+  cb: (offset: number) => void,
+) => {
+  const element = instance.scrollElement
+  if (!element) {
+    return
+  }
 
-const scrollProps = {
-  element: ['scrollLeft', 'scrollTop'],
-  window: ['scrollX', 'scrollY'],
-} as const
+  const handler = () => {
+    cb(element[instance.options.horizontal ? 'scrollLeft' : 'scrollTop'])
+  }
+  handler()
 
-const createOffsetObserver = (mode: ObserverMode) => {
-  return (instance: Virtualizer<any, any>, cb: (offset: number) => void) => {
-    if (!instance.scrollElement) {
-      return
-    }
+  element.addEventListener('scroll', handler, {
+    passive: true,
+  })
 
-    const propX = scrollProps[mode][0]
-    const propY = scrollProps[mode][1]
-
-    let prevX: number = instance.scrollElement[propX]
-    let prevY: number = instance.scrollElement[propY]
-
-    const scroll = () => {
-      const offset =
-        instance.scrollElement[instance.options.horizontal ? propX : propY]
-
-      cb(offset)
-    }
-
-    scroll()
-
-    const onScroll = (e: Event) => {
-      const target = e.currentTarget as HTMLElement & Window
-      const scrollX = target[propX]
-      const scrollY = target[propY]
-
-      if (instance.options.horizontal ? prevX - scrollX : prevY - scrollY) {
-        scroll()
-      }
-
-      prevX = scrollX
-      prevY = scrollY
-    }
-
-    instance.scrollElement.addEventListener('scroll', onScroll, {
-      capture: false,
-      passive: true,
-    })
-
-    return () => {
-      instance.scrollElement.removeEventListener('scroll', onScroll)
-    }
+  return () => {
+    element.removeEventListener('scroll', handler)
   }
 }
 
-export const observeElementOffset = createOffsetObserver('element')
-export const observeWindowOffset = createOffsetObserver('window')
+export const observeWindowOffset = (
+  instance: Virtualizer<Window, any>,
+  cb: (offset: number) => void,
+) => {
+  const element = instance.scrollElement
+  if (!element) {
+    return
+  }
+
+  const handler = () => {
+    cb(element[instance.options.horizontal ? 'scrollX' : 'scrollY'])
+  }
+  handler()
+
+  element.addEventListener('scroll', handler, {
+    passive: true,
+  })
+
+  return () => {
+    element.removeEventListener('scroll', handler)
+  }
+}
 
 export const measureElement = <TItemElement extends Element>(
   element: TItemElement,
@@ -397,8 +361,15 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
+          const prev = this.scrollRect
           this.scrollRect = rect
-          this.maybeNotify()
+          if (
+            this.options.horizontal
+              ? rect.width !== prev.width
+              : rect.height !== prev.height
+          ) {
+            this.maybeNotify()
+          }
         }),
       )
 
