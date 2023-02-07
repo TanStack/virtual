@@ -56,6 +56,7 @@ function useVirtualizerBase<
       })
 
       virtualizer._willUpdate()
+      triggerRef(state)
     },
     {
       immediate: true,
