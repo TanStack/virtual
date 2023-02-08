@@ -67,17 +67,26 @@ export const observeElementRect = <T extends Element>(
     return
   }
 
-  const handler = () => {
-    const { width, height } = element.getBoundingClientRect()
+  const handler = (rect: { width: number; height: number }) => {
+    const { width, height } = rect
     cb({ width: Math.round(width), height: Math.round(height) })
   }
-  handler()
 
-  const observer = new ResizeObserver(() => {
-    handler()
+  handler(element.getBoundingClientRect())
+
+  const observer = new ResizeObserver((entries) => {
+    const entry = entries[0]
+    if (entry) {
+      const box = entry.borderBoxSize[0]
+      if (box) {
+        handler({ width: box.inlineSize, height: box.blockSize })
+        return
+      }
+    }
+    handler(element.getBoundingClientRect())
   })
 
-  observer.observe(element)
+  observer.observe(element, { box: 'border-box' })
 
   return () => {
     observer.unobserve(element)
@@ -155,8 +164,18 @@ export const observeWindowOffset = (
 
 export const measureElement = <TItemElement extends Element>(
   element: TItemElement,
+  entry: ResizeObserverEntry | undefined,
   instance: Virtualizer<any, TItemElement>,
 ) => {
+  if (entry) {
+    const box = entry.borderBoxSize[0]
+    if (box) {
+      const size = Math.round(
+        box[instance.options.horizontal ? 'inlineSize' : 'blockSize'],
+      )
+      return size
+    }
+  }
   return Math.round(
     element.getBoundingClientRect()[
       instance.options.horizontal ? 'width' : 'height'
@@ -225,7 +244,8 @@ export interface VirtualizerOptions<
   initialRect?: Rect
   onChange?: (instance: Virtualizer<TScrollElement, TItemElement>) => void
   measureElement?: (
-    el: TItemElement,
+    element: TItemElement,
+    entry: ResizeObserverEntry | undefined,
     instance: Virtualizer<TScrollElement, TItemElement>,
   ) => number
   overscan?: number
@@ -254,31 +274,35 @@ export class Virtualizer<
   private isScrollingTimeoutId: ReturnType<typeof setTimeout> | null = null
   private scrollToIndexTimeoutId: ReturnType<typeof setTimeout> | null = null
   measurementsCache: VirtualItem[] = []
-  private itemSizeCache: Record<Key, number> = {}
+  private itemSizeCache = new Map<Key, number>()
   private pendingMeasuredCacheIndexes: number[] = []
   private scrollRect: Rect
   scrollOffset: number
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments: number = 0
-  private measureElementCache: Record<
-    Key,
-    TItemElement & { __virtualizerSkipFirstNotSync?: boolean }
-  > = {}
-  private getResizeObserver = (() => {
+  measureElementCache = new Map<Key, TItemElement>()
+  private observer = (() => {
     let _ro: ResizeObserver | null = null
 
-    return () => {
+    const get = () => {
       if (_ro) {
         return _ro
       } else if (typeof ResizeObserver !== 'undefined') {
         return (_ro = new ResizeObserver((entries) => {
           entries.forEach((entry) => {
-            this._measureElement(entry.target as TItemElement, false)
+            this._measureElement(entry.target as TItemElement, entry)
           })
         }))
       } else {
         return null
       }
+    }
+
+    return {
+      disconnect: () => get()?.disconnect(),
+      observe: (target: Element) =>
+        get()?.observe(target, { box: 'border-box' }),
+      unobserve: (target: Element) => get()?.unobserve(target),
     }
   })()
   range: { startIndex: number; endIndex: number } = {
@@ -292,7 +316,7 @@ export class Virtualizer<
     this.scrollOffset = this.options.initialOffset
     this.measurementsCache = this.options.initialMeasurementsCache
     this.measurementsCache.forEach((item) => {
-      this.itemSizeCache[item.key] = item.size
+      this.itemSizeCache.set(item.key, item.size)
     })
 
     this.maybeNotify()
@@ -336,12 +360,9 @@ export class Virtualizer<
   }
 
   _didMount = () => {
-    const ro = this.getResizeObserver()
-    Object.values(this.measureElementCache).forEach((node) => ro?.observe(node))
-
+    this.measureElementCache.forEach(this.observer.observe)
     return () => {
-      ro?.disconnect()
-
+      this.observer.disconnect()
       this.cleanup()
     }
   }
@@ -428,7 +449,7 @@ export class Virtualizer<
 
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
-        const measuredSize = itemSizeCache[key]
+        const measuredSize = itemSizeCache.get(key)
         const start = measurements[i - 1]
           ? measurements[i - 1]!.end
           : paddingStart + scrollMargin
@@ -511,7 +532,10 @@ export class Virtualizer<
     return parseInt(indexStr, 10)
   }
 
-  private _measureElement = (node: TItemElement, sync: boolean) => {
+  private _measureElement = (
+    node: TItemElement,
+    entry: ResizeObserverEntry | undefined,
+  ) => {
     const index = this.indexFromElement(node)
 
     const item = this.measurementsCache[index]
@@ -519,34 +543,27 @@ export class Virtualizer<
       return
     }
 
-    const prevNode = this.measureElementCache[item.key]
-
-    const ro = this.getResizeObserver()
+    const prevNode = this.measureElementCache.get(item.key)
 
     if (!node.isConnected) {
-      ro?.unobserve(node)
+      this.observer.unobserve(node)
       if (node === prevNode) {
-        delete this.measureElementCache[item.key]
+        this.measureElementCache.delete(item.key)
       }
       return
     }
 
     if (prevNode !== node) {
       if (prevNode) {
-        ro?.unobserve(prevNode)
+        this.observer.unobserve(prevNode)
       }
-      ro?.observe(node)
-      this.measureElementCache[item.key] = node
-    } else {
-      if (!sync && !prevNode.__virtualizerSkipFirstNotSync) {
-        prevNode.__virtualizerSkipFirstNotSync = true
-        return
-      }
+      this.observer.observe(node)
+      this.measureElementCache.set(item.key, node)
     }
 
-    const measuredItemSize = this.options.measureElement(node, this)
+    const measuredItemSize = this.options.measureElement(node, entry, this)
 
-    const itemSize = this.itemSizeCache[item.key] ?? item.size
+    const itemSize = this.itemSizeCache.get(item.key) ?? item.size
 
     const delta = measuredItemSize - itemSize
 
@@ -563,10 +580,11 @@ export class Virtualizer<
       }
 
       this.pendingMeasuredCacheIndexes.push(index)
-      this.itemSizeCache = {
-        ...this.itemSizeCache,
-        [item.key]: measuredItemSize,
-      }
+
+      this.itemSizeCache = new Map(
+        this.itemSizeCache.set(item.key, measuredItemSize),
+      )
+
       this.notify()
     }
   }
@@ -576,7 +594,7 @@ export class Virtualizer<
       return
     }
 
-    this._measureElement(node, true)
+    this._measureElement(node, undefined)
   }
 
   getVirtualItems = memo(
@@ -663,7 +681,7 @@ export class Virtualizer<
     return [this.getOffsetForAlignment(toOffset, align), align] as const
   }
 
-  private isDynamicMode = () => Object.keys(this.measureElementCache).length > 0
+  private isDynamicMode = () => this.measureElementCache.size > 0
 
   private cancelScrollToIndex = () => {
     if (this.scrollToIndexTimeoutId !== null) {
@@ -712,8 +730,9 @@ export class Virtualizer<
       this.scrollToIndexTimeoutId = setTimeout(() => {
         this.scrollToIndexTimeoutId = null
 
-        const elementInDOM =
-          !!this.measureElementCache[this.options.getItemKey(index)]
+        const elementInDOM = this.measureElementCache.has(
+          this.options.getItemKey(index),
+        )
 
         if (elementInDOM) {
           const [toOffset] = this.getOffsetForIndex(index, align)
@@ -763,7 +782,7 @@ export class Virtualizer<
   }
 
   measure = () => {
-    this.itemSizeCache = {}
+    this.itemSizeCache = new Map()
     this.notify()
   }
 }
