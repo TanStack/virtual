@@ -1,7 +1,7 @@
 {
   "name": "@tanstack/vue-virtual",
   "author": "Tanner Linsley",
-  "version": "3.0.0-beta.46",
+  "version": "3.0.0-beta.47",
   "description": "Headless UI for virtualizing scrollable elements in Solid",
   "license": "MIT",
   "homepage": "https://github.com/tanstack/virtual#readme",
@@ -46,7 +46,7 @@
     "vue": "^3.2.45"
   },
   "dependencies": {
-    "@tanstack/virtual-core": "3.0.0-beta.45"
+    "@tanstack/virtual-core": "3.0.0-beta.47"
   },
   "peerDependencies": {
     "vue": "^2.7.0 || ^3.0.0"
