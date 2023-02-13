@@ -2,8 +2,6 @@
 title: Vue Virtual (Coming Soon)
 ---
 
-> ⚠️ This module has not yet been developed. It requires an adapter similiar to `@tanstack/react-virtual` to work. We estimate the amount of code to do this is very minimal, but does require familiarity with the Vue framework. If you would like to contribute this adapter, please open a PR!
-
 The `@tanstack/vue-virtual` adapter is a wrapper around the core virtual logic.
 
 ## `useVirtualizer`
