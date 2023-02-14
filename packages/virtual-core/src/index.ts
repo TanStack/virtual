@@ -617,6 +617,21 @@ export class Virtualizer<
     },
   )
 
+  getVirtualItemForOffset = (offset: number) => {
+    const measurements = this.getMeasurements()
+
+    return notUndefined(
+      measurements[
+        findNearestBinarySearch(
+          0,
+          measurements.length - 1,
+          (index: number) => notUndefined(measurements[index]).start,
+          offset,
+        )
+      ],
+    )
+  }
+
   getOffsetForAlignment = (toOffset: number, align: ScrollAlignment) => {
     const size = this.getSize()
 
