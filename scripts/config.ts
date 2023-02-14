@@ -34,7 +34,7 @@ export const packages: Package[] = [
   }
 ]
 
-export const latestBranch = 'main'
+export const latestBranch = 'beta'
 
 export const branchConfigs: Record<string, BranchConfig> = {
   main: {
