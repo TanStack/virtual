@@ -55,7 +55,7 @@ function List({
 
   const measureElement = dynamic ? rowVirtualizer.measureElement : undefined
 
-  const items = rowVirtualizer.getVirtualItems()
+  const items = rowVirtualizer.virtualItems
 
   return (
     <div
@@ -65,7 +65,7 @@ function List({
     >
       <div
         style={{
-          height: rowVirtualizer.getTotalSize(),
+          height: rowVirtualizer.totalSize,
           width: '100%',
           position: 'relative',
         }}

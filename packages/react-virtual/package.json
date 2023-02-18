@@ -45,9 +45,11 @@
     "@testing-library/react": "^13.4.0",
     "@types/react": "18.0.26",
     "@types/react-dom": "18.0.10",
+    "@types/use-sync-external-store": "^0.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "resize-observer-polyfill": "^1.5.1"
+    "resize-observer-polyfill": "^1.5.1",
+    "use-sync-external-store": "^1.2.0"
   },
   "dependencies": {
     "@tanstack/virtual-core": "3.0.0-beta.48"

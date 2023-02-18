@@ -267,6 +267,7 @@ export class Virtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 > {
+  private changeSubs: (() => void)[] = []
   private unsubs: (void | (() => void))[] = []
   options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
   scrollElement: TScrollElement | null = null
@@ -349,7 +350,15 @@ export class Virtualizer<
     }
   }
 
+  subscribeToChanges = (cb: () => void) => {
+    this.changeSubs.push(cb)
+    return () => {
+      this.changeSubs = this.changeSubs.filter((d) => d !== cb)
+    }
+  }
+
   private notify = () => {
+    this.changeSubs.forEach((cb) => cb())
     this.options.onChange?.(this)
   }
 

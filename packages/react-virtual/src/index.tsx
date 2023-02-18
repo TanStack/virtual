@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useSyncExternalStore as useSyncExternalStoreShim } from 'use-sync-external-store/shim';
 import {
   elementScroll,
   observeElementOffset,
@@ -7,37 +8,96 @@ import {
   observeWindowRect,
   PartialKeys,
   Virtualizer,
+  VirtualItem,
   VirtualizerOptions,
   windowScroll,
 } from '@tanstack/virtual-core'
+
+const useSyncExternalStore = React.useSyncExternalStore || useSyncExternalStoreShim;
+
 export * from '@tanstack/virtual-core'
+export type { VirtualItem, Virtualizer, VirtualizerOptions, Range, ScrollToOptions } from '@tanstack/virtual-core'
 
-//
+type Filter<Obj extends Object, ValueType> = {
+  [Key in keyof Obj as Obj[Key] extends ValueType ? Key : never]: Obj[Key]
+}
 
-const useIsomorphicLayoutEffect =
-  typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect
+//we can or should exclude a few here
+function getObjectFuntions<T extends Object>(
+  obj: T,
+  exclude: { [key in keyof T]?: true },
+) {
+  return Object.getOwnPropertyNames(obj).reduce((acc, key) => {
+    const typedKey = key as keyof T
+    const property = obj[typedKey]
+    if (typeof property === 'function' && !exclude[typedKey]) {
+      acc[typedKey as keyof Filter<T, Function>] = property.bind(obj)
+    }
+    return acc
+  }, {} as Filter<T, Function>)
+}
+
+export type ReactVirtualizer<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+> = Omit<
+  Filter<Virtualizer<TScrollElement, TItemElement>, Function>,
+  'getTotalSize' | 'getVirtualItems'
+> & {
+  totalSize: number
+  virtualItems: VirtualItem[]
+  getMeasurements: () => Virtualizer<TScrollElement, TItemElement>['measureElementCache']
+  getOptions: () => Virtualizer<TScrollElement, TItemElement>['options']
+}
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect
 
 function useVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 >(
   options: VirtualizerOptions<TScrollElement, TItemElement>,
-): Virtualizer<TScrollElement, TItemElement> {
-  const rerender = React.useReducer(() => ({}), {})[1]
-
-  const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
-    ...options,
-    onChange: (instance) => {
-      rerender()
-      options.onChange?.(instance)
-    },
-  }
+): ReactVirtualizer<TScrollElement, TItemElement> {
 
   const [instance] = React.useState(
-    () => new Virtualizer<TScrollElement, TItemElement>(resolvedOptions),
+    () => new Virtualizer<TScrollElement, TItemElement>(options),
   )
 
-  instance.setOptions(resolvedOptions)
+  instance.setOptions(options)
+
+  const lastValue = React.useRef<null | ReactVirtualizer<
+    TScrollElement,
+    TItemElement
+  >>(null)
+
+  const getValue = React.useCallback(() => {
+    const lastItems = lastValue.current?.virtualItems
+    const newItems = instance.getVirtualItems()
+    const changed = !lastItems || newItems.some((item, index) => item !== lastItems[index])
+    if (!changed && lastValue.current) {
+      return lastValue.current
+    }
+
+    const newValue = {
+      ...getObjectFuntions(instance, {
+        getTotalSize: true,
+        getVirtualItems: true,
+      }),
+      totalSize: instance.getTotalSize(),
+      virtualItems: newItems,
+      getMeasurements: () => instance.measureElementCache,
+      getOptions: () => instance.options,
+      //add register to scroll
+    }
+
+    lastValue.current = newValue
+    return newValue
+  }, [])
+
+  const instanceState = useSyncExternalStore(
+    instance.subscribeToChanges,
+    getValue,
+  )
 
   React.useEffect(() => {
     return instance._didMount()
@@ -47,7 +107,7 @@ function useVirtualizerBase<
     return instance._willUpdate()
   })
 
-  return instance
+  return instanceState
 }
 
 export function useVirtualizer<
@@ -58,7 +118,7 @@ export function useVirtualizer<
     VirtualizerOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
   >,
-): Virtualizer<TScrollElement, TItemElement> {
+): ReactVirtualizer<TScrollElement, TItemElement> {
   return useVirtualizerBase<TScrollElement, TItemElement>({
     observeElementRect: observeElementRect,
     observeElementOffset: observeElementOffset,
@@ -75,7 +135,7 @@ export function useWindowVirtualizer<TItemElement extends Element>(
     | 'observeElementOffset'
     | 'scrollToFn'
   >,
-): Virtualizer<Window, TItemElement> {
+): ReactVirtualizer<Window, TItemElement> {
   return useVirtualizerBase<Window, TItemElement>({
     getScrollElement: () => (typeof window !== 'undefined' ? window : null!),
     observeElementRect: observeWindowRect,
