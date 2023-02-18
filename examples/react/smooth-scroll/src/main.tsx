@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 
 import './index.css'
 
@@ -14,13 +15,13 @@ function easeInOutQuint(t) {
 }
 
 function App() {
-  const parentRef = React.useRef<HTMLDivElement>()
+  const parentRef = React.useRef<HTMLDivElement>(null)
   const scrollingRef = React.useRef<number>()
 
   const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] =
     React.useCallback((offset, canSmooth, instance) => {
       const duration = 1000
-      const start = parentRef.current.scrollTop
+      const start = parentRef.current?.scrollTop || 0;
       const startTime = (scrollingRef.current = Date.now())
 
       const run = () => {
@@ -82,12 +83,12 @@ function App() {
       >
         <div
           style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
+            height: `${rowVirtualizer.totalSize}px`,
             width: '100%',
             position: 'relative',
           }}
         >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+          {rowVirtualizer.virtualItems.map((virtualRow) => (
             <div
               key={virtualRow.index}
               className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
@@ -118,9 +119,9 @@ function App() {
   )
 }
 
-ReactDOM.render(
+const root = createRoot(document.getElementById('root')!)
+root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-  document.getElementById('root'),
-)
+  </React.StrictMode>
+);

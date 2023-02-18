@@ -1,5 +1,5 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 
 import './index.css'
 
@@ -7,7 +7,7 @@ import { useMeasure } from '@react-hookz/web/esm'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 function App() {
-  const parentRef = React.useRef<HTMLDivElement>()
+  const parentRef = React.useRef<HTMLDivElement>(null)
   const [theadSize, theadRef] = useMeasure<HTMLTableSectionElement>()
 
   const rowVirtualizer = useVirtualizer({
@@ -54,7 +54,7 @@ function App() {
       >
         <table
           style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
+            height: `${rowVirtualizer.totalSize}px`,
             width: '100%',
           }}
         >
@@ -65,7 +65,7 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+            {rowVirtualizer.virtualItems.map((virtualRow) => (
               <tr
                 key={virtualRow.index}
                 className={
@@ -98,9 +98,9 @@ function App() {
   )
 }
 
-ReactDOM.render(
+const root = createRoot(document.getElementById('root')!);
+root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-  document.getElementById('root'),
-)
+  </React.StrictMode>
+);

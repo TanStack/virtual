@@ -1,5 +1,5 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import axios from 'axios'
 import { QueryClient, QueryClientProvider, useInfiniteQuery } from 'react-query'
 
@@ -41,7 +41,7 @@ function App() {
 
   const allRows = data ? data.pages.flatMap((d) => d.rows) : []
 
-  const parentRef = React.useRef()
+  const parentRef = React.useRef(null)
 
   const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? allRows.length + 1 : allRows.length,
@@ -51,7 +51,7 @@ function App() {
   })
 
   React.useEffect(() => {
-    const [lastItem] = [...rowVirtualizer.getVirtualItems()].reverse()
+    const [lastItem] = [...rowVirtualizer.virtualItems].reverse()
 
     if (!lastItem) {
       return
@@ -69,7 +69,7 @@ function App() {
     fetchNextPage,
     allRows.length,
     isFetchingNextPage,
-    rowVirtualizer.getVirtualItems(),
+    rowVirtualizer.virtualItems,
   ])
 
   return (
@@ -100,12 +100,12 @@ function App() {
         >
           <div
             style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
+              height: `${rowVirtualizer.totalSize}px`,
               width: '100%',
               position: 'relative',
             }}
           >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            {rowVirtualizer.virtualItems.map((virtualRow) => {
               const isLoaderRow = virtualRow.index > allRows.length - 1
               const post = allRows[virtualRow.index]
 
@@ -151,11 +151,11 @@ function App() {
   )
 }
 
-ReactDOM.render(
+const root = createRoot(document.getElementById('root')!);
+root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
-  </React.StrictMode>,
-  document.getElementById('root'),
-)
+  </React.StrictMode>
+);

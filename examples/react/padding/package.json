@@ -9,12 +9,14 @@
     "start": "vite"
   },
   "dependencies": {
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "@tanstack/react-virtual": "3.0.0-beta.48"
+    "@tanstack/react-virtual": "3.0.0-beta.48",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "^4.0.0",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^1.2.0",
     "vite": "^2.8.6"
   }

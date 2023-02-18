@@ -23,7 +23,7 @@ function RowVirtualizerDynamic() {
     estimateSize: () => 45,
   })
 
-  const items = virtualizer.getVirtualItems()
+  const items = virtualizer.virtualItems
 
   return (
     <div>
@@ -63,7 +63,7 @@ function RowVirtualizerDynamic() {
       >
         <div
           style={{
-            height: virtualizer.getTotalSize(),
+            height: virtualizer.totalSize,
             width: '100%',
             position: 'relative',
           }}
@@ -113,13 +113,13 @@ const RowVirtualizerDynamicWindow = () => {
     estimateSize: () => 45,
     scrollMargin: parentOffsetRef.current,
   })
-  const items = virtualizer.getVirtualItems()
+  const items = virtualizer.virtualItems
 
   return (
     <div ref={parentRef} className="List">
       <div
         style={{
-          height: virtualizer.getTotalSize(),
+          height: virtualizer.totalSize,
           width: '100%',
           position: 'relative',
         }}
@@ -130,9 +130,8 @@ const RowVirtualizerDynamicWindow = () => {
             top: 0,
             left: 0,
             width: '100%',
-            transform: `translateY(${
-              items[0].start - virtualizer.options.scrollMargin
-            }px)`,
+            transform: `translateY(${items[0].start - virtualizer.getOptions().scrollMargin
+              }px)`,
           }}
         >
           {items.map((virtualRow) => (
@@ -173,12 +172,12 @@ function ColumnVirtualizerDynamic() {
       >
         <div
           style={{
-            width: virtualizer.getTotalSize(),
+            width: virtualizer.totalSize,
             height: '100%',
             position: 'relative',
           }}
         >
-          {virtualizer.getVirtualItems().map((virtualColumn) => (
+          {virtualizer.virtualItems.map((virtualColumn) => (
             <div
               key={virtualColumn.key}
               data-index={virtualColumn.index}
@@ -231,7 +230,7 @@ function GridVirtualizerDynamic({
 
   const virtualizer = useWindowVirtualizer({
     count: data.length,
-    estimateSize: () => 350,
+    estimateSize: () => 30,
     overscan: 5,
     scrollMargin: parentOffsetRef.current,
   })
@@ -241,16 +240,16 @@ function GridVirtualizerDynamic({
     count: columns.length,
     getScrollElement: () => parentRef.current,
     estimateSize: getColumnWidth,
-    overscan: 5,
+    overscan: 0,
   })
-  const columnItems = columnVirtualizer.getVirtualItems()
+  const columnItems = columnVirtualizer.virtualItems
   const [before, after] =
     columnItems.length > 0
       ? [
-          columnItems[0].start,
-          columnVirtualizer.getTotalSize() -
-            columnItems[columnItems.length - 1].end,
-        ]
+        columnItems[0].start,
+        columnVirtualizer.totalSize -
+        columnItems[columnItems.length - 1].end,
+      ]
       : [0, 0]
 
   return (
@@ -260,11 +259,11 @@ function GridVirtualizerDynamic({
     >
       <div
         style={{
-          height: virtualizer.getTotalSize(),
+          height: virtualizer.totalSize,
           position: 'relative',
         }}
       >
-        {virtualizer.getVirtualItems().map((row) => {
+        {virtualizer.virtualItems.map((row) => {
           return (
             <div
               key={row.key}
@@ -274,9 +273,8 @@ function GridVirtualizerDynamic({
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                transform: `translateY(${
-                  row.start - virtualizer.options.scrollMargin
-                }px)`,
+                transform: `translateY(${row.start - virtualizer.getOptions().scrollMargin
+                  }px)`,
                 display: 'flex',
               }}
             >

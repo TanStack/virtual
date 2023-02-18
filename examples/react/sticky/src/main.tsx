@@ -1,6 +1,6 @@
 import './index.css'
 import * as React from 'react'
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { faker } from '@faker-js/faker'
 import { findIndex, groupBy } from 'lodash'
 import { useVirtualizer, defaultRangeExtractor } from '@tanstack/react-virtual'
@@ -12,10 +12,10 @@ const groupedNames = groupBy(
   (name) => name[0],
 )
 const groups = Object.keys(groupedNames)
-const rows = groups.reduce((acc, k) => [...acc, k, ...groupedNames[k]], [])
+const rows = groups.reduce((acc, k) => [...acc, k, ...groupedNames[k]], [] as string[])
 
 const App = () => {
-  const parentRef = React.useRef()
+  const parentRef = React.useRef(null)
 
   const activeStickyIndexRef = React.useRef(0)
 
@@ -62,31 +62,31 @@ const App = () => {
       >
         <div
           style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
+            height: `${rowVirtualizer.totalSize}px`,
             width: '100%',
             position: 'relative',
           }}
         >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+          {rowVirtualizer.virtualItems.map((virtualRow) => (
             <div
               key={virtualRow.index}
               className={'ListItem'}
               style={{
                 ...(isSticky(virtualRow.index)
                   ? {
-                      background: '#fff',
-                      borderBottom: '1px solid #ddd',
-                      zIndex: 1,
-                    }
+                    background: '#fff',
+                    borderBottom: '1px solid #ddd',
+                    zIndex: 1,
+                  }
                   : {}),
                 ...(isActiveSticky(virtualRow.index)
                   ? {
-                      position: 'sticky',
-                    }
+                    position: 'sticky',
+                  }
                   : {
-                      position: 'absolute',
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }),
+                    position: 'absolute',
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }),
                 top: 0,
                 left: 0,
                 width: '100%',
@@ -109,9 +109,9 @@ const App = () => {
   )
 }
 
-ReactDOM.render(
+const root = createRoot(document.getElementById('root')!)
+root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-  document.getElementById('root'),
-)
+  </React.StrictMode>
+);
