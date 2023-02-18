@@ -11,18 +11,18 @@ import {
   VirtualItem,
   VirtualizerOptions,
   windowScroll,
+  ScrollDirection
 } from '@tanstack/virtual-core'
 
 const useSyncExternalStore = React.useSyncExternalStore || useSyncExternalStoreShim;
 
 export * from '@tanstack/virtual-core'
-export type { VirtualItem, Virtualizer, VirtualizerOptions, Range, ScrollToOptions } from '@tanstack/virtual-core'
+export type { VirtualItem, Range, ScrollToOptions, ScrollDirection } from '@tanstack/virtual-core'
 
 type Filter<Obj extends Object, ValueType> = {
   [Key in keyof Obj as Obj[Key] extends ValueType ? Key : never]: Obj[Key]
 }
 
-//we can or should exclude a few here
 function getObjectFuntions<T extends Object>(
   obj: T,
   exclude: { [key in keyof T]?: true },
@@ -37,6 +37,12 @@ function getObjectFuntions<T extends Object>(
   }, {} as Filter<T, Function>)
 }
 
+export type ScrollInfo = {
+  isScrolling: boolean;
+  scrollOffset: number;
+  direction: ScrollDirection | null;
+}
+
 export type ReactVirtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
@@ -48,7 +54,13 @@ export type ReactVirtualizer<
   virtualItems: VirtualItem[]
   getMeasurements: () => Virtualizer<TScrollElement, TItemElement>['measureElementCache']
   getOptions: () => Virtualizer<TScrollElement, TItemElement>['options']
+  getScrollInfo: () => ScrollInfo
 }
+
+export type ReactVirtualizerOptions<TScrollElement extends Element | Window, TItemElement extends Element> =
+  VirtualizerOptions<TScrollElement, TItemElement> & {
+    onIsScrollingChange?: (scrollInfo: ScrollInfo) => void
+  }
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect
 
@@ -56,7 +68,7 @@ function useVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 >(
-  options: VirtualizerOptions<TScrollElement, TItemElement>,
+  options: ReactVirtualizerOptions<TScrollElement, TItemElement>,
 ): ReactVirtualizer<TScrollElement, TItemElement> {
 
   const [instance] = React.useState(
@@ -69,6 +81,12 @@ function useVirtualizerBase<
     TScrollElement,
     TItemElement
   >>(null)
+
+  const getScrollInfo = React.useCallback(() => ({
+    isScrolling: instance.isScrolling,
+    scrollOffset: instance.scrollOffset,
+    direction: instance.scrollDirection,
+  }), [instance]);
 
   const getValue = React.useCallback(() => {
     const lastItems = lastValue.current?.virtualItems
@@ -87,17 +105,33 @@ function useVirtualizerBase<
       virtualItems: newItems,
       getMeasurements: () => instance.measureElementCache,
       getOptions: () => instance.options,
-      //add register to scroll
+      getScrollInfo: getScrollInfo
     }
 
     lastValue.current = newValue
     return newValue
-  }, [])
+  }, [instance, getScrollInfo])
 
   const instanceState = useSyncExternalStore(
     instance.subscribeToChanges,
     getValue,
   )
+
+  const isScrolling = React.useRef(false);
+  React.useEffect(function notifyIsScrolling() {
+    const cb = options.onIsScrollingChange;
+    if (!cb) return;
+
+    const unsubscribe = instance.subscribeToChanges(() => {
+      if (isScrolling.current !== instance.isScrolling) {
+        isScrolling.current = instance.isScrolling;
+        cb(getScrollInfo())
+      }
+    });
+    return () => {
+      unsubscribe();
+    }
+  }, [instance, options.onIsScrollingChange, getScrollInfo])
 
   React.useEffect(() => {
     return instance._didMount()
@@ -115,7 +149,7 @@ export function useVirtualizer<
   TItemElement extends Element,
 >(
   options: PartialKeys<
-    VirtualizerOptions<TScrollElement, TItemElement>,
+    ReactVirtualizerOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
   >,
 ): ReactVirtualizer<TScrollElement, TItemElement> {
@@ -129,7 +163,7 @@ export function useVirtualizer<
 
 export function useWindowVirtualizer<TItemElement extends Element>(
   options: PartialKeys<
-    VirtualizerOptions<Window, TItemElement>,
+    ReactVirtualizerOptions<Window, TItemElement>,
     | 'getScrollElement'
     | 'observeElementRect'
     | 'observeElementOffset'

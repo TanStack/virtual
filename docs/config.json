@@ -38,7 +38,8 @@
         { "to": "examples/react/sticky", "label": "Sticky" },
         { "to": "examples/react/infinite-scroll", "label": "Infinite Scroll" },
         { "to": "examples/react/smooth-scroll", "label": "Smooth Scroll" },
-        { "to": "examples/react/react-17", "label": "React 17" }
+        { "to": "examples/react/react-17", "label": "React 17" },
+        { "to": "examples/react/is-scrolling", "label": "Is Scrolling" }
       ]
     },
     {

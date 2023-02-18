@@ -4,7 +4,7 @@ export * from './utils'
 
 //
 
-type ScrollDirection = 'forward' | 'backward'
+export type ScrollDirection = 'forward' | 'backward'
 
 type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 

@@ -32,7 +32,8 @@
     "./examples/react/smooth-scroll",
     "./examples/react/sticky",
     "./examples/react/variable",
-    "./examples/react/react-17"
+    "./examples/react/react-17",
+    "./examples/react/is-scrolling"
   ],
   "devDependencies": {
     "@babel/core": "^7.20.2",
