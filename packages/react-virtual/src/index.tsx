@@ -55,6 +55,7 @@ export type ReactVirtualizer<
   getMeasurements: () => Virtualizer<TScrollElement, TItemElement>['measureElementCache']
   getOptions: () => Virtualizer<TScrollElement, TItemElement>['options']
   getScrollInfo: () => ScrollInfo
+  setScrollOffset: (offset: number) => void
 }
 
 export type ReactVirtualizerOptions<TScrollElement extends Element | Window, TItemElement extends Element> =
@@ -105,7 +106,8 @@ function useVirtualizerBase<
       virtualItems: newItems,
       getMeasurements: () => instance.measureElementCache,
       getOptions: () => instance.options,
-      getScrollInfo: getScrollInfo
+      getScrollInfo: getScrollInfo,
+      setScrollOffset: (offset: number) => instance.scrollOffset = offset,
     }
 
     lastValue.current = newValue
