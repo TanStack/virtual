@@ -49,13 +49,7 @@ export const defaultRangeExtractor = (range: Range) => {
   const start = Math.max(range.startIndex - range.overscan, 0)
   const end = Math.min(range.endIndex + range.overscan, range.count - 1)
 
-  const arr = []
-
-  for (let i = start; i <= end; i++) {
-    arr.push(i)
-  }
-
-  return arr
+  return Array(end - start + 1).fill().map((_, i) => start + i)
 }
 
 export const observeElementRect = <T extends Element>(
@@ -820,12 +814,7 @@ const findNearestBinarySearch = (
       return middle
     }
   }
-
-  if (low > 0) {
-    return low - 1
-  } else {
-    return 0
-  }
+  return Math.max(low - 1, 0)
 }
 
 function calculateRange({
