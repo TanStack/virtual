@@ -430,15 +430,30 @@ export class Virtualizer<
     return this.scrollRect[this.options.horizontal ? 'width' : 'height']
   }
 
-  private getMeasurements = memo(
+  private memoOptions = memo(
     () => [
       this.options.count,
       this.options.paddingStart,
       this.options.scrollMargin,
       this.options.getItemKey,
-      this.itemSizeCache,
     ],
-    (count, paddingStart, scrollMargin, getItemKey, itemSizeCache) => {
+    (count, paddingStart, scrollMargin, getItemKey) => {
+      this.pendingMeasuredCacheIndexes = []
+      return {
+        count,
+        paddingStart,
+        scrollMargin,
+        getItemKey,
+      }
+    },
+    {
+      key: false,
+    },
+  )
+
+  private getMeasurements = memo(
+    () => [this.memoOptions(), this.itemSizeCache],
+    ({ count, paddingStart, scrollMargin, getItemKey }, itemSizeCache) => {
       const min =
         this.pendingMeasuredCacheIndexes.length > 0
           ? Math.min(...this.pendingMeasuredCacheIndexes)
@@ -487,14 +502,22 @@ export class Virtualizer<
   )
 
   private maybeNotify = memo(
-    () => [...Object.values(this.calculateRange()), this.isScrolling],
+    () => {
+      const range = this.calculateRange()
+
+      return [range.startIndex, range.endIndex, this.isScrolling]
+    },
     () => {
       this.notify()
     },
     {
       key: process.env.NODE_ENV !== 'production' && 'maybeNotify',
       debug: () => this.options.debug,
-      initialDeps: [...Object.values(this.range), this.isScrolling],
+      initialDeps: [
+        this.range.startIndex,
+        this.range.endIndex,
+        this.isScrolling,
+      ],
     },
   )
 

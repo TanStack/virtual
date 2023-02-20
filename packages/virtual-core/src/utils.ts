@@ -6,7 +6,7 @@ export function memo<TDeps extends readonly any[], TResult>(
   getDeps: () => [...TDeps],
   fn: (...args: NoInfer<[...TDeps]>) => TResult,
   opts: {
-    key: any
+    key: false | string
     debug?: () => any
     onChange?: (result: TResult) => void
     initialDeps?: TDeps
