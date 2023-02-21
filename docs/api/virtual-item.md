@@ -54,4 +54,4 @@ The ending pixel offset for the item. This value is not necessary for most layou
 size: number
 ```
 
-The size of the item. This is usually mapped to a css property like `width/height`. Before an item is measured vit the `VirtualItem.measureElement` method, this will be the estimated size returned from your `estimateSize` virtualizer option. After an item is measured (if you choose to measure it at all), this value will be the number returned by your `measureElement` virtualizer option (which by default is configured to measure elements with `getBoundingClientRect()`).
+The size of the item. This is usually mapped to a css property like `width/height`. Before an item is measured with the `VirtualItem.measureElement` method, this will be the estimated size returned from your `estimateSize` virtualizer option. After an item is measured (if you choose to measure it at all), this value will be the number returned by your `measureElement` virtualizer option (which by default is configured to measure elements with `getBoundingClientRect()`).
