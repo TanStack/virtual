@@ -77,7 +77,7 @@ export function useWindowVirtualizer<TItemElement extends Element>(
   >,
 ): Virtualizer<Window, TItemElement> {
   return useVirtualizerBase<Window, TItemElement>({
-    getScrollElement: () => (typeof document !== 'undefined' ? window : null!),
+    getScrollElement: () => (typeof document !== 'undefined' ? window : null),
     observeElementRect: observeWindowRect,
     observeElementOffset: observeWindowOffset,
     scrollToFn: windowScroll,
