@@ -15,7 +15,7 @@ export * from '@tanstack/virtual-core'
 //
 
 const useIsomorphicLayoutEffect =
-  typeof window !== 'undefined' ? React.useLayoutEffect : React.useEffect
+  typeof document !== 'undefined' ? React.useLayoutEffect : React.useEffect
 
 function useVirtualizerBase<
   TScrollElement extends Element | Window,
@@ -77,7 +77,7 @@ export function useWindowVirtualizer<TItemElement extends Element>(
   >,
 ): Virtualizer<Window, TItemElement> {
   return useVirtualizerBase<Window, TItemElement>({
-    getScrollElement: () => (typeof window !== 'undefined' ? window : null!),
+    getScrollElement: () => (typeof document !== 'undefined' ? window : null!),
     observeElementRect: observeWindowRect,
     observeElementOffset: observeWindowOffset,
     scrollToFn: windowScroll,

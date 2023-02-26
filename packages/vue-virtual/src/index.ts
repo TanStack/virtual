@@ -103,7 +103,8 @@ export function useWindowVirtualizer<TItemElement extends Element>(
   return useVirtualizerBase<Window, TItemElement>(
     computed(() => ({
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getScrollElement: () => (typeof Window !== 'undefined' ? window : null!),
+      getScrollElement: () =>
+        typeof document !== 'undefined' ? window : null!,
       observeElementRect: observeWindowRect,
       observeElementOffset: observeWindowOffset,
       scrollToFn: windowScroll,

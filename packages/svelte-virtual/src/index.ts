@@ -88,7 +88,7 @@ export function createWindowVirtualizer<TItemElement extends Element>(
   >,
 ): Readable<SvelteVirtualizer<Window, TItemElement>> {
   return createVirtualizerBase<Window, TItemElement>({
-    getScrollElement: () => (typeof window !== 'undefined' ? window : null!),
+    getScrollElement: () => (typeof document !== 'undefined' ? window : null!),
     observeElementRect: observeWindowRect,
     observeElementOffset: observeWindowOffset,
     scrollToFn: windowScroll,
