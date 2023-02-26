@@ -118,7 +118,7 @@ export function createWindowVirtualizer<TItemElement extends Element>(
     mergeProps(
       {
         getScrollElement: () =>
-          typeof window !== 'undefined' ? window : null!,
+          typeof document !== 'undefined' ? window : null!,
         observeElementRect: observeWindowRect,
         observeElementOffset: observeWindowOffset,
         scrollToFn: windowScroll,
