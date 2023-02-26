@@ -76,7 +76,7 @@ export const observeElementRect = <T extends Element>(
 
   const observer = new ResizeObserver((entries) => {
     const entry = entries[0]
-    if (entry) {
+    if (entry?.borderBoxSize?.[0]) {
       const box = entry.borderBoxSize[0]
       if (box) {
         handler({ width: box.inlineSize, height: box.blockSize })
@@ -167,7 +167,7 @@ export const measureElement = <TItemElement extends Element>(
   entry: ResizeObserverEntry | undefined,
   instance: Virtualizer<any, TItemElement>,
 ) => {
-  if (entry) {
+  if (entry?.borderBoxSize?.[0]) {
     const box = entry.borderBoxSize[0]
     if (box) {
       const size = Math.round(
