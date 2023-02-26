@@ -67,7 +67,7 @@ export const observeElementRect = <T extends Element>(
     return
   }
 
-  const handler = (rect: { width: number; height: number }) => {
+  const handler = (rect: Rect) => {
     const { width, height } = rect
     cb({ width: Math.round(width), height: Math.round(height) })
   }
