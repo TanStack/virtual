@@ -271,7 +271,7 @@ Resets any prev item measurements.
 measureElement: (el: TItemElement | null) => void
 ```
 
-Measures the element using your configured `measureElement` virtualizer option. You are repsonsible for calling this in your virtualizer markup when the component is rendered (eg. using something like React's ref callback prop) also adding `data-index`
+Measures the element using your configured `measureElement` virtualizer option. You are responsible for calling this in your virtualizer markup when the component is rendered (eg. using something like React's ref callback prop) also adding `data-index`
 
 ```tsx
  <div

@@ -2,7 +2,7 @@
 title: VirtualItem
 ---
 
-The `VirtualItem` object represents a single item returned by the virtualizer. It contains information you need to render the item in the cooredinate space within your virtualizer's scrollElement and other helpful properties/functions.
+The `VirtualItem` object represents a single item returned by the virtualizer. It contains information you need to render the item in the coordinate space within your virtualizer's scrollElement and other helpful properties/functions.
 
 ```tsx
 export interface VirtualItem {
