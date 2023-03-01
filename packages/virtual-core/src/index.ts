@@ -34,6 +34,8 @@ export interface VirtualItem {
   start: number
   end: number
   size: number
+  top: number
+  left: number
 }
 
 interface Rect {
@@ -261,6 +263,8 @@ export interface VirtualizerOptions<
   scrollingDelay?: number
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
+  columns?: number
+  columnsSize?: number
 }
 
 export class Virtualizer<
@@ -345,6 +349,8 @@ export class Virtualizer<
       scrollingDelay: 150,
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
+      columns: 1,
+      columnsSize: 0,
       ...opts,
     }
   }
@@ -464,16 +470,68 @@ export class Virtualizer<
 
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
-        const measuredSize = itemSizeCache.get(key)
-        const start = measurements[i - 1]
-          ? measurements[i - 1]!.end
+
+        const complete = new Map<number, true>()
+        const columns = new Map<number, VirtualItem>()
+        for (let m = i - 1; m >= 0; m--) {
+          if (complete.size === this.options.columns) {
+            break
+          }
+
+          const measurement = measurements[m]!
+          const index = this.options.horizontal
+            ? measurement.top
+            : measurement.left
+
+          if (complete.has(index)) {
+            continue
+          }
+
+          const previous = columns.get(index)
+          if (previous == null || measurement.end > previous.end) {
+            columns.set(index, measurement)
+          } else if (measurement.end < previous.end) {
+            complete.set(index, true)
+          }
+        }
+
+        const beforeMeasurement =
+          columns.size === this.options.columns
+            ? Array.from(columns.values()).sort((a, b) => a.end - b.end)[0]
+            : undefined
+
+        const start = beforeMeasurement
+          ? beforeMeasurement.end
           : paddingStart + scrollMargin
+
+        const measuredSize = itemSizeCache.get(key)
         const size =
           typeof measuredSize === 'number'
             ? measuredSize
             : this.options.estimateSize(i)
+
         const end = start + size
-        measurements[i] = { index: i, start, size, end, key }
+
+        measurements[i] = {
+          index: i,
+          start,
+          size,
+          end,
+          key,
+          ...(this.options.horizontal
+            ? {
+                top: beforeMeasurement
+                  ? beforeMeasurement.top
+                  : i * this.options.columnsSize,
+                left: start,
+              }
+            : {
+                top: start,
+                left: beforeMeasurement
+                  ? beforeMeasurement.left
+                  : i * this.options.columnsSize,
+              }),
+        }
       }
 
       this.measurementsCache = measurements
