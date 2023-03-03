@@ -474,24 +474,24 @@ export class Virtualizer<
         const complete = new Map<number, true>()
         const columns = new Map<number, VirtualItem>()
         for (let m = i - 1; m >= 0; m--) {
-          if (complete.size === this.options.columns) {
-            break
-          }
-
           const measurement = measurements[m]!
-          const index = this.options.horizontal
+          const key = this.options.horizontal
             ? measurement.top
             : measurement.left
 
-          if (complete.has(index)) {
+          if (complete.has(key)) {
             continue
           }
 
-          const previous = columns.get(index)
+          const previous = columns.get(key)
           if (previous == null || measurement.end > previous.end) {
-            columns.set(index, measurement)
+            columns.set(key, measurement)
           } else if (measurement.end < previous.end) {
-            complete.set(index, true)
+            complete.set(key, true)
+          }
+
+          if (complete.size === this.options.columns) {
+            break
           }
         }
 
