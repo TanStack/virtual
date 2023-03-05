@@ -34,7 +34,7 @@ export interface VirtualItem {
   start: number
   end: number
   size: number
-  column: number
+  lane: number
 }
 
 interface Rect {
@@ -262,7 +262,7 @@ export interface VirtualizerOptions<
   scrollingDelay?: number
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
-  columns?: number
+  lanes?: number
 }
 
 export class Virtualizer<
@@ -347,7 +347,7 @@ export class Virtualizer<
       scrollingDelay: 150,
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
-      columns: 1,
+      lanes: 1,
       ...opts,
     }
   }
@@ -473,29 +473,29 @@ export class Virtualizer<
         for (let m = i - 1; m >= 0; m--) {
           const measurement = measurements[m]!
 
-          if (furthestMeasurementsFound.has(measurement.column)) {
+          if (furthestMeasurementsFound.has(measurement.lane)) {
             continue
           }
 
           const previousFurthestMeasurement = furthestMeasurements.get(
-            measurement.column,
+            measurement.lane,
           )
           if (
             previousFurthestMeasurement == null ||
             measurement.end > previousFurthestMeasurement.end
           ) {
-            furthestMeasurements.set(measurement.column, measurement)
+            furthestMeasurements.set(measurement.lane, measurement)
           } else if (measurement.end < previousFurthestMeasurement.end) {
-            furthestMeasurementsFound.set(measurement.column, true)
+            furthestMeasurementsFound.set(measurement.lane, true)
           }
 
-          if (furthestMeasurementsFound.size === this.options.columns) {
+          if (furthestMeasurementsFound.size === this.options.lanes) {
             break
           }
         }
 
         const furthestMeasurement =
-          furthestMeasurements.size === this.options.columns
+          furthestMeasurements.size === this.options.lanes
             ? Array.from(furthestMeasurements.values()).sort(
                 (a, b) => a.end - b.end,
               )[0]
@@ -513,9 +513,9 @@ export class Virtualizer<
 
         const end = start + size
 
-        const column = furthestMeasurement
-          ? furthestMeasurement.column
-          : i % this.options.columns
+        const lane = furthestMeasurement
+          ? furthestMeasurement.lane
+          : i % this.options.lanes
 
         measurements[i] = {
           index: i,
@@ -523,7 +523,7 @@ export class Virtualizer<
           size,
           end,
           key,
-          column,
+          lane,
         }
       }
 

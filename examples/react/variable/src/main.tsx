@@ -235,7 +235,7 @@ function MasonryVerticalVirtualizerVariable({ rows }) {
     getScrollElement: () => parentRef.current,
     estimateSize: (i) => rows[i],
     overscan: 5,
-    columns: 4,
+    lanes: 4,
   })
 
   return (
@@ -263,7 +263,7 @@ function MasonryVerticalVirtualizerVariable({ rows }) {
               style={{
                 position: 'absolute',
                 top: 0,
-                left: `${virtualRow.column * 25}%`,
+                left: `${virtualRow.lane * 25}%`,
                 width: '25%',
                 height: `${rows[virtualRow.index]}px`,
                 transform: `translateY(${virtualRow.start}px)`,
@@ -287,7 +287,7 @@ function MasonryHorizontalVirtualizerVariable({ rows }) {
     getScrollElement: () => parentRef.current,
     estimateSize: (i) => columns[i],
     overscan: 5,
-    columns: 4,
+    lanes: 4,
   })
 
   return (
@@ -316,7 +316,7 @@ function MasonryHorizontalVirtualizerVariable({ rows }) {
               }
               style={{
                 position: 'absolute',
-                top: `${virtualColumn.column * 25}%`,
+                top: `${virtualColumn.lane * 25}%`,
                 left: 0,
                 height: '25%',
                 width: `${columns[virtualColumn.index]}px`,
