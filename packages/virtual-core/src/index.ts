@@ -34,8 +34,7 @@ export interface VirtualItem {
   start: number
   end: number
   size: number
-  top: number
-  left: number
+  column: number
 }
 
 interface Rect {
@@ -264,7 +263,6 @@ export interface VirtualizerOptions<
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
   columns?: number
-  columnsSize?: number
 }
 
 export class Virtualizer<
@@ -350,7 +348,6 @@ export class Virtualizer<
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
       columns: 1,
-      columnsSize: 0,
       ...opts,
     }
   }
@@ -475,19 +472,16 @@ export class Virtualizer<
         const columns = new Map<number, VirtualItem>()
         for (let m = i - 1; m >= 0; m--) {
           const measurement = measurements[m]!
-          const key = this.options.horizontal
-            ? measurement.top
-            : measurement.left
 
-          if (complete.has(key)) {
+          if (complete.has(measurement.column)) {
             continue
           }
 
-          const previous = columns.get(key)
+          const previous = columns.get(measurement.column)
           if (previous == null || measurement.end > previous.end) {
-            columns.set(key, measurement)
+            columns.set(measurement.column, measurement)
           } else if (measurement.end < previous.end) {
-            complete.set(key, true)
+            complete.set(measurement.column, true)
           }
 
           if (complete.size === this.options.columns) {
@@ -512,25 +506,17 @@ export class Virtualizer<
 
         const end = start + size
 
+        const column = beforeMeasurement
+          ? beforeMeasurement.column
+          : i % this.options.columns
+
         measurements[i] = {
           index: i,
           start,
           size,
           end,
           key,
-          ...(this.options.horizontal
-            ? {
-                top: beforeMeasurement
-                  ? beforeMeasurement.top
-                  : i * this.options.columnsSize,
-                left: start,
-              }
-            : {
-                top: start,
-                left: beforeMeasurement
-                  ? beforeMeasurement.left
-                  : i * this.options.columnsSize,
-              }),
+          column,
         }
       }
 
