@@ -283,3 +283,11 @@ Measures the element using your configured `measureElement` virtualizer option. 
 ```
 
 By default the `measureElement` virtualizer option is configured to measure elements with `getBoundingClientRect()`.
+
+### `columns`
+
+```tsx
+columns: number
+```
+
+The number of columns the list is divided into.
