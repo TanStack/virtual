@@ -35,6 +35,10 @@ function App() {
       <GridVirtualizerVariable rows={rows} columns={columns} />
       <br />
       <br />
+      <h3>Masonry</h3>
+      <MasonryVirtualizerVariable rows={rows} />
+      <br />
+      <br />
       {process.env.NODE_ENV === 'development' ? (
         <p>
           <strong>Notice:</strong> You are currently running React in
@@ -212,6 +216,59 @@ function GridVirtualizerVariable({ rows, columns }) {
                 </div>
               ))}
             </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
+function MasonryVirtualizerVariable({ rows }) {
+  const parentRef = React.useRef()
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (i) => rows[i],
+    overscan: 5,
+    columns: 4,
+  })
+
+  return (
+    <>
+      <div
+        ref={parentRef}
+        className="List"
+        style={{
+          height: `200px`,
+          width: `400px`,
+          overflow: 'auto',
+        }}
+      >
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+            <div
+              key={virtualRow.index}
+              className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100px',
+                height: `${rows[virtualRow.index]}px`,
+                transform: `translate(${virtualRow.column * 100}px, ${
+                  virtualRow.start
+                }px)`,
+              }}
+            >
+              Row {virtualRow.index}
+            </div>
           ))}
         </div>
       </div>
