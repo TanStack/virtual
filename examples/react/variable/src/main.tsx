@@ -35,8 +35,12 @@ function App() {
       <GridVirtualizerVariable rows={rows} columns={columns} />
       <br />
       <br />
-      <h3>Masonry</h3>
-      <MasonryVirtualizerVariable rows={rows} />
+      <h3>Masonry (vertical)</h3>
+      <MasonryVerticalVirtualizerVariable rows={rows} />
+      <br />
+      <br />
+      <h3>Masonry (horizontal)</h3>
+      <MasonryHorizontalVirtualizerVariable rows={rows} />
       <br />
       <br />
       {process.env.NODE_ENV === 'development' ? (
@@ -223,7 +227,7 @@ function GridVirtualizerVariable({ rows, columns }) {
   )
 }
 
-function MasonryVirtualizerVariable({ rows }) {
+function MasonryVerticalVirtualizerVariable({ rows }) {
   const parentRef = React.useRef()
 
   const rowVirtualizer = useVirtualizer({
@@ -259,15 +263,67 @@ function MasonryVirtualizerVariable({ rows }) {
               style={{
                 position: 'absolute',
                 top: 0,
-                left: 0,
-                width: '100px',
+                left: `${virtualRow.column * 25}%`,
+                width: '25%',
                 height: `${rows[virtualRow.index]}px`,
-                transform: `translate(${virtualRow.column * 100}px, ${
-                  virtualRow.start
-                }px)`,
+                transform: `translateY(${virtualRow.start}px)`,
               }}
             >
               Row {virtualRow.index}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
+function MasonryHorizontalVirtualizerVariable({ rows }) {
+  const parentRef = React.useRef()
+
+  const columnVirtualizer = useVirtualizer({
+    horizontal: true,
+    count: columns.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (i) => columns[i],
+    overscan: 5,
+    columns: 4,
+  })
+
+  return (
+    <>
+      <div
+        ref={parentRef}
+        className="List"
+        style={{
+          width: `500px`,
+          height: `400px`,
+          overflow: 'auto',
+        }}
+      >
+        <div
+          style={{
+            width: `${columnVirtualizer.getTotalSize()}px`,
+            height: '100%',
+            position: 'relative',
+          }}
+        >
+          {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
+            <div
+              key={virtualColumn.index}
+              className={
+                virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'
+              }
+              style={{
+                position: 'absolute',
+                top: `${virtualColumn.column * 25}%`,
+                left: 0,
+                height: '25%',
+                width: `${columns[virtualColumn.index]}px`,
+                transform: `translateX(${virtualColumn.start}px)`,
+              }}
+            >
+              Column {virtualColumn.index}
             </div>
           ))}
         </div>
