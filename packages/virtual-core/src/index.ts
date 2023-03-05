@@ -468,34 +468,41 @@ export class Virtualizer<
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
 
-        const complete = new Map<number, true>()
-        const columns = new Map<number, VirtualItem>()
+        const furthestMeasurementsFound = new Map<number, true>()
+        const furthestMeasurements = new Map<number, VirtualItem>()
         for (let m = i - 1; m >= 0; m--) {
           const measurement = measurements[m]!
 
-          if (complete.has(measurement.column)) {
+          if (furthestMeasurementsFound.has(measurement.column)) {
             continue
           }
 
-          const previous = columns.get(measurement.column)
-          if (previous == null || measurement.end > previous.end) {
-            columns.set(measurement.column, measurement)
-          } else if (measurement.end < previous.end) {
-            complete.set(measurement.column, true)
+          const previousFurthestMeasurement = furthestMeasurements.get(
+            measurement.column,
+          )
+          if (
+            previousFurthestMeasurement == null ||
+            measurement.end > previousFurthestMeasurement.end
+          ) {
+            furthestMeasurements.set(measurement.column, measurement)
+          } else if (measurement.end < previousFurthestMeasurement.end) {
+            furthestMeasurementsFound.set(measurement.column, true)
           }
 
-          if (complete.size === this.options.columns) {
+          if (furthestMeasurementsFound.size === this.options.columns) {
             break
           }
         }
 
-        const beforeMeasurement =
-          columns.size === this.options.columns
-            ? Array.from(columns.values()).sort((a, b) => a.end - b.end)[0]
+        const furthestMeasurement =
+          furthestMeasurements.size === this.options.columns
+            ? Array.from(furthestMeasurements.values()).sort(
+                (a, b) => a.end - b.end,
+              )[0]
             : undefined
 
-        const start = beforeMeasurement
-          ? beforeMeasurement.end
+        const start = furthestMeasurement
+          ? furthestMeasurement.end
           : paddingStart + scrollMargin
 
         const measuredSize = itemSizeCache.get(key)
@@ -506,8 +513,8 @@ export class Virtualizer<
 
         const end = start + size
 
-        const column = beforeMeasurement
-          ? beforeMeasurement.column
+        const column = furthestMeasurement
+          ? furthestMeasurement.column
           : i % this.options.columns
 
         measurements[i] = {
