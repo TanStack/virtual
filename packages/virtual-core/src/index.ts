@@ -454,6 +454,47 @@ export class Virtualizer<
     },
   )
 
+  private getFurthestMeasurement = (
+    measurements: VirtualItem[],
+    index: number,
+  ) => {
+    if (this.options.lanes === 1) {
+      return measurements[index - 1]
+    }
+
+    const furthestMeasurementsFound = new Map<number, true>()
+    const furthestMeasurements = new Map<number, VirtualItem>()
+    for (let m = index - 1; m >= 0; m--) {
+      const measurement = measurements[m]!
+
+      if (furthestMeasurementsFound.has(measurement.lane)) {
+        continue
+      }
+
+      const previousFurthestMeasurement = furthestMeasurements.get(
+        measurement.lane,
+      )
+      if (
+        previousFurthestMeasurement == null ||
+        measurement.end > previousFurthestMeasurement.end
+      ) {
+        furthestMeasurements.set(measurement.lane, measurement)
+      } else if (measurement.end < previousFurthestMeasurement.end) {
+        furthestMeasurementsFound.set(measurement.lane, true)
+      }
+
+      if (furthestMeasurementsFound.size === this.options.lanes) {
+        break
+      }
+    }
+
+    return furthestMeasurements.size === this.options.lanes
+      ? Array.from(furthestMeasurements.values()).sort(
+          (a, b) => a.end - b.end,
+        )[0]
+      : undefined
+  }
+
   private getMeasurements = memo(
     () => [this.memoOptions(), this.itemSizeCache],
     ({ count, paddingStart, scrollMargin, getItemKey }, itemSizeCache) => {
@@ -468,38 +509,7 @@ export class Virtualizer<
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
 
-        const furthestMeasurementsFound = new Map<number, true>()
-        const furthestMeasurements = new Map<number, VirtualItem>()
-        for (let m = i - 1; m >= 0; m--) {
-          const measurement = measurements[m]!
-
-          if (furthestMeasurementsFound.has(measurement.lane)) {
-            continue
-          }
-
-          const previousFurthestMeasurement = furthestMeasurements.get(
-            measurement.lane,
-          )
-          if (
-            previousFurthestMeasurement == null ||
-            measurement.end > previousFurthestMeasurement.end
-          ) {
-            furthestMeasurements.set(measurement.lane, measurement)
-          } else if (measurement.end < previousFurthestMeasurement.end) {
-            furthestMeasurementsFound.set(measurement.lane, true)
-          }
-
-          if (furthestMeasurementsFound.size === this.options.lanes) {
-            break
-          }
-        }
-
-        const furthestMeasurement =
-          furthestMeasurements.size === this.options.lanes
-            ? Array.from(furthestMeasurements.values()).sort(
-                (a, b) => a.end - b.end,
-              )[0]
-            : undefined
+        const furthestMeasurement = this.getFurthestMeasurement(measurements, i)
 
         const start = furthestMeasurement
           ? furthestMeasurement.end
