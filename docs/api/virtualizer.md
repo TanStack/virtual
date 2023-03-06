@@ -283,3 +283,11 @@ Measures the element using your configured `measureElement` virtualizer option. 
 ```
 
 By default the `measureElement` virtualizer option is configured to measure elements with `getBoundingClientRect()`.
+
+### `lanes`
+
+```tsx
+lanes: number
+```
+
+The number of lanes the list is divided into (aka columns for vertical lists and rows for horizontal lists).

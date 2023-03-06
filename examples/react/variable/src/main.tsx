@@ -35,6 +35,14 @@ function App() {
       <GridVirtualizerVariable rows={rows} columns={columns} />
       <br />
       <br />
+      <h3>Masonry (vertical)</h3>
+      <MasonryVerticalVirtualizerVariable rows={rows} />
+      <br />
+      <br />
+      <h3>Masonry (horizontal)</h3>
+      <MasonryHorizontalVirtualizerVariable rows={rows} />
+      <br />
+      <br />
       {process.env.NODE_ENV === 'development' ? (
         <p>
           <strong>Notice:</strong> You are currently running React in
@@ -212,6 +220,111 @@ function GridVirtualizerVariable({ rows, columns }) {
                 </div>
               ))}
             </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
+function MasonryVerticalVirtualizerVariable({ rows }) {
+  const parentRef = React.useRef()
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (i) => rows[i],
+    overscan: 5,
+    lanes: 4,
+  })
+
+  return (
+    <>
+      <div
+        ref={parentRef}
+        className="List"
+        style={{
+          height: `200px`,
+          width: `400px`,
+          overflow: 'auto',
+        }}
+      >
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+            <div
+              key={virtualRow.index}
+              className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: `${virtualRow.lane * 25}%`,
+                width: '25%',
+                height: `${rows[virtualRow.index]}px`,
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              Row {virtualRow.index}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
+function MasonryHorizontalVirtualizerVariable({ rows }) {
+  const parentRef = React.useRef()
+
+  const columnVirtualizer = useVirtualizer({
+    horizontal: true,
+    count: columns.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (i) => columns[i],
+    overscan: 5,
+    lanes: 4,
+  })
+
+  return (
+    <>
+      <div
+        ref={parentRef}
+        className="List"
+        style={{
+          width: `500px`,
+          height: `400px`,
+          overflow: 'auto',
+        }}
+      >
+        <div
+          style={{
+            width: `${columnVirtualizer.getTotalSize()}px`,
+            height: '100%',
+            position: 'relative',
+          }}
+        >
+          {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
+            <div
+              key={virtualColumn.index}
+              className={
+                virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'
+              }
+              style={{
+                position: 'absolute',
+                top: `${virtualColumn.lane * 25}%`,
+                left: 0,
+                height: '25%',
+                width: `${columns[virtualColumn.index]}px`,
+                transform: `translateX(${virtualColumn.start}px)`,
+              }}
+            >
+              Column {virtualColumn.index}
+            </div>
           ))}
         </div>
       </div>

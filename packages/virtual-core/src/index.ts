@@ -34,6 +34,7 @@ export interface VirtualItem {
   start: number
   end: number
   size: number
+  lane: number
 }
 
 interface Rect {
@@ -261,6 +262,7 @@ export interface VirtualizerOptions<
   scrollingDelay?: number
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
+  lanes?: number
 }
 
 export class Virtualizer<
@@ -345,6 +347,7 @@ export class Virtualizer<
       scrollingDelay: 150,
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
+      lanes: 1,
       ...opts,
     }
   }
@@ -451,6 +454,43 @@ export class Virtualizer<
     },
   )
 
+  private getFurthestMeasurement = (
+    measurements: VirtualItem[],
+    index: number,
+  ) => {
+    const furthestMeasurementsFound = new Map<number, true>()
+    const furthestMeasurements = new Map<number, VirtualItem>()
+    for (let m = index - 1; m >= 0; m--) {
+      const measurement = measurements[m]!
+
+      if (furthestMeasurementsFound.has(measurement.lane)) {
+        continue
+      }
+
+      const previousFurthestMeasurement = furthestMeasurements.get(
+        measurement.lane,
+      )
+      if (
+        previousFurthestMeasurement == null ||
+        measurement.end > previousFurthestMeasurement.end
+      ) {
+        furthestMeasurements.set(measurement.lane, measurement)
+      } else if (measurement.end < previousFurthestMeasurement.end) {
+        furthestMeasurementsFound.set(measurement.lane, true)
+      }
+
+      if (furthestMeasurementsFound.size === this.options.lanes) {
+        break
+      }
+    }
+
+    return furthestMeasurements.size === this.options.lanes
+      ? Array.from(furthestMeasurements.values()).sort(
+          (a, b) => a.end - b.end,
+        )[0]
+      : undefined
+  }
+
   private getMeasurements = memo(
     () => [this.memoOptions(), this.itemSizeCache],
     ({ count, paddingStart, scrollMargin, getItemKey }, itemSizeCache) => {
@@ -464,16 +504,36 @@ export class Virtualizer<
 
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
-        const measuredSize = itemSizeCache.get(key)
-        const start = measurements[i - 1]
-          ? measurements[i - 1]!.end
+
+        const furthestMeasurement =
+          this.options.lanes === 1
+            ? measurements[i - 1]
+            : this.getFurthestMeasurement(measurements, i)
+
+        const start = furthestMeasurement
+          ? furthestMeasurement.end
           : paddingStart + scrollMargin
+
+        const measuredSize = itemSizeCache.get(key)
         const size =
           typeof measuredSize === 'number'
             ? measuredSize
             : this.options.estimateSize(i)
+
         const end = start + size
-        measurements[i] = { index: i, start, size, end, key }
+
+        const lane = furthestMeasurement
+          ? furthestMeasurement.lane
+          : i % this.options.lanes
+
+        measurements[i] = {
+          index: i,
+          start,
+          size,
+          end,
+          key,
+          lane,
+        }
       }
 
       this.measurementsCache = measurements
