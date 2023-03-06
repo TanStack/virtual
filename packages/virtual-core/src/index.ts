@@ -458,10 +458,6 @@ export class Virtualizer<
     measurements: VirtualItem[],
     index: number,
   ) => {
-    if (this.options.lanes === 1) {
-      return measurements[index - 1]
-    }
-
     const furthestMeasurementsFound = new Map<number, true>()
     const furthestMeasurements = new Map<number, VirtualItem>()
     for (let m = index - 1; m >= 0; m--) {
@@ -509,7 +505,10 @@ export class Virtualizer<
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
 
-        const furthestMeasurement = this.getFurthestMeasurement(measurements, i)
+        const furthestMeasurement =
+          this.options.lanes === 1
+            ? measurements[i - 1]
+            : this.getFurthestMeasurement(measurements, i)
 
         const start = furthestMeasurement
           ? furthestMeasurement.end
