@@ -15,13 +15,13 @@ export function memo<TDeps extends readonly any[], TResult>(
   let deps = opts.initialDeps ?? []
   let result: TResult | undefined
 
-  return (): TResult => {
+  return (force?: boolean): TResult => {
     let depTime: number
     if (opts.key && opts.debug?.()) depTime = Date.now()
 
     const newDeps = getDeps()
 
-    const depsChanged =
+    const depsChanged = force ||
       newDeps.length !== deps.length ||
       newDeps.some((dep: any, index: number) => deps[index] !== dep)
 
@@ -55,9 +55,9 @@ export function memo<TDeps extends readonly any[], TResult>(
             font-size: .6rem;
             font-weight: bold;
             color: hsl(${Math.max(
-              0,
-              Math.min(120 - 120 * resultFpsPercentage, 120),
-            )}deg 100% 31%);`,
+          0,
+          Math.min(120 - 120 * resultFpsPercentage, 120),
+        )}deg 100% 31%);`,
         opts?.key,
       )
     }

@@ -179,7 +179,7 @@ export const measureElement = <TItemElement extends Element>(
   }
   return Math.round(
     element.getBoundingClientRect()[
-      instance.options.horizontal ? 'width' : 'height'
+    instance.options.horizontal ? 'width' : 'height'
     ],
   )
 }
@@ -237,7 +237,7 @@ export interface VirtualizerOptions<
   ) => void | (() => void)
   observeElementOffset: (
     instance: Virtualizer<TScrollElement, TItemElement>,
-    cb: (offset: number) => void,
+    cb: (offset: number, force?: boolean) => void,
   ) => void | (() => void)
 
   // Optional
@@ -340,7 +340,7 @@ export class Virtualizer<
       horizontal: false,
       getItemKey: defaultKeyExtractor,
       rangeExtractor: defaultRangeExtractor,
-      onChange: () => {},
+      onChange: () => { },
       measureElement,
       initialRect: { width: 0, height: 0 },
       scrollMargin: 0,
@@ -398,7 +398,7 @@ export class Virtualizer<
       )
 
       this.unsubs.push(
-        this.options.observeElementOffset(this, (offset) => {
+        this.options.observeElementOffset(this, (offset, force) => {
           this.scrollAdjustments = 0
 
           if (this.scrollOffset === offset) {
@@ -415,7 +415,7 @@ export class Virtualizer<
             this.scrollOffset < offset ? 'forward' : 'backward'
           this.scrollOffset = offset
 
-          this.maybeNotify()
+          this.maybeNotify(force)
 
           this.isScrollingTimeoutId = setTimeout(() => {
             this.isScrollingTimeoutId = null
@@ -486,8 +486,8 @@ export class Virtualizer<
 
     return furthestMeasurements.size === this.options.lanes
       ? Array.from(furthestMeasurements.values()).sort(
-          (a, b) => a.end - b.end,
-        )[0]
+        (a, b) => a.end - b.end,
+      )[0]
       : undefined
   }
 
@@ -705,12 +705,12 @@ export class Virtualizer<
 
     return notUndefined(
       measurements[
-        findNearestBinarySearch(
-          0,
-          measurements.length - 1,
-          (index: number) => notUndefined(measurements[index]).start,
-          offset,
-        )
+      findNearestBinarySearch(
+        0,
+        measurements.length - 1,
+        (index: number) => notUndefined(measurements[index]).start,
+        offset,
+      )
       ],
     )
   }
