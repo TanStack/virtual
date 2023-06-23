@@ -11,14 +11,14 @@ At the heart of TanStack Virtual is the `Virtualizer`. Virtualizers can be orien
 Here is just a quick example of what it looks like to virtualize a long list within a div using TanStack Virtual in React:
 
 ```tsx
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtual } from '@tanstack/react-virtual';
 
 function App() {
   // The scrollable element for your list
   const parentRef = React.useRef()
 
   // The virtualizer
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = useVirtual({
     count: 10000,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 35,
