@@ -187,7 +187,7 @@ export const measureElement = <TItemElement extends Element>(
 export const windowScroll = <T extends Window>(
   offset: number,
   {
-    adjustments = 0,
+    adjustments = window.scrollY,
     behavior,
   }: { adjustments?: number; behavior?: ScrollBehavior },
   instance: Virtualizer<T, any>,
