@@ -260,6 +260,7 @@ export interface VirtualizerOptions<
   rangeExtractor?: (range: Range) => number[]
   scrollMargin?: number
   scrollingDelay?: number
+  elementKeyAttribute?: string
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
   lanes?: number
@@ -346,6 +347,7 @@ export class Virtualizer<
       scrollMargin: 0,
       scrollingDelay: 150,
       indexAttribute: 'data-index',
+      elementKeyAttribute: 'data-element-key',
       initialMeasurementsCache: [],
       lanes: 1,
       ...opts,
@@ -621,17 +623,17 @@ export class Virtualizer<
   ) => {
     const index = this.indexFromElement(node)
 
-    const item = this.measurementsCache[index]
-    if (!item) {
-      return
-    }
+    const item = notUndefined(this.measurementsCache[index])
 
-    const prevNode = this.measureElementCache.get(item.key)
+    const elementKey =
+      node.getAttribute(this.options.elementKeyAttribute) ?? item.key
+
+    const prevNode = this.measureElementCache.get(elementKey)
 
     if (!node.isConnected) {
       this.observer.unobserve(node)
       if (node === prevNode) {
-        this.measureElementCache.delete(item.key)
+        this.measureElementCache.delete(elementKey)
       }
       return
     }
@@ -641,7 +643,7 @@ export class Virtualizer<
         this.observer.unobserve(prevNode)
       }
       this.observer.observe(node)
-      this.measureElementCache.set(item.key, node)
+      this.measureElementCache.set(elementKey, node)
     }
 
     const measuredItemSize = this.options.measureElement(node, entry, this)
