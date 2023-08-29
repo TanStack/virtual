@@ -284,6 +284,18 @@ Measures the element using your configured `measureElement` virtualizer option. 
 
 By default the `measureElement` virtualizer option is configured to measure elements with `getBoundingClientRect()`.
 
+### `resizeItem`
+
+```tsx
+resizeItem: (index: number, size: number) => void
+```
+
+Change the virtualized item's size manually. Use this function to manually set the size calculated for this item. Useful in occations when using some custom morphing transition and you know the morphed item's size beforehand.
+
+You can also use this method with a throttled ResizeObserver instead of `Virtualizer.measureElement` to reduce re-rendering.
+
+> ⚠️ Please be aware that manually changing the size of an item when using `Virtualizer.measureElement` to monitor that item, will result in unpredictable behaviour as the `Virtualizer.measureElement` is also changing the size. However you can use one of resizeItem or measureElement in the same virtualizer instance but on different item indexes.
+
 ### `lanes`
 
 ```tsx

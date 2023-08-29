@@ -648,9 +648,18 @@ export class Virtualizer<
 
     const measuredItemSize = this.options.measureElement(node, entry, this)
 
+    this.resizeItem(index, measuredItemSize)
+  }
+
+  resizeItem = (index: number, size: number) => {
+    const item = this.measurementsCache[index]
+    if (!item) {
+      return
+    }
+
     const itemSize = this.itemSizeCache.get(item.key) ?? item.size
 
-    const delta = measuredItemSize - itemSize
+    const delta = size - itemSize
 
     if (delta !== 0) {
       if (item.start < this.scrollOffset) {
@@ -667,7 +676,7 @@ export class Virtualizer<
       this.pendingMeasuredCacheIndexes.push(index)
 
       this.itemSizeCache = new Map(
-        this.itemSizeCache.set(item.key, measuredItemSize),
+        this.itemSizeCache.set(item.key, size),
       )
 
       this.notify()
