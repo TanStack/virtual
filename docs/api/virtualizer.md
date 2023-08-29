@@ -154,7 +154,7 @@ scrollToFn?: (
 ) => void
 ```
 
-An optional function that if provided should implement the scrolling behavior for your scrollElement. It will be called with the offset to scroll to, a boolean indicating if the scrolling is allowed to be smoothed, and the virtualizer instance. Built-in scroll implementations are exported as `elementScroll` and `windowScroll` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `createWindowVirtualizer`.
+An optional function that if provided should implement the scrolling behavior for your scrollElement. It will be called with the offset to scroll to, a boolean indicating if the scrolling is allowed to be smoothed, and the virtualizer instance. Built-in scroll implementations are exported as `elementScroll` and `windowScroll` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `useWindowVirtualizer`.
 
 > ⚠️ Attempting to use smoothScroll with dynamically measured elements will not work.
 
@@ -167,7 +167,7 @@ observeElementRect: (
 ) => void | (() => void)
 ```
 
-An optional function that if provided is called when the scrollElement changes and should implement the initial measurement and continuous monitoring of the scrollElement's `Rect` (an object with `width` and `height`). It's called with the instance (which also gives you access to the scrollElement via `instance.scrollElement`. Built-in implementations are exported as `observeElementRect` and `observeWindowRect` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `createWindowVirtualizer`.
+An optional function that if provided is called when the scrollElement changes and should implement the initial measurement and continuous monitoring of the scrollElement's `Rect` (an object with `width` and `height`). It's called with the instance (which also gives you access to the scrollElement via `instance.scrollElement`. Built-in implementations are exported as `observeElementRect` and `observeWindowRect` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `useWindowVirtualizer`.
 
 ### `observeElementOffset`
 
@@ -178,7 +178,7 @@ observeElementOffset: (
   ) => void | (() => void)
 ```
 
-An optional function that if provided is called when the scrollElement changes and should implement the initial measurement and continuous monitoring of the scrollElement's scroll offset (a number). It's called with the instance (which also gives you access to the scrollElement via `instance.scrollElement`. Built-in implementations are exported as `observeElementOffset` and `observeWindowOffset` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `createWindowVirtualizer`.
+An optional function that if provided is called when the scrollElement changes and should implement the initial measurement and continuous monitoring of the scrollElement's scroll offset (a number). It's called with the instance (which also gives you access to the scrollElement via `instance.scrollElement`. Built-in implementations are exported as `observeElementOffset` and `observeWindowOffset` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `useWindowVirtualizer`.
 
 ### `measureElement`
 
