@@ -40,7 +40,7 @@ function App() {
 }
 
 function RowVirtualizerFixed() {
-  const parentRef = React.useRef()
+  const parentRef = React.useRef(null)
 
   const rowVirtualizer = useVirtualizer({
     count: 10000,
@@ -90,7 +90,7 @@ function RowVirtualizerFixed() {
 }
 
 function ColumnVirtualizerFixed() {
-  const parentRef = React.useRef()
+  const parentRef = React.useRef(null)
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
@@ -143,7 +143,7 @@ function ColumnVirtualizerFixed() {
 }
 
 function GridVirtualizerFixed() {
-  const parentRef = React.useRef()
+  const parentRef = React.useRef(null)
 
   const rowVirtualizer = useVirtualizer({
     count: 10000,
