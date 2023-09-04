@@ -623,10 +623,9 @@ export class Virtualizer<
   ) => {
     const index = this.indexFromElement(node)
 
-    const item = notUndefined(this.measurementsCache[index])
-
     const elementKey =
-      node.getAttribute(this.options.elementKeyAttribute) ?? item.key
+      node.getAttribute(this.options.elementKeyAttribute) ??
+      this.options.getItemKey(index)
 
     const prevNode = this.measureElementCache.get(elementKey)
 
@@ -675,9 +674,7 @@ export class Virtualizer<
 
       this.pendingMeasuredCacheIndexes.push(index)
 
-      this.itemSizeCache = new Map(
-        this.itemSizeCache.set(item.key, size),
-      )
+      this.itemSizeCache = new Map(this.itemSizeCache.set(item.key, size))
 
       this.notify()
     }
