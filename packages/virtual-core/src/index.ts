@@ -260,7 +260,6 @@ export interface VirtualizerOptions<
   rangeExtractor?: (range: Range) => number[]
   scrollMargin?: number
   scrollingDelay?: number
-  elementKeyAttribute?: string
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
   lanes?: number
@@ -347,7 +346,6 @@ export class Virtualizer<
       scrollMargin: 0,
       scrollingDelay: 150,
       indexAttribute: 'data-index',
-      elementKeyAttribute: 'data-element-key',
       initialMeasurementsCache: [],
       lanes: 1,
       ...opts,
@@ -623,9 +621,7 @@ export class Virtualizer<
   ) => {
     const index = this.indexFromElement(node)
 
-    const elementKey =
-      node.getAttribute(this.options.elementKeyAttribute) ??
-      this.options.getItemKey(index)
+    const elementKey = this.options.getItemKey(index)
 
     const prevNode = this.measureElementCache.get(elementKey)
 
@@ -653,6 +649,7 @@ export class Virtualizer<
   resizeItem = (index: number, size: number) => {
     const item = this.measurementsCache[index]
     if (!item) {
+      console.warn(`Missing virtual item for index = ${index}`)
       return
     }
 
