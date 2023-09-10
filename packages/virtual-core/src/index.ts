@@ -619,16 +619,23 @@ export class Virtualizer<
     node: TItemElement,
     entry: ResizeObserverEntry | undefined,
   ) => {
-    const index = this.indexFromElement(node)
+    const item = this.measurementsCache[this.indexFromElement(node)]
+    if (!item) {
+      this.measureElementCache.forEach((cached, key) => {
+        if (cached === node) {
+          this.observer.unobserve(node)
+          this.measureElementCache.delete(key)
+        }
+      })
+      return
+    }
 
-    const elementKey = this.options.getItemKey(index)
-
-    const prevNode = this.measureElementCache.get(elementKey)
+    const prevNode = this.measureElementCache.get(item.key)
 
     if (!node.isConnected) {
-      this.observer.unobserve(node)
-      if (node === prevNode) {
-        this.measureElementCache.delete(elementKey)
+      if (prevNode) {
+        this.observer.unobserve(prevNode)
+        this.measureElementCache.delete(item.key)
       }
       return
     }
@@ -638,23 +645,16 @@ export class Virtualizer<
         this.observer.unobserve(prevNode)
       }
       this.observer.observe(node)
-      this.measureElementCache.set(elementKey, node)
+      this.measureElementCache.set(item.key, node)
     }
 
     const measuredItemSize = this.options.measureElement(node, entry, this)
 
-    this.resizeItem(index, measuredItemSize)
+    this.resizeItem(item, measuredItemSize)
   }
 
-  resizeItem = (index: number, size: number) => {
-    const item = this.measurementsCache[index]
-    if (!item) {
-      console.warn(`Missing virtual item for index = ${index}`)
-      return
-    }
-
+  resizeItem = (item: VirtualItem, size: number) => {
     const itemSize = this.itemSizeCache.get(item.key) ?? item.size
-
     const delta = size - itemSize
 
     if (delta !== 0) {
@@ -669,8 +669,7 @@ export class Virtualizer<
         })
       }
 
-      this.pendingMeasuredCacheIndexes.push(index)
-
+      this.pendingMeasuredCacheIndexes.push(item.index)
       this.itemSizeCache = new Map(this.itemSizeCache.set(item.key, size))
 
       this.notify()
