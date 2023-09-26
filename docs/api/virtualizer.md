@@ -126,7 +126,7 @@ The initial offset to apply to the virtualizer. This is usually only useful if y
 getItemKey?: (index: number) => Key
 ```
 
-This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set.
+This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set. This function should be memoized to prevent unnecessary re-renders.
 
 ### `rangeExtractor`
 
