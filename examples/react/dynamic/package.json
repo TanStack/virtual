@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "7.6.0",
-    "@tanstack/react-virtual": "3.0.0-beta.60",
+    "@tanstack/react-virtual": "3.0.0-beta.61",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
