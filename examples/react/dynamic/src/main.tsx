@@ -74,7 +74,7 @@ function RowVirtualizerDynamic() {
               top: 0,
               left: 0,
               width: '100%',
-              transform: `translateY(${items[0].start}px)`,
+              transform: `translateY(${items[0]?.start ?? 0}px)`,
             }}
           >
             {items.map((virtualRow) => (
@@ -131,7 +131,7 @@ const RowVirtualizerDynamicWindow = () => {
             left: 0,
             width: '100%',
             transform: `translateY(${
-              items[0].start - virtualizer.options.scrollMargin
+              items[0] ? items[0].start - virtualizer.options.scrollMargin : 0
             }px)`,
           }}
         >

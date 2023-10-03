@@ -587,13 +587,16 @@ export class Virtualizer<
       this.calculateRange(),
       this.options.overscan,
       this.options.count,
+      this.getSize(),
     ],
-    (rangeExtractor, range, overscan, count) => {
-      return rangeExtractor({
-        ...range,
-        overscan,
-        count,
-      })
+    (rangeExtractor, range, overscan, count, outerSize) => {
+      return outerSize === 0
+        ? []
+        : rangeExtractor({
+            ...range,
+            overscan,
+            count,
+          })
     },
     {
       key: process.env.NODE_ENV !== 'production' && 'getIndexes',
