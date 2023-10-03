@@ -620,7 +620,8 @@ export class Virtualizer<
     entry: ResizeObserverEntry | undefined,
   ) => {
     const item = this.measurementsCache[this.indexFromElement(node)]
-    if (!item) {
+
+    if (!item || !node.isConnected) {
       this.measureElementCache.forEach((cached, key) => {
         if (cached === node) {
           this.observer.unobserve(node)
@@ -631,14 +632,6 @@ export class Virtualizer<
     }
 
     const prevNode = this.measureElementCache.get(item.key)
-
-    if (!node.isConnected) {
-      if (prevNode) {
-        this.observer.unobserve(prevNode)
-        this.measureElementCache.delete(item.key)
-      }
-      return
-    }
 
     if (prevNode !== node) {
       if (prevNode) {
