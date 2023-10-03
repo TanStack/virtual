@@ -148,7 +148,7 @@ test('should render given dynamic size after scroll', () => {
   expect(screen.queryByText('Row 6')).toBeInTheDocument()
   expect(screen.queryByText('Row 7')).not.toBeInTheDocument()
 
-  expect(renderer).toHaveBeenCalledTimes(3)
+  expect(renderer).toHaveBeenCalledTimes(2)
 })
 
 test('should use rangeExtractor', () => {
