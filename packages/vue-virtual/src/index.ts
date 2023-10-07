@@ -18,6 +18,7 @@ import {
   unref,
   watch,
 } from 'vue'
+export * from '@tanstack/virtual-core'
 
 type MaybeRef<T> = T | Ref<T>
 
