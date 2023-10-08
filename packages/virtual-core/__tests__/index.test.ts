@@ -4,7 +4,7 @@ test('should export the Virtualizer class', () => {
   expect(Virtualizer).toBeDefined()
 })
 
-test('shoul', () => {
+test('should return empty items for empty scroll element', () => {
   const virtualizer = new Virtualizer({
     count: 100,
     getScrollElement: () => null,
