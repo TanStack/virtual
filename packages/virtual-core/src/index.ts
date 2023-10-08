@@ -307,10 +307,7 @@ export class Virtualizer<
       unobserve: (target: Element) => get()?.unobserve(target),
     }
   })()
-  range: { startIndex: number; endIndex: number } = {
-    startIndex: 0,
-    endIndex: 0,
-  }
+  range: { startIndex: number; endIndex: number } | null = null
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
@@ -385,15 +382,8 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
-          const prev = this.scrollRect
           this.scrollRect = rect
-          if (
-            this.options.horizontal
-              ? rect.width !== prev.width
-              : rect.height !== prev.height
-          ) {
-            this.maybeNotify()
-          }
+          this.maybeNotify()
         }),
       )
 
@@ -549,11 +539,14 @@ export class Virtualizer<
   calculateRange = memo(
     () => [this.getMeasurements(), this.getSize(), this.scrollOffset],
     (measurements, outerSize, scrollOffset) => {
-      return (this.range = calculateRange({
-        measurements,
-        outerSize,
-        scrollOffset,
-      }))
+      return (this.range =
+        measurements.length > 0 && outerSize > 0
+          ? calculateRange({
+              measurements,
+              outerSize,
+              scrollOffset,
+            })
+          : null)
     },
     {
       key: process.env.NODE_ENV !== 'production' && 'calculateRange',
@@ -563,9 +556,13 @@ export class Virtualizer<
 
   private maybeNotify = memo(
     () => {
-      const range = this.calculateRange()
+      this.calculateRange()
 
-      return [range.startIndex, range.endIndex, this.isScrolling]
+      return [
+        this.range ? this.range.startIndex : null,
+        this.range ? this.range.endIndex : null,
+        this.isScrolling,
+      ]
     },
     () => {
       this.notify()
@@ -574,8 +571,8 @@ export class Virtualizer<
       key: process.env.NODE_ENV !== 'production' && 'maybeNotify',
       debug: () => this.options.debug,
       initialDeps: [
-        this.range.startIndex,
-        this.range.endIndex,
+        this.range ? this.range.startIndex : null,
+        this.range ? this.range.endIndex : null,
         this.isScrolling,
       ],
     },
@@ -587,10 +584,9 @@ export class Virtualizer<
       this.calculateRange(),
       this.options.overscan,
       this.options.count,
-      this.getSize(),
     ],
-    (rangeExtractor, range, overscan, count, outerSize) => {
-      return outerSize === 0
+    (rangeExtractor, range, overscan, count) => {
+      return range === null
         ? []
         : rangeExtractor({
             ...range,
