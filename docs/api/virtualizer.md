@@ -56,6 +56,14 @@ initialRect?: Rect
 
 The initial `Rect` of the scrollElement. This is mostly useful if you need to run the virtualizer in an SSR environment, otherwise the initialRect will be calculated on mount by the `observeElementRect` implementation.
 
+### `initialMeasurementsCache`
+
+```tsx
+initialMeasurementsCache?: VirtualItem[]
+```
+
+The initial `measurementsCache`. This is mostly useful if you need to restore the virtualizer dstate in dynamic mode.
+
 ### `onChange`
 
 ```tsx
@@ -126,7 +134,7 @@ The initial offset to apply to the virtualizer. This is usually only useful if y
 getItemKey?: (index: number) => Key
 ```
 
-This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set. This function should be memoized to prevent unnecessary re-renders.
+This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set. `This function should be memoized to prevent unnecessary re-renders.`
 
 ### `rangeExtractor`
 
@@ -134,15 +142,15 @@ This function is passed the index of each item and should return a unique key fo
 rangeExtractor?: (range: Range) => number[]
 ```
 
-This function receives visible range indexes and should return array of indexes to render. This is useful if you need to add or remove items from the virtualizer manually regardless of the visible range, eg. rendering sticky items, headers, footers, etc. The default range extractor implementation will return the visible range indexes and is exported as `defaultRangeExtractor`.
+This function receives visible range indexes and should return array of indexes to render. This is useful if you need to add or remove items from the virtualizer manually regardless of the visible range, eg. rendering sticky items, headers, footers, etc. The default range extractor implementation will return the visible range indexes and is exported as `defaultRangeExtractor`. `This function should be memoized to prevent unnecessary re-renders.`
 
-### `enableSmoothScroll`
+### `scrollMargin`
 
 ```tsx
-enableSmoothScroll?: boolean
+scrollMargin?: number
 ```
 
-Enables/disables smooth scrolling. Smooth scrolling is enabled by default, but may result in inaccurate landing positions when dynamically measuring elements (a common use case and configuration). If you plan to use smooth scrolling, it's suggested that you either estimate the size of your elements as close to their maximums as possible, or simply turn off dynamic measuring of elements.
+With this option, can specify from where the scroll offset should start, most common case is having before a window virtualizer a header.
 
 ### `scrollToFn`
 
@@ -184,8 +192,9 @@ An optional function that if provided is called when the scrollElement changes a
 
 ```tsx
 measureElement?: (
-  el: TItemElement,
-  instance: Virtualizer<TScrollElement, TItemElement>
+  element: TItemElement,
+  entry: ResizeObserverEntry | undefined,
+  instance: Virtualizer<TScrollElement, TItemElement>,
 ) => number
 ```
 

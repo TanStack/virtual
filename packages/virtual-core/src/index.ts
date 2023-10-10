@@ -278,11 +278,11 @@ export class Virtualizer<
   measurementsCache: VirtualItem[] = []
   private itemSizeCache = new Map<Key, number>()
   private pendingMeasuredCacheIndexes: number[] = []
-  private scrollRect: Rect
+  scrollRect: Rect
   scrollOffset: number
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments: number = 0
-  measureElementCache = new Map<Key, TItemElement>()
+  elementsCache = new Map<Key, TItemElement>()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
 
@@ -360,7 +360,7 @@ export class Virtualizer<
   }
 
   _didMount = () => {
-    this.measureElementCache.forEach(this.observer.observe)
+    this.elementsCache.forEach(this.observer.observe)
     return () => {
       this.observer.disconnect()
       this.cleanup()
@@ -621,23 +621,23 @@ export class Virtualizer<
     const item = this.measurementsCache[this.indexFromElement(node)]
 
     if (!item || !node.isConnected) {
-      this.measureElementCache.forEach((cached, key) => {
+      this.elementsCache.forEach((cached, key) => {
         if (cached === node) {
           this.observer.unobserve(node)
-          this.measureElementCache.delete(key)
+          this.elementsCache.delete(key)
         }
       })
       return
     }
 
-    const prevNode = this.measureElementCache.get(item.key)
+    const prevNode = this.elementsCache.get(item.key)
 
     if (prevNode !== node) {
       if (prevNode) {
         this.observer.unobserve(prevNode)
       }
       this.observer.observe(node)
-      this.measureElementCache.set(item.key, node)
+      this.elementsCache.set(item.key, node)
     }
 
     const measuredItemSize = this.options.measureElement(node, entry, this)
@@ -775,7 +775,7 @@ export class Virtualizer<
     return [this.getOffsetForAlignment(toOffset, align), align] as const
   }
 
-  private isDynamicMode = () => this.measureElementCache.size > 0
+  private isDynamicMode = () => this.elementsCache.size > 0
 
   private cancelScrollToIndex = () => {
     if (this.scrollToIndexTimeoutId !== null) {
@@ -824,7 +824,7 @@ export class Virtualizer<
       this.scrollToIndexTimeoutId = setTimeout(() => {
         this.scrollToIndexTimeoutId = null
 
-        const elementInDOM = this.measureElementCache.has(
+        const elementInDOM = this.elementsCache.has(
           this.options.getItemKey(index),
         )
 
