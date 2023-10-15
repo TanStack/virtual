@@ -31,11 +31,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import RowVirtualizerDynamic from "./components/RowVirtualizerDynamic.vue";
-import RowVirtualizerDynamicWindow from "./components/RowVirtualizerDynamicWindow.vue";
-import ColumnVirtualizerDynamic from "./components/ColumnVirtualizerDynamic.vue";
-import GridVirtualizerDynamic from "./components/GridVirtualizerDynamic.vue";
+import { computed } from 'vue'
+import RowVirtualizerDynamic from './components/RowVirtualizerDynamic.vue'
+import RowVirtualizerDynamicWindow from './components/RowVirtualizerDynamicWindow.vue'
+import ColumnVirtualizerDynamic from './components/ColumnVirtualizerDynamic.vue'
+import GridVirtualizerDynamic from './components/GridVirtualizerDynamic.vue'
 
-const pathname = computed(() => window.location.pathname);
+const pathname = computed(() => window.location.pathname)
 </script>

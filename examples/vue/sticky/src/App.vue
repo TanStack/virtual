@@ -44,35 +44,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { faker } from "@faker-js/faker";
-import { findIndex, groupBy } from "lodash";
-import { useVirtualizer, defaultRangeExtractor } from "@tanstack/vue-virtual";
+import { computed, ref } from 'vue'
+import { faker } from '@faker-js/faker'
+import { findIndex, groupBy } from 'lodash'
+import { useVirtualizer, defaultRangeExtractor } from '@tanstack/vue-virtual'
 
 const groupedNames = groupBy(
   Array.from({ length: 1000 })
     .map(() => faker.name.firstName())
     .sort(),
   (name: string[]) => name[0],
-);
-const groups = Object.keys(groupedNames);
+)
+const groups = Object.keys(groupedNames)
 
 const rows = groups.reduce<string[]>(
   (acc, k) => [...acc, k, ...groupedNames[k]],
   [],
-);
+)
 
-const parentRef = ref<HTMLElement | null>(null);
+const parentRef = ref<HTMLElement | null>(null)
 
-const activeStickyIndexRef = ref(0);
+const activeStickyIndexRef = ref(0)
 
 const stickyIndexes = computed(() =>
   groups.map((gn) => findIndex(rows, (n: string) => n === gn)),
-);
+)
 
-const isSticky = (index: number) => stickyIndexes.value.includes(index);
+const isSticky = (index: number) => stickyIndexes.value.includes(index)
 
-const isActiveSticky = (index: number) => activeStickyIndexRef.value === index;
+const isActiveSticky = (index: number) => activeStickyIndexRef.value === index
 
 const rowVirtualizer = useVirtualizer({
   count: rows.length,
@@ -81,18 +81,18 @@ const rowVirtualizer = useVirtualizer({
   rangeExtractor: (range) => {
     activeStickyIndexRef.value = [...stickyIndexes.value]
       .reverse()
-      .find((index) => range.startIndex >= index);
+      .find((index) => range.startIndex >= index)
 
     const next = new Set([
       activeStickyIndexRef.value,
       ...defaultRangeExtractor(range),
-    ]);
+    ])
 
-    return [...next].sort((a, b) => a - b);
+    return [...next].sort((a, b) => a - b)
   },
-});
+})
 
-const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
-const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 </script>

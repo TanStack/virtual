@@ -50,20 +50,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, type VNodeRef } from "vue";
-import { useWindowVirtualizer, useVirtualizer } from "@tanstack/vue-virtual";
-import { generateData, generateColumns } from "./utils";
+import { ref, computed, onMounted, type VNodeRef } from 'vue'
+import { useWindowVirtualizer, useVirtualizer } from '@tanstack/vue-virtual'
+import { generateData, generateColumns } from './utils'
 
-const columns = generateColumns(30);
-const data = generateData(columns);
+const columns = generateColumns(30)
+const data = generateData(columns)
 
-const parentRef = ref<HTMLElement | null>(null);
+const parentRef = ref<HTMLElement | null>(null)
 
-const parentOffsetRef = ref(0);
+const parentOffsetRef = ref(0)
 
 onMounted(() => {
-  parentOffsetRef.value = parentRef.value?.offsetTop ?? 0;
-});
+  parentOffsetRef.value = parentRef.value?.offsetTop ?? 0
+})
 
 const rowVirtualizerOptions = computed(() => {
   return {
@@ -71,16 +71,16 @@ const rowVirtualizerOptions = computed(() => {
     estimateSize: () => 350,
     overscan: 5,
     scrollMargin: parentOffsetRef.value,
-  };
-});
+  }
+})
 
-const rowVirtualizer = useWindowVirtualizer(rowVirtualizerOptions);
+const rowVirtualizer = useWindowVirtualizer(rowVirtualizerOptions)
 
-const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
-const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 
-const getColumnWidth = (index: number) => columns[index].width;
+const getColumnWidth = (index: number) => columns[index].width
 
 const columnVirtualizerOptions = computed(() => {
   return {
@@ -89,14 +89,12 @@ const columnVirtualizerOptions = computed(() => {
     getScrollElement: () => parentRef.value,
     estimateSize: getColumnWidth,
     overscan: 5,
-  };
-});
+  }
+})
 
-const columnVirtualizer = useVirtualizer(columnVirtualizerOptions);
+const columnVirtualizer = useVirtualizer(columnVirtualizerOptions)
 
-const virtualColumns = computed(() =>
-  columnVirtualizer.value.getVirtualItems(),
-);
+const virtualColumns = computed(() => columnVirtualizer.value.getVirtualItems())
 
 const width = computed(() => {
   return virtualColumns.value.length > 0
@@ -105,16 +103,16 @@ const width = computed(() => {
         columnVirtualizer.value.getTotalSize() -
           virtualColumns.value[virtualColumns.value.length - 1].end,
       ]
-    : [0, 0];
-});
+    : [0, 0]
+})
 
 const measureElement = (el: VNodeRef & HTMLElement) => {
   if (!el) {
-    return;
+    return
   }
 
-  rowVirtualizer.value.measureElement(el);
+  rowVirtualizer.value.measureElement(el)
 
-  return el;
-};
+  return el
+}
 </script>

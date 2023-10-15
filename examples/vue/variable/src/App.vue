@@ -29,17 +29,17 @@
 </template>
 
 <script setup lang="ts">
-import RowVirtualizerVariable from "./components/RowVirtualizerVariable.vue";
-import ColumnVirtualizerVariable from "./components/ColumnVirtualizerVariable.vue";
-import GridVirtualizerVariable from "./components/GridVirtualizerVariable.vue";
-import MasonryVerticalVirtualizerVariable from "./components/MasonryVerticalVirtualizerVariable.vue";
-import MasonryHorizontalVirtualizerVariable from "./components/MasonryHorizontalVirtualizerVariable.vue";
+import RowVirtualizerVariable from './components/RowVirtualizerVariable.vue'
+import ColumnVirtualizerVariable from './components/ColumnVirtualizerVariable.vue'
+import GridVirtualizerVariable from './components/GridVirtualizerVariable.vue'
+import MasonryVerticalVirtualizerVariable from './components/MasonryVerticalVirtualizerVariable.vue'
+import MasonryHorizontalVirtualizerVariable from './components/MasonryHorizontalVirtualizerVariable.vue'
 
 const rows = new Array(10000)
   .fill(true)
-  .map(() => 25 + Math.round(Math.random() * 100));
+  .map(() => 25 + Math.round(Math.random() * 100))
 
 const columns = new Array(10000)
   .fill(true)
-  .map(() => 75 + Math.round(Math.random() * 100));
+  .map(() => 75 + Math.round(Math.random() * 100))
 </script>

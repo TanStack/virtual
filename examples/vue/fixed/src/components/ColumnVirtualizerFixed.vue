@@ -31,10 +31,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { useVirtualizer } from "@tanstack/vue-virtual";
+import { ref, computed } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 
-const parentRef = ref<HTMLElement | null>(null);
+const parentRef = ref<HTMLElement | null>(null)
 
 const columnVirtualizer = useVirtualizer({
   horizontal: true,
@@ -42,11 +42,9 @@ const columnVirtualizer = useVirtualizer({
   getScrollElement: () => parentRef.value,
   estimateSize: () => 100,
   overscan: 5,
-});
+})
 
-const virtualColumns = computed(() =>
-  columnVirtualizer.value.getVirtualItems(),
-);
+const virtualColumns = computed(() => columnVirtualizer.value.getVirtualItems())
 
-const totalSize = computed(() => columnVirtualizer.value.getTotalSize());
+const totalSize = computed(() => columnVirtualizer.value.getTotalSize())
 </script>

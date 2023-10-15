@@ -69,8 +69,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { useVirtualizer } from "@tanstack/vue-virtual";
+import { ref, computed } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import {
   FlexRender,
   ColumnDef,
@@ -78,88 +78,88 @@ import {
   useVueTable,
   getCoreRowModel,
   getSortedRowModel,
-} from "@tanstack/vue-table";
-import { makeData, Person } from "./makeData";
+} from '@tanstack/vue-table'
+import { makeData, Person } from './makeData'
 
-const data = ref(makeData(50_000));
+const data = ref(makeData(50_000))
 
-const sorting = ref<SortingState>([]);
+const sorting = ref<SortingState>([])
 
 const getSortingHandler = (e: Event, fn: any) => {
-  return fn(e);
-};
+  return fn(e)
+}
 
 const setSorting = (sortingUpdater: any) => {
-  const newSortVal = sortingUpdater(sorting.value);
+  const newSortVal = sortingUpdater(sorting.value)
 
-  sorting.value = newSortVal;
-};
+  sorting.value = newSortVal
+}
 
 const columns = computed<ColumnDef<Person>[]>(() => {
   return [
     {
-      accessorKey: "id",
-      header: "ID",
+      accessorKey: 'id',
+      header: 'ID',
       size: 60,
     },
     {
-      accessorKey: "firstName",
+      accessorKey: 'firstName',
       cell: (info) => info.getValue(),
     },
     {
       accessorFn: (row) => row.lastName,
-      id: "lastName",
+      id: 'lastName',
       cell: (info) => info.getValue(),
-      header: () => "Last Name",
+      header: () => 'Last Name',
     },
     {
-      accessorKey: "age",
-      header: () => "Age",
+      accessorKey: 'age',
+      header: () => 'Age',
       size: 50,
     },
     {
-      accessorKey: "visits",
-      header: () => "Visits",
+      accessorKey: 'visits',
+      header: () => 'Visits',
       size: 50,
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: 'status',
+      header: 'Status',
     },
     {
-      accessorKey: "progress",
-      header: "Profile Progress",
+      accessorKey: 'progress',
+      header: 'Profile Progress',
       size: 80,
     },
     {
-      accessorKey: "createdAt",
-      header: "Created At",
+      accessorKey: 'createdAt',
+      header: 'Created At',
       cell: (info) => info.getValue<Date>().toLocaleString(),
     },
-  ];
-});
+  ]
+})
 
 const table = useVueTable({
   get data() {
-    return data.value;
+    return data.value
   },
   columns: columns.value,
   state: {
     get sorting() {
-      return sorting.value;
+      return sorting.value
     },
   },
   onSortingChange: setSorting,
   getCoreRowModel: getCoreRowModel(),
   getSortedRowModel: getSortedRowModel(),
   debugTable: true,
-});
+})
 
 const rows = computed(() => {
-  return table.getRowModel().rows;
-});
+  return table.getRowModel().rows
+})
 
-const parentRef = ref<HTMLElement | null>(null);
+const parentRef = ref<HTMLElement | null>(null)
 
 const rowVirtualizerOptions = computed(() => {
   return {
@@ -167,12 +167,12 @@ const rowVirtualizerOptions = computed(() => {
     getScrollElement: () => parentRef.value,
     estimateSize: () => 34,
     overscan: 5,
-  };
-});
+  }
+})
 
-const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
+const rowVirtualizer = useVirtualizer(rowVirtualizerOptions)
 
-const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
-const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 </script>

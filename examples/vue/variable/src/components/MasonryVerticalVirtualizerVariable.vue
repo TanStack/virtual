@@ -31,17 +31,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, PropType } from "vue";
-import { useVirtualizer } from "@tanstack/vue-virtual";
+import { ref, computed, PropType } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 
 const props = defineProps({
   rows: {
     type: Array as PropType<number[]>,
     default: () => [],
   },
-});
+})
 
-const parentRef = ref<HTMLElement | null>(null);
+const parentRef = ref<HTMLElement | null>(null)
 
 const rowVirtualizer = useVirtualizer({
   count: props.rows.length,
@@ -49,8 +49,8 @@ const rowVirtualizer = useVirtualizer({
   estimateSize: (i) => props.rows[i],
   overscan: 5,
   lanes: 4,
-});
+})
 
-const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
-const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 </script>

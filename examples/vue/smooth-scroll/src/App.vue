@@ -12,8 +12,8 @@
     <div>
       <button
         @click="
-          rowVirtualizer.scrollToIndex(randomIndex);
-          randomIndex = generateRandomIndex();
+          rowVirtualizer.scrollToIndex(randomIndex),
+            (randomIndex = generateRandomIndex())
         "
       >
         Scroll To Random Index ({{ randomIndex }})
@@ -60,50 +60,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed } from 'vue'
 import {
   elementScroll,
   useVirtualizer,
   VirtualizerOptions,
-} from "@tanstack/vue-virtual";
+} from '@tanstack/vue-virtual'
 
 const easeInOutQuint = (t: number) => {
-  return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t;
-};
+  return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
+}
 
-const generateRandomIndex = () => Math.floor(Math.random() * 10000);
+const generateRandomIndex = () => Math.floor(Math.random() * 10000)
 
-const randomIndex = ref(generateRandomIndex());
+const randomIndex = ref(generateRandomIndex())
 
-const parentRef = ref<HTMLElement | null>(null);
-const scrollingRef = ref<number>();
+const parentRef = ref<HTMLElement | null>(null)
+const scrollingRef = ref<number>()
 
-const scrollToFn: VirtualizerOptions<any, any>["scrollToFn"] = (
+const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] = (
   offset,
   canSmooth,
   instance,
 ) => {
-  const duration = 1000;
-  const start = parentRef.value?.scrollTop || 0;
-  const startTime = (scrollingRef.value = Date.now());
+  const duration = 1000
+  const start = parentRef.value?.scrollTop || 0
+  const startTime = (scrollingRef.value = Date.now())
 
   const run = () => {
-    if (scrollingRef.value !== startTime) return;
-    const now = Date.now();
-    const elapsed = now - startTime;
-    const progress = easeInOutQuint(Math.min(elapsed / duration, 1));
-    const interpolated = start + (offset - start) * progress;
+    if (scrollingRef.value !== startTime) return
+    const now = Date.now()
+    const elapsed = now - startTime
+    const progress = easeInOutQuint(Math.min(elapsed / duration, 1))
+    const interpolated = start + (offset - start) * progress
 
     if (elapsed < duration) {
-      elementScroll(interpolated, canSmooth, instance);
-      requestAnimationFrame(run);
+      elementScroll(interpolated, canSmooth, instance)
+      requestAnimationFrame(run)
     } else {
-      elementScroll(interpolated, canSmooth, instance);
+      elementScroll(interpolated, canSmooth, instance)
     }
-  };
+  }
 
-  requestAnimationFrame(run);
-};
+  requestAnimationFrame(run)
+}
 
 const rowVirtualizerOptions = computed(() => {
   return {
@@ -112,12 +112,12 @@ const rowVirtualizerOptions = computed(() => {
     estimateSize: () => 35,
     overscan: 5,
     scrollToFn,
-  };
-});
+  }
+})
 
-const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
+const rowVirtualizer = useVirtualizer(rowVirtualizerOptions)
 
-const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
-const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 </script>

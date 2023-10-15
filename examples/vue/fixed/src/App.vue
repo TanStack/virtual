@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import RowVirtualizerFixed from "./components/RowVirtualizerFixed.vue";
-import ColumnVirtualizerFixed from "./components/ColumnVirtualizerFixed.vue";
-import GridVirtualizerFixed from "./components/GridVirtualizerFixed.vue";
+import RowVirtualizerFixed from './components/RowVirtualizerFixed.vue'
+import ColumnVirtualizerFixed from './components/ColumnVirtualizerFixed.vue'
+import GridVirtualizerFixed from './components/GridVirtualizerFixed.vue'
 </script>

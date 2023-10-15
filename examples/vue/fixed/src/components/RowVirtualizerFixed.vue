@@ -27,19 +27,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { useVirtualizer } from "@tanstack/vue-virtual";
+import { ref, computed } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 
-const parentRef = ref<HTMLElement | null>(null);
+const parentRef = ref<HTMLElement | null>(null)
 
 const rowVirtualizer = useVirtualizer({
   count: 10000,
   getScrollElement: () => parentRef.value,
   estimateSize: () => 35,
   overscan: 5,
-});
+})
 
-const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
-const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 </script>

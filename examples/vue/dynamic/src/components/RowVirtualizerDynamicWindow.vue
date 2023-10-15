@@ -36,31 +36,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useWindowVirtualizer } from "@tanstack/vue-virtual";
-import { generateSentences } from "./utils";
+import { ref, computed, onMounted } from 'vue'
+import { useWindowVirtualizer } from '@tanstack/vue-virtual'
+import { generateSentences } from './utils'
 
-const sentences = generateSentences();
+const sentences = generateSentences()
 
-const parentRef = ref<HTMLElement | null>(null);
+const parentRef = ref<HTMLElement | null>(null)
 
-const parentOffsetRef = ref(0);
+const parentOffsetRef = ref(0)
 
 onMounted(() => {
-  parentOffsetRef.value = parentRef.value?.offsetTop ?? 0;
-});
+  parentOffsetRef.value = parentRef.value?.offsetTop ?? 0
+})
 
 const rowVirtualizerOptions = computed(() => {
   return {
     count: sentences.length,
     estimateSize: () => 45,
     scrollMargin: parentOffsetRef.value,
-  };
-});
+  }
+})
 
-const rowVirtualizer = useWindowVirtualizer(rowVirtualizerOptions);
+const rowVirtualizer = useWindowVirtualizer(rowVirtualizerOptions)
 
-const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
-const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 </script>

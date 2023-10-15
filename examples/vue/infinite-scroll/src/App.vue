@@ -38,7 +38,7 @@
           }"
         >
           <template v-if="virtualRow.index > allRows.length - 1">
-            {{ hasNextPage ? "Loading more..." : "Nothing more to load" }}
+            {{ hasNextPage ? 'Loading more...' : 'Nothing more to load' }}
           </template>
           <template v-else>
             {{ allRows[virtualRow.index] }}
@@ -51,9 +51,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect } from "vue";
-import { useVirtualizer } from "@tanstack/vue-virtual";
-import { useInfiniteQuery } from "@tanstack/vue-query";
+import { computed, ref, watchEffect } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
+import { useInfiniteQuery } from '@tanstack/vue-query'
 
 const fetchServerPage = async (
   limit: number,
@@ -61,12 +61,12 @@ const fetchServerPage = async (
 ): Promise<{ rows: string[]; nextOffset: number }> => {
   const rows = new Array(limit)
     .fill(0)
-    .map((e, i) => `Async loaded row #${i + offset * limit}`);
+    .map((e, i) => `Async loaded row #${i + offset * limit}`)
 
-  await new Promise((r) => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 500))
 
-  return { rows, nextOffset: offset + 1 };
-};
+  return { rows, nextOffset: offset + 1 }
+}
 
 const {
   status,
@@ -77,18 +77,18 @@ const {
   fetchNextPage,
   hasNextPage,
 } = useInfiniteQuery(
-  ["projects"],
+  ['projects'],
   (ctx) => fetchServerPage(10, ctx.pageParam),
   {
     getNextPageParam: (_lastGroup, groups) => groups.length,
   },
-);
+)
 
 const allRows = computed(() =>
   data.value ? data.value.pages.flatMap((d) => d.rows) : [],
-);
+)
 
-const parentRef = ref<HTMLElement | null>(null);
+const parentRef = ref<HTMLElement | null>(null)
 
 const rowVirtualizerOptions = computed(() => {
   return {
@@ -96,20 +96,20 @@ const rowVirtualizerOptions = computed(() => {
     getScrollElement: () => parentRef.value,
     estimateSize: () => 100,
     overscan: 5,
-  };
-});
+  }
+})
 
-const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
+const rowVirtualizer = useVirtualizer(rowVirtualizerOptions)
 
-const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
-const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 
 watchEffect(() => {
-  const [lastItem] = [...virtualRows.value].reverse();
+  const [lastItem] = [...virtualRows.value].reverse()
 
   if (!lastItem) {
-    return;
+    return
   }
 
   if (
@@ -117,7 +117,7 @@ watchEffect(() => {
     hasNextPage &&
     !isFetchingNextPage.value
   ) {
-    fetchNextPage();
+    fetchNextPage()
   }
-});
+})
 </script>
