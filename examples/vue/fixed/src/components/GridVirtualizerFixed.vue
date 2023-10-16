@@ -12,32 +12,29 @@
       }"
     >
       <template v-for="virtualRow in virtualRows" :key="virtualRow.index">
-        <template
+        <div
           v-for="virtualColumn in columnVirtualizer.getVirtualItems()"
           :key="virtualColumn.index"
-        >
-          <div
-            :class="
-              virtualColumn.index % 2
-                ? virtualRow.index % 2 === 0
-                  ? 'ListItemOdd'
-                  : 'ListItemEven'
-                : virtualRow.index % 2
+          :class="
+            virtualColumn.index % 2
+              ? virtualRow.index % 2 === 0
                 ? 'ListItemOdd'
                 : 'ListItemEven'
-            "
-            :style="{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: `${virtualColumn.size}px`,
-              height: `${virtualRow.size}px`,
-              transform: `translateX(${virtualColumn.start}px) translateY(${virtualRow.start}px)`,
-            }"
-          >
-            Cell {{ virtualRow.index }}, {{ virtualColumn.index }}
-          </div>
-        </template>
+              : virtualRow.index % 2
+              ? 'ListItemOdd'
+              : 'ListItemEven'
+          "
+          :style="{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: `${virtualColumn.size}px`,
+            height: `${virtualRow.size}px`,
+            transform: `translateX(${virtualColumn.start}px) translateY(${virtualRow.start}px)`,
+          }"
+        >
+          Cell {{ virtualRow.index }}, {{ virtualColumn.index }}
+        </div>
       </template>
     </div>
   </div>
