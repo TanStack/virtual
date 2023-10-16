@@ -17,7 +17,7 @@
       >
         <div
           :data-index="virtualColumn.index"
-          :ref="measureElement"
+          ref="columnVirtualizer.measureElement"
           :class="virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'"
           :style="{
             position: 'absolute',
@@ -56,14 +56,4 @@ const columnVirtualizer = useVirtualizer({
 const virtualColumns = computed(() => columnVirtualizer.value.getVirtualItems())
 
 const totalSize = computed(() => columnVirtualizer.value.getTotalSize())
-
-const measureElement = (el: VNodeRef & HTMLElement) => {
-  if (!el) {
-    return
-  }
-
-  columnVirtualizer.value.measureElement(el)
-
-  return el
-}
 </script>

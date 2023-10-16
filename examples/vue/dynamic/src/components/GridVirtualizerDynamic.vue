@@ -9,7 +9,7 @@
       <template v-for="virtualRow in virtualRows" :key="virtualRow.key">
         <div
           :data-index="virtualRow.index"
-          :ref="measureElement"
+          ref="rowVirtualizer.measureElement"
           :style="{
             position: 'absolute',
             top: 0,
@@ -105,14 +105,4 @@ const width = computed(() => {
       ]
     : [0, 0]
 })
-
-const measureElement = (el: VNodeRef & HTMLElement) => {
-  if (!el) {
-    return
-  }
-
-  rowVirtualizer.value.measureElement(el)
-
-  return el
-}
 </script>
