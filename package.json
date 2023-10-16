@@ -11,7 +11,7 @@
     "linkAll": "lerna exec 'npm link' --parallel",
     "unlinkAll": "lerna exec 'npm unlink' --parallel",
     "dev": "npm run clean && npm run watch",
-    "prettier": "prettier \"packages/*/{src/**,examples/**/src/**}.{md,js,jsx,ts,tsx,json}\" --write",
+    "prettier": "prettier \"{packages/*/src/**,examples/*/*/src/**}.{md,js,jsx,ts,tsx,vue,json}\" --write",
     "visualize": "lerna exec 'open build/stats-html.html'",
     "cipublish": "ts-node scripts/publish.ts",
     "cipublishforce": "CI=true npm run cipublish",
