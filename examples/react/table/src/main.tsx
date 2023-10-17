@@ -26,12 +26,12 @@ function ReactTableVirtualized() {
       },
       {
         accessorKey: 'firstName',
-        cell: info => info.getValue(),
+        cell: (info) => info.getValue(),
       },
       {
-        accessorFn: row => row.lastName,
+        accessorFn: (row) => row.lastName,
         id: 'lastName',
-        cell: info => info.getValue(),
+        cell: (info) => info.getValue(),
         header: () => <span>Last Name</span>,
       },
       {
@@ -56,10 +56,10 @@ function ReactTableVirtualized() {
       {
         accessorKey: 'createdAt',
         header: 'Created At',
-        cell: info => info.getValue<Date>().toLocaleString(),
+        cell: (info) => info.getValue<Date>().toLocaleString(),
       },
     ],
-    []
+    [],
   )
 
   const [data, setData] = React.useState(() => makeData(50_000))
@@ -76,8 +76,7 @@ function ReactTableVirtualized() {
     debugTable: true,
   })
 
-  const {rows} = table.getRowModel();
-
+  const { rows } = table.getRowModel()
 
   const parentRef = React.useRef<HTMLDivElement>(null)
 
@@ -85,17 +84,17 @@ function ReactTableVirtualized() {
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 34,
-    overscan: 20
-  });
+    overscan: 20,
+  })
 
   return (
     <div ref={parentRef} className="container">
-      <div style={{ height: `${virtualizer.getTotalSize()}px`}}>
+      <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
         <table>
           <thead>
-            {table.getHeaderGroups().map(headerGroup => (
+            {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
+                {headerGroup.headers.map((header) => {
                   return (
                     <th
                       key={header.id}
@@ -113,7 +112,7 @@ function ReactTableVirtualized() {
                         >
                           {flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                           {{
                             asc: ' 🔼',
@@ -131,17 +130,21 @@ function ReactTableVirtualized() {
             {virtualizer.getVirtualItems().map((virtualRow, index) => {
               const row = rows[virtualRow.index] as Row<Person>
               return (
-                <tr key={row.id} 
-                style={{
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start - index * virtualRow.size}px)`,
-                }}>
-                  {row.getVisibleCells().map(cell => {
+                <tr
+                  key={row.id}
+                  style={{
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${
+                      virtualRow.start - index * virtualRow.size
+                    }px)`,
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => {
                     return (
                       <td key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     )
@@ -151,7 +154,8 @@ function ReactTableVirtualized() {
             })}
           </tbody>
         </table>
-      </div></div>
+      </div>
+    </div>
   )
 }
 
@@ -159,7 +163,10 @@ function App() {
   return (
     <div>
       <p>
-        For tables, the basis for the offset of the translate css function is from the row's initial position itself. Because of this, we need to calculate the translateY pixel count different and base it off the the index.
+        For tables, the basis for the offset of the translate css function is
+        from the row's initial position itself. Because of this, we need to
+        calculate the translateY pixel count different and base it off the the
+        index.
       </p>
       <ReactTableVirtualized />
       <br />

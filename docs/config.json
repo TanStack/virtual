@@ -51,7 +51,15 @@
     },
     {
       "label": "Vue Examples",
-      "children": [{ "to": "#", "label": "Coming Soon!" }]
+      "children": [
+        { "to": "examples/vue/fixed", "label": "Fixed" },
+        { "to": "examples/vue/variable", "label": "Variable" },
+        { "to": "examples/vue/dynamic", "label": "Dynamic" },
+        { "to": "examples/vue/sticky", "label": "Sticky" },
+        { "to": "examples/vue/infinite-scroll", "label": "Infinite Scroll" },
+        { "to": "examples/vue/smooth-scroll", "label": "Smooth Scroll" },
+        { "to": "examples/vue/table", "label": "Table" }
+      ]
     }
   ]
 }
