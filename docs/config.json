@@ -58,7 +58,9 @@
         { "to": "examples/vue/sticky", "label": "Sticky" },
         { "to": "examples/vue/infinite-scroll", "label": "Infinite Scroll" },
         { "to": "examples/vue/smooth-scroll", "label": "Smooth Scroll" },
-        { "to": "examples/vue/table", "label": "Table" }
+        { "to": "examples/vue/table", "label": "Table" },
+        { "to": "examples/vue/padding", "label": "Padding" },
+        { "to": "examples/vue/scroll-padding", "label": "Scroll Padding" }
       ]
     }
   ]
