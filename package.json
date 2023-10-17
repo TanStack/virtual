@@ -35,9 +35,10 @@
     "./examples/vue/dynamic",
     "./examples/vue/fixed",
     "./examples/vue/infinite-scroll",
-    "./examples/vue/scroll-padding",
     "./examples/vue/smooth-scroll",
+    "./examples/vue/scroll-padding",
     "./examples/vue/sticky",
+    "./examples/vue/table",
     "./examples/vue/variable"
   ],
   "devDependencies": {
