@@ -9,7 +9,7 @@
       <template v-for="virtualRow in virtualRows" :key="virtualRow.key">
         <div
           :data-index="virtualRow.index"
-          ref="rowVirtualizer.measureElement"
+          :ref="measureElement"
           :style="{
             position: 'absolute',
             top: 0,
@@ -21,27 +21,24 @@
           }"
         >
           <div :style="{ width: `${width[0]}px` }" />
-          <template
+          <div
             v-for="virtualColumn in virtualColumns"
             :key="virtualColumn.key"
+            :style="{
+              minHeight: virtualRow.index === 0 ? 50 : virtualRow.size,
+              width: `${getColumnWidth(virtualColumn.index)}px`,
+              borderBottom: '1px solid #c8c8c8',
+              borderRight: '1px solid #c8c8c8',
+              padding: '7px 12px',
+            }"
           >
-            <div
-              :style="{
-                minHeight: virtualRow.index === 0 ? 50 : virtualRow.size,
-                width: `${getColumnWidth(virtualColumn.index)}px`,
-                borderBottom: '1px solid #c8c8c8',
-                borderRight: '1px solid #c8c8c8',
-                padding: '7px 12px',
-              }"
-            >
-              <div v-if="virtualRow.index === 0">
-                {{ columns[virtualColumn.index].name }}
-              </div>
-              <div v-else>
-                {{ data[virtualRow.index][virtualColumn.index] }}
-              </div>
+            <div v-if="virtualRow.index === 0">
+              {{ columns[virtualColumn.index].name }}
             </div>
-          </template>
+            <div v-else>
+              {{ data[virtualRow.index][virtualColumn.index] }}
+            </div>
+          </div>
           <div :style="{ width: `${width[1]}px` }" />
         </div>
       </template>
@@ -105,4 +102,14 @@ const width = computed(() => {
       ]
     : [0, 0]
 })
+
+const measureElement = (el) => {
+  if (!el) {
+    return
+  }
+
+  rowVirtualizer.value.measureElement(el)
+
+  return undefined
+}
 </script>

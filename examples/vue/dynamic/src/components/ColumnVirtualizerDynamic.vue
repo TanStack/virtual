@@ -11,28 +11,25 @@
         position: 'relative',
       }"
     >
-      <template
+      <div
         v-for="virtualColumn in virtualColumns"
         :key="virtualColumn.key"
+        :data-index="virtualColumn.index"
+        :ref="measureElement"
+        :class="virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'"
+        :style="{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          height: '100%',
+          transform: `translateX(${virtualColumn.start}px)`,
+        }"
       >
-        <div
-          :data-index="virtualColumn.index"
-          ref="columnVirtualizer.measureElement"
-          :class="virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'"
-          :style="{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            height: '100%',
-            transform: `translateX(${virtualColumn.start}px)`,
-          }"
-        >
-          <div :style="{ width: `${sentences[virtualColumn.index].length}px` }">
-            <div>Column {{ virtualColumn.index }}</div>
-            <div>{{ sentences[virtualColumn.index] }}</div>
-          </div>
+        <div :style="{ width: `${sentences[virtualColumn.index].length}px` }">
+          <div>Column {{ virtualColumn.index }}</div>
+          <div>{{ sentences[virtualColumn.index] }}</div>
         </div>
-      </template>
+      </div>
     </div>
   </div>
 </template>
@@ -56,4 +53,14 @@ const columnVirtualizer = useVirtualizer({
 const virtualColumns = computed(() => columnVirtualizer.value.getVirtualItems())
 
 const totalSize = computed(() => columnVirtualizer.value.getTotalSize())
+
+const measureElement = (el) => {
+  if (!el) {
+    return
+  }
+
+  columnVirtualizer.value.measureElement(el)
+
+  return undefined
+}
 </script>
