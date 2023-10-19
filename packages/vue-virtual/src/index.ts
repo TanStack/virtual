@@ -50,9 +50,9 @@ function useVirtualizerBase<
     (options) => {
       virtualizer.setOptions({
         ...options,
-        onChange: (instance) => {
+        onChange: (instance, sync) => {
           triggerRef(state)
-          options.onChange?.(instance)
+          options.onChange?.(instance, sync)
         },
       })
 
