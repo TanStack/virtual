@@ -43,9 +43,12 @@ function createVirtualizerBase<
     }
     originalSetOptions({
       ...resolvedOptions,
-      onChange: (instance: Virtualizer<TScrollElement, TItemElement>) => {
+      onChange: (
+        instance: Virtualizer<TScrollElement, TItemElement>,
+        sync: boolean,
+      ) => {
         virtualizerWritable.set(instance)
-        resolvedOptions.onChange?.(instance)
+        resolvedOptions.onChange?.(instance, sync)
       },
     })
     virtualizer._willUpdate()

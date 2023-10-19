@@ -1,5 +1,5 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
+import * as React from 'react'
+import * as ReactDOM from 'react-dom/client'
 
 import './index.css'
 
@@ -179,10 +179,10 @@ function GridVirtualizerFixed() {
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-            <React.Fragment key={virtualRow.index}>
+            <React.Fragment key={virtualRow.key}>
               {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
                 <div
-                  key={virtualColumn.index}
+                  key={virtualColumn.key}
                   className={
                     virtualColumn.index % 2
                       ? virtualRow.index % 2 === 0
@@ -212,9 +212,8 @@ function GridVirtualizerFixed() {
   )
 }
 
-ReactDOM.render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-  document.getElementById('root'),
 )

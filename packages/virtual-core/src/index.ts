@@ -243,7 +243,10 @@ export interface VirtualizerOptions<
   // Optional
   debug?: any
   initialRect?: Rect
-  onChange?: (instance: Virtualizer<TScrollElement, TItemElement>) => void
+  onChange?: (
+    instance: Virtualizer<TScrollElement, TItemElement>,
+    sync: boolean,
+  ) => void
   measureElement?: (
     element: TItemElement,
     entry: ResizeObserverEntry | undefined,
@@ -349,9 +352,33 @@ export class Virtualizer<
     }
   }
 
-  private notify = () => {
-    this.options.onChange?.(this)
+  private notify = (sync: boolean) => {
+    this.options.onChange?.(this, sync)
   }
+
+  private maybeNotify = memo(
+    () => {
+      this.calculateRange()
+
+      return [
+        this.isScrolling,
+        this.range ? this.range.startIndex : null,
+        this.range ? this.range.endIndex : null,
+      ]
+    },
+    (isScrolling) => {
+      this.notify(isScrolling)
+    },
+    {
+      key: process.env.NODE_ENV !== 'production' && 'maybeNotify',
+      debug: () => this.options.debug,
+      initialDeps: [
+        this.isScrolling,
+        this.range ? this.range.startIndex : null,
+        this.range ? this.range.endIndex : null,
+      ] as [boolean, number | null, number | null],
+    },
+  )
 
   private cleanup = () => {
     this.unsubs.filter(Boolean).forEach((d) => d!())
@@ -554,30 +581,6 @@ export class Virtualizer<
     },
   )
 
-  private maybeNotify = memo(
-    () => {
-      this.calculateRange()
-
-      return [
-        this.range ? this.range.startIndex : null,
-        this.range ? this.range.endIndex : null,
-        this.isScrolling,
-      ]
-    },
-    () => {
-      this.notify()
-    },
-    {
-      key: process.env.NODE_ENV !== 'production' && 'maybeNotify',
-      debug: () => this.options.debug,
-      initialDeps: [
-        this.range ? this.range.startIndex : null,
-        this.range ? this.range.endIndex : null,
-        this.isScrolling,
-      ],
-    },
-  )
-
   private getIndexes = memo(
     () => [
       this.options.rangeExtractor,
@@ -664,7 +667,7 @@ export class Virtualizer<
       this.pendingMeasuredCacheIndexes.push(item.index)
       this.itemSizeCache = new Map(this.itemSizeCache.set(item.key, size))
 
-      this.notify()
+      this.notify(false)
     }
   }
 
@@ -877,7 +880,7 @@ export class Virtualizer<
 
   measure = () => {
     this.itemSizeCache = new Map()
-    this.notify()
+    this.notify(false)
   }
 }
 
