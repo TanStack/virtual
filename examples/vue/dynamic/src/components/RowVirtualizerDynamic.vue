@@ -35,7 +35,7 @@
             v-for="virtualRow in virtualRows"
             :key="virtualRow.key"
             :data-index="virtualRow.index"
-            ref="measureElement"
+            :ref="measureElement"
             :class="virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'"
           >
             <div style="padding: 10px 0">
@@ -67,4 +67,14 @@ const rowVirtualizer = useVirtualizer({
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
 const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
+
+const measureElement = (el) => {
+  if (!el) {
+    return
+  }
+
+  rowVirtualizer.value.measureElement(el)
+
+  return undefined
+}
 </script>
