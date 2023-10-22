@@ -32,6 +32,7 @@
     "./examples/react/smooth-scroll",
     "./examples/react/sticky",
     "./examples/react/variable",
+    "./examples/react/window",
     "./examples/vue/dynamic",
     "./examples/vue/fixed",
     "./examples/vue/infinite-scroll",

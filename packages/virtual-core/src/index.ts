@@ -281,7 +281,7 @@ export class Virtualizer<
   measurementsCache: VirtualItem[] = []
   private itemSizeCache = new Map<Key, number>()
   private pendingMeasuredCacheIndexes: number[] = []
-  private scrollRect: Rect
+  scrollRect: Rect
   scrollOffset: number
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments: number = 0

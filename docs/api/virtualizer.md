@@ -136,14 +136,6 @@ rangeExtractor?: (range: Range) => number[]
 
 This function receives visible range indexes and should return array of indexes to render. This is useful if you need to add or remove items from the virtualizer manually regardless of the visible range, eg. rendering sticky items, headers, footers, etc. The default range extractor implementation will return the visible range indexes and is exported as `defaultRangeExtractor`.
 
-### `enableSmoothScroll`
-
-```tsx
-enableSmoothScroll?: boolean
-```
-
-Enables/disables smooth scrolling. Smooth scrolling is enabled by default, but may result in inaccurate landing positions when dynamically measuring elements (a common use case and configuration). If you plan to use smooth scrolling, it's suggested that you either estimate the size of your elements as close to their maximums as possible, or simply turn off dynamic measuring of elements.
-
 ### `scrollToFn`
 
 ```tsx
@@ -192,6 +184,15 @@ measureElement?: (
 This optional function is called when the virtualizer needs to dynamically measure the size (width or height) of an item when `virtualItem.measureElement` is called. It's passed the element given when you call `virtualItem.measureElement(TItemElement)` and the virtualizer instance. It should return the size of the element as a `number`.
 
 > 🧠 You can use `instance.options.horizontal` to determine if the width or height of the item should be measured.
+
+### `scrollMargin`
+
+```tsx
+scrollMargin?: number
+```
+
+With this option, you can specify where the scroll offset should originate. Typically, this value represents the space between the beginning of the scrolling element and the start of the list. This is especially useful in common scenarios such as when you have a header preceding a window virtualizer or when multiple virtualizers are utilized within a single scrolling element.
+
 
 ## Virtualizer Instance
 
@@ -303,3 +304,11 @@ lanes: number
 ```
 
 The number of lanes the list is divided into (aka columns for vertical lists and rows for horizontal lists).
+
+### `scrollRect`
+
+```tsx
+scrollRect: Rect
+```
+
+Current `Rect` of the scroll element.
