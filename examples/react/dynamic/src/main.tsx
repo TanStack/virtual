@@ -99,61 +99,6 @@ function RowVirtualizerDynamic() {
   )
 }
 
-const RowVirtualizerDynamicWindow = () => {
-  const parentRef = React.useRef<HTMLDivElement>(null)
-
-  const parentOffsetRef = React.useRef(0)
-
-  React.useLayoutEffect(() => {
-    parentOffsetRef.current = parentRef.current?.offsetTop ?? 0
-  }, [])
-
-  const virtualizer = useWindowVirtualizer({
-    count: sentences.length,
-    estimateSize: () => 45,
-    scrollMargin: parentOffsetRef.current,
-  })
-  const items = virtualizer.getVirtualItems()
-
-  return (
-    <div ref={parentRef} className="List">
-      <div
-        style={{
-          height: virtualizer.getTotalSize(),
-          width: '100%',
-          position: 'relative',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            transform: `translateY(${
-              items[0] ? items[0].start - virtualizer.options.scrollMargin : 0
-            }px)`,
-          }}
-        >
-          {items.map((virtualRow) => (
-            <div
-              key={virtualRow.key}
-              data-index={virtualRow.index}
-              ref={virtualizer.measureElement}
-              className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
-            >
-              <div style={{ padding: '10px 0' }}>
-                <div>Row {virtualRow.index}</div>
-                <div>{sentences[virtualRow.index]}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function ColumnVirtualizerDynamic() {
   const parentRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -366,8 +311,6 @@ function App() {
             return <RowVirtualizerDynamic />
           case '/columns':
             return <ColumnVirtualizerDynamic />
-          case '/window-list':
-            return <RowVirtualizerDynamicWindow />
           case '/grid': {
             const columns = generateColumns(30)
             const data = generateData(columns)

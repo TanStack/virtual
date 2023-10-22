@@ -38,7 +38,8 @@
         { "to": "examples/react/sticky", "label": "Sticky" },
         { "to": "examples/react/infinite-scroll", "label": "Infinite Scroll" },
         { "to": "examples/react/smooth-scroll", "label": "Smooth Scroll" },
-        { "to": "examples/react/table", "label": "Table" }
+        { "to": "examples/react/table", "label": "Table" },
+        { "to": "examples/react/window", "label": "Window" }
       ]
     },
     {
