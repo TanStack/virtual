@@ -48,7 +48,11 @@
     },
     {
       "label": "Svelte Examples",
-      "children": [{ "to": "#", "label": "Coming Soon!" }]
+      "children": [
+        { "to": "examples/svelte/fixed", "label": "Fixed" },
+        { "to": "examples/svelte/variable", "label": "Variable" },
+        { "to": "examples/svelte/dynamic", "label": "Dynamic" }
+      ]
     },
     {
       "label": "Vue Examples",
