@@ -20,7 +20,7 @@
       <div
         class:list-item-even={col.index % 2 === 0}
         class:list-item-odd={col.index % 2 === 1}
-        style="position: absolute; top: 0; left: 0; width: {col.size}px; height: 100%; transform: translateX({col.start}px)"
+        style="position: absolute; top: 0; left: 0; width: {col.size}px; height: 100%; transform: translateX({col.start}px);"
       >
         Column {col.index}
       </div>

@@ -36,7 +36,7 @@
         data-index={col.index}
         class:list-item-even={col.index % 2 === 0}
         class:list-item-odd={col.index % 2 === 1}
-        style="position: absolute; top: 0; left: 0; height: 100%; transform: translateX({col.start}px)"
+        style="position: absolute; top: 0; left: 0; height: 100%; transform: translateX({col.start}px);"
       >
         <div style="width: {sentences[col.index].length}px">
           <div>Column {col.index}</div>

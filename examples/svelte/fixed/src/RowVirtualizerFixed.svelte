@@ -19,7 +19,7 @@
       <div
         class:list-item-even={row.index % 2 === 0}
         class:list-item-odd={row.index % 2 === 1}
-        style="position: absolute; top: 0; left: 0; width: 100%; height: {row.size}px; transform: translateY({row.start}px)"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: {row.size}px; transform: translateY({row.start}px);"
       >
         Row {row.index}
       </div>

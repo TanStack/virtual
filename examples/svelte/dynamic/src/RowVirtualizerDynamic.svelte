@@ -61,7 +61,7 @@
       <div
         style="position: absolute; top: 0; left: 0; width: 100%; transform: translateY({items[0]
           ? items[0].start
-          : 0}px)"
+          : 0}px);"
       >
         {#each items as row, idx (row.index)}
           <div

@@ -34,6 +34,8 @@
     "./examples/react/variable",
     "./examples/react/window",
     "./examples/svelte/fixed",
+    "./examples/svelte/dynamic",
+    "./examples/svelte/infinite-scroll",
     "./examples/vue/dynamic",
     "./examples/vue/fixed",
     "./examples/vue/infinite-scroll",
