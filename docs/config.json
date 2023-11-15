@@ -48,7 +48,15 @@
     },
     {
       "label": "Svelte Examples",
-      "children": [{ "to": "#", "label": "Coming Soon!" }]
+      "children": [
+        { "to": "examples/svelte/fixed", "label": "Fixed" },
+        { "to": "examples/svelte/variable", "label": "Variable" },
+        { "to": "examples/svelte/dynamic", "label": "Dynamic" },
+        { "to": "examples/svelte/sticky", "label": "Sticky" },
+        { "to": "examples/svelte/infinite-scroll", "label": "Infinite Scroll" },
+        { "to": "examples/svelte/smooth-scroll", "label": "Smooth Scroll" },
+        { "to": "examples/svelte/table", "label": "Table" }
+      ]
     },
     {
       "label": "Vue Examples",

@@ -1,5 +1,5 @@
 ---
-title: Svelte Virtual (Coming Soon)
+title: Svelte Virtual
 ---
 
 The `@tanstack/svelte-virtual` adapter is a wrapper around the core virtual logic.
