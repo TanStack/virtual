@@ -84,7 +84,7 @@ async function run() {
 
       // Is it a major version?
       if (!semver.patch(process.env.TAG) && !semver.minor(process.env.TAG)) {
-        range = `beta..HEAD`
+        range = `HEAD`
         latestTag = process.env.TAG
       }
     } else {
@@ -355,7 +355,8 @@ async function run() {
             async (config) => {
               await Promise.all(
                 packages.map(async (pkg) => {
-                  config.dependencies[pkg.name] = version
+                  if (!config.dependencies![pkg.name]) return
+                  config.dependencies![pkg.name] = version
                 }),
               )
             },
