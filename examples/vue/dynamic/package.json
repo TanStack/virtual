@@ -1,0 +1,23 @@
+{
+  "name": "tanstack-vue-virtual-example-dynamic",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "volar-preview-vite --port 3001",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^7.6.0",
+    "@tanstack/vue-virtual": "^3.0.0-beta.65",
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@codesandbox/vue-preview": "^0.1.1-alpha.16",
+    "@vitejs/plugin-vue": "^4.4.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.11",
+    "vue-tsc": "^1.8.19"
+  }
+}
