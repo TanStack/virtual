@@ -35,4 +35,4 @@ Enjoy this library? Try the entire [TanStack](https://tanstack.com)! [React Quer
 - Imperative scrollTo control for offset, indices and alignment
 - Custom scrolling function support (eg. smooth scroll)
 
-<!-- Force  -->
+<!-- Use the Force, Luke!  -->
