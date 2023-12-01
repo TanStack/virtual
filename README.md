@@ -1,4 +1,4 @@
-![React Virtual Header](https://github.com/tanstack/virtual/raw/beta/media/header.png)
+![React Virtual Header](https://github.com/tanstack/virtual/raw/main/media/header.png)
 
 Headless UI for virtualizing scrollable elements in TS/JS and React
 
