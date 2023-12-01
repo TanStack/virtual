@@ -20,7 +20,7 @@ export type AuthorOrCommitter = {
 }
 
 export type Parsed = {
-  type: string | null
+  type: string
   scope?: string | null
   subject: string
   merge?: null
@@ -38,8 +38,18 @@ export type Package = {
   name: string
   packageDir: string
   srcDir: string
-  dependencies?: string[]
-  peerDependencies?: string[]
+  builds: Build[]
+}
+
+export type Build = {
+  jsName: string
+  entryFile: string
+  external?: (d: string) => any
+  globals?: Record<string, string>
+  esm?: boolean
+  cjs?: boolean
+  umd?: boolean
+  externals?: any[]
 }
 
 export type BranchConfig = {
