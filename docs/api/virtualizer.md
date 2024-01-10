@@ -26,7 +26,7 @@ The total number of items to virtualize.
 getScrollElement: () => TScrollElement
 ```
 
-A function that returns the scrollable element for the virtualizer. It may return undefined if the element is not available yet.
+A function that returns the scrollable element for the virtualizer. It may return null if the element is not available yet.
 
 ### `estimateSize`
 
