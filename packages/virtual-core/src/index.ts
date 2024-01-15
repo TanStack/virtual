@@ -75,6 +75,10 @@ export const observeElementRect = <T extends Element>(
 
   handler(element.getBoundingClientRect())
 
+  if (typeof ResizeObserver === 'undefined') {
+    return () => {}
+  }
+
   const observer = new ResizeObserver((entries) => {
     const entry = entries[0]
     if (entry?.borderBoxSize) {
