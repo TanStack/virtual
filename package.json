@@ -23,14 +23,16 @@
     "./packages/*",
     "./examples/react/*",
     "./examples/svelte/*",
-    "./examples/vue/*"
+    "./examples/vue/*",
+    "./examples/solid/*"
   ],
   "pnpm": {
     "overrides": {
       "@tanstack/virtual-core": "workspace:*",
       "@tanstack/react-virtual": "workspace:*",
       "@tanstack/svelte-virtual": "workspace:*",
-      "@tanstack/vue-virtual": "workspace:*"
+      "@tanstack/vue-virtual": "workspace:*",
+      "@tanstack/solid-virtual": "workspace:*"
     }
   },
   "devDependencies": {
