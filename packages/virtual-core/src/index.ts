@@ -654,8 +654,7 @@ export class Virtualizer<
 
     if (delta !== 0) {
       if (
-        (delta > 0 && item.start < this.scrollOffset) ||
-        (delta < 0 && item.start - delta < this.scrollOffset)
+        item.start < _this.scrollOffset + _this.scrollAdjustments
       ) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
