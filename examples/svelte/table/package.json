@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@tanstack/svelte-table": "^8.10.7",
-    "@tanstack/svelte-virtual": "3.0.1"
+    "@tanstack/svelte-virtual": "3.0.2"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.4.2",
