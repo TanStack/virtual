@@ -83,7 +83,7 @@
         {
           "label": "Getting Started",
           "children": [
-            { "label": "Solid Virtual", "to": "adapters/solid-virtual" }
+            { "label": "Solid Virtual", "to": "framework/solid/solid-virtual" }
           ]
         }
       ]
@@ -96,7 +96,7 @@
           "children": [
             {
               "label": "Svelte Virtual",
-              "to": "adapters/svelte-virtual"
+              "to": "framework/svelte/svelte-virtual"
             }
           ]
         },
@@ -104,31 +104,31 @@
           "label": "Examples",
           "children": [
             {
-              "to": "examples/svelte/fixed",
+              "to": "framework/svelte/examples/fixed",
               "label": "Fixed"
             },
             {
-              "to": "examples/svelte/variable",
+              "to": "framework/svelte/examples/variable",
               "label": "Variable"
             },
             {
-              "to": "examples/svelte/dynamic",
+              "to": "framework/svelte/examples/dynamic",
               "label": "Dynamic"
             },
             {
-              "to": "examples/svelte/sticky",
+              "to": "framework/svelte/examples/sticky",
               "label": "Sticky"
             },
             {
-              "to": "examples/svelte/infinite-scroll",
+              "to": "framework/svelte/examples/infinite-scroll",
               "label": "Infinite Scroll"
             },
             {
-              "to": "examples/svelte/smooth-scroll",
+              "to": "framework/svelte/examples/smooth-scroll",
               "label": "Smooth Scroll"
             },
             {
-              "to": "examples/svelte/table",
+              "to": "framework/svelte/examples/table",
               "label": "Table"
             }
           ]
@@ -143,7 +143,7 @@
           "children": [
             {
               "label": "Vue Virtual",
-              "to": "adapters/vue-virtual"
+              "to": "framework/vue/vue-virtual"
             }
           ]
         },
@@ -151,39 +151,39 @@
           "label": "Examples",
           "children": [
             {
-              "to": "examples/vue/fixed",
+              "to": "framework/vue/examples/fixed",
               "label": "Fixed"
             },
             {
-              "to": "examples/vue/variable",
+              "to": "framework/vue/examples/variable",
               "label": "Variable"
             },
             {
-              "to": "examples/vue/dynamic",
+              "to": "framework/vue/examples/dynamic",
               "label": "Dynamic"
             },
             {
-              "to": "examples/vue/sticky",
+              "to": "framework/vue/examples/sticky",
               "label": "Sticky"
             },
             {
-              "to": "examples/vue/infinite-scroll",
+              "to": "framework/vue/examples/infinite-scroll",
               "label": "Infinite Scroll"
             },
             {
-              "to": "examples/vue/smooth-scroll",
+              "to": "framework/vue/examples/smooth-scroll",
               "label": "Smooth Scroll"
             },
             {
-              "to": "examples/vue/table",
+              "to": "framework/vue/examples/table",
               "label": "Table"
             },
             {
-              "to": "examples/vue/padding",
+              "to": "framework/vue/examples/padding",
               "label": "Padding"
             },
             {
-              "to": "examples/vue/scroll-padding",
+              "to": "framework/vue/examples/scroll-padding",
               "label": "Scroll Padding"
             }
           ]
