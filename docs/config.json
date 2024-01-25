@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/TanStack/tanstack.com/main/tanstack-docs-config.schema.json",
   "docSearch": {
     "appId": "",
     "indexName": "",
@@ -6,19 +7,10 @@
   },
   "menu": [
     {
-      "label": "Guide",
+      "label": "Getting Started",
       "children": [
-        { "label": "Introduction", "to": "guide/introduction" },
-        { "label": "Installation", "to": "guide/installation" }
-      ]
-    },
-    {
-      "label": "Adapters",
-      "children": [
-        { "label": "React Virtual", "to": "adapters/react-virtual" },
-        { "label": "Solid Virtual", "to": "adapters/solid-virtual" },
-        { "label": "Svelte Virtual", "to": "adapters/svelte-virtual" },
-        { "label": "Vue Virtual", "to": "adapters/vue-virtual" }
+        { "label": "Introduction", "to": "introduction" },
+        { "label": "Installation", "to": "installation" }
       ]
     },
     {
@@ -27,49 +19,175 @@
         { "label": "Virtualizer", "to": "api/virtualizer" },
         { "label": "VirtualItem", "to": "api/virtual-item" }
       ]
-    },
+    }
+  ],
+  "frameworkMenus": [
     {
-      "label": "React Examples",
-      "children": [
-        { "to": "examples/react/fixed", "label": "Fixed" },
-        { "to": "examples/react/variable", "label": "Variable" },
-        { "to": "examples/react/dynamic", "label": "Dynamic" },
-        { "to": "examples/react/padding", "label": "Padding" },
-        { "to": "examples/react/sticky", "label": "Sticky" },
-        { "to": "examples/react/infinite-scroll", "label": "Infinite Scroll" },
-        { "to": "examples/react/smooth-scroll", "label": "Smooth Scroll" },
-        { "to": "examples/react/table", "label": "Table" },
-        { "to": "examples/react/window", "label": "Window" }
+      "framework": "react",
+      "menuItems": [
+        {
+          "label": "Getting Started",
+          "children": [
+            {
+              "label": "React Virtual",
+              "to": "framework/react/react-virtual"
+            }
+          ]
+        },
+        {
+          "label": "Examples",
+          "children": [
+            {
+              "to": "framework/react/examples/fixed",
+              "label": "Fixed"
+            },
+            {
+              "to": "framework/react/examples/variable",
+              "label": "Variable"
+            },
+            {
+              "to": "framework/react/examples/dynamic",
+              "label": "Dynamic"
+            },
+            {
+              "to": "framework/react/examples/padding",
+              "label": "Padding"
+            },
+            {
+              "to": "framework/react/examples/sticky",
+              "label": "Sticky"
+            },
+            {
+              "to": "framework/react/examples/infinite-scroll",
+              "label": "Infinite Scroll"
+            },
+            {
+              "to": "framework/react/examples/smooth-scroll",
+              "label": "Smooth Scroll"
+            },
+            {
+              "to": "framework/react/examples/table",
+              "label": "Table"
+            },
+            {
+              "to": "framework/react/examples/window",
+              "label": "Window"
+            }
+          ]
+        }
       ]
     },
     {
-      "label": "Solid Examples",
-      "children": [{ "to": "#", "label": "Coming Soon!" }]
-    },
-    {
-      "label": "Svelte Examples",
-      "children": [
-        { "to": "examples/svelte/fixed", "label": "Fixed" },
-        { "to": "examples/svelte/variable", "label": "Variable" },
-        { "to": "examples/svelte/dynamic", "label": "Dynamic" },
-        { "to": "examples/svelte/sticky", "label": "Sticky" },
-        { "to": "examples/svelte/infinite-scroll", "label": "Infinite Scroll" },
-        { "to": "examples/svelte/smooth-scroll", "label": "Smooth Scroll" },
-        { "to": "examples/svelte/table", "label": "Table" }
+      "framework": "solid",
+      "menuItems": [
+        {
+          "label": "Getting Started",
+          "children": [
+            { "label": "Solid Virtual", "to": "adapters/solid-virtual" }
+          ]
+        }
       ]
     },
     {
-      "label": "Vue Examples",
-      "children": [
-        { "to": "examples/vue/fixed", "label": "Fixed" },
-        { "to": "examples/vue/variable", "label": "Variable" },
-        { "to": "examples/vue/dynamic", "label": "Dynamic" },
-        { "to": "examples/vue/sticky", "label": "Sticky" },
-        { "to": "examples/vue/infinite-scroll", "label": "Infinite Scroll" },
-        { "to": "examples/vue/smooth-scroll", "label": "Smooth Scroll" },
-        { "to": "examples/vue/table", "label": "Table" },
-        { "to": "examples/vue/padding", "label": "Padding" },
-        { "to": "examples/vue/scroll-padding", "label": "Scroll Padding" }
+      "framework": "svelte",
+      "menuItems": [
+        {
+          "label": "Getting Started",
+          "children": [
+            {
+              "label": "Svelte Virtual",
+              "to": "adapters/svelte-virtual"
+            }
+          ]
+        },
+        {
+          "label": "Examples",
+          "children": [
+            {
+              "to": "examples/svelte/fixed",
+              "label": "Fixed"
+            },
+            {
+              "to": "examples/svelte/variable",
+              "label": "Variable"
+            },
+            {
+              "to": "examples/svelte/dynamic",
+              "label": "Dynamic"
+            },
+            {
+              "to": "examples/svelte/sticky",
+              "label": "Sticky"
+            },
+            {
+              "to": "examples/svelte/infinite-scroll",
+              "label": "Infinite Scroll"
+            },
+            {
+              "to": "examples/svelte/smooth-scroll",
+              "label": "Smooth Scroll"
+            },
+            {
+              "to": "examples/svelte/table",
+              "label": "Table"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "framework": "vue",
+      "menuItems": [
+        {
+          "label": "Getting Started",
+          "children": [
+            {
+              "label": "Vue Virtual",
+              "to": "adapters/vue-virtual"
+            }
+          ]
+        },
+        {
+          "label": "Examples",
+          "children": [
+            {
+              "to": "examples/vue/fixed",
+              "label": "Fixed"
+            },
+            {
+              "to": "examples/vue/variable",
+              "label": "Variable"
+            },
+            {
+              "to": "examples/vue/dynamic",
+              "label": "Dynamic"
+            },
+            {
+              "to": "examples/vue/sticky",
+              "label": "Sticky"
+            },
+            {
+              "to": "examples/vue/infinite-scroll",
+              "label": "Infinite Scroll"
+            },
+            {
+              "to": "examples/vue/smooth-scroll",
+              "label": "Smooth Scroll"
+            },
+            {
+              "to": "examples/vue/table",
+              "label": "Table"
+            },
+            {
+              "to": "examples/vue/padding",
+              "label": "Padding"
+            },
+            {
+              "to": "examples/vue/scroll-padding",
+              "label": "Scroll Padding"
+            }
+          ]
+        }
       ]
     }
   ]
