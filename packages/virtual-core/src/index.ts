@@ -503,7 +503,13 @@ export class Virtualizer<
 
     return furthestMeasurements.size === this.options.lanes
       ? Array.from(furthestMeasurements.values()).sort(
-          (a, b) => a.end - b.end,
+          (a, b) => {
+            if (a.end === b.end) {
+              return a.index - b.index;
+            }
+            
+            return a.end - b.end;
+          },
         )[0]
       : undefined
   }
