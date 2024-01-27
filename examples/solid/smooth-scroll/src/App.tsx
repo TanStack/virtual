@@ -3,7 +3,7 @@ import {
   createVirtualizer,
   elementScroll,
 } from '@tanstack/solid-virtual'
-import { For, createSignal } from 'solid-js'
+import { For, createSignal, onMount } from 'solid-js'
 
 function App() {
   return (
@@ -31,40 +31,43 @@ function generateRandomIndex() {
 
 function RowVirtualizer() {
   let parentRef!: HTMLDivElement
-  let scrollingRef!: number
+  let time = Date.now()
 
-  const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] = (
-    offset,
-    canSmooth,
-    instance,
-  ) => {
-    const duration = 1000
-    const start = parentRef?.scrollTop
-    const startTime = (scrollingRef = Date.now())
+  const [scrollToFn, setScrollToFn] =
+    createSignal<VirtualizerOptions<any, any>['scrollToFn']>()
 
-    const run = () => {
-      if (scrollingRef !== startTime) return
-      const now = Date.now()
-      const elapsed = now - startTime
-      const progress = easeInOutQuint(Math.min(elapsed / duration, 1))
-      const interpolated = start + (offset - start) * progress
+  onMount(() => {
+    setScrollToFn(() => (offset, canSmooth, instance) => {
+      const duration = 1000
+      const start = parentRef.scrollTop
+      const startTime = (time = Date.now())
 
-      if (elapsed < duration) {
-        elementScroll(interpolated, canSmooth, instance)
-        requestAnimationFrame(run)
-      } else {
-        elementScroll(interpolated, canSmooth, instance)
+      const run = () => {
+        if (time !== startTime) return
+        const now = Date.now()
+        const elapsed = now - startTime
+        const progress = easeInOutQuint(Math.min(elapsed / duration, 1))
+        const interpolated = start + (offset - start) * progress
+
+        if (elapsed < duration) {
+          elementScroll(interpolated, canSmooth, instance)
+          requestAnimationFrame(run)
+        } else {
+          elementScroll(interpolated, canSmooth, instance)
+        }
       }
-    }
 
-    requestAnimationFrame(run)
-  }
+      requestAnimationFrame(run)
+    })
+  })
 
   const rowVirtualizer = createVirtualizer({
     count: 10000,
     getScrollElement: () => parentRef,
     estimateSize: () => 35,
-    scrollToFn,
+    get scrollToFn() {
+      return scrollToFn()
+    },
   })
 
   const [randomIndex, setRandomIndex] = createSignal(generateRandomIndex())
@@ -75,7 +78,7 @@ function RowVirtualizer() {
         <button
           onClick={() => {
             rowVirtualizer.scrollToIndex(randomIndex())
-            setRandomIndex(generateRandomIndex)
+            setRandomIndex(generateRandomIndex())
           }}
         >
           Scroll To Random Index ({randomIndex()})
