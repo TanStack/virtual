@@ -1,0 +1,21 @@
+{
+  "name": "dynamic",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@faker-js/faker": "7.6.0",
+    "@tanstack/solid-virtual": "3.0.1",
+    "solid-js": "^1.8.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vite-plugin-solid": "^2.8.0"
+  }
+}
