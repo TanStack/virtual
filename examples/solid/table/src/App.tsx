@@ -108,11 +108,11 @@ function App() {
                         >
                           <Show when={!header.isPlaceholder}>
                             <div
-                              class={
-                                header.column.getCanSort()
-                                  ? 'cursor-pointer select-none'
-                                  : undefined
-                              }
+                              class="text-left"
+                              classList={{
+                                'cursor-pointer select-none':
+                                  header.column.getCanSort(),
+                              }}
                               onClick={header.column.getToggleSortingHandler()}
                             >
                               {flexRender(
