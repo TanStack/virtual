@@ -42,8 +42,8 @@ function RowVirtualizerFixed() {
         ref={parentRef}
         class="List"
         style={{
-          height: `200px`,
-          width: `400px`,
+          height: '200px',
+          width: '400px',
           overflow: 'auto',
         }}
       >
@@ -94,8 +94,8 @@ function ColumnVirtualizerFixed() {
         ref={parentRef}
         class="List"
         style={{
-          width: `400px`,
-          height: `100px`,
+          width: '400px',
+          height: '100px',
           overflow: 'auto',
         }}
       >
@@ -153,8 +153,8 @@ function GridVirtualizerFixed() {
         ref={parentRef}
         class="List"
         style={{
-          height: `500px`,
-          width: `500px`,
+          height: '500px',
+          width: '500px',
           overflow: 'auto',
         }}
       >

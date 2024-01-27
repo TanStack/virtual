@@ -57,8 +57,8 @@ function RowVirtualizerVariable() {
         ref={parentRef}
         class="List"
         style={{
-          height: `200px`,
-          width: `400px`,
+          height: '200px',
+          width: '400px',
           overflow: 'auto',
         }}
       >
@@ -109,8 +109,8 @@ function ColumnVirtualizerVariable() {
         ref={parentRef}
         class="List"
         style={{
-          width: `400px`,
-          height: `100px`,
+          width: '400px',
+          height: '100px',
           overflow: 'auto',
         }}
       >
@@ -168,8 +168,8 @@ function GridVirtualizerVariable() {
         ref={parentRef}
         class="List"
         style={{
-          height: `400px`,
-          width: `500px`,
+          height: '400px',
+          width: '500px',
           overflow: 'auto',
         }}
       >
@@ -232,8 +232,8 @@ function MasonryVerticalVirtualizerVariable() {
         ref={parentRef}
         class="List"
         style={{
-          height: `200px`,
-          width: `400px`,
+          height: '200px',
+          width: '400px',
           overflow: 'auto',
         }}
       >
@@ -285,8 +285,8 @@ function MasonryHorizontalVirtualizerVariable() {
         ref={parentRef}
         class="List"
         style={{
-          width: `500px`,
-          height: `400px`,
+          width: '500px',
+          height: '400px',
           overflow: 'auto',
         }}
       >
