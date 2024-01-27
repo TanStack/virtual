@@ -1,0 +1,23 @@
+{
+  "name": "sticky",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^8.4.0",
+    "@tanstack/solid-virtual": "3.0.1",
+    "lodash": "^4.17.21",
+    "solid-js": "^1.8.7"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.202",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vite-plugin-solid": "^2.8.0"
+  }
+}
