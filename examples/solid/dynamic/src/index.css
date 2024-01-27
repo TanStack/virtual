@@ -21,3 +21,7 @@ body {
 .ListItemEven {
   background-color: #e6e4dc;
 }
+
+button {
+  border: 1px solid gray;
+}
