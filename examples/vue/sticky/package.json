@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^7.6.0",
-    "@tanstack/vue-virtual": "3.0.3",
+    "@tanstack/vue-virtual": "3.0.4",
     "lodash": "^4.17.21",
     "vue": "^3.3.4"
   },

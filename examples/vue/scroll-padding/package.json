@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tanstack/vue-virtual": "3.0.3",
+    "@tanstack/vue-virtual": "3.0.4",
     "@vueuse/core": "^10.5.0",
     "vue": "^3.3.4"
   },
