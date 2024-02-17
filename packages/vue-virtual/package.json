@@ -46,7 +46,7 @@
     "vue": "^3.2.45"
   },
   "dependencies": {
-    "@tanstack/virtual-core": "3.0.0"
+    "@tanstack/virtual-core": "workspace:*"
   },
   "peerDependencies": {
     "vue": "^2.7.0 || ^3.0.0"

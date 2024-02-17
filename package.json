@@ -1,6 +1,7 @@
 {
   "private": true,
   "repository": "https://github.com/tanstack/react-virtual.git",
+  "packageManager": "pnpm@8.15.1",
   "scripts": {
     "clean-dist": "pnpm -rc --parallel exec 'rm -rf build dist'",
     "clean-all": "pnpm -rc --parallel exec 'rm -rf build dist node_modules'",
@@ -19,20 +20,6 @@
     "typecheck-perf": "tsc -b --generateTrace ts-perf"
   },
   "namespace": "@tanstack",
-  "workspaces": [
-    "./packages/*",
-    "./examples/react/*",
-    "./examples/svelte/*",
-    "./examples/vue/*"
-  ],
-  "pnpm": {
-    "overrides": {
-      "@tanstack/virtual-core": "workspace:*",
-      "@tanstack/react-virtual": "workspace:*",
-      "@tanstack/svelte-virtual": "workspace:*",
-      "@tanstack/vue-virtual": "workspace:*"
-    }
-  },
   "devDependencies": {
     "@babel/core": "^7.20.2",
     "@babel/plugin-transform-modules-commonjs": "^7.19.6",
@@ -44,6 +31,7 @@
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-node-resolve": "^13.2.1",
     "@rollup/plugin-replace": "^4.0.0",
+    "@tanstack/config": "^0.5.0",
     "@testing-library/jest-dom": "^5.16.4",
     "@types/luxon": "^2.3.1",
     "@types/node": "^17.0.25",

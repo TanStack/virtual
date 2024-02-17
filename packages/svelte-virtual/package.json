@@ -46,7 +46,7 @@
     "svelte": "^4.2.2"
   },
   "dependencies": {
-    "@tanstack/virtual-core": "3.0.0"
+    "@tanstack/virtual-core": "workspace:*"
   },
   "peerDependencies": {
     "svelte": "^3.48.0 || ^4.0.0"
