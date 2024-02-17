@@ -40,6 +40,7 @@ stats.html
 .cache
 .nx/cache
 .pnpm-store
+.svelte-kit
 
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
