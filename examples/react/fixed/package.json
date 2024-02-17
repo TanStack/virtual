@@ -1,5 +1,5 @@
 {
-  "name": "fixed",
+  "name": "tanstack-react-virtual-example-fixed",
   "private": true,
   "scripts": {
     "dev": "vite",
