@@ -1,16 +1,43 @@
 {
   "name": "@tanstack/react-virtual",
-  "author": "Tanner Linsley",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "description": "Headless UI for virtualizing scrollable elements in React",
+  "author": "Tanner Linsley",
   "license": "MIT",
-  "homepage": "https://github.com/tanstack/virtual#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tanstack/virtual.git"
   },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+  "homepage": "https://github.com/tanstack/virtual#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "type": "module",
+  "types": "dist/esm/index.d.ts",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rimraf ./dist && rimraf ./coverage",
+    "test:types": "tsc",
+    "test:lib": "vitest",
+    "test:lib:dev": "pnpm run test:lib --watch",
+    "test:build": "publint --strict",
+    "build": "vite build"
   },
   "keywords": [
     "react",
@@ -20,37 +47,21 @@
     "virtual-core",
     "datagrid"
   ],
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/sponsors/tannerlinsley"
-  },
-  "types": "build/lib/index.d.ts",
-  "main": "build/lib/index.js",
-  "module": "build/lib/index.esm.js",
-  "exports": {
-    ".": {
-      "types": "./build/lib/index.d.ts",
-      "import": "./build/lib/index.mjs",
-      "default": "./build/lib/index.js"
-    },
-    "./package.json": "./package.json"
-  },
-  "sideEffects": false,
   "files": [
-    "build/lib/*",
-    "build/umd/*",
+    "dist",
     "src"
   ],
+  "dependencies": {
+    "@tanstack/virtual-core": "workspace:*"
+  },
   "devDependencies": {
-    "@testing-library/react": "^13.4.0",
-    "@types/react": "18.0.26",
-    "@types/react-dom": "18.0.10",
+    "@testing-library/react": "^14.2.1",
+    "@types/react": "^18.2.56",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "resize-observer-polyfill": "^1.5.1"
-  },
-  "dependencies": {
-    "@tanstack/virtual-core": "3.0.0"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0",

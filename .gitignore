@@ -37,6 +37,10 @@ stats.html
 
 *.log
 .DS_Store
-node_modules
 .cache
-dist
+.nx/cache
+.pnpm-store
+.svelte-kit
+
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
