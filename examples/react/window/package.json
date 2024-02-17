@@ -1,5 +1,5 @@
 {
-  "name": "window",
+  "name": "tanstack-react-virtual-example-window",
   "private": true,
   "scripts": {
     "dev": "vite",
