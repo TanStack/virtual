@@ -39,7 +39,7 @@ jobs:
         run: pnpm install --frozen-lockfile --prefer-offline
       - name: Run Tests
         run: pnpm run test:ci
-- name: Publish
+      - name: Publish
         run: |
           git config --global user.name 'Tanner Linsley'
           git config --global user.email 'tannerlinsley@users.noreply.github.com'
