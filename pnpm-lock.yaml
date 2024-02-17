@@ -14,27 +14,9 @@ importers:
       '@testing-library/jest-dom':
         specifier: ^6.4.2
         version: 6.4.2(vitest@0.34.6)
-      '@testing-library/react':
-        specifier: ^12.1.2
-        version: 12.1.5(react-dom@18.2.0)(react@18.2.0)
-      '@testing-library/react-hooks':
-        specifier: ^7.0.2
-        version: 7.0.2(react-dom@18.2.0)(react@18.2.0)
-      '@tsconfig/svelte':
-        specifier: ^3.0.0
-        version: 3.0.0
       '@types/node':
         specifier: ^17.0.25
         version: 17.0.45
-      '@types/react':
-        specifier: ^18.0.27
-        version: 18.2.39
-      '@types/react-dom':
-        specifier: ^18.0.10
-        version: 18.0.10
-      axios:
-        specifier: ^0.26.1
-        version: 0.26.1
       jsdom:
         specifier: ^24.0.0
         version: 24.0.0
@@ -50,39 +32,21 @@ importers:
       publint:
         specifier: ^0.2.7
         version: 0.2.7
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
       rimraf:
         specifier: ^5.0.5
         version: 5.0.5
       sherif:
         specifier: ^0.7.0
         version: 0.7.0
-      solid-js:
-        specifier: ^1.6.5
-        version: 1.8.6
-      svelte:
-        specifier: ^3.55.0
-        version: 3.59.2
       typescript:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^4.4.9
+        specifier: ^4.4.11
         version: 4.5.0(@types/node@17.0.45)
       vitest:
         specifier: ^0.34.3
         version: 0.34.6(jsdom@24.0.0)
-      vue:
-        specifier: ^3.2.33
-        version: 3.3.9(typescript@5.2.2)
-      zod:
-        specifier: ^3.20.2
-        version: 3.22.4
 
   examples/react/dynamic:
     dependencies:
@@ -160,6 +124,9 @@ importers:
       '@tanstack/react-virtual':
         specifier: ^3.1.0
         version: link:../../../packages/react-virtual
+      axios:
+        specifier: ^0.26.1
+        version: 0.26.1
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -2108,42 +2075,6 @@ packages:
       vitest: 0.34.6(jsdom@24.0.0)
     dev: true
 
-  /@testing-library/react-hooks@7.0.2(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-dYxpz8u9m4q1TuzfcUApqi8iFfR6R0FaMbr2hjZJy1uC8z+bO/K4v8Gs9eogGKYQop7QsrBTFkv/BCF7MzD2Cg==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      react: '>=16.9.0'
-      react-dom: '>=16.9.0'
-      react-test-renderer: '>=16.9.0'
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
-      react-test-renderer:
-        optional: true
-    dependencies:
-      '@babel/runtime': 7.23.5
-      '@types/react': 18.2.39
-      '@types/react-dom': 18.0.10
-      '@types/react-test-renderer': 18.0.7
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      react-error-boundary: 3.1.4(react@18.2.0)
-    dev: true
-
-  /@testing-library/react@12.1.5(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-OfTXCJUFgjd/digLUuPxa0+/3ZxsQmE7ub9kcbW/wi96Bh3o/p5vrETcBGfP17NWPGqeYYl5LTRpwyGoMC4ysg==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      react: <18.0.0
-      react-dom: <18.0.0
-    dependencies:
-      '@babel/runtime': 7.23.5
-      '@testing-library/dom': 8.20.1
-      '@types/react-dom': 17.0.25
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-    dev: true
-
   /@testing-library/react@13.4.0(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-sXOGON+WNTh3MLE9rve97ftaZukN3oNf2KjDy7YTx6hcTO2uuLHuCGynMDhFwGw/jYf4OJ2Qk0i4i79qMNNkyw==}
     engines: {node: '>=12'}
@@ -2156,10 +2087,6 @@ packages:
       '@types/react-dom': 18.0.10
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-    dev: true
-
-  /@tsconfig/svelte@3.0.0:
-    resolution: {integrity: sha512-pYrtLtOwku/7r1i9AMONsJMVYAtk3hzOfiGNekhtq5tYBGA7unMve8RvUclKLMT3PrihvJqUmzsRGh0RP84hKg==}
     dev: true
 
   /@tsconfig/svelte@5.0.2:
@@ -2238,30 +2165,10 @@ packages:
     resolution: {integrity: sha512-Sk/uYFOBAB7mb74XcpizmH0KOR2Pv3D2Hmrh1Dmy5BmK3MpdSa5kqZcg6EKBdklU0bFXX9gCfzvpnyUehrPIuA==}
     dev: true
 
-  /@types/react-dom@17.0.25:
-    resolution: {integrity: sha512-urx7A7UxkZQmThYA4So0NelOVjx3V4rNFVJwp0WZlbIK5eM4rNJDiN3R/E9ix0MBh6kAEojk/9YL+Te6D9zHNA==}
-    dependencies:
-      '@types/react': 17.0.71
-    dev: true
-
   /@types/react-dom@18.0.10:
     resolution: {integrity: sha512-E42GW/JA4Qv15wQdqJq8DL4JhNpB3prJgjgapN3qJT9K2zO5IIAQh4VXvCEDupoqAwnz0cY4RlXeC/ajX5SFHg==}
     dependencies:
       '@types/react': 18.2.39
-    dev: true
-
-  /@types/react-test-renderer@18.0.7:
-    resolution: {integrity: sha512-1+ANPOWc6rB3IkSnElhjv6VLlKg2dSv/OWClUyZimbLsQyBn8Js9Vtdsi3UICJ2rIQ3k2la06dkB+C92QfhKmg==}
-    dependencies:
-      '@types/react': 18.2.39
-    dev: true
-
-  /@types/react@17.0.71:
-    resolution: {integrity: sha512-lfqOu9mp16nmaGRrS8deS2Taqhd5Ih0o92Te5Ws6I1py4ytHBcXLqh0YIqVsViqwVI5f+haiFM6hju814BzcmA==}
-    dependencies:
-      '@types/prop-types': 15.7.11
-      '@types/scheduler': 0.16.8
-      csstype: 3.1.2
     dev: true
 
   /@types/react@18.2.39:
@@ -2705,10 +2612,10 @@ packages:
   /axios@0.26.1:
     resolution: {integrity: sha512-fPwcX4EvnSHuInCMItEhAGnaSEXRBjtzh9fOtsE6E1G6p7vl7edEeZe11QHf18+6+9gR5PbKV/sGKNaD8YaMeA==}
     dependencies:
-      follow-redirects: 1.15.3
+      follow-redirects: 1.15.5
     transitivePeerDependencies:
       - debug
-    dev: true
+    dev: false
 
   /axios@1.6.7:
     resolution: {integrity: sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==}
@@ -3549,16 +3456,6 @@ packages:
     hasBin: true
     dev: true
 
-  /follow-redirects@1.15.3:
-    resolution: {integrity: sha512-1VzOtuEM8pC9SFU1E+8KfTjZyMztRsgEfwQl44z8A25uy13jSzTj6dyK2Df52iV0vgHCfBwLhDWevLn95w5v6Q==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dev: true
-
   /follow-redirects@1.15.5:
     resolution: {integrity: sha512-vSFWUON1B+yAw1VN4xMfxgn5fTUiaOzAJCKBwIIgT/+7CuGy9+r+5gITvP62j3RmaD5Ph65UaERdOSRGUzZtgw==}
     engines: {node: '>=4.0'}
@@ -3567,7 +3464,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dev: true
 
   /for-each@0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -5307,16 +5203,6 @@ packages:
       react: 18.2.0
       scheduler: 0.23.0
 
-  /react-error-boundary@3.1.4(react@18.2.0):
-    resolution: {integrity: sha512-uM9uPzZJTF6wRQORmSrvOIgt4lJ9MC1sNgEOj2XGsDTRE4kmpWxg7ENK9EWNKJRMAOY9z0MuF4yIfl6gp4sotA==}
-    engines: {node: '>=10', npm: '>=6'}
-    peerDependencies:
-      react: '>=16.13.1'
-    dependencies:
-      '@babel/runtime': 7.23.5
-      react: 18.2.0
-    dev: true
-
   /react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
     dev: true
@@ -6078,11 +5964,6 @@ packages:
       pascal-case: 3.1.2
       svelte: 4.2.8
       typescript: 5.2.2
-    dev: true
-
-  /svelte@3.59.2:
-    resolution: {integrity: sha512-vzSyuGr3eEoAtT/A6bmajosJZIUWySzY2CzB3w2pgPvnkUjGqlDnsNnA0PMO+mMAhuyMul6C2uuZzY6ELSkzyA==}
-    engines: {node: '>= 8'}
     dev: true
 
   /svelte@4.2.8:

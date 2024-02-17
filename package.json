@@ -40,28 +40,16 @@
   "devDependencies": {
     "@tanstack/config": "^0.5.0",
     "@testing-library/jest-dom": "^6.4.2",
-    "@testing-library/react": "^12.1.2",
-    "@testing-library/react-hooks": "^7.0.2",
-    "@tsconfig/svelte": "^3.0.0",
     "@types/node": "^17.0.25",
-    "@types/react": "^18.0.27",
-    "@types/react-dom": "^18.0.10",
-    "axios": "^0.26.1",
     "jsdom": "^24.0.0",
     "knip": "^4.6.0",
     "nx": "^18.0.4",
     "prettier": "^3.2.5",
     "publint": "^0.2.7",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "rimraf": "^5.0.5",
     "sherif": "^0.7.0",
-    "solid-js": "^1.6.5",
-    "svelte": "^3.55.0",
     "typescript": "5.2.2",
-    "vite": "^4.4.9",
-    "vitest": "^0.34.3",
-    "vue": "^3.2.33",
-    "zod": "^3.20.2"
+    "vite": "^4.4.11",
+    "vitest": "^0.34.3"
   }
 }
