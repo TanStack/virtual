@@ -57,7 +57,7 @@
     "@tanstack/virtual-core": "workspace:*"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.4.0",
+    "@vitejs/plugin-vue": "^5.0.4",
     "vue": "^3.3.4"
   },
   "peerDependencies": {
