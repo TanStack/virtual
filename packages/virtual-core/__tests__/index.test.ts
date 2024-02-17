@@ -1,3 +1,4 @@
+import { expect, test, vi } from 'vitest'
 import { Virtualizer } from '../src/index'
 
 test('should export the Virtualizer class', () => {
@@ -9,9 +10,9 @@ test('should return empty items for empty scroll element', () => {
     count: 100,
     getScrollElement: () => null,
     estimateSize: () => 50,
-    scrollToFn: jest.fn(),
-    observeElementRect: jest.fn(),
-    observeElementOffset: jest.fn(),
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
   })
   expect(virtualizer.getVirtualItems()).toEqual([])
 })

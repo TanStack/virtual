@@ -211,8 +211,8 @@ function GridVirtualizerDynamic({ rows, columns }) {
                           ? 'ListItemOdd'
                           : 'ListItemEven'
                         : virtualRow.index % 2
-                        ? 'ListItemOdd'
-                        : 'ListItemEven'
+                          ? 'ListItemOdd'
+                          : 'ListItemEven'
                     }
                     style={{
                       position: 'absolute',

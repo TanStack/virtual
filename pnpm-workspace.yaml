@@ -1,3 +1,5 @@
 packages:
   - 'packages/*'
-  - 'examples/*/*'
+  - 'examples/react/*'
+  - 'examples/svelte/*'
+  - 'examples/vue/*'
