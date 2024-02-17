@@ -24,8 +24,6 @@ coverage
 .env.test.local
 .env.production.local
 .next
-.nx/cache
-.pnpm-store
 
 npm-debug.log*
 yarn-debug.log*
@@ -39,6 +37,9 @@ stats.html
 
 *.log
 .DS_Store
-node_modules
 .cache
-dist
+.nx/cache
+.pnpm-store
+
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
