@@ -1,0 +1,4 @@
+{
+  "$schema": "https://unpkg.com/knip@4/schema.json",
+  "ignoreWorkspaces": ["examples/**"]
+}
