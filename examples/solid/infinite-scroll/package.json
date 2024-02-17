@@ -1,5 +1,5 @@
 {
-  "name": "infinite-scroll",
+  "name": "tanstack-solid-virtual-example-infinite-scroll",
   "private": true,
   "version": "0.0.0",
   "type": "module",

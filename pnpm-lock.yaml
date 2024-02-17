@@ -51,8 +51,8 @@ importers:
   examples/react/dynamic:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/react-virtual':
         specifier: ^3.1.0
         version: link:../../../packages/react-virtual
@@ -219,8 +219,8 @@ importers:
   examples/react/sticky:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/react-virtual':
         specifier: ^3.1.0
         version: link:../../../packages/react-virtual
@@ -247,8 +247,8 @@ importers:
   examples/react/table:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/react-table':
         specifier: ^8.7.9
         version: 8.10.7(react-dom@18.2.0)(react@18.2.0)
@@ -334,8 +334,8 @@ importers:
   examples/solid/dynamic:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/solid-virtual':
         specifier: 3.0.1
         version: 3.0.1(solid-js@1.8.15)
@@ -454,8 +454,8 @@ importers:
   examples/solid/sticky:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/solid-virtual':
         specifier: 3.0.1
         version: 3.0.1(solid-js@1.8.15)
@@ -482,8 +482,8 @@ importers:
   examples/solid/table:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/solid-table':
         specifier: ^8.11.7
         version: 8.12.0(solid-js@1.8.15)
@@ -545,8 +545,8 @@ importers:
   examples/svelte/dynamic:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/svelte-virtual':
         specifier: 3.0.4
         version: link:../../../packages/svelte-virtual
@@ -635,8 +635,8 @@ importers:
   examples/svelte/smooth-scroll:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/svelte-virtual':
         specifier: 3.0.4
         version: link:../../../packages/svelte-virtual
@@ -666,8 +666,8 @@ importers:
   examples/svelte/sticky:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/svelte-virtual':
         specifier: 3.0.4
         version: link:../../../packages/svelte-virtual
@@ -700,8 +700,8 @@ importers:
   examples/svelte/table:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/svelte-table':
         specifier: ^8.10.7
         version: 8.10.7(svelte@4.2.8)
@@ -734,8 +734,8 @@ importers:
   examples/vue/dynamic:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/vue-virtual':
         specifier: ^3.1.0
         version: link:../../../packages/vue-virtual
@@ -893,8 +893,8 @@ importers:
   examples/vue/sticky:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/vue-virtual':
         specifier: ^3.1.0
         version: link:../../../packages/vue-virtual
@@ -927,8 +927,8 @@ importers:
   examples/vue/table:
     dependencies:
       '@faker-js/faker':
-        specifier: ^7.6.0
-        version: 7.6.0
+        specifier: ^8.3.1
+        version: 8.4.1
       '@tanstack/vue-table':
         specifier: ^8.10.7
         version: 8.10.7(vue@3.3.9)
@@ -1561,9 +1561,9 @@ packages:
     dev: true
     optional: true
 
-  /@faker-js/faker@7.6.0:
-    resolution: {integrity: sha512-XK6BTq1NDMo9Xqw/YkYyGjSsg44fbNwYRx7QK2CuoQgyy+f1rrTDHoExVM5PsyXCtfl2vs2vVJ0MN0yN6LppRw==}
-    engines: {node: '>=14.0.0', npm: '>=6.0.0'}
+  /@faker-js/faker@8.4.1:
+    resolution: {integrity: sha512-XQ3cU+Q8Uqmrbf2e0cIC/QN43sTBSC8KF12u29Mb47tWrt2hAgBXSgpZMj4Ao8Uk0iJcU99QsOCaIL8934obCg==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0, npm: '>=6.14.13'}
     dev: false
 
   /@isaacs/cliui@8.0.2:
