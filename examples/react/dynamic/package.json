@@ -1,5 +1,5 @@
 {
-  "name": "dynamic",
+  "name": "tanstack-react-virtual-example-dynamic",
   "private": true,
   "scripts": {
     "dev": "vite",
