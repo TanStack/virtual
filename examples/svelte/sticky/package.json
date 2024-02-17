@@ -10,7 +10,9 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@tanstack/svelte-virtual": "3.0.4"
+    "@faker-js/faker": "^7.6.0",
+    "@tanstack/svelte-virtual": "3.0.4",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.0.2",

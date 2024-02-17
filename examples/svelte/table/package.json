@@ -10,6 +10,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
+    "@faker-js/faker": "^7.6.0",
     "@tanstack/svelte-table": "^8.10.7",
     "@tanstack/svelte-virtual": "3.0.4"
   },

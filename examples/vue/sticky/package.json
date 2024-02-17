@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "volar-preview-vite --port 3001",
-    "build": "vue-tsc && vite build",
+    "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@codesandbox/vue-preview": "^0.1.1-alpha.16",
+    "@types/lodash": "^4.14.202",
     "@vitejs/plugin-vue": "^5.0.4",
     "typescript": "5.2.2",
     "vite": "^5.1.3",
