@@ -1,11 +1,7 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "composite": true,
-    "rootDir": "./src",
-    "outDir": "./build/lib",
-    "tsBuildInfoFile": "./build/.tsbuildinfo"
+    "jsx": "react"
   },
-  "include": ["src"],
-  "references": [{ "path": "../virtual-core" }]
+  "include": ["src", "vite.config.ts"]
 }

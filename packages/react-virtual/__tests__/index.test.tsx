@@ -1,3 +1,4 @@
+import { beforeEach, vi, test, expect } from 'vitest'
 import * as React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 
@@ -16,7 +17,7 @@ beforeEach(() => {
   })
 })
 
-let renderer: jest.Mock<undefined, []>
+let renderer: vi.Mock<undefined, []>
 
 interface ListProps {
   count?: number
@@ -103,7 +104,7 @@ function List({
 }
 
 beforeEach(() => {
-  renderer = jest.fn(() => undefined)
+  renderer = vi.fn(() => undefined)
 })
 
 test('should render', () => {

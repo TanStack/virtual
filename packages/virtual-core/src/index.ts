@@ -502,15 +502,13 @@ export class Virtualizer<
     }
 
     return furthestMeasurements.size === this.options.lanes
-      ? Array.from(furthestMeasurements.values()).sort(
-          (a, b) => {
-            if (a.end === b.end) {
-              return a.index - b.index;
-            }
-            
-            return a.end - b.end;
-          },
-        )[0]
+      ? Array.from(furthestMeasurements.values()).sort((a, b) => {
+          if (a.end === b.end) {
+            return a.index - b.index
+          }
+
+          return a.end - b.end
+        })[0]
       : undefined
   }
 
@@ -659,9 +657,7 @@ export class Virtualizer<
     const delta = size - itemSize
 
     if (delta !== 0) {
-      if (
-        item.start < this.scrollOffset + this.scrollAdjustments
-      ) {
+      if (item.start < this.scrollOffset + this.scrollAdjustments) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
         }
@@ -868,22 +864,23 @@ export class Virtualizer<
   }
 
   getTotalSize = () => {
-    const measurements = this.getMeasurements();
+    const measurements = this.getMeasurements()
 
-    let end: number;
+    let end: number
     // If there are no measurements, set the end to paddingStart
     if (measurements.length === 0) {
-      end = this.options.paddingStart;
+      end = this.options.paddingStart
     } else {
       // If lanes is 1, use the last measurement's end, otherwise find the maximum end value among all measurements
-      end = this.options.lanes === 1 
-      ? (measurements[measurements.length - 1]?.end ?? 0)
-      : Math.max(...measurements.slice(-this.options.lanes).map((m) => m.end));
+      end =
+        this.options.lanes === 1
+          ? measurements[measurements.length - 1]?.end ?? 0
+          : Math.max(
+              ...measurements.slice(-this.options.lanes).map((m) => m.end),
+            )
     }
 
-   return end -
-    this.options.scrollMargin +
-    this.options.paddingEnd
+    return end - this.options.scrollMargin + this.options.paddingEnd
   }
 
   private _scrollToOffset = (
