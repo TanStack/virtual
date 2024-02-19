@@ -37,7 +37,7 @@ export interface VirtualItem {
   lane: number
 }
 
-interface Rect {
+export interface Rect {
   width: number
   height: number
 }
