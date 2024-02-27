@@ -21,6 +21,10 @@ export const packages = [
     packageDir: 'packages/solid-virtual',
   },
   {
+    name: '@tanstack/svelte-virtual',
+    packageDir: 'packages/svelte-virtual',
+  },
+  {
     name: '@tanstack/vue-virtual',
     packageDir: 'packages/vue-virtual',
   },
