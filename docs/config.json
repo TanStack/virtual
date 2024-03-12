@@ -1,32 +1,20 @@
 {
-  "$schema": "https://raw.githubusercontent.com/TanStack/tanstack.com/main/tanstack-docs-config.schema.json",
+  "$schema": "https://raw.githubusercontent.com/TanStack/tanstack.com/docs-sidebar-restructure/tanstack-docs-config.schema.json",
   "docSearch": {
     "appId": "",
     "indexName": "",
     "apiKey": ""
   },
-  "menu": [
+  "sections": [
     {
       "label": "Getting Started",
       "children": [
         { "label": "Introduction", "to": "introduction" },
         { "label": "Installation", "to": "installation" }
-      ]
-    },
-    {
-      "label": "Core APIs",
-      "children": [
-        { "label": "Virtualizer", "to": "api/virtualizer" },
-        { "label": "VirtualItem", "to": "api/virtual-item" }
-      ]
-    }
-  ],
-  "frameworkMenus": [
-    {
-      "framework": "react",
-      "menuItems": [
+      ],
+      "frameworks": [
         {
-          "label": "Getting Started",
+          "label": "react",
           "children": [
             {
               "label": "React Virtual",
@@ -35,7 +23,44 @@
           ]
         },
         {
-          "label": "Examples",
+          "label": "solid",
+          "children": [
+            { "label": "Solid Virtual", "to": "framework/solid/solid-virtual" }
+          ]
+        },
+        {
+          "label": "svelte",
+          "children": [
+            {
+              "label": "Svelte Virtual",
+              "to": "framework/svelte/svelte-virtual"
+            }
+          ]
+        },
+        {
+          "label": "vue",
+          "children": [
+            {
+              "label": "Vue Virtual",
+              "to": "framework/vue/vue-virtual"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Core APIs",
+      "children": [
+        { "label": "Virtualizer", "to": "api/virtualizer" },
+        { "label": "VirtualItem", "to": "api/virtual-item" }
+      ]
+    },
+    {
+      "label": "Examples",
+      "children": [],
+      "frameworks": [
+        {
+          "label": "react",
           "children": [
             {
               "to": "framework/react/examples/fixed",
@@ -74,34 +99,9 @@
               "label": "Window"
             }
           ]
-        }
-      ]
-    },
-    {
-      "framework": "solid",
-      "menuItems": [
-        {
-          "label": "Getting Started",
-          "children": [
-            { "label": "Solid Virtual", "to": "framework/solid/solid-virtual" }
-          ]
-        }
-      ]
-    },
-    {
-      "framework": "svelte",
-      "menuItems": [
-        {
-          "label": "Getting Started",
-          "children": [
-            {
-              "label": "Svelte Virtual",
-              "to": "framework/svelte/svelte-virtual"
-            }
-          ]
         },
         {
-          "label": "Examples",
+          "label": "svelte",
           "children": [
             {
               "to": "framework/svelte/examples/fixed",
@@ -132,23 +132,9 @@
               "label": "Table"
             }
           ]
-        }
-      ]
-    },
-    {
-      "framework": "vue",
-      "menuItems": [
-        {
-          "label": "Getting Started",
-          "children": [
-            {
-              "label": "Vue Virtual",
-              "to": "framework/vue/vue-virtual"
-            }
-          ]
         },
         {
-          "label": "Examples",
+          "label": "vue",
           "children": [
             {
               "to": "framework/vue/examples/fixed",
