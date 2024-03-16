@@ -266,6 +266,7 @@ export interface VirtualizerOptions<
   getItemKey?: (index: number) => Key
   rangeExtractor?: (range: Range) => number[]
   scrollMargin?: number
+  gap?: number
   scrollingDelay?: number
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
@@ -348,6 +349,7 @@ export class Virtualizer<
       measureElement,
       initialRect: { width: 0, height: 0 },
       scrollMargin: 0,
+      gap: 0,
       scrollingDelay: 150,
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
@@ -536,7 +538,7 @@ export class Virtualizer<
             : this.getFurthestMeasurement(measurements, i)
 
         const start = furthestMeasurement
-          ? furthestMeasurement.end
+          ? furthestMeasurement.end + this.options.gap
           : paddingStart + scrollMargin
 
         const measuredSize = itemSizeCache.get(key)
