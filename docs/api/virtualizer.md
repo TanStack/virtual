@@ -193,6 +193,14 @@ scrollMargin?: number
 
 With this option, you can specify where the scroll offset should originate. Typically, this value represents the space between the beginning of the scrolling element and the start of the list. This is especially useful in common scenarios such as when you have a header preceding a window virtualizer or when multiple virtualizers are utilized within a single scrolling element.
 
+### `gap`
+
+```tsx
+gap?: number
+```
+
+This option allows you to set the spacing between items in the virtualized list. It's particularly useful for maintaining a consistent visual separation between items without having to manually adjust each item's margin or padding. The value is specified in pixels.
+
 
 ## Virtualizer Instance
 
