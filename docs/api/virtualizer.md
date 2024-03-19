@@ -201,6 +201,13 @@ gap?: number
 
 This option allows you to set the spacing between items in the virtualized list. It's particularly useful for maintaining a consistent visual separation between items without having to manually adjust each item's margin or padding. The value is specified in pixels.
 
+### `lanes`
+
+```tsx
+lanes: number
+```
+
+The number of lanes the list is divided into (aka columns for vertical lists and rows for horizontal lists).
 
 ## Virtualizer Instance
 
@@ -304,14 +311,6 @@ Change the virtualized item's size manually. Use this function to manually set t
 You can also use this method with a throttled ResizeObserver instead of `Virtualizer.measureElement` to reduce re-rendering.
 
 > ⚠️ Please be aware that manually changing the size of an item when using `Virtualizer.measureElement` to monitor that item, will result in unpredictable behaviour as the `Virtualizer.measureElement` is also changing the size. However you can use one of resizeItem or measureElement in the same virtualizer instance but on different item indexes.
-
-### `lanes`
-
-```tsx
-lanes: number
-```
-
-The number of lanes the list is divided into (aka columns for vertical lists and rows for horizontal lists).
 
 ### `scrollRect`
 
