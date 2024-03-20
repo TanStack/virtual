@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect, toValue } from 'vue'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useInfiniteQuery } from '@tanstack/vue-query'
 
@@ -106,7 +106,7 @@ const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 
 watchEffect(() => {
-  const [lastItem] = [...virtualRows.value].reverse()
+  const lastItem = toValue(virtualRows).at(-1)
 
   if (!lastItem) {
     return
