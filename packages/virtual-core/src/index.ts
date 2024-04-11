@@ -262,7 +262,7 @@ export interface VirtualizerOptions<
   paddingEnd?: number
   scrollPaddingStart?: number
   scrollPaddingEnd?: number
-  initialOffset?: number
+  initialOffset?: number | (() => number)
   getItemKey?: (index: number) => Key
   rangeExtractor?: (range: Range) => number[]
   scrollMargin?: number
@@ -320,7 +320,10 @@ export class Virtualizer<
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
     this.scrollRect = this.options.initialRect
-    this.scrollOffset = this.options.initialOffset
+    this.scrollOffset =
+      typeof this.options.initialOffset === 'function'
+        ? this.options.initialOffset()
+        : this.options.initialOffset
     this.measurementsCache = this.options.initialMeasurementsCache
     this.measurementsCache.forEach((item) => {
       this.itemSizeCache.set(item.key, item.size)
