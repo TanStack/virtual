@@ -115,7 +115,7 @@ The padding to apply to the end of the virtualizer in pixels when scrolling to a
 ### `initialOffset`
 
 ```tsx
-initialOffset?: number
+initialOffset?: number | (() => number)
 ```
 
 The initial offset to apply to the virtualizer. This is usually only useful if you are rendering the virtualizer in a SSR environment.
