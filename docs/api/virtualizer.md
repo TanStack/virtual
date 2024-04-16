@@ -320,6 +320,8 @@ scrollRect: Rect
 
 Current `Rect` of the scroll element.
 
+### `shouldAdjustScrollPositionOnItemSizeChange`
+
 ```tsx
 shouldAdjustScrollPositionOnItemSizeChange: undefined | ((item: VirtualItem, delta: number, instance: Virtualizer<TScrollElement, TItemElement>) => boolean)
 ```

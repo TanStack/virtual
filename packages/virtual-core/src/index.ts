@@ -271,6 +271,11 @@ export interface VirtualizerOptions<
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
   lanes?: number
+  shouldAdjustScrollPositionOnItemSizeChange?: (
+    item: VirtualItem,
+    delta: number,
+    instance: Virtualizer<TScrollElement, TItemElement>,
+    ) => boolean
 }
 
 export class Virtualizer<
@@ -290,13 +295,6 @@ export class Virtualizer<
   scrollOffset: number
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments: number = 0
-  shouldAdjustScrollPositionOnItemSizeChange:
-    | undefined
-    | ((
-        item: VirtualItem,
-        delta: number,
-        instance: Virtualizer<TScrollElement, TItemElement>,
-      ) => boolean)
   measureElementCache = new Map<Key, TItemElement>()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
@@ -674,8 +672,8 @@ export class Virtualizer<
 
     if (delta !== 0) {
       if (
-        this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
-          ? this.shouldAdjustScrollPositionOnItemSizeChange(item, delta, this)
+        this.options.shouldAdjustScrollPositionOnItemSizeChange !== undefined
+          ? this.options.shouldAdjustScrollPositionOnItemSizeChange(item, delta, this)
           : item.start < this.scrollOffset + this.scrollAdjustments
       ) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
