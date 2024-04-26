@@ -61,7 +61,7 @@ function useVirtualizerBase<
     },
     {
       immediate: true,
-      flush: 'post'
+      flush: 'post',
     },
   )
 
