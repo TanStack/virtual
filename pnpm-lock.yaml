@@ -526,7 +526,7 @@ importers:
         specifier: ^7.6.0
         version: 7.6.0
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.3.4
@@ -551,7 +551,7 @@ importers:
   examples/vue/fixed:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.3.4
@@ -579,7 +579,7 @@ importers:
         specifier: ^4.37.0
         version: 4.37.1(vue@3.3.9)
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.3.4
@@ -604,7 +604,7 @@ importers:
   examples/vue/padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.3.4
@@ -629,7 +629,7 @@ importers:
   examples/vue/scroll-padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       '@vueuse/core':
         specifier: ^10.5.0
@@ -657,7 +657,7 @@ importers:
   examples/vue/smooth-scroll:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.3.4
@@ -685,7 +685,7 @@ importers:
         specifier: ^7.6.0
         version: 7.6.0
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       lodash:
         specifier: ^4.17.21
@@ -722,7 +722,7 @@ importers:
         specifier: ^8.10.7
         version: 8.10.7(vue@3.3.9)
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.3.4
@@ -747,7 +747,7 @@ importers:
   examples/vue/variable:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.4.0
+        specifier: ^3.4.1
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.3.4
