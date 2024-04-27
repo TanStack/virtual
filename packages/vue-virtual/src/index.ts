@@ -60,7 +60,7 @@ function useVirtualizerBase<
       triggerRef(state)
     },
     {
-      flush: 'post',
+      immediate: true,
     },
   )
 
