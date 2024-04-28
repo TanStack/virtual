@@ -29,6 +29,8 @@
         <a href="/grid">Grid</a>
       </li>
     </ul>
+
+
   </nav>
   {#if pathname === '/'}
     <RowVirtualizerDynamic />
