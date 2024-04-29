@@ -1,33 +1,19 @@
 import { defineConfig, mergeConfig } from 'vitest/config'
-import packageJson from './package.json'
-import dts from 'vite-plugin-dts'
-import { resolve } from 'node:path'
+import { tanstackBuildConfig } from '@tanstack/config/build'
 
 const config = defineConfig({
+  plugins: [],
   test: {
-    name: packageJson.name,
+    name: 'react-form',
     watch: false,
     environment: 'jsdom'
   },
 })
 
-export default mergeConfig(config, {
-  plugins: [
-    dts({
-      include: ['src'],
+export default mergeConfig(
+    config,
+    tanstackBuildConfig({
+      entry: './src/index.ts',
+      srcDir: './src',
     }),
-  ],
-  build: {
-    lib: {
-      entry: resolve('src', 'index.ts'),
-      formats: ['es', 'cjs'],
-      fileName: (format: string) => {
-        if (format === 'cjs') return 'cjs/[name].cjs'
-        return 'esm/[name].js'
-      },
-    },
-    rollupOptions: {
-      external: ['lit']
-    },
-  },
-})
+)
