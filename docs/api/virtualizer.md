@@ -209,6 +209,16 @@ lanes: number
 
 The number of lanes the list is divided into (aka columns for vertical lists and rows for horizontal lists).
 
+### `isScrollingResetDelay`
+
+```tsx
+isScrollingResetDelay: number
+```
+
+This option allows you to specify the duration to wait after the last scroll event before resetting the isScrolling instance property. The default value is 150 milliseconds. 
+
+The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
+
 ## Virtualizer Instance
 
 The following properties and methods are available on the virtualizer instance:
@@ -320,8 +330,34 @@ scrollRect: Rect
 
 Current `Rect` of the scroll element.
 
+### `shouldAdjustScrollPositionOnItemSizeChange`
+
 ```tsx
 shouldAdjustScrollPositionOnItemSizeChange: undefined | ((item: VirtualItem, delta: number, instance: Virtualizer<TScrollElement, TItemElement>) => boolean)
 ```
 
 The shouldAdjustScrollPositionOnItemSizeChange method enables fine-grained control over the adjustment of scroll position when the size of dynamically rendered items differs from the estimated size. When jumping in the middle of the list and scrolling backward new elements may have a different size than the initially estimated size. This discrepancy can cause subsequent items to shift, potentially disrupting the user's scrolling experience, particularly when navigating backward through the list. 
+
+### `isScrolling`
+
+```tsx
+isScrolling: boolean
+```
+
+Boolean flag indicating if list is currently being scrolled.
+
+### `scrollDirection`
+
+```tsx
+scrollDirection: 'forward' | 'backward' | null
+```
+
+This option indicates the direction of scrolling, with possible values being 'forward' for scrolling downwards and 'backward' for scrolling upwards. The value is set to null when there is no active scrolling.
+
+### `scrollOffset`
+
+```tsx
+scrollOffset: number
+```
+
+This option represents the current scroll position along the scrolling axis. It is measured in pixels from the starting point of the scrollable area.
