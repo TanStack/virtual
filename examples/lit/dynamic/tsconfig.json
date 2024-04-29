@@ -9,7 +9,5 @@
     "useDefineForClassFields": false
   },
   "files": ["src/main.ts"],
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

@@ -6,14 +6,14 @@ const config = defineConfig({
   test: {
     name: 'react-form',
     watch: false,
-    environment: 'jsdom'
+    environment: 'jsdom',
   },
 })
 
 export default mergeConfig(
-    config,
-    tanstackBuildConfig({
-      entry: './src/index.ts',
-      srcDir: './src',
-    }),
+  config,
+  tanstackBuildConfig({
+    entry: './src/index.ts',
+    srcDir: './src',
+  }),
 )
