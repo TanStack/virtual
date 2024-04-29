@@ -1,6 +1,6 @@
 import { customElement, property } from 'lit/decorators.js'
 import { Ref, createRef, ref } from 'lit/directives/ref.js'
-import { html, LitElement, PropertyValues } from 'lit'
+import { html, LitElement } from 'lit'
 import { faker } from '@faker-js/faker'
 import { repeat } from 'lit/directives/repeat.js'
 import {
