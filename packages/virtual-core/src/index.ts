@@ -140,7 +140,7 @@ export const observeElementOffset = <T extends Element>(
     ? () => undefined
     : debounce(() => {
         cb(offset, false)
-      }, 150)
+      }, instance.options.isScrollingResetDelay)
 
   const createHandler = (isScrolling: boolean) => () => {
     offset = element[instance.options.horizontal ? 'scrollLeft' : 'scrollTop']
@@ -174,7 +174,7 @@ export const observeWindowOffset = (
     ? () => undefined
     : debounce(() => {
         cb(offset, false)
-      }, 150)
+      }, instance.options.isScrollingResetDelay)
 
   const createHandler = (isScrolling: boolean) => () => {
     offset = element[instance.options.horizontal ? 'scrollX' : 'scrollY']
@@ -297,6 +297,7 @@ export interface VirtualizerOptions<
   indexAttribute?: string
   initialMeasurementsCache?: VirtualItem[]
   lanes?: number
+  isScrollingResetDelay?: number
 }
 
 export class Virtualizer<
@@ -388,6 +389,7 @@ export class Virtualizer<
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
       lanes: 1,
+      isScrollingResetDelay: 150,
       ...opts,
     }
   }
