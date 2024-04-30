@@ -1,34 +1,12 @@
 {
+  "composite": true,
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "lib": ["esnext", "dom", "dom.iterable"],
-    "declaration": true,
-    "outDir": "./build",
-    "rootDir": "./src",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "useDefineForClassFields": false,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
-    "resolveJsonModule": true,
-    "emitDecoratorMetadata": true,
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "forceConsistentCasingInFileNames": true,
-    "strictPropertyInitialization": false,
-    "plugins": [
-      {
-        "name": "ts-lit-plugin",
-        "strict": true
-      }
-    ]
+    "outDir": "./build/types"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": []
+  "files": ["src/main.tsx"],
+  "include": [
+    "src"
+    // "__tests__/**/*.test.*"
+  ]
 }
