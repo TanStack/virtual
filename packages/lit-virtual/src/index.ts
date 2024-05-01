@@ -33,7 +33,6 @@ class VirtualizerControllerBase<
     const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
       ...options,
       onChange: (instance, sync) => {
-        instance._willUpdate()
         this.host.updateComplete.then(() => this.host.requestUpdate())
         options.onChange?.(instance, sync)
       },
