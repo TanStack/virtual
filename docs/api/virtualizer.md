@@ -40,6 +40,14 @@ This function is passed the index of each item and should return the actual size
 
 ## Optional Options
 
+### `enabled`
+
+```tsx
+enabled?: boolean
+```
+
+Set to `false` to disable scrollElement observers and reset the virtualizer's state
+
 ### `debug`
 
 ```tsx
