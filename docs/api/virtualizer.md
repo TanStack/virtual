@@ -141,7 +141,7 @@ This function receives visible range indexes and should return array of indexes 
 ```tsx
 scrollToFn?: (
   offset: number,
-  canSmooth: boolean,
+  options: { adjustments?: number; behavior?: 'auto' | 'smooth' },
   instance: Virtualizer<TScrollElement, TItemElement>,
 ) => void
 ```
@@ -254,7 +254,7 @@ scrollToOffset: (
   toOffset: number,
   options?: {
     align?: 'start' | 'center' | 'end' | 'auto',
-    smoothScroll?: boolean
+    behavior?: 'auto' | 'smooth'
   }
 ) => void
 ```
@@ -268,7 +268,7 @@ scrollToIndex: (
   index: number,
   options?: {
     align?: 'start' | 'center' | 'end' | 'auto',
-    smoothScroll?: boolean
+    behavior?: 'auto' | 'scroll'
   }
 ) => void
 ```
