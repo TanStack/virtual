@@ -32,6 +32,10 @@ await publish({
       name: '@tanstack/vue-virtual',
       packageDir: 'packages/vue-virtual',
     },
+    {
+      name: '@tanstack/angular-virtual',
+      packageDir: 'packages/angular-virtual',
+    },
   ],
   branchConfigs: {
     main: {

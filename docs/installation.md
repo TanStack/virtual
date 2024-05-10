@@ -36,6 +36,12 @@ $ npm install @tanstack/vue-virtual
 $ npm install @tanstack/lit-virtual
 ```
 
+## Angular Virtual
+
+```bash
+$ npm install @tanstack/angular-virtual
+```
+
 ## Virtual Core (no framework)
 
 ```bash
