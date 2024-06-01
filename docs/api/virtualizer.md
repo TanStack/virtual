@@ -321,10 +321,10 @@ By default the `measureElement` virtualizer option is configured to measure elem
 ### `resizeItem`
 
 ```tsx
-resizeItem: (item: VirtualItem, size: number) => void
+resizeItem: (index: number, size: number) => void
 ```
 
-Change the virtualized item's size manually. Use this function to manually set the size calculated for this item. Useful in occations when using some custom morphing transition and you know the morphed item's size beforehand.
+Change the virtualized item's size manually. Use this function to manually set the size calculated for this index. Useful in occations when using some custom morphing transition and you know the morphed item's size beforehand.
 
 You can also use this method with a throttled ResizeObserver instead of `Virtualizer.measureElement` to reduce re-rendering.
 
