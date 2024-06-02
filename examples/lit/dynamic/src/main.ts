@@ -251,7 +251,7 @@ class GridVirtualizerDynamic extends LitElement {
       columnItems.length > 0
         ? [
             columnItems[0].start,
-            virtualizer.getTotalSize() -
+            columnVirtualizer.getTotalSize() -
               columnItems[columnItems.length - 1].end,
           ]
         : [0, 0]
