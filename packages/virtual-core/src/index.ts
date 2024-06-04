@@ -67,7 +67,7 @@ export const observeElementRect = <T extends Element>(
   if (!element) {
     return
   }
-  const targetWindow = element.ownerDocument.defaultView
+  const targetWindow = instance.targetWindow
   if (!targetWindow) {
     return
   }
@@ -138,7 +138,7 @@ export const observeElementOffset = <T extends Element>(
   if (!element) {
     return
   }
-  const targetWindow = element.ownerDocument.defaultView
+  const targetWindow = instance.targetWindow
   if (!targetWindow) {
     return
   }
@@ -180,7 +180,7 @@ export const observeWindowOffset = (
   if (!element) {
     return
   }
-  const targetWindow = element.window
+  const targetWindow = instance.targetWindow
   if (!targetWindow) {
     return
   }
@@ -327,7 +327,7 @@ export class Virtualizer<
   private unsubs: (void | (() => void))[] = []
   options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
   scrollElement: TScrollElement | null = null
-  private targetWindow: (Window & typeof globalThis) | null = null
+  targetWindow: (Window & typeof globalThis) | null = null
   isScrolling: boolean = false
   private scrollToIndexTimeoutId: number | null = null
   measurementsCache: VirtualItem[] = []
