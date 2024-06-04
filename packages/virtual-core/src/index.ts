@@ -353,7 +353,7 @@ export class Virtualizer<
         return _ro
       }
 
-      if (typeof ResizeObserver === 'undefined' || !this.targetWindow) {
+      if (!this.targetWindow || !this.targetWindow.ResizeObserver) {
         return null
       }
 
