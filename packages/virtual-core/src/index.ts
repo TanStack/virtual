@@ -79,7 +79,7 @@ export const observeElementRect = <T extends Element>(
 
   handler(element.getBoundingClientRect())
 
-  if (typeof ResizeObserver === 'undefined') {
+  if (!targetWindow.ResizeObserver) {
     return () => {}
   }
 
