@@ -67,6 +67,10 @@ export const observeElementRect = <T extends Element>(
   if (!element) {
     return
   }
+  const targetWindow = instance.targetWindow
+  if (!targetWindow) {
+    return
+  }
 
   const handler = (rect: Rect) => {
     const { width, height } = rect
@@ -75,11 +79,11 @@ export const observeElementRect = <T extends Element>(
 
   handler(element.getBoundingClientRect())
 
-  if (typeof ResizeObserver === 'undefined') {
+  if (!targetWindow.ResizeObserver) {
     return () => {}
   }
 
-  const observer = new ResizeObserver((entries) => {
+  const observer = new targetWindow.ResizeObserver((entries) => {
     const entry = entries[0]
     if (entry?.borderBoxSize) {
       const box = entry.borderBoxSize[0]
@@ -134,13 +138,21 @@ export const observeElementOffset = <T extends Element>(
   if (!element) {
     return
   }
+  const targetWindow = instance.targetWindow
+  if (!targetWindow) {
+    return
+  }
 
   let offset = 0
   const fallback = supportsScrollend
     ? () => undefined
-    : debounce(() => {
-        cb(offset, false)
-      }, instance.options.isScrollingResetDelay)
+    : debounce(
+        targetWindow,
+        () => {
+          cb(offset, false)
+        },
+        instance.options.isScrollingResetDelay,
+      )
 
   const createHandler = (isScrolling: boolean) => () => {
     offset = element[instance.options.horizontal ? 'scrollLeft' : 'scrollTop']
@@ -168,13 +180,21 @@ export const observeWindowOffset = (
   if (!element) {
     return
   }
+  const targetWindow = instance.targetWindow
+  if (!targetWindow) {
+    return
+  }
 
   let offset = 0
   const fallback = supportsScrollend
     ? () => undefined
-    : debounce(() => {
-        cb(offset, false)
-      }, instance.options.isScrollingResetDelay)
+    : debounce(
+        targetWindow,
+        () => {
+          cb(offset, false)
+        },
+        instance.options.isScrollingResetDelay,
+      )
 
   const createHandler = (isScrolling: boolean) => () => {
     offset = element[instance.options.horizontal ? 'scrollX' : 'scrollY']
@@ -307,8 +327,9 @@ export class Virtualizer<
   private unsubs: (void | (() => void))[] = []
   options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
   scrollElement: TScrollElement | null = null
+  targetWindow: (Window & typeof globalThis) | null = null
   isScrolling: boolean = false
-  private scrollToIndexTimeoutId: ReturnType<typeof setTimeout> | null = null
+  private scrollToIndexTimeoutId: number | null = null
   measurementsCache: VirtualItem[] = []
   private itemSizeCache = new Map<Key, number>()
   private pendingMeasuredCacheIndexes: number[] = []
@@ -330,15 +351,17 @@ export class Virtualizer<
     const get = () => {
       if (_ro) {
         return _ro
-      } else if (typeof ResizeObserver !== 'undefined') {
-        return (_ro = new ResizeObserver((entries) => {
-          entries.forEach((entry) => {
-            this._measureElement(entry.target as TItemElement, entry)
-          })
-        }))
-      } else {
+      }
+
+      if (!this.targetWindow || !this.targetWindow.ResizeObserver) {
         return null
       }
+
+      return (_ro = new this.targetWindow.ResizeObserver((entries) => {
+        entries.forEach((entry) => {
+          this._measureElement(entry.target as TItemElement, entry)
+        })
+      }))
     }
 
     return {
@@ -431,6 +454,12 @@ export class Virtualizer<
       this.cleanup()
 
       this.scrollElement = scrollElement
+
+      if (this.scrollElement && 'ownerDocument' in this.scrollElement) {
+        this.targetWindow = this.scrollElement.ownerDocument.defaultView
+      } else {
+        this.targetWindow = this.scrollElement?.window ?? null
+      }
 
       this._scrollToOffset(this.scrollOffset, {
         adjustments: undefined,
@@ -807,8 +836,8 @@ export class Virtualizer<
   private isDynamicMode = () => this.measureElementCache.size > 0
 
   private cancelScrollToIndex = () => {
-    if (this.scrollToIndexTimeoutId !== null) {
-      clearTimeout(this.scrollToIndexTimeoutId)
+    if (this.scrollToIndexTimeoutId !== null && this.targetWindow) {
+      this.targetWindow.clearTimeout(this.scrollToIndexTimeoutId)
       this.scrollToIndexTimeoutId = null
     }
   }
@@ -849,8 +878,8 @@ export class Virtualizer<
 
     this._scrollToOffset(toOffset, { adjustments: undefined, behavior })
 
-    if (behavior !== 'smooth' && this.isDynamicMode()) {
-      this.scrollToIndexTimeoutId = setTimeout(() => {
+    if (behavior !== 'smooth' && this.isDynamicMode() && this.targetWindow) {
+      this.scrollToIndexTimeoutId = this.targetWindow.setTimeout(() => {
         this.scrollToIndexTimeoutId = null
 
         const elementInDOM = this.measureElementCache.has(
