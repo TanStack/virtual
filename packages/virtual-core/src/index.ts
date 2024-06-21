@@ -28,13 +28,14 @@ export interface Range {
 
 type Key = number | string
 
-export interface VirtualItem {
+export interface VirtualItem<TItemElement extends Element> {
   key: Key
   index: number
   start: number
   end: number
   size: number
   lane: number
+  measureElement: (node: TItemElement | null | undefined) => void
 }
 
 export interface Rect {
@@ -315,7 +316,7 @@ export interface VirtualizerOptions<
   scrollMargin?: number
   gap?: number
   indexAttribute?: string
-  initialMeasurementsCache?: VirtualItem[]
+  initialMeasurementsCache?: VirtualItem<TItemElement>[]
   lanes?: number
   isScrollingResetDelay?: number
   enabled?: boolean
@@ -331,7 +332,7 @@ export class Virtualizer<
   targetWindow: (Window & typeof globalThis) | null = null
   isScrolling: boolean = false
   private scrollToIndexTimeoutId: number | null = null
-  measurementsCache: VirtualItem[] = []
+  measurementsCache: VirtualItem<TItemElement>[] = []
   private itemSizeCache = new Map<Key, number>()
   private pendingMeasuredCacheIndexes: number[] = []
   scrollRect: Rect | null = null
@@ -341,11 +342,11 @@ export class Virtualizer<
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
-        item: VirtualItem,
+        item: VirtualItem<TItemElement>,
         delta: number,
         instance: Virtualizer<TScrollElement, TItemElement>,
       ) => boolean)
-  measureElementCache = new Map<Key, TItemElement>()
+  elementsCache = new Map<Key, TItemElement>()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
 
@@ -430,7 +431,7 @@ export class Virtualizer<
     this.scrollElement = null
     this.targetWindow = null
     this.observer.disconnect()
-    this.measureElementCache.clear()
+    this.elementsCache.clear()
   }
 
   _didMount = () => {
@@ -518,11 +519,11 @@ export class Virtualizer<
   }
 
   private getFurthestMeasurement = (
-    measurements: VirtualItem[],
+    measurements: VirtualItem<TItemElement>[],
     index: number,
   ) => {
     const furthestMeasurementsFound = new Map<number, true>()
-    const furthestMeasurements = new Map<number, VirtualItem>()
+    const furthestMeasurements = new Map<number, VirtualItem<TItemElement>>()
     for (let m = index - 1; m >= 0; m--) {
       const measurement = measurements[m]!
 
@@ -609,6 +610,38 @@ export class Virtualizer<
       const measurements = this.measurementsCache.slice(0, min)
 
       for (let i = min; i < count; i++) {
+        let measureElement = this.measurementsCache[i]?.measureElement
+
+        if (!measureElement) {
+          measureElement = (node: TItemElement | null | undefined) => {
+            const key = getItemKey(i)
+            const prevNode = this.elementsCache.get(key)
+
+            if (!node) {
+              if (prevNode) {
+                this.observer.unobserve(prevNode)
+                this.elementsCache.delete(key)
+              }
+              return
+            }
+
+            if (prevNode !== node) {
+              if (prevNode) {
+                this.observer.unobserve(prevNode)
+              }
+              this.observer.observe(node)
+              this.elementsCache.set(key, node)
+            }
+
+            if (node.isConnected) {
+              this.resizeItem(
+                i,
+                this.options.measureElement(node, undefined, this),
+              )
+            }
+          }
+        }
+
         const key = getItemKey(i)
 
         const furthestMeasurement =
@@ -639,6 +672,7 @@ export class Virtualizer<
           end,
           key,
           lane,
+          measureElement,
         }
       }
 
@@ -711,34 +745,37 @@ export class Virtualizer<
     node: TItemElement,
     entry: ResizeObserverEntry | undefined,
   ) => {
-    const item = this.getMeasurements()[this.indexFromElement(node)]
+    const i = this.indexFromElement(node)
+    const item = this.getMeasurements()[i]
 
     if (!item || !node.isConnected) {
-      this.measureElementCache.forEach((cached, key) => {
+      this.elementsCache.forEach((cached, key) => {
         if (cached === node) {
           this.observer.unobserve(node)
-          this.measureElementCache.delete(key)
+          this.elementsCache.delete(key)
         }
       })
       return
     }
 
-    const prevNode = this.measureElementCache.get(item.key)
+    const prevNode = this.elementsCache.get(item.key)
 
     if (prevNode !== node) {
       if (prevNode) {
         this.observer.unobserve(prevNode)
       }
       this.observer.observe(node)
-      this.measureElementCache.set(item.key, node)
+      this.elementsCache.set(item.key, node)
     }
 
-    const measuredItemSize = this.options.measureElement(node, entry, this)
-
-    this.resizeItem(item, measuredItemSize)
+    this.resizeItem(i, this.options.measureElement(node, entry, this))
   }
 
-  resizeItem = (item: VirtualItem, size: number) => {
+  resizeItem = (index: number, size: number) => {
+    const item = this.getMeasurements()[index]
+    if (!item) {
+      return
+    }
     const itemSize = this.itemSizeCache.get(item.key) ?? item.size
     const delta = size - itemSize
 
@@ -765,7 +802,7 @@ export class Virtualizer<
     }
   }
 
-  measureElement = (node: TItemElement | null) => {
+  measureElement = (node: TItemElement | null | undefined) => {
     if (!node) {
       return
     }
@@ -776,7 +813,7 @@ export class Virtualizer<
   getVirtualItems = memo(
     () => [this.getIndexes(), this.getMeasurements()],
     (indexes, measurements) => {
-      const virtualItems: VirtualItem[] = []
+      const virtualItems: VirtualItem<TItemElement>[] = []
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
@@ -875,7 +912,7 @@ export class Virtualizer<
     return [this.getOffsetForAlignment(toOffset, align), align] as const
   }
 
-  private isDynamicMode = () => this.measureElementCache.size > 0
+  private isDynamicMode = () => this.elementsCache.size > 0
 
   private cancelScrollToIndex = () => {
     if (this.scrollToIndexTimeoutId !== null && this.targetWindow) {
@@ -927,7 +964,7 @@ export class Virtualizer<
       this.scrollToIndexTimeoutId = this.targetWindow.setTimeout(() => {
         this.scrollToIndexTimeoutId = null
 
-        const elementInDOM = this.measureElementCache.has(
+        const elementInDOM = this.elementsCache.has(
           this.options.getItemKey(index),
         )
 
@@ -1026,12 +1063,12 @@ const findNearestBinarySearch = (
   }
 }
 
-function calculateRange({
+function calculateRange<TItemElement extends Element>({
   measurements,
   outerSize,
   scrollOffset,
 }: {
-  measurements: VirtualItem[]
+  measurements: VirtualItem<TItemElement>[]
   outerSize: number
   scrollOffset: number
 }) {
