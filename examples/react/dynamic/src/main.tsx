@@ -16,11 +16,14 @@ const sentences = new Array(10000)
 function RowVirtualizerDynamic() {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
+  const [enabled, setEnabled] = React.useState(true)
+
   const count = sentences.length
   const virtualizer = useVirtualizer({
     count,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 45,
+    enabled,
   })
 
   const items = virtualizer.getVirtualItems()
@@ -49,6 +52,14 @@ function RowVirtualizerDynamic() {
         }}
       >
         scroll to the end
+      </button>
+      <span style={{ padding: '0 4px' }} />
+      <button
+        onClick={() => {
+          setEnabled((prev) => !prev)
+        }}
+      >
+        turn {enabled ? 'off' : 'on'} virtualizer
       </button>
       <hr />
       <div
