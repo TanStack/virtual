@@ -46,9 +46,6 @@ class VirtualizerControllerBase<
 
   async hostConnected() {
     this.cleanup = this.virtualizer._didMount()
-    await this.host.updateComplete
-    this.host.requestUpdate()
-    this.virtualizer.measure()
   }
 
   hostUpdated() {
