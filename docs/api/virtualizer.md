@@ -40,6 +40,14 @@ This function is passed the index of each item and should return the actual size
 
 ## Optional Options
 
+### `enabled`
+
+```tsx
+enabled?: boolean
+```
+
+Set to `false` to disable scrollElement observers and reset the virtualizer's state
+
 ### `debug`
 
 ```tsx
@@ -141,7 +149,7 @@ This function receives visible range indexes and should return array of indexes 
 ```tsx
 scrollToFn?: (
   offset: number,
-  canSmooth: boolean,
+  options: { adjustments?: number; behavior?: 'auto' | 'smooth' },
   instance: Virtualizer<TScrollElement, TItemElement>,
 ) => void
 ```
@@ -254,7 +262,7 @@ scrollToOffset: (
   toOffset: number,
   options?: {
     align?: 'start' | 'center' | 'end' | 'auto',
-    smoothScroll?: boolean
+    behavior?: 'auto' | 'smooth'
   }
 ) => void
 ```
@@ -268,7 +276,7 @@ scrollToIndex: (
   index: number,
   options?: {
     align?: 'start' | 'center' | 'end' | 'auto',
-    smoothScroll?: boolean
+    behavior?: 'auto' | 'scroll'
   }
 ) => void
 ```
@@ -313,10 +321,10 @@ By default the `measureElement` virtualizer option is configured to measure elem
 ### `resizeItem`
 
 ```tsx
-resizeItem: (item: VirtualItem, size: number) => void
+resizeItem: (index: number, size: number) => void
 ```
 
-Change the virtualized item's size manually. Use this function to manually set the size calculated for this item. Useful in occations when using some custom morphing transition and you know the morphed item's size beforehand.
+Change the virtualized item's size manually. Use this function to manually set the size calculated for this index. Useful in occations when using some custom morphing transition and you know the morphed item's size beforehand.
 
 You can also use this method with a throttled ResizeObserver instead of `Virtualizer.measureElement` to reduce re-rendering.
 

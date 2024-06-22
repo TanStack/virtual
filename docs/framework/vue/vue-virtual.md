@@ -1,5 +1,5 @@
 ---
-title: Vue Virtual (Coming Soon)
+title: Vue Virtual
 ---
 
 The `@tanstack/vue-virtual` adapter is a wrapper around the core virtual logic.
