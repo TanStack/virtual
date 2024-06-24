@@ -1,0 +1,65 @@
+{
+  "name": "@tanstack/angular-virtual",
+  "version": "3.5.0",
+  "description": "Headless UI for virtualizing scrollable elements in Angular",
+  "author": "Garrett Darnell",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tanstack/virtual.git",
+    "directory": "packages/angular-virtual"
+  },
+  "homepage": "https://github.com/tanstack/virtual",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "keywords": [
+    "angular",
+    "virtual",
+    "virtual-core"
+  ],
+  "type": "module",
+  "module": "build/fesm2022/tanstack-angular-virtual.mjs",
+  "types": "build/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "esm2022": "./build/esm2022/tanstack-angular-virtual.mjs",
+      "esm": "./build/esm2022/tanstack-angular-virtual.mjs",
+      "default": "./build/fesm2022/tanstack-angular-virtual.mjs"
+    },
+    "./package.json": {
+      "default": "./package.json"
+    }
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "files": [
+    "build",
+    "!**/*.d.ts",
+    "!**/*.d.ts.map"
+  ],
+  "scripts": {
+    "clean": "rimraf ./build",
+    "test:types": "tsc --noEmit",
+    "build": "ng-packagr -p ng-package.json -c tsconfig.build.json",
+    "build-no-package-json": "pnpm run build && rimraf ./build/package.json",
+    "BAK": "ng-packagr -p ng-package.json -c tsconfig.build.json",
+    "build:types": "tsc --emitDeclarationOnly"
+  },
+  "dependencies": {
+    "@tanstack/virtual-core": "workspace:*",
+    "tslib": "^2.6.0"
+  },
+  "devDependencies": {
+    "@angular/core": "^17.3.0",
+    "ng-packagr": "^17.3.0",
+    "typescript": "5.2.2"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=17"
+  },
+  "sideEffects": false
+}

@@ -30,6 +30,12 @@ $ npm install @tanstack/svelte-virtual
 $ npm install @tanstack/vue-virtual
 ```
 
+## Angular Virtual
+
+```bash
+$ npm install @tanstack/angular-virtual
+```
+
 ## Virtual Core (no framework)
 
 ```bash
