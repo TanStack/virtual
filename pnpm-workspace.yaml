@@ -3,3 +3,4 @@ packages:
   - 'examples/react/*'
   - 'examples/svelte/*'
   - 'examples/vue/*'
+  - 'examples/lit/*'

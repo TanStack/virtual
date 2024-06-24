@@ -1,0 +1,62 @@
+{
+  "name": "@tanstack/lit-virtual",
+  "version": "0.0.0",
+  "description": "Headless UI for virtualizing scrollable elements in Lit",
+  "author": "Tanner Linsley",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tanstack/virtual.git"
+  },
+  "homepage": "https://github.com/tanstack/virtual#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "type": "module",
+  "types": "dist/esm/index.d.ts",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rimraf ./dist && rimraf ./coverage",
+    "test:types": "tsc",
+    "test:build": "publint --strict",
+    "test:lib": "vitest",
+    "test:lib:dev": "pnpm run test:lib --watch",
+    "build": "vite build"
+  },
+  "keywords": [
+    "lit",
+    "virtual",
+    "virtual-core",
+    "datagrid"
+  ],
+  "files": [
+    "dist",
+    "src"
+  ],
+  "dependencies": {
+    "@tanstack/virtual-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@open-wc/testing": "^4.0.0",
+    "lit": "^3.1.3"
+  },
+  "peerDependencies": {
+    "lit": "^3.1.3"
+  }
+}
