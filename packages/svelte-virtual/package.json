@@ -28,6 +28,7 @@
   "sideEffects": false,
   "scripts": {
     "clean": "rimraf ./dist && rimraf ./coverage",
+    "test:eslint": "eslint ./src",
     "test:types": "svelte-check --tsconfig ./tsconfig.json",
     "test:build": "publint --strict",
     "build": "svelte-package --input ./src --output ./dist"

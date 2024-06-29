@@ -17,6 +17,9 @@ importers:
       '@types/node':
         specifier: ^18.19.3
         version: 18.19.17
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.0
       jsdom:
         specifier: ^24.1.0
         version: 24.1.0

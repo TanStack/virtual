@@ -1,19 +1,17 @@
 import * as React from 'react'
 import { flushSync } from 'react-dom'
 import {
+  Virtualizer,
   elementScroll,
   observeElementOffset,
   observeElementRect,
   observeWindowOffset,
   observeWindowRect,
-  PartialKeys,
-  Virtualizer,
-  VirtualizerOptions,
   windowScroll,
 } from '@tanstack/virtual-core'
-export * from '@tanstack/virtual-core'
+import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
-//
+export * from '@tanstack/virtual-core'
 
 const useIsomorphicLayoutEffect =
   typeof document !== 'undefined' ? React.useLayoutEffect : React.useEffect
