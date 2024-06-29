@@ -2,7 +2,7 @@ export type NoInfer<A extends any> = [A][A extends any ? 0 : never]
 
 export type PartialKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
-export function memo<TDeps extends readonly any[], TResult>(
+export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   getDeps: () => [...TDeps],
   fn: (...args: NoInfer<[...TDeps]>) => TResult,
   opts: {
@@ -64,7 +64,7 @@ export function memo<TDeps extends readonly any[], TResult>(
 
     opts?.onChange?.(result)
 
-    return result!
+    return result
   }
 }
 
@@ -84,7 +84,7 @@ export const debounce = (
   ms: number,
 ) => {
   let timeoutId: number
-  return function (this: any, ...args: any[]) {
+  return function (this: any, ...args: Array<any>) {
     targetWindow.clearTimeout(timeoutId)
     timeoutId = targetWindow.setTimeout(() => fn.apply(this, args), ms)
   }

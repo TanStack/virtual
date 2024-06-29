@@ -1,17 +1,17 @@
 import {
+  Virtualizer,
   elementScroll,
   observeElementOffset,
   observeElementRect,
   observeWindowOffset,
   observeWindowRect,
-  PartialKeys,
-  Virtualizer,
-  VirtualizerOptions,
   windowScroll,
 } from '@tanstack/virtual-core'
-export * from '@tanstack/virtual-core'
+import { derived, writable } from 'svelte/store'
+import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type { Readable, Writable } from 'svelte/store'
 
-import { derived, Readable, writable, Writable } from 'svelte/store'
+export * from '@tanstack/virtual-core'
 
 export type SvelteVirtualizer<
   TScrollElement extends Element | Window,
@@ -31,6 +31,7 @@ function createVirtualizerBase<
   const virtualizer = new Virtualizer(initialOptions)
   const originalSetOptions = virtualizer.setOptions
 
+  // eslint-disable-next-line prefer-const
   let virtualizerWritable: Writable<Virtualizer<TScrollElement, TItemElement>>
 
   const setOptions = (

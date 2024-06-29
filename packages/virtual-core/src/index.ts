@@ -1,4 +1,4 @@
-import { approxEqual, memo, notUndefined, debounce } from './utils'
+import { approxEqual, debounce, memo, notUndefined } from './utils'
 
 export * from './utils'
 
@@ -312,11 +312,11 @@ export interface VirtualizerOptions<
   scrollPaddingEnd?: number
   initialOffset?: number | (() => number)
   getItemKey?: (index: number) => Key
-  rangeExtractor?: (range: Range) => number[]
+  rangeExtractor?: (range: Range) => Array<number>
   scrollMargin?: number
   gap?: number
   indexAttribute?: string
-  initialMeasurementsCache?: VirtualItem<TItemElement>[]
+  initialMeasurementsCache?: Array<VirtualItem<TItemElement>>
   lanes?: number
   isScrollingResetDelay?: number
   enabled?: boolean
@@ -326,19 +326,19 @@ export class Virtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 > {
-  private unsubs: (void | (() => void))[] = []
+  private unsubs: Array<void | (() => void)> = []
   options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
   scrollElement: TScrollElement | null = null
   targetWindow: (Window & typeof globalThis) | null = null
-  isScrolling: boolean = false
+  isScrolling = false
   private scrollToIndexTimeoutId: number | null = null
-  measurementsCache: VirtualItem<TItemElement>[] = []
+  measurementsCache: Array<VirtualItem<TItemElement>> = []
   private itemSizeCache = new Map<Key, number>()
-  private pendingMeasuredCacheIndexes: number[] = []
+  private pendingMeasuredCacheIndexes: Array<number> = []
   scrollRect: Rect | null = null
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
-  private scrollAdjustments: number = 0
+  private scrollAdjustments = 0
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -519,7 +519,7 @@ export class Virtualizer<
   }
 
   private getFurthestMeasurement = (
-    measurements: VirtualItem<TItemElement>[],
+    measurements: Array<VirtualItem<TItemElement>>,
     index: number,
   ) => {
     const furthestMeasurementsFound = new Map<number, true>()
@@ -813,7 +813,7 @@ export class Virtualizer<
   getVirtualItems = memo(
     () => [this.getIndexes(), this.getMeasurements()],
     (indexes, measurements) => {
-      const virtualItems: VirtualItem<TItemElement>[] = []
+      const virtualItems: Array<VirtualItem<TItemElement>> = []
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
@@ -1068,7 +1068,7 @@ function calculateRange<TItemElement extends Element>({
   outerSize,
   scrollOffset,
 }: {
-  measurements: VirtualItem<TItemElement>[]
+  measurements: Array<VirtualItem<TItemElement>>
   outerSize: number
   scrollOffset: number
 }) {

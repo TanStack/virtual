@@ -1,7 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import axios from 'axios'
-import { QueryClient, QueryClientProvider, useInfiniteQuery } from 'react-query'
+import {
+  QueryClient,
+  QueryClientProvider,
+  useInfiniteQuery,
+} from '@tanstack/react-query'
 
 import './index.css'
 
@@ -31,13 +34,11 @@ function App() {
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
-  } = useInfiniteQuery(
-    'projects',
-    (ctx) => fetchServerPage(10, ctx.pageParam),
-    {
-      getNextPageParam: (_lastGroup, groups) => groups.length,
-    },
-  )
+  } = useInfiniteQuery({
+    queryKey: 'projects',
+    queryFn: (ctx) => fetchServerPage(10, ctx.pageParam),
+    getNextPageParam: (_lastGroup, groups) => groups.length,
+  })
 
   const allRows = data ? data.pages.flatMap((d) => d.rows) : []
 

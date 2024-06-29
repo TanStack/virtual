@@ -3,18 +3,13 @@
 
 # dependencies
 node_modules
+package-lock.json
+yarn.lock
 
 # builds
-types
 build
-*/build
-dist
-lib
-es
-artifacts
-.rpt2_cache
 coverage
-*.tgz
+dist
 
 # misc
 .DS_Store
@@ -34,13 +29,14 @@ stats-hydration.json
 stats.json
 stats.html
 .vscode/settings.json
-.idea
 
 *.log
-.DS_Store
 .cache
+.idea
 .nx/cache
+.nx/workspace-data
 .pnpm-store
+.tsup
 .svelte-kit
 
 vite.config.js.timestamp-*

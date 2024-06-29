@@ -36,6 +36,7 @@
   "sideEffects": false,
   "scripts": {
     "clean": "rimraf ./dist && rimraf ./coverage",
+    "test:eslint": "eslint ./src",
     "test:types": "tsc",
     "test:build": "publint --strict",
     "build": "vite build"
@@ -57,8 +58,8 @@
     "@tanstack/virtual-core": "workspace:*"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
-    "vue": "^3.3.4"
+    "@vitejs/plugin-vue": "^5.0.5",
+    "vue": "^3.4.31"
   },
   "peerDependencies": {
     "vue": "^2.7.0 || ^3.0.0"

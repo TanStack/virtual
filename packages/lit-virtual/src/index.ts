@@ -1,17 +1,14 @@
-import { ReactiveController, ReactiveControllerHost } from 'lit'
 import {
-  PartialKeys,
   Virtualizer,
-  VirtualizerOptions,
-  observeWindowOffset,
-  observeWindowRect,
-} from '@tanstack/virtual-core'
-import {
+  elementScroll,
   observeElementOffset,
   observeElementRect,
+  observeWindowOffset,
+  observeWindowRect,
   windowScroll,
-  elementScroll,
 } from '@tanstack/virtual-core'
+import type { ReactiveController, ReactiveControllerHost } from 'lit'
+import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
 class VirtualizerControllerBase<
   TScrollElement extends Element | Window,
