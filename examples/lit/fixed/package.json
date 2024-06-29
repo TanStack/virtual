@@ -1,6 +1,7 @@
 {
   "name": "tanstack-lit-virtual-example-fixed",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

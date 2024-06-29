@@ -1,6 +1,7 @@
 {
   "name": "tanstack-react-virtual-example-dynamic",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

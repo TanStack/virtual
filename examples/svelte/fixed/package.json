@@ -1,7 +1,6 @@
 {
   "name": "tanstack-svelte-virtual-example-fixed",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
