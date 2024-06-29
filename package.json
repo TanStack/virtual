@@ -47,8 +47,8 @@
     "nx": "^19.3.2",
     "prettier": "^3.3.2",
     "publint": "^0.2.8",
-    "rimraf": "^5.0.5",
-    "sherif": "^0.7.0",
+    "rimraf": "^5.0.7",
+    "sherif": "^0.8.4",
     "typescript": "5.2.2",
     "vite": "^5.3.2",
     "vitest": "^1.6.0"

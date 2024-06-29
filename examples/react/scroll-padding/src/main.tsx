@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 
 import './index.css'
 
-import { useMeasure } from '@react-hookz/web/esm'
+import { useMeasure } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 function App() {

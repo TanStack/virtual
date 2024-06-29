@@ -36,11 +36,11 @@ importers:
         specifier: ^0.2.8
         version: 0.2.8
       rimraf:
-        specifier: ^5.0.5
-        version: 5.0.5
+        specifier: ^5.0.7
+        version: 5.0.7
       sherif:
-        specifier: ^0.7.0
-        version: 0.7.0
+        specifier: ^0.8.4
+        version: 0.8.4
       typescript:
         specifier: 5.2.2
         version: 5.2.2
@@ -210,8 +210,8 @@ importers:
   examples/react/scroll-padding:
     dependencies:
       '@react-hookz/web':
-        specifier: ^14.2.2
-        version: 14.7.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^24.0.4
+        version: 24.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.7.0
         version: link:../../../packages/react-virtual
@@ -655,8 +655,8 @@ importers:
         specifier: ^3.7.0
         version: link:../../../packages/vue-virtual
       '@vueuse/core':
-        specifier: ^10.5.0
-        version: 10.6.1(vue@3.4.31(typescript@5.2.2))
+        specifier: ^10.11.0
+        version: 10.11.0(vue@3.4.31(typescript@5.2.2))
       vue:
         specifier: ^3.4.31
         version: 3.4.31(typescript@5.2.2)
@@ -840,11 +840,11 @@ importers:
         version: link:../virtual-core
     devDependencies:
       solid-js:
-        specifier: ^1.3.15
-        version: 1.8.6
+        specifier: ^1.8.18
+        version: 1.8.18
       vite-plugin-solid:
         specifier: ^2.10.2
-        version: 2.10.2(@testing-library/jest-dom@6.4.6(vitest@1.6.0(@types/node@18.19.17)(jsdom@24.1.0)))(solid-js@1.8.6)(vite@5.3.2(@types/node@18.19.17))
+        version: 2.10.2(@testing-library/jest-dom@6.4.6(vitest@1.6.0(@types/node@18.19.17)(jsdom@24.1.0)))(solid-js@1.8.18)(vite@5.3.2(@types/node@18.19.17))
 
   packages/svelte-virtual:
     dependencies:
@@ -1402,10 +1402,11 @@ packages:
   '@react-hookz/deep-equal@1.0.4':
     resolution: {integrity: sha512-N56fTrAPUDz/R423pag+n6TXWbvlBZDtTehaGFjK0InmN+V2OFWLE/WmORhmn6Ce7dlwH5+tQN1LJFw3ngTJVg==}
 
-  '@react-hookz/web@14.7.1':
-    resolution: {integrity: sha512-kU1CccZDXvQ9G4vcCCpX3mDQqYKkuLXGFOtPMgmbZ9KrvkEduMRH4JqSVXp1nI/bGI1GJ0KAWm4UEb1x5eDGAg==}
+  '@react-hookz/web@24.0.4':
+    resolution: {integrity: sha512-DcIM6JiZklDyHF6CRD1FTXzuggAkQ+3Ncq2Wln7Kdih8GV6ZIeN9JfS6ZaQxpQUxan8/4n0J2V/R7nMeiSrb2Q==}
+    engines: {node: '>=18.0.0'}
     peerDependencies:
-      js-cookie: ^3.0.1
+      js-cookie: ^3.0.5
       react: ^16.8 || ^17 || ^18
       react-dom: ^16.8 || ^17 || ^18
     peerDependenciesMeta:
@@ -1958,14 +1959,14 @@ packages:
   '@vue/shared@3.4.31':
     resolution: {integrity: sha512-Yp3wtJk//8cO4NItOPpi3QkLExAr/aLBGZMmTtW9WpdwBCJpRM6zj9WgWktXAl8IDIozwNMByT45JP3tO3ACWA==}
 
-  '@vueuse/core@10.6.1':
-    resolution: {integrity: sha512-Pc26IJbqgC9VG1u6VY/xrXXfxD33hnvxBnKrLlA2LJlyHII+BSrRoTPJgGYq7qZOu61itITFUnm6QbacwZ4H8Q==}
+  '@vueuse/core@10.11.0':
+    resolution: {integrity: sha512-x3sD4Mkm7PJ+pcq3HX8PLPBadXCAlSDR/waK87dz0gQE+qJnaaFhc/dZVfJz+IUYzTMVGum2QlR7ImiJQN4s6g==}
 
-  '@vueuse/metadata@10.6.1':
-    resolution: {integrity: sha512-qhdwPI65Bgcj23e5lpGfQsxcy0bMjCAsUGoXkJ7DsoeDUdasbZ2DBa4dinFCOER3lF4gwUv+UD2AlA11zdzMFw==}
+  '@vueuse/metadata@10.11.0':
+    resolution: {integrity: sha512-kQX7l6l8dVWNqlqyN3ePW3KmjCQO3ZMgXuBMddIu83CmucrsBfXlH+JoviYyRBws/yLTQO8g3Pbw+bdIoVm4oQ==}
 
-  '@vueuse/shared@10.6.1':
-    resolution: {integrity: sha512-TECVDTIedFlL0NUfHWncf3zF9Gc4VfdxfQc8JFwoVZQmxpONhLxFrlm0eHQeidHj4rdTPL3KXJa0TZCk1wnc5Q==}
+  '@vueuse/shared@10.11.0':
+    resolution: {integrity: sha512-fyNoIXEq3PfX1L3NkNhtVQUSRtqYwJtJg+Bp9rIzculIZWHTkKSysujrOk2J+NrRulLTQH9+3gGSfYLWSEWU1A==}
 
   '@web/browser-logs@0.4.0':
     resolution: {integrity: sha512-/EBiDAUCJ2DzZhaFxTPRIznEPeafdLbXShIL6aTu7x73x7ZoxSDv7DGuTsh2rWNMUa4+AKli4UORrpyv6QBOiA==}
@@ -2368,9 +2369,6 @@ packages:
   cssstyle@4.0.1:
     resolution: {integrity: sha512-8ZYiJ3A/3OkDd093CBT/0UKDWry7ak4BdPTFP2+QEP7cmhouyq/Up709ASSj2cK02BbZiMgk7kYjZNS4QP5qrQ==}
     engines: {node: '>=18'}
-
-  csstype@3.1.2:
-    resolution: {integrity: sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==}
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
@@ -4047,11 +4045,12 @@ packages:
 
   rimraf@3.0.2:
     resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
+    deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
 
-  rimraf@5.0.5:
-    resolution: {integrity: sha512-CqDakW+hMe/Bz202FPEymy68P+G50RfMQK+Qo5YUqc9SPipvbGjCGKd0RSKEelbsfQuw3g5NZDSrlZZAJurH1A==}
-    engines: {node: '>=14'}
+  rimraf@5.0.7:
+    resolution: {integrity: sha512-nV6YcJo5wbLW77m+8KjH8aB/7/rxQy9SZ0HY5shnwULfS+9nmTtVXAJET5NdZmCzA4fPI/Hm1wo/Po/4mopOdg==}
+    engines: {node: '>=14.18'}
     hasBin: true
 
   rollup-plugin-preserve-directives@0.4.0:
@@ -4116,8 +4115,14 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  seroval@0.14.1:
-    resolution: {integrity: sha512-ZlC9y1KVDhZFdEHLYZup1RjKDutyX1tt3ffOauqRbRURa2vRr2NU/bHuVEuNEqR3zE2uCU3WM6LqH6Oinc3tWg==}
+  seroval-plugins@1.0.7:
+    resolution: {integrity: sha512-GO7TkWvodGp6buMEX9p7tNyIkbwlyuAWbI6G9Ec5bhcm7mQdu3JOK1IXbEUwb3FVzSc363GraG/wLW23NSavIw==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      seroval: ^1.0
+
+  seroval@1.0.7:
+    resolution: {integrity: sha512-n6ZMQX5q0Vn19Zq7CIKNIo7E75gPkGCFUEqDpa8jgwpYr/vScjqnQ6H09t1uIiZ0ZSK0ypEGvrYK2bhBGWsGdw==}
     engines: {node: '>=10'}
 
   set-function-length@1.2.2:
@@ -4153,38 +4158,38 @@ packages:
   shell-quote-word@1.0.1:
     resolution: {integrity: sha512-lT297f1WLAdq0A4O+AknIFRP6kkiI3s8C913eJ0XqBxJbZPGWUNkRQk2u8zk4bEAjUJ5i+fSLwB6z1HzeT+DEg==}
 
-  sherif-darwin-arm64@0.7.0:
-    resolution: {integrity: sha512-rzWV13FwPA3h7UcO2B1o3s5lBhB4h7p1wXPB7Z0NMR/xweiTpT+hn3kls3YLdAeIL460Gc46ieJCnPFkI/rC0A==}
+  sherif-darwin-arm64@0.8.4:
+    resolution: {integrity: sha512-mFJO9BjwjXnzn7UQ0moLyJzDWu68g71E1jNKujkuS8a4UQ8jV2O6gosOqfqPMHLLiZjZwuVZNnp59ecqP4rVpg==}
     cpu: [arm64]
     os: [darwin]
 
-  sherif-darwin-x64@0.7.0:
-    resolution: {integrity: sha512-6y3cp/ZdhrbHS9e1J70POZyPJdJ1eDYc43Xck9FcRL7GTsH5JbinIqyihdNVu1ctG7ewMA2Ii1nzuQe/rt9Gig==}
+  sherif-darwin-x64@0.8.4:
+    resolution: {integrity: sha512-71keXqkH27FvN5q3OmddS7FXaAVk0iBXGlfZhsuuNSR00CnSndM+AS8ibUH2okvF55HdPK6x6VovoEG3PvqCmw==}
     cpu: [x64]
     os: [darwin]
 
-  sherif-linux-arm64@0.7.0:
-    resolution: {integrity: sha512-DRfXTJuQ3CkF41+vDtCsptKjcvZg+PM9C+btJbZnAhbLSP8kSDWNmOIyH5/LQOBpntbEe6obqPFsBTjpkATkQw==}
+  sherif-linux-arm64@0.8.4:
+    resolution: {integrity: sha512-hQwFHQ6cGDOkKSa1zuEAc8WIsSgY0a4MFXEiHIPfRbJdE+leDcAVDovvpPIQZRUgbSe96mQ5QJg5fw52+eySrw==}
     cpu: [arm64]
     os: [linux]
 
-  sherif-linux-x64@0.7.0:
-    resolution: {integrity: sha512-4KM7P/V1jy8WKuGax8hOaRNWLTkwY10+MzVeof4UbTfcZxKibAHpSKtNmmzYFHKlFxOLXRGqDgXYmj5iuXB4bQ==}
+  sherif-linux-x64@0.8.4:
+    resolution: {integrity: sha512-S2BK9YLc12JMxg8ODIcceRW7Y4rmgrIEzUBOqp6NSeOz4Wq/34YdtimNRHzwrDOgjTpgUA/pt+TwPsGPXr+gNA==}
     cpu: [x64]
     os: [linux]
 
-  sherif-windows-arm64@0.7.0:
-    resolution: {integrity: sha512-WZ62t+YQ39XO6TuMTSWZJwiJTtKaoverhAk0F1MwlCkTZu2xZvlMMWKIN9wtMJvvrNYqTsjrv2xEH1EQNUDfhg==}
+  sherif-windows-arm64@0.8.4:
+    resolution: {integrity: sha512-9IBeX13AeCQ9ETRqfGR7GQqcyRxu4jlXyO7TNQVKU/kBrMjWjYYic/VKwHB37q0xealXUNmB9nD08hfMmdnidg==}
     cpu: [arm64]
     os: [win32]
 
-  sherif-windows-x64@0.7.0:
-    resolution: {integrity: sha512-x5464tDL2VhuLgddbVL33ekMYoTxTDkIsI018o0VaD2V675Bw6RiFrmpzd/HqjXdVRCOh0LCBfH43G3C0NN0Uw==}
+  sherif-windows-x64@0.8.4:
+    resolution: {integrity: sha512-PR1tjnCLxcdYaC8FRM3K6ldIwaJDEJn0tOt6e2V6R7OFMDwF8CJOSq24RzGgSmJRBFtlLqU94sXTDPfUCR0YPw==}
     cpu: [x64]
     os: [win32]
 
-  sherif@0.7.0:
-    resolution: {integrity: sha512-2ofYRtx6L4O1EFzUIxD4aSs4tqbE6/oes5/UTjjADHhLIBoq0SbxstPbpxLfz18EKdSDCDr5ZBQBinfm8k8bSQ==}
+  sherif@0.8.4:
+    resolution: {integrity: sha512-L2tNE60i5gRNe5eFNSjUAqt2rCIbKj9jp/50zCfsw8bSBX6noHamR7FDhaecyrNBk6ZgGEEAjxGe4C6iqelwZw==}
     hasBin: true
 
   side-channel@1.0.6:
@@ -4216,8 +4221,8 @@ packages:
     resolution: {integrity: sha512-Y0OT8HezWsTNeEOSVxDnKOW/AyNXHQ4BwJNbAXlLTF5wWsBvrcHhIkE5Rf8kQMLmgf7nDX3PVOlgC6/Aiggu3Q==}
     engines: {node: '>= 18', pnpm: '>= 8'}
 
-  solid-js@1.8.6:
-    resolution: {integrity: sha512-yiH6ZfBBZ3xj/aU/PBpVKB+8r8WWp100NGF7k/Z0IrK9Y8Lv0jwvFiJY1cHdc6Tj7GqXArKnMBabM0m1k+LzkA==}
+  solid-js@1.8.18:
+    resolution: {integrity: sha512-cpkxDPvO/AuKBugVv6xKFd1C9VC0XZMu4VtF56IlHoux8HgyW44uqNSWbozMnVcpIzHIhS3vVXPAVZYM26jpWw==}
 
   solid-refresh@0.6.3:
     resolution: {integrity: sha512-F3aPsX6hVw9ttm5LYlth8Q15x6MlI/J3Dn+o3EQyRTtTxidepSTwAYdozt01/YA+7ObcciagGEyXIopGZzQtbA==}
@@ -4719,17 +4724,6 @@ packages:
 
   vscode-uri@3.0.8:
     resolution: {integrity: sha512-AyFQ0EVmsOZOlAnxoFOGOq1SQDWAB7C6aqMGS23svWAllfOaxbuFvcT8D1i8z3Gyn8fraVeZNNmN6e9bxxXkKw==}
-
-  vue-demi@0.14.6:
-    resolution: {integrity: sha512-8QA7wrYSHKaYgUxDA5ZC24w+eHm3sYCbp0EzcDwKqN3p6HqtTCGR/GVsPyZW92unff4UlcSh++lmqDWN3ZIq4w==}
-    engines: {node: '>=12'}
-    hasBin: true
-    peerDependencies:
-      '@vue/composition-api': ^1.0.0-rc.1
-      vue: ^3.0.0-0 || ^2.6.0
-    peerDependenciesMeta:
-      '@vue/composition-api':
-        optional: true
 
   vue-demi@0.14.8:
     resolution: {integrity: sha512-Uuqnk9YE9SsWeReYqK2alDI5YzciATE0r2SkA6iMAtuXvNTMNACJLJEXNXaEy94ECuBe4Sk6RzRU80kjdbIo1Q==}
@@ -5472,7 +5466,7 @@ snapshots:
 
   '@react-hookz/deep-equal@1.0.4': {}
 
-  '@react-hookz/web@14.7.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@react-hookz/web@24.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@react-hookz/deep-equal': 1.0.4
       react: 18.3.1
@@ -6153,21 +6147,21 @@ snapshots:
 
   '@vue/shared@3.4.31': {}
 
-  '@vueuse/core@10.6.1(vue@3.4.31(typescript@5.2.2))':
+  '@vueuse/core@10.11.0(vue@3.4.31(typescript@5.2.2))':
     dependencies:
       '@types/web-bluetooth': 0.0.20
-      '@vueuse/metadata': 10.6.1
-      '@vueuse/shared': 10.6.1(vue@3.4.31(typescript@5.2.2))
-      vue-demi: 0.14.6(vue@3.4.31(typescript@5.2.2))
+      '@vueuse/metadata': 10.11.0
+      '@vueuse/shared': 10.11.0(vue@3.4.31(typescript@5.2.2))
+      vue-demi: 0.14.8(vue@3.4.31(typescript@5.2.2))
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
 
-  '@vueuse/metadata@10.6.1': {}
+  '@vueuse/metadata@10.11.0': {}
 
-  '@vueuse/shared@10.6.1(vue@3.4.31(typescript@5.2.2))':
+  '@vueuse/shared@10.11.0(vue@3.4.31(typescript@5.2.2))':
     dependencies:
-      vue-demi: 0.14.6(vue@3.4.31(typescript@5.2.2))
+      vue-demi: 0.14.8(vue@3.4.31(typescript@5.2.2))
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
@@ -6645,8 +6639,6 @@ snapshots:
   cssstyle@4.0.1:
     dependencies:
       rrweb-cssom: 0.6.0
-
-  csstype@3.1.2: {}
 
   csstype@3.1.3: {}
 
@@ -7201,7 +7193,7 @@ snapshots:
     dependencies:
       foreground-child: 3.1.1
       jackspeak: 2.3.6
-      minimatch: 9.0.3
+      minimatch: 9.0.5
       minipass: 7.0.4
       path-scurry: 1.10.1
 
@@ -8412,7 +8404,7 @@ snapshots:
     dependencies:
       glob: 7.2.3
 
-  rimraf@5.0.5:
+  rimraf@5.0.7:
     dependencies:
       glob: 10.3.10
 
@@ -8489,7 +8481,11 @@ snapshots:
 
   semver@7.6.2: {}
 
-  seroval@0.14.1: {}
+  seroval-plugins@1.0.7(seroval@1.0.7):
+    dependencies:
+      seroval: 1.0.7
+
+  seroval@1.0.7: {}
 
   set-function-length@1.2.2:
     dependencies:
@@ -8524,32 +8520,32 @@ snapshots:
 
   shell-quote-word@1.0.1: {}
 
-  sherif-darwin-arm64@0.7.0:
+  sherif-darwin-arm64@0.8.4:
     optional: true
 
-  sherif-darwin-x64@0.7.0:
+  sherif-darwin-x64@0.8.4:
     optional: true
 
-  sherif-linux-arm64@0.7.0:
+  sherif-linux-arm64@0.8.4:
     optional: true
 
-  sherif-linux-x64@0.7.0:
+  sherif-linux-x64@0.8.4:
     optional: true
 
-  sherif-windows-arm64@0.7.0:
+  sherif-windows-arm64@0.8.4:
     optional: true
 
-  sherif-windows-x64@0.7.0:
+  sherif-windows-x64@0.8.4:
     optional: true
 
-  sherif@0.7.0:
+  sherif@0.8.4:
     optionalDependencies:
-      sherif-darwin-arm64: 0.7.0
-      sherif-darwin-x64: 0.7.0
-      sherif-linux-arm64: 0.7.0
-      sherif-linux-x64: 0.7.0
-      sherif-windows-arm64: 0.7.0
-      sherif-windows-x64: 0.7.0
+      sherif-darwin-arm64: 0.8.4
+      sherif-darwin-x64: 0.8.4
+      sherif-linux-arm64: 0.8.4
+      sherif-linux-x64: 0.8.4
+      sherif-windows-arm64: 0.8.4
+      sherif-windows-x64: 0.8.4
 
   side-channel@1.0.6:
     dependencies:
@@ -8582,17 +8578,18 @@ snapshots:
 
   smol-toml@1.1.4: {}
 
-  solid-js@1.8.6:
+  solid-js@1.8.18:
     dependencies:
-      csstype: 3.1.2
-      seroval: 0.14.1
+      csstype: 3.1.3
+      seroval: 1.0.7
+      seroval-plugins: 1.0.7(seroval@1.0.7)
 
-  solid-refresh@0.6.3(solid-js@1.8.6):
+  solid-refresh@0.6.3(solid-js@1.8.18):
     dependencies:
       '@babel/generator': 7.24.7
       '@babel/helper-module-imports': 7.24.7
       '@babel/types': 7.24.7
-      solid-js: 1.8.6
+      solid-js: 1.8.18
     transitivePeerDependencies:
       - supports-color
 
@@ -8963,14 +8960,14 @@ snapshots:
     dependencies:
       vite: 5.3.2(@types/node@18.19.17)
 
-  vite-plugin-solid@2.10.2(@testing-library/jest-dom@6.4.6(vitest@1.6.0(@types/node@18.19.17)(jsdom@24.1.0)))(solid-js@1.8.6)(vite@5.3.2(@types/node@18.19.17)):
+  vite-plugin-solid@2.10.2(@testing-library/jest-dom@6.4.6(vitest@1.6.0(@types/node@18.19.17)(jsdom@24.1.0)))(solid-js@1.8.18)(vite@5.3.2(@types/node@18.19.17)):
     dependencies:
       '@babel/core': 7.24.7
       '@types/babel__core': 7.20.5
       babel-preset-solid: 1.8.15(@babel/core@7.24.7)
       merge-anything: 5.1.7
-      solid-js: 1.8.6
-      solid-refresh: 0.6.3(solid-js@1.8.6)
+      solid-js: 1.8.18
+      solid-refresh: 0.6.3(solid-js@1.8.18)
       vite: 5.3.2(@types/node@18.19.17)
       vitefu: 0.2.5(vite@5.3.2(@types/node@18.19.17))
     optionalDependencies:
@@ -9039,10 +9036,6 @@ snapshots:
   vlq@0.2.3: {}
 
   vscode-uri@3.0.8: {}
-
-  vue-demi@0.14.6(vue@3.4.31(typescript@5.2.2)):
-    dependencies:
-      vue: 3.4.31(typescript@5.2.2)
 
   vue-demi@0.14.8(vue@3.4.31(typescript@5.2.2)):
     dependencies:
