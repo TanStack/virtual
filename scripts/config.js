@@ -9,8 +9,8 @@ import { fileURLToPath } from 'node:url'
  */
 export const packages = [
   {
-    name: '@tanstack/virtual-core',
-    packageDir: 'packages/virtual-core',
+    name: '@tanstack/lit-virtual',
+    packageDir: 'packages/lit-virtual',
   },
   {
     name: '@tanstack/react-virtual',
@@ -23,6 +23,10 @@ export const packages = [
   {
     name: '@tanstack/svelte-virtual',
     packageDir: 'packages/svelte-virtual',
+  },
+  {
+    name: '@tanstack/virtual-core',
+    packageDir: 'packages/virtual-core',
   },
   {
     name: '@tanstack/vue-virtual',
