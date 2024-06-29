@@ -1,14 +1,16 @@
 import { defineConfig, mergeConfig } from 'vitest/config'
 import { tanstackViteConfig } from '@tanstack/config/vite'
 import react from '@vitejs/plugin-react'
+import packageJson from './package.json'
 
 const config = defineConfig({
   plugins: [react()],
   test: {
-    name: 'react-form',
+    name: packageJson.name,
+    dir: './tests',
     watch: false,
     environment: 'jsdom',
-    setupFiles: ['test-setup.ts'],
+    setupFiles: ['./tests/test-setup.ts'],
   },
 })
 
