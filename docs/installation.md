@@ -30,6 +30,12 @@ $ npm install @tanstack/svelte-virtual
 $ npm install @tanstack/vue-virtual
 ```
 
+## Lit Virtual
+
+```bash
+$ npm install @tanstack/lit-virtual
+```
+
 ## Virtual Core (no framework)
 
 ```bash
