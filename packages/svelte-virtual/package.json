@@ -6,12 +6,29 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tanstack/virtual.git"
+    "url": "https://github.com/TanStack/virtual.git",
+    "directory": "packages/svelte-virtual"
   },
-  "homepage": "https://github.com/tanstack/virtual#readme",
+  "homepage": "https://tanstack.com/virtual",
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "keywords": [
+    "react",
+    "vue",
+    "solid",
+    "svelte",
+    "virtual",
+    "virtual-core",
+    "datagrid"
+  ],
+  "scripts": {
+    "clean": "rimraf ./dist && rimraf ./coverage",
+    "test:eslint": "eslint ./src",
+    "test:types": "svelte-check --tsconfig ./tsconfig.json",
+    "test:build": "publint --strict",
+    "build": "svelte-package --input ./src --output ./dist"
   },
   "type": "module",
   "types": "dist/index.d.ts",
@@ -26,22 +43,6 @@
     "./package.json": "./package.json"
   },
   "sideEffects": false,
-  "scripts": {
-    "clean": "rimraf ./dist && rimraf ./coverage",
-    "test:eslint": "eslint ./src",
-    "test:types": "svelte-check --tsconfig ./tsconfig.json",
-    "test:build": "publint --strict",
-    "build": "svelte-package --input ./src --output ./dist"
-  },
-  "keywords": [
-    "react",
-    "vue",
-    "solid",
-    "svelte",
-    "virtual",
-    "virtual-core",
-    "datagrid"
-  ],
   "files": [
     "dist",
     "src"

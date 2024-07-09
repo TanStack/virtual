@@ -1,5 +1,5 @@
 {
-  "name": "virtual",
+  "name": "root",
   "private": true,
   "repository": {
     "type": "git",
@@ -36,7 +36,6 @@
       "test:sherif"
     ]
   },
-  "namespace": "@tanstack",
   "devDependencies": {
     "@tanstack/config": "^0.9.0",
     "@testing-library/jest-dom": "^6.4.6",
