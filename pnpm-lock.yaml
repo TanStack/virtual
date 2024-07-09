@@ -73,7 +73,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/lit/fixed:
@@ -98,7 +98,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/dynamic:
@@ -132,7 +132,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/fixed:
@@ -163,14 +163,14 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/infinite-scroll:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.48.0
-        version: 5.48.0(react@18.3.1)
+        specifier: ^5.50.1
+        version: 5.50.1(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.8.1
         version: link:../../../packages/react-virtual
@@ -185,7 +185,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@5.3.3(@types/node@18.19.17))
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/padding:
@@ -204,7 +204,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@5.3.3(@types/node@18.19.17))
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/scroll-padding:
@@ -226,7 +226,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@5.3.3(@types/node@18.19.17))
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/smooth-scroll:
@@ -245,7 +245,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@5.3.3(@types/node@18.19.17))
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/sticky:
@@ -270,7 +270,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@5.3.3(@types/node@18.19.17))
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/table:
@@ -279,8 +279,8 @@ importers:
         specifier: ^7.6.0
         version: 7.6.0
       '@tanstack/react-table':
-        specifier: ^8.17.3
-        version: 8.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^8.19.2
+        version: 8.19.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.8.1
         version: link:../../../packages/react-virtual
@@ -301,7 +301,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@5.3.3(@types/node@18.19.17))
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/variable:
@@ -320,7 +320,7 @@ importers:
         specifier: ^4.3.1
         version: 4.3.1(vite@5.3.3(@types/node@18.19.17))
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/react/window:
@@ -351,7 +351,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/svelte/dynamic:
@@ -382,7 +382,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/svelte/fixed:
@@ -410,14 +410,14 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/svelte/infinite-scroll:
     dependencies:
       '@tanstack/svelte-query':
-        specifier: ^5.48.0
-        version: 5.48.0(svelte@4.2.18)
+        specifier: ^5.50.3
+        version: 5.50.3(svelte@4.2.18)
       '@tanstack/svelte-virtual':
         specifier: ^3.8.1
         version: link:../../../packages/svelte-virtual
@@ -441,7 +441,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/svelte/smooth-scroll:
@@ -472,7 +472,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/svelte/sticky:
@@ -506,7 +506,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/svelte/table:
@@ -515,8 +515,8 @@ importers:
         specifier: ^7.6.0
         version: 7.6.0
       '@tanstack/svelte-table':
-        specifier: ^8.17.3
-        version: 8.17.3(svelte@4.2.18)
+        specifier: ^8.19.2
+        version: 8.19.2(svelte@4.2.18)
       '@tanstack/svelte-virtual':
         specifier: ^3.8.1
         version: link:../../../packages/svelte-virtual
@@ -540,7 +540,7 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
 
   examples/vue/dynamic:
@@ -565,11 +565,11 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   examples/vue/fixed:
     dependencies:
@@ -590,17 +590,17 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   examples/vue/infinite-scroll:
     dependencies:
       '@tanstack/vue-query':
-        specifier: ^5.48.2
-        version: 5.48.2(vue@3.4.31(typescript@5.2.2))
+        specifier: ^5.51.0
+        version: 5.51.0(vue@3.4.31(typescript@5.2.2))
       '@tanstack/vue-virtual':
         specifier: ^3.8.1
         version: link:../../../packages/vue-virtual
@@ -618,11 +618,11 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   examples/vue/padding:
     dependencies:
@@ -643,11 +643,11 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   examples/vue/scroll-padding:
     dependencies:
@@ -671,11 +671,11 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   examples/vue/smooth-scroll:
     dependencies:
@@ -696,11 +696,11 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   examples/vue/sticky:
     dependencies:
@@ -730,11 +730,11 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   examples/vue/table:
     dependencies:
@@ -742,8 +742,8 @@ importers:
         specifier: ^7.6.0
         version: 7.6.0
       '@tanstack/vue-table':
-        specifier: ^8.17.3
-        version: 8.17.3(vue@3.4.31(typescript@5.2.2))
+        specifier: ^8.19.2
+        version: 8.19.2(vue@3.4.31(typescript@5.2.2))
       '@tanstack/vue-virtual':
         specifier: ^3.8.1
         version: link:../../../packages/vue-virtual
@@ -761,11 +761,11 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   examples/vue/variable:
     dependencies:
@@ -786,11 +786,11 @@ importers:
         specifier: 5.2.2
         version: 5.2.2
       vite:
-        specifier: ^5.3.2
+        specifier: ^5.3.3
         version: 5.3.3(@types/node@18.19.17)
       vue-tsc:
-        specifier: ^2.0.22
-        version: 2.0.22(typescript@5.2.2)
+        specifier: ^2.0.26
+        version: 2.0.26(typescript@5.2.2)
 
   packages/lit-virtual:
     dependencies:
@@ -1511,38 +1511,38 @@ packages:
     resolution: {integrity: sha512-PnVV3d2poenUM31ZbZi/yXkBu3J7kd5k2u51CGwwNojag451AjTH9N6n41yjXz2fpLeewleyLBmNS6+HcGDlXw==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.48.0':
-    resolution: {integrity: sha512-lZAfPPeVIqXCswE9SSbG33B6/91XOWt/Iq41bFeWb/mnHwQSIfFRbkS4bfs+WhIk9abRArF9Id2fp0Mgo+hq6Q==}
+  '@tanstack/query-core@5.50.1':
+    resolution: {integrity: sha512-lpfhKPrJlyV2DSVcQb/HuozH3Av3kws4ge22agx+lNGpFkS4vLZ7St0l3GLwlAD+bqB+qXGex3JdRKUNtMviEQ==}
 
-  '@tanstack/react-query@5.48.0':
-    resolution: {integrity: sha512-GDExbjYWzvDokyRqMSWXdrPiYpp95Aig0oeMIrxTaruOJJgWiWfUP//OAaowm2RrRkGVsavSZdko/XmIrrV2Nw==}
+  '@tanstack/react-query@5.50.1':
+    resolution: {integrity: sha512-s0DW3rVBDPReDDovUjVqItVa3R2nPfUANK9nqGvarO2DwTiY9U4EBTsqizMxItRCoGgK5apeM7D3mxlHrSKpdQ==}
     peerDependencies:
       react: ^18.0.0
 
-  '@tanstack/react-table@8.17.3':
-    resolution: {integrity: sha512-5gwg5SvPD3lNAXPuJJz1fOCEZYk9/GeBFH3w/hCgnfyszOIzwkwgp5I7Q4MJtn0WECp84b5STQUDdmvGi8m3nA==}
+  '@tanstack/react-table@8.19.2':
+    resolution: {integrity: sha512-itoSIAkA/Vsg+bjY23FSemcTyPhc5/1YjYyaMsr9QSH/cdbZnQxHVWrpWn0Sp2BWN71qkzR7e5ye8WuMmwyOjg==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
 
-  '@tanstack/svelte-query@5.48.0':
-    resolution: {integrity: sha512-0XzCAsmls0hmr6dijDiALJxuUpo4IlDZ00sML3Q1h2n/DFm5i6HdZ4Tzn52OurJ7/hqoOF+pzxv1XDpNsCjW6w==}
+  '@tanstack/svelte-query@5.50.3':
+    resolution: {integrity: sha512-fvdFoXL3MB6W4DKEiAbdtZGGGiruCbGhhdy5yDPZqqUCwgmTjAOCQaaFIJiUedvEx1YKI8weaUdqf/NojpJhRQ==}
     peerDependencies:
       svelte: ^3.54.0 || ^4.0.0 || ^5.0.0-next.0
 
-  '@tanstack/svelte-table@8.17.3':
-    resolution: {integrity: sha512-BZgGJW56ucY3yI828dinGAS2OGSdTYT7BDv+X04rx58ur5GuOkY0lglctWg9h5AF/FHcnMEc/uiriFGNa3H1tg==}
+  '@tanstack/svelte-table@8.19.2':
+    resolution: {integrity: sha512-yII6lHQuBB45sVdjRh6kUyq5pt+smaAOyEkYUN07tcn6r05O+Xv0oY+DHqUgWQtDV57ATE6xM9OC0wBNJRrPZw==}
     engines: {node: '>=12'}
     peerDependencies:
       svelte: ^4.0.0 || ^3.49.0
 
-  '@tanstack/table-core@8.17.3':
-    resolution: {integrity: sha512-mPBodDGVL+fl6d90wUREepHa/7lhsghg2A3vFpakEhrhtbIlgNAZiMr7ccTgak5qbHqF14Fwy+W1yFWQt+WmYQ==}
+  '@tanstack/table-core@8.19.2':
+    resolution: {integrity: sha512-KpRjhgehIhbfH78ARm/GJDXGnpdw4bCg3qas6yjWSi7czJhI/J6pWln7NHtmBkGE9ZbohiiNtLqwGzKmBfixig==}
     engines: {node: '>=12'}
 
-  '@tanstack/vue-query@5.48.2':
-    resolution: {integrity: sha512-W2ReyrVSdlgWwW5YDvvdXLvrpuGcwJuz4yfS7kp6cU2Augkzznsfj8Eooco4oYo8A+3yhi9jdkRu7Du/xDFRtw==}
+  '@tanstack/vue-query@5.51.0':
+    resolution: {integrity: sha512-h9wP5Aib4Xwxyd/9Wvo/QHgm7ZJoaI0XmGO7c2MbZbnqioyRjrbi350qycjdwKWobhhSI1AOiKdLFgc2mbp2vg==}
     peerDependencies:
       '@vue/composition-api': ^1.1.2
       vue: ^2.6.0 || ^3.3.0
@@ -1550,8 +1550,8 @@ packages:
       '@vue/composition-api':
         optional: true
 
-  '@tanstack/vue-table@8.17.3':
-    resolution: {integrity: sha512-19amh2JJR4cFKmi3ZQERwwJg1ucoLm955Xg+RzypCMn6/dmHEzDu2TkVH/riaZFw5JbVfl17MoobMjWNE/fAEg==}
+  '@tanstack/vue-table@8.19.2':
+    resolution: {integrity: sha512-tzY/SfbltF3yvES6bQU8BQzcfl5qqSKB4xCGzbUM3qeRLlHNt6bpiHwFHfr0fhASMPQzwJadP+KW2zyaggRpmg==}
     engines: {node: '>=12'}
     peerDependencies:
       vue: '>=3.2'
@@ -1835,20 +1835,20 @@ packages:
   '@volar/language-core@1.11.1':
     resolution: {integrity: sha512-dOcNn3i9GgZAcJt43wuaEykSluAuOkQgzni1cuxLxTV0nJKanQztp7FxyswdRILaKH+P2XZMPRp2S4MV/pElCw==}
 
-  '@volar/language-core@2.3.4':
-    resolution: {integrity: sha512-wXBhY11qG6pCDAqDnbBRFIDSIwbqkWI7no+lj5+L7IlA7HRIjRP7YQLGzT0LF4lS6eHkMSsclXqy9DwYJasZTQ==}
+  '@volar/language-core@2.4.0-alpha.15':
+    resolution: {integrity: sha512-mt8z4Fm2WxfQYoQHPcKVjLQV6PgPqyKLbkCVY2cr5RSaamqCHjhKEpsFX66aL4D/7oYguuaUw9Bx03Vt0TpIIA==}
 
   '@volar/source-map@1.11.1':
     resolution: {integrity: sha512-hJnOnwZ4+WT5iupLRnuzbULZ42L7BWWPMmruzwtLhJfpDVoZLjNBxHDi2sY2bgZXCKlpU5XcsMFoYrsQmPhfZg==}
 
-  '@volar/source-map@2.3.4':
-    resolution: {integrity: sha512-C+t63nwcblqLIVTYXaVi/+gC8NukDaDIQI72J3R7aXGvtgaVB16c+J8Iz7/VfOy7kjYv7lf5GhBny6ACw9fTGQ==}
+  '@volar/source-map@2.4.0-alpha.15':
+    resolution: {integrity: sha512-8Htngw5TmBY4L3ClDqBGyfLhsB8EmoEXUH1xydyEtEoK0O6NX5ur4Jw8jgvscTlwzizyl/wsN1vn0cQXVbbXYg==}
 
   '@volar/typescript@1.11.1':
     resolution: {integrity: sha512-iU+t2mas/4lYierSnoFOeRFQUhAEMgsFuQxoxvwn5EdQopw43j+J27a4lt9LMInx1gLJBC6qL14WYGlgymaSMQ==}
 
-  '@volar/typescript@2.3.4':
-    resolution: {integrity: sha512-acCvt7dZECyKcvO5geNybmrqOsu9u8n5XP1rfiYsOLYGPxvHRav9BVmEdRyZ3vvY6mNyQ1wLL5Hday4IShe17w==}
+  '@volar/typescript@2.4.0-alpha.15':
+    resolution: {integrity: sha512-U3StRBbDuxV6Woa4hvGS4kz3XcOzrWUKgFdEFN+ba1x3eaYg7+ytau8ul05xgA+UNGLXXsKur7fTUhDFyISk0w==}
 
   '@vue/compiler-core@3.4.31':
     resolution: {integrity: sha512-skOiodXWTV3DxfDhB4rOf3OGalpITLlgCeOwb+Y9GJpfQ8ErigdBUHomBzvG78JoVE8MJoQsb+qhZiHfKeNeEg==}
@@ -1873,8 +1873,8 @@ packages:
       typescript:
         optional: true
 
-  '@vue/language-core@2.0.22':
-    resolution: {integrity: sha512-dNTAAtEOuMiz7N1s5tKpypnVVCtawxVSF5BukD0ELcYSw+DSbrSlYYSw8GuwvurodCeYFSHsmslE+c2sYDNoiA==}
+  '@vue/language-core@2.0.26':
+    resolution: {integrity: sha512-/lt6SfQ3O1yDAhPsnLv9iSUgXd1dMHqUm/t3RctfqjuwQf1LnftZ414X3UBn6aXT4MiwXWtbNJ4Z0NZWwDWgJQ==}
     peerDependencies:
       typescript: '*'
     peerDependenciesMeta:
@@ -4569,11 +4569,11 @@ packages:
     peerDependencies:
       typescript: '*'
 
-  vue-tsc@2.0.22:
-    resolution: {integrity: sha512-lMBIwPBO0sxCcmvu45yt1b035AaQ8/XSXQDk8m75y4j0jSXY/y/XzfEtssQ9JMS47lDaR10O3/926oCs8OeGUw==}
+  vue-tsc@2.0.26:
+    resolution: {integrity: sha512-tOhuwy2bIXbMhz82ef37qeiaQHMXKQkD6mOF6CCPl3/uYtST3l6fdNyfMxipudrQTxTfXVPlgJdMENBFfC1CfQ==}
     hasBin: true
     peerDependencies:
-      typescript: '*'
+      typescript: '>=5.0.0'
 
   vue@3.4.31:
     resolution: {integrity: sha512-njqRrOy7W3YLAlVqSKpBebtZpDVg21FPoaq1I7f/+qqBThK9ChAIjkRWgeP6Eat+8C+iia4P3OYqpATP21BCoQ==}
@@ -5380,42 +5380,42 @@ snapshots:
     dependencies:
       remove-accents: 0.5.0
 
-  '@tanstack/query-core@5.48.0': {}
+  '@tanstack/query-core@5.50.1': {}
 
-  '@tanstack/react-query@5.48.0(react@18.3.1)':
+  '@tanstack/react-query@5.50.1(react@18.3.1)':
     dependencies:
-      '@tanstack/query-core': 5.48.0
+      '@tanstack/query-core': 5.50.1
       react: 18.3.1
 
-  '@tanstack/react-table@8.17.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tanstack/react-table@8.19.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tanstack/table-core': 8.17.3
+      '@tanstack/table-core': 8.19.2
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tanstack/svelte-query@5.48.0(svelte@4.2.18)':
+  '@tanstack/svelte-query@5.50.3(svelte@4.2.18)':
     dependencies:
-      '@tanstack/query-core': 5.48.0
+      '@tanstack/query-core': 5.50.1
       svelte: 4.2.18
 
-  '@tanstack/svelte-table@8.17.3(svelte@4.2.18)':
+  '@tanstack/svelte-table@8.19.2(svelte@4.2.18)':
     dependencies:
-      '@tanstack/table-core': 8.17.3
+      '@tanstack/table-core': 8.19.2
       svelte: 4.2.18
 
-  '@tanstack/table-core@8.17.3': {}
+  '@tanstack/table-core@8.19.2': {}
 
-  '@tanstack/vue-query@5.48.2(vue@3.4.31(typescript@5.2.2))':
+  '@tanstack/vue-query@5.51.0(vue@3.4.31(typescript@5.2.2))':
     dependencies:
       '@tanstack/match-sorter-utils': 8.15.1
-      '@tanstack/query-core': 5.48.0
+      '@tanstack/query-core': 5.50.1
       '@vue/devtools-api': 6.5.1
       vue: 3.4.31(typescript@5.2.2)
       vue-demi: 0.14.8(vue@3.4.31(typescript@5.2.2))
 
-  '@tanstack/vue-table@8.17.3(vue@3.4.31(typescript@5.2.2))':
+  '@tanstack/vue-table@8.19.2(vue@3.4.31(typescript@5.2.2))':
     dependencies:
-      '@tanstack/table-core': 8.17.3
+      '@tanstack/table-core': 8.19.2
       vue: 3.4.31(typescript@5.2.2)
 
   '@testing-library/dom@9.3.4':
@@ -5765,24 +5765,24 @@ snapshots:
     dependencies:
       '@volar/source-map': 1.11.1
 
-  '@volar/language-core@2.3.4':
+  '@volar/language-core@2.4.0-alpha.15':
     dependencies:
-      '@volar/source-map': 2.3.4
+      '@volar/source-map': 2.4.0-alpha.15
 
   '@volar/source-map@1.11.1':
     dependencies:
       muggle-string: 0.3.1
 
-  '@volar/source-map@2.3.4': {}
+  '@volar/source-map@2.4.0-alpha.15': {}
 
   '@volar/typescript@1.11.1':
     dependencies:
       '@volar/language-core': 1.11.1
       path-browserify: 1.0.1
 
-  '@volar/typescript@2.3.4':
+  '@volar/typescript@2.4.0-alpha.15':
     dependencies:
-      '@volar/language-core': 2.3.4
+      '@volar/language-core': 2.4.0-alpha.15
       path-browserify: 1.0.1
       vscode-uri: 3.0.8
 
@@ -5832,9 +5832,9 @@ snapshots:
     optionalDependencies:
       typescript: 5.2.2
 
-  '@vue/language-core@2.0.22(typescript@5.2.2)':
+  '@vue/language-core@2.0.26(typescript@5.2.2)':
     dependencies:
-      '@volar/language-core': 2.3.4
+      '@volar/language-core': 2.4.0-alpha.15
       '@vue/compiler-dom': 3.4.31
       '@vue/shared': 3.4.31
       computeds: 0.0.1
@@ -8683,10 +8683,10 @@ snapshots:
       semver: 7.6.2
       typescript: 5.2.2
 
-  vue-tsc@2.0.22(typescript@5.2.2):
+  vue-tsc@2.0.26(typescript@5.2.2):
     dependencies:
-      '@volar/typescript': 2.3.4
-      '@vue/language-core': 2.0.22(typescript@5.2.2)
+      '@volar/typescript': 2.4.0-alpha.15
+      '@vue/language-core': 2.0.26(typescript@5.2.2)
       semver: 7.6.2
       typescript: 5.2.2
 
