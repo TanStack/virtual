@@ -39,8 +39,8 @@ importers:
         specifier: ^5.0.9
         version: 5.0.9
       sherif:
-        specifier: ^0.8.4
-        version: 0.8.4
+        specifier: ^0.10.0
+        version: 0.10.0
       typescript:
         specifier: 5.2.2
         version: 5.2.2
@@ -3901,38 +3901,38 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  sherif-darwin-arm64@0.8.4:
-    resolution: {integrity: sha512-mFJO9BjwjXnzn7UQ0moLyJzDWu68g71E1jNKujkuS8a4UQ8jV2O6gosOqfqPMHLLiZjZwuVZNnp59ecqP4rVpg==}
+  sherif-darwin-arm64@0.10.0:
+    resolution: {integrity: sha512-4o1EIHsLfCmvT0tryeoLTerPxb47pYdwuWzpeV1+KSaE1hvlorAbBVgc2YBrkdwbgqZrWYzAdeWGmS/Ob3sIMw==}
     cpu: [arm64]
     os: [darwin]
 
-  sherif-darwin-x64@0.8.4:
-    resolution: {integrity: sha512-71keXqkH27FvN5q3OmddS7FXaAVk0iBXGlfZhsuuNSR00CnSndM+AS8ibUH2okvF55HdPK6x6VovoEG3PvqCmw==}
+  sherif-darwin-x64@0.10.0:
+    resolution: {integrity: sha512-MhaPxhGmn66J/aLjpIbf93B4XWlu2sKo+rzXohCbCYU2ajsgswMIw8gDi3JGPHLuilhWZB8kS9I/rEczAD3CQA==}
     cpu: [x64]
     os: [darwin]
 
-  sherif-linux-arm64@0.8.4:
-    resolution: {integrity: sha512-hQwFHQ6cGDOkKSa1zuEAc8WIsSgY0a4MFXEiHIPfRbJdE+leDcAVDovvpPIQZRUgbSe96mQ5QJg5fw52+eySrw==}
+  sherif-linux-arm64@0.10.0:
+    resolution: {integrity: sha512-INTPHGvxdRxIEOAemWfltIyJatL8O9IPxwPkZX499Fn6vK9yj5ZHSlZ+SUgXpp1aX2Yo35gFuHshDRQ1Kuh9UA==}
     cpu: [arm64]
     os: [linux]
 
-  sherif-linux-x64@0.8.4:
-    resolution: {integrity: sha512-S2BK9YLc12JMxg8ODIcceRW7Y4rmgrIEzUBOqp6NSeOz4Wq/34YdtimNRHzwrDOgjTpgUA/pt+TwPsGPXr+gNA==}
+  sherif-linux-x64@0.10.0:
+    resolution: {integrity: sha512-NYUDzTdUnCxbDFjpS8VLoUF9aTsZ+3L7q4H5s5m8sHO8e3Swf2jgK7LixNhyGLhLcXtBAP5Veit4zy4yQ3WP1Q==}
     cpu: [x64]
     os: [linux]
 
-  sherif-windows-arm64@0.8.4:
-    resolution: {integrity: sha512-9IBeX13AeCQ9ETRqfGR7GQqcyRxu4jlXyO7TNQVKU/kBrMjWjYYic/VKwHB37q0xealXUNmB9nD08hfMmdnidg==}
+  sherif-windows-arm64@0.10.0:
+    resolution: {integrity: sha512-iKni78rIcN0PTzI+V8+o81R0G7RA391wCxroU6tBS/tkBTBsPNzzO5KpOw3tgyZt3nETbL5hBZbHxV3MuE/+Ag==}
     cpu: [arm64]
     os: [win32]
 
-  sherif-windows-x64@0.8.4:
-    resolution: {integrity: sha512-PR1tjnCLxcdYaC8FRM3K6ldIwaJDEJn0tOt6e2V6R7OFMDwF8CJOSq24RzGgSmJRBFtlLqU94sXTDPfUCR0YPw==}
+  sherif-windows-x64@0.10.0:
+    resolution: {integrity: sha512-ylERbSsYmjHL6nX+NfX8jcnODKQQPrVT6wyp9INmvY+eoiovE1Ck7HOgyWGXpOEAYnr2/UOooTczKVQJDrXqhA==}
     cpu: [x64]
     os: [win32]
 
-  sherif@0.8.4:
-    resolution: {integrity: sha512-L2tNE60i5gRNe5eFNSjUAqt2rCIbKj9jp/50zCfsw8bSBX6noHamR7FDhaecyrNBk6ZgGEEAjxGe4C6iqelwZw==}
+  sherif@0.10.0:
+    resolution: {integrity: sha512-KAKYAnhgJaz2F7EFowXU3xrukrRWkNsC8OhmTD9TW84mu0Pb6jI2GabFd9U/umMTVshDjS9l43D1JAGx/e0JdQ==}
     hasBin: true
 
   side-channel@1.0.6:
@@ -7940,32 +7940,32 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  sherif-darwin-arm64@0.8.4:
+  sherif-darwin-arm64@0.10.0:
     optional: true
 
-  sherif-darwin-x64@0.8.4:
+  sherif-darwin-x64@0.10.0:
     optional: true
 
-  sherif-linux-arm64@0.8.4:
+  sherif-linux-arm64@0.10.0:
     optional: true
 
-  sherif-linux-x64@0.8.4:
+  sherif-linux-x64@0.10.0:
     optional: true
 
-  sherif-windows-arm64@0.8.4:
+  sherif-windows-arm64@0.10.0:
     optional: true
 
-  sherif-windows-x64@0.8.4:
+  sherif-windows-x64@0.10.0:
     optional: true
 
-  sherif@0.8.4:
+  sherif@0.10.0:
     optionalDependencies:
-      sherif-darwin-arm64: 0.8.4
-      sherif-darwin-x64: 0.8.4
-      sherif-linux-arm64: 0.8.4
-      sherif-linux-x64: 0.8.4
-      sherif-windows-arm64: 0.8.4
-      sherif-windows-x64: 0.8.4
+      sherif-darwin-arm64: 0.10.0
+      sherif-darwin-x64: 0.10.0
+      sherif-linux-arm64: 0.10.0
+      sherif-linux-x64: 0.10.0
+      sherif-windows-arm64: 0.10.0
+      sherif-windows-x64: 0.10.0
 
   side-channel@1.0.6:
     dependencies:

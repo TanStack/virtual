@@ -47,7 +47,7 @@
     "prettier": "^3.3.2",
     "publint": "^0.2.8",
     "rimraf": "^5.0.9",
-    "sherif": "^0.8.4",
+    "sherif": "^0.10.0",
     "typescript": "5.2.2",
     "vite": "^5.3.3",
     "vitest": "^1.6.0"
