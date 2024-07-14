@@ -1009,7 +1009,7 @@ export class Virtualizer<
       // If lanes is 1, use the last measurement's end, otherwise find the maximum end value among all measurements
       end =
         this.options.lanes === 1
-          ? measurements[measurements.length - 1]?.end ?? 0
+          ? (measurements[measurements.length - 1]?.end ?? 0)
           : Math.max(
               ...measurements.slice(-this.options.lanes).map((m) => m.end),
             )
