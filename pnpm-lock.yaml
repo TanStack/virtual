@@ -24,14 +24,14 @@ importers:
         specifier: ^24.1.0
         version: 24.1.0
       knip:
-        specifier: ^5.25.1
-        version: 5.25.1(@types/node@18.19.17)(typescript@5.2.2)
+        specifier: ^5.26.0
+        version: 5.26.0(@types/node@18.19.17)(typescript@5.2.2)
       nx:
-        specifier: ^19.4.2
-        version: 19.4.2
+        specifier: ^19.4.3
+        version: 19.4.3
       prettier:
-        specifier: ^3.3.2
-        version: 3.3.2
+        specifier: ^3.3.3
+        version: 3.3.3
       publint:
         specifier: ^0.2.8
         version: 0.2.8
@@ -169,8 +169,8 @@ importers:
   examples/react/infinite-scroll:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.50.1
-        version: 5.50.1(react@18.3.1)
+        specifier: ^5.51.1
+        version: 5.51.1(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.8.3
         version: link:../../../packages/react-virtual
@@ -416,8 +416,8 @@ importers:
   examples/svelte/infinite-scroll:
     dependencies:
       '@tanstack/svelte-query':
-        specifier: ^5.50.3
-        version: 5.50.3(svelte@4.2.18)
+        specifier: ^5.51.1
+        version: 5.51.1(svelte@4.2.18)
       '@tanstack/svelte-virtual':
         specifier: ^3.8.3
         version: link:../../../packages/svelte-virtual
@@ -599,8 +599,8 @@ importers:
   examples/vue/infinite-scroll:
     dependencies:
       '@tanstack/vue-query':
-        specifier: ^5.51.0
-        version: 5.51.0(vue@3.4.31(typescript@5.2.2))
+        specifier: ^5.51.1
+        version: 5.51.1(vue@3.4.31(typescript@5.2.2))
       '@tanstack/vue-virtual':
         specifier: ^3.8.3
         version: link:../../../packages/vue-virtual
@@ -1260,66 +1260,66 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
-  '@nrwl/tao@19.4.2':
-    resolution: {integrity: sha512-bRCRWWqR86ckji7tK4xRl9czB2WSZG4qSGqvttQMmxCvQc+njnG/QhnoGXYueaz2xr5Z1z7RJWNEqTYEAILh5Q==}
+  '@nrwl/tao@19.4.3':
+    resolution: {integrity: sha512-edZQTC6M5lj1A8B0gmKCaYcyL8n/CPr0jZ9j3zlwwvUoPvdbCroskD0eb7wsc6l83y31I6af+q7eTbFsWeC0vg==}
     hasBin: true
 
-  '@nx/nx-darwin-arm64@19.4.2':
-    resolution: {integrity: sha512-yy0ik+MYli6lg9khgb0/NJIjMr2re2fpE7hl/MhaHWZmTH9PUmzz6vWpx74O3tnz93oT/9ENXFLBagQuj9hjww==}
+  '@nx/nx-darwin-arm64@19.4.3':
+    resolution: {integrity: sha512-aostkFmS8HPgnJS3Po55AqtU+O09LC4R79UBa/Pnxjtb7GGM3T7Gk8349RTc/wEWIRi1pS6Yk0GgT3FS59WF3g==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@nx/nx-darwin-x64@19.4.2':
-    resolution: {integrity: sha512-UEZw7qzvWyOe0B5SvvrN4I2irq8FGlf1V6ut0ajL0vDbLR2IiiF6EYiM36ewpJmx5XspjhbLxEyQJn1TUMUm4w==}
+  '@nx/nx-darwin-x64@19.4.3':
+    resolution: {integrity: sha512-aZUEHq0gn+OHYmN0tEQ4yQsx6l5tlCwl0EJIGUaps9o6XunjPnw5qKpmy/aw804HF6pqjSuWMqVWwh3RuAvSJQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@nx/nx-freebsd-x64@19.4.2':
-    resolution: {integrity: sha512-kAB73FAe3Ae50XnZ+DrCFjbbqHJoTF2ZJVYiHdtRfAefEqsrFltM3Py2/qeeSp1Pxtri3sp4yeEui8WGV2ArWA==}
+  '@nx/nx-freebsd-x64@19.4.3':
+    resolution: {integrity: sha512-RDlLUoG1aT9u9Acz8jjsgoaRkge+uTOG11JYUjgDidJ/avB0zgLOpjhLUUH53NLgt5Fc53RDZqzfytzXB/lr9Q==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [freebsd]
 
-  '@nx/nx-linux-arm-gnueabihf@19.4.2':
-    resolution: {integrity: sha512-24cHzxYB/cxlvX8I/cYZIp88TNgCrl4srMeUzqV5bHuDKVYjA1BL/gzP/pRmsdOSq+ggAKxzXhgCG3nwStUvdw==}
+  '@nx/nx-linux-arm-gnueabihf@19.4.3':
+    resolution: {integrity: sha512-2hur4cKowYY1D+y017Yog8V2T0tlMkf/hzjjnyxxsbEXCBSo3mwzbNdaLzXh2kSP9f/d4nyHWJY0VJJed06dFw==}
     engines: {node: '>= 10'}
     cpu: [arm]
     os: [linux]
 
-  '@nx/nx-linux-arm64-gnu@19.4.2':
-    resolution: {integrity: sha512-6gbBak/bL4vEV2aoTFc7VaeWYF+ossJ0YOqx+hwLpv9SSt6e3yIJrqf7SiwdKq0lcoPeHq3DO06+bRzNLZxVTQ==}
+  '@nx/nx-linux-arm64-gnu@19.4.3':
+    resolution: {integrity: sha512-bf46gPM7R83+uhdkVeqd7LjU5p9OeXYzE3B66wOHWZag8LVAwvh73sUQU/G5kjyzYiYlow3R5K6Xo1ZlKcNaJg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@nx/nx-linux-arm64-musl@19.4.2':
-    resolution: {integrity: sha512-JKc3Bw84jWbOhlqXGBIH9/qz3kzTwpKfsIqtar8K8Gd5/UFJS8GLEdy0mXsnoeFrA1DuYJJ0PWxoHkAa1MYLxg==}
+  '@nx/nx-linux-arm64-musl@19.4.3':
+    resolution: {integrity: sha512-BwjVuws2wTeaNiXsr5oc7vL/f+GY2nir45P5fHN2pvvHg672SkepYvTqLNPbmpl2R5oY0gAgXtzcq3oWIVz4yg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@nx/nx-linux-x64-gnu@19.4.2':
-    resolution: {integrity: sha512-hyf0cDZ3rAM8WERZ/M82v1rnf6oO1X+xwYq363Qx04SufU+Knto7xHGndLNkx2i18+UtCoEr4ZhDYrIb8ZWHww==}
+  '@nx/nx-linux-x64-gnu@19.4.3':
+    resolution: {integrity: sha512-7MT1Q+aH84p5QgmrfPqCm83GHJqJv7vuJd+6whdxvoritfh6YdlVH3P75TVByYNXd1qV/Hwx2+diWlwJ3mXiRg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@nx/nx-linux-x64-musl@19.4.2':
-    resolution: {integrity: sha512-XbKut3RTb04FNA0diDhO/OM8DgqaWaaXhyybRocfhITxH+mPQBZPUs/NM3xeQCrzlGjwrBYxt+Y9Ep8Ftgd/MA==}
+  '@nx/nx-linux-x64-musl@19.4.3':
+    resolution: {integrity: sha512-LYLQct984GqPMvColo5JyXVsrmsI8vlO64NkUSdCuxgd+qkLbLWpjrH0fPmkaunylrKRBFfIk+2EOV4h/xPgtw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@nx/nx-win32-arm64-msvc@19.4.2':
-    resolution: {integrity: sha512-VMOQ44KlndtAKE6JaXSQqrAdHBEqbJSJP4EKrBREn8HyVyr6LAfAG3Pj93ZPMvQC47uheisBcDwitxEY/Mhs1Q==}
+  '@nx/nx-win32-arm64-msvc@19.4.3':
+    resolution: {integrity: sha512-pDCZ/dqL2AZOghzP+wDFQsI6P407K4jvHif9L5UviRmLMBfiqwvjhfYdJOouRij/h42mkDjahynN2yls3aqyGg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@nx/nx-win32-x64-msvc@19.4.2':
-    resolution: {integrity: sha512-FOK4XVanWZYM4cLS9uAx8Xg4BpPRdo0z/jt8gVto8BwgoBPIJuytGhnTVyDNgB+nRJf8K3fz7RFcZm5jup/krg==}
+  '@nx/nx-win32-x64-msvc@19.4.3':
+    resolution: {integrity: sha512-rfttenQwx17D4vXchReaAuWRlxweoxNoYIBpiu8Wg47gNXX36dsTG8VZmJ3T96h7aLUT/lmZ9MmqoItzRQrjeQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -1507,11 +1507,11 @@ packages:
     resolution: {integrity: sha512-PnVV3d2poenUM31ZbZi/yXkBu3J7kd5k2u51CGwwNojag451AjTH9N6n41yjXz2fpLeewleyLBmNS6+HcGDlXw==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.50.1':
-    resolution: {integrity: sha512-lpfhKPrJlyV2DSVcQb/HuozH3Av3kws4ge22agx+lNGpFkS4vLZ7St0l3GLwlAD+bqB+qXGex3JdRKUNtMviEQ==}
+  '@tanstack/query-core@5.51.1':
+    resolution: {integrity: sha512-fJBMQMpo8/KSsWW5ratJR5+IFr7YNJ3K2kfP9l5XObYHsgfVy1w3FJUWU4FT2fj7+JMaEg33zOcNDBo0LMwHnw==}
 
-  '@tanstack/react-query@5.50.1':
-    resolution: {integrity: sha512-s0DW3rVBDPReDDovUjVqItVa3R2nPfUANK9nqGvarO2DwTiY9U4EBTsqizMxItRCoGgK5apeM7D3mxlHrSKpdQ==}
+  '@tanstack/react-query@5.51.1':
+    resolution: {integrity: sha512-s47HKFnQ4HOJAHoIiXcpna/roMMPZJPy6fJ6p4ZNVn8+/onlLBEDd1+xc8OnDuwgvecqkZD7Z2mnSRbcWefrKw==}
     peerDependencies:
       react: ^18.0.0
 
@@ -1522,8 +1522,8 @@ packages:
       react: '>=16.8'
       react-dom: '>=16.8'
 
-  '@tanstack/svelte-query@5.50.3':
-    resolution: {integrity: sha512-fvdFoXL3MB6W4DKEiAbdtZGGGiruCbGhhdy5yDPZqqUCwgmTjAOCQaaFIJiUedvEx1YKI8weaUdqf/NojpJhRQ==}
+  '@tanstack/svelte-query@5.51.1':
+    resolution: {integrity: sha512-MpovODB8oshrXSYgd75i3GYOh5mxaXYGrQfSReF52U8szCLoHG6RvQuTgiyOPx7qkRW0xyxwOVhOoS25sFUSMw==}
     peerDependencies:
       svelte: ^3.54.0 || ^4.0.0 || ^5.0.0-next.0
 
@@ -1537,8 +1537,8 @@ packages:
     resolution: {integrity: sha512-KpRjhgehIhbfH78ARm/GJDXGnpdw4bCg3qas6yjWSi7czJhI/J6pWln7NHtmBkGE9ZbohiiNtLqwGzKmBfixig==}
     engines: {node: '>=12'}
 
-  '@tanstack/vue-query@5.51.0':
-    resolution: {integrity: sha512-h9wP5Aib4Xwxyd/9Wvo/QHgm7ZJoaI0XmGO7c2MbZbnqioyRjrbi350qycjdwKWobhhSI1AOiKdLFgc2mbp2vg==}
+  '@tanstack/vue-query@5.51.1':
+    resolution: {integrity: sha512-09cjEZ98q6J47YYmtqEGJBdL5TBedtzJdh/YcO6LPAMnv8qKTlcPJXIDvzNOzKN4FuohcV6H4d837Zc7qb1HQg==}
     peerDependencies:
       '@vue/composition-api': ^1.1.2
       vue: ^2.6.0 || ^3.3.0
@@ -3192,8 +3192,8 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
 
-  knip@5.25.1:
-    resolution: {integrity: sha512-vUopqkh/gOovZ05qYgTghZpmkM3b2eKYdLTsu11ZTYnYEcsdfQeZs6l4U7Rap4b+1KEDd/yydJsuWl+4NyEA9g==}
+  knip@5.26.0:
+    resolution: {integrity: sha512-vOp+Wk86aqlPwElrUpxXyg6Q8w+j0j6wuzyu5p6k/mBWUI8iP91PCAz1Jzz9PGq5JYdptV7rFBYB9vHr7AFgqg==}
     engines: {node: '>=18.6.0'}
     hasBin: true
     peerDependencies:
@@ -3472,8 +3472,8 @@ packages:
   nwsapi@2.2.10:
     resolution: {integrity: sha512-QK0sRs7MKv0tKe1+5uZIQk/C8XGza4DAnztJG8iD+TpJIORARrCxczA738awHrZoHeTjSSoHqao2teO0dC/gFQ==}
 
-  nx@19.4.2:
-    resolution: {integrity: sha512-h4NMoy9uvSHuM+kyioZXb5G4hfBZ7E4a5dswG2RPe3g/GcY9wdpkUMd/EJJ0cHQwv36kRZOMCflhounYCd7OeA==}
+  nx@19.4.3:
+    resolution: {integrity: sha512-RmjV+bnMy7YecgbKYGkt5gVXQXf3Bxja2oOmdUd2EkPx1YbiBQfw6c/RtmgDL2cx2d28Pbq8xNo9zIumX8EiGA==}
     hasBin: true
     peerDependencies:
       '@swc-node/register': ^1.8.0
@@ -3659,8 +3659,8 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  prettier@3.3.2:
-    resolution: {integrity: sha512-rAVeHYMcv8ATV5d508CFdn+8/pHPpXeIid1DdrPwXnaAdH7cqjVbpJaT5eq4yRAFU/lsbwYwSF/n5iNrdJHPQA==}
+  prettier@3.3.3:
+    resolution: {integrity: sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -4996,43 +4996,43 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.15.0
 
-  '@nrwl/tao@19.4.2':
+  '@nrwl/tao@19.4.3':
     dependencies:
-      nx: 19.4.2
+      nx: 19.4.3
       tslib: 2.6.3
     transitivePeerDependencies:
       - '@swc-node/register'
       - '@swc/core'
       - debug
 
-  '@nx/nx-darwin-arm64@19.4.2':
+  '@nx/nx-darwin-arm64@19.4.3':
     optional: true
 
-  '@nx/nx-darwin-x64@19.4.2':
+  '@nx/nx-darwin-x64@19.4.3':
     optional: true
 
-  '@nx/nx-freebsd-x64@19.4.2':
+  '@nx/nx-freebsd-x64@19.4.3':
     optional: true
 
-  '@nx/nx-linux-arm-gnueabihf@19.4.2':
+  '@nx/nx-linux-arm-gnueabihf@19.4.3':
     optional: true
 
-  '@nx/nx-linux-arm64-gnu@19.4.2':
+  '@nx/nx-linux-arm64-gnu@19.4.3':
     optional: true
 
-  '@nx/nx-linux-arm64-musl@19.4.2':
+  '@nx/nx-linux-arm64-musl@19.4.3':
     optional: true
 
-  '@nx/nx-linux-x64-gnu@19.4.2':
+  '@nx/nx-linux-x64-gnu@19.4.3':
     optional: true
 
-  '@nx/nx-linux-x64-musl@19.4.2':
+  '@nx/nx-linux-x64-musl@19.4.3':
     optional: true
 
-  '@nx/nx-win32-arm64-msvc@19.4.2':
+  '@nx/nx-win32-arm64-msvc@19.4.3':
     optional: true
 
-  '@nx/nx-win32-x64-msvc@19.4.2':
+  '@nx/nx-win32-x64-msvc@19.4.3':
     optional: true
 
   '@open-wc/dedupe-mixin@1.4.0': {}
@@ -5246,11 +5246,11 @@ snapshots:
     dependencies:
       remove-accents: 0.5.0
 
-  '@tanstack/query-core@5.50.1': {}
+  '@tanstack/query-core@5.51.1': {}
 
-  '@tanstack/react-query@5.50.1(react@18.3.1)':
+  '@tanstack/react-query@5.51.1(react@18.3.1)':
     dependencies:
-      '@tanstack/query-core': 5.50.1
+      '@tanstack/query-core': 5.51.1
       react: 18.3.1
 
   '@tanstack/react-table@8.19.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -5259,9 +5259,9 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tanstack/svelte-query@5.50.3(svelte@4.2.18)':
+  '@tanstack/svelte-query@5.51.1(svelte@4.2.18)':
     dependencies:
-      '@tanstack/query-core': 5.50.1
+      '@tanstack/query-core': 5.51.1
       svelte: 4.2.18
 
   '@tanstack/svelte-table@8.19.2(svelte@4.2.18)':
@@ -5271,10 +5271,10 @@ snapshots:
 
   '@tanstack/table-core@8.19.2': {}
 
-  '@tanstack/vue-query@5.51.0(vue@3.4.31(typescript@5.2.2))':
+  '@tanstack/vue-query@5.51.1(vue@3.4.31(typescript@5.2.2))':
     dependencies:
       '@tanstack/match-sorter-utils': 8.15.1
-      '@tanstack/query-core': 5.50.1
+      '@tanstack/query-core': 5.51.1
       '@vue/devtools-api': 6.5.1
       vue: 3.4.31(typescript@5.2.2)
       vue-demi: 0.14.8(vue@3.4.31(typescript@5.2.2))
@@ -7166,7 +7166,7 @@ snapshots:
 
   kleur@4.1.5: {}
 
-  knip@5.25.1(@types/node@18.19.17)(typescript@5.2.2):
+  knip@5.26.0(@types/node@18.19.17)(typescript@5.2.2):
     dependencies:
       '@nodelib/fs.walk': 1.2.8
       '@snyk/github-codeowners': 1.1.0
@@ -7183,7 +7183,6 @@ snapshots:
       smol-toml: 1.1.4
       strip-json-comments: 5.0.1
       summary: 2.1.0
-      tsconfig-paths: 4.2.0
       typescript: 5.2.2
       zod: 3.22.4
       zod-validation-error: 3.3.0(zod@3.22.4)
@@ -7471,9 +7470,9 @@ snapshots:
 
   nwsapi@2.2.10: {}
 
-  nx@19.4.2:
+  nx@19.4.3:
     dependencies:
-      '@nrwl/tao': 19.4.2
+      '@nrwl/tao': 19.4.3
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.0-rc.46
       '@zkochan/js-yaml': 0.0.7
@@ -7508,16 +7507,16 @@ snapshots:
       yargs: 17.7.2
       yargs-parser: 21.1.1
     optionalDependencies:
-      '@nx/nx-darwin-arm64': 19.4.2
-      '@nx/nx-darwin-x64': 19.4.2
-      '@nx/nx-freebsd-x64': 19.4.2
-      '@nx/nx-linux-arm-gnueabihf': 19.4.2
-      '@nx/nx-linux-arm64-gnu': 19.4.2
-      '@nx/nx-linux-arm64-musl': 19.4.2
-      '@nx/nx-linux-x64-gnu': 19.4.2
-      '@nx/nx-linux-x64-musl': 19.4.2
-      '@nx/nx-win32-arm64-msvc': 19.4.2
-      '@nx/nx-win32-x64-msvc': 19.4.2
+      '@nx/nx-darwin-arm64': 19.4.3
+      '@nx/nx-darwin-x64': 19.4.3
+      '@nx/nx-freebsd-x64': 19.4.3
+      '@nx/nx-linux-arm-gnueabihf': 19.4.3
+      '@nx/nx-linux-arm64-gnu': 19.4.3
+      '@nx/nx-linux-arm64-musl': 19.4.3
+      '@nx/nx-linux-x64-gnu': 19.4.3
+      '@nx/nx-linux-x64-musl': 19.4.3
+      '@nx/nx-win32-arm64-msvc': 19.4.3
+      '@nx/nx-win32-x64-msvc': 19.4.3
     transitivePeerDependencies:
       - debug
 
@@ -7694,7 +7693,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier@3.3.2: {}
+  prettier@3.3.3: {}
 
   pretty-format@27.5.1:
     dependencies:
