@@ -279,8 +279,8 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-table':
-        specifier: ^8.19.2
-        version: 8.19.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^8.19.3
+        version: 8.19.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.8.3
         version: link:../../../packages/react-virtual
@@ -515,8 +515,8 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-table':
-        specifier: ^8.19.2
-        version: 8.19.2(svelte@4.2.18)
+        specifier: ^8.19.3
+        version: 8.19.3(svelte@4.2.18)
       '@tanstack/svelte-virtual':
         specifier: ^3.8.3
         version: link:../../../packages/svelte-virtual
@@ -742,8 +742,8 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-table':
-        specifier: ^8.19.2
-        version: 8.19.2(vue@3.4.31(typescript@5.2.2))
+        specifier: ^8.19.3
+        version: 8.19.3(vue@3.4.31(typescript@5.2.2))
       '@tanstack/vue-virtual':
         specifier: ^3.8.3
         version: link:../../../packages/vue-virtual
@@ -1515,8 +1515,8 @@ packages:
     peerDependencies:
       react: ^18.0.0
 
-  '@tanstack/react-table@8.19.2':
-    resolution: {integrity: sha512-itoSIAkA/Vsg+bjY23FSemcTyPhc5/1YjYyaMsr9QSH/cdbZnQxHVWrpWn0Sp2BWN71qkzR7e5ye8WuMmwyOjg==}
+  '@tanstack/react-table@8.19.3':
+    resolution: {integrity: sha512-MtgPZc4y+cCRtU16y1vh1myuyZ2OdkWgMEBzyjYsoMWMicKZGZvcDnub3Zwb6XF2pj9iRMvm1SO1n57lS0vXLw==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16.8'
@@ -1527,14 +1527,14 @@ packages:
     peerDependencies:
       svelte: ^3.54.0 || ^4.0.0 || ^5.0.0-next.0
 
-  '@tanstack/svelte-table@8.19.2':
-    resolution: {integrity: sha512-yII6lHQuBB45sVdjRh6kUyq5pt+smaAOyEkYUN07tcn6r05O+Xv0oY+DHqUgWQtDV57ATE6xM9OC0wBNJRrPZw==}
+  '@tanstack/svelte-table@8.19.3':
+    resolution: {integrity: sha512-874af26Hxnz7WNiwkDPq27vIYeyuIPneLC1cnaIJFQQVXvWc5mUsvYxVfsP2VNNbVYgKUt+dlBIQl3WNEfdHfA==}
     engines: {node: '>=12'}
     peerDependencies:
       svelte: ^4.0.0 || ^3.49.0
 
-  '@tanstack/table-core@8.19.2':
-    resolution: {integrity: sha512-KpRjhgehIhbfH78ARm/GJDXGnpdw4bCg3qas6yjWSi7czJhI/J6pWln7NHtmBkGE9ZbohiiNtLqwGzKmBfixig==}
+  '@tanstack/table-core@8.19.3':
+    resolution: {integrity: sha512-IqREj9ADoml9zCAouIG/5kCGoyIxPFdqdyoxis9FisXFi5vT+iYfEfLosq4xkU/iDbMcEuAj+X8dWRLvKYDNoQ==}
     engines: {node: '>=12'}
 
   '@tanstack/vue-query@5.51.1':
@@ -1546,8 +1546,8 @@ packages:
       '@vue/composition-api':
         optional: true
 
-  '@tanstack/vue-table@8.19.2':
-    resolution: {integrity: sha512-tzY/SfbltF3yvES6bQU8BQzcfl5qqSKB4xCGzbUM3qeRLlHNt6bpiHwFHfr0fhASMPQzwJadP+KW2zyaggRpmg==}
+  '@tanstack/vue-table@8.19.3':
+    resolution: {integrity: sha512-vSgrV1HikfenUDyCWbsA8Mw6+Zr3OhTFi6D6Ictj4hrPLc/UeixjaEU6ccNw59zomyNIT+qBSP+/5iCE10oC6A==}
     engines: {node: '>=12'}
     peerDependencies:
       vue: '>=3.2'
@@ -5253,9 +5253,9 @@ snapshots:
       '@tanstack/query-core': 5.51.1
       react: 18.3.1
 
-  '@tanstack/react-table@8.19.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tanstack/react-table@8.19.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tanstack/table-core': 8.19.2
+      '@tanstack/table-core': 8.19.3
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
@@ -5264,12 +5264,12 @@ snapshots:
       '@tanstack/query-core': 5.51.1
       svelte: 4.2.18
 
-  '@tanstack/svelte-table@8.19.2(svelte@4.2.18)':
+  '@tanstack/svelte-table@8.19.3(svelte@4.2.18)':
     dependencies:
-      '@tanstack/table-core': 8.19.2
+      '@tanstack/table-core': 8.19.3
       svelte: 4.2.18
 
-  '@tanstack/table-core@8.19.2': {}
+  '@tanstack/table-core@8.19.3': {}
 
   '@tanstack/vue-query@5.51.1(vue@3.4.31(typescript@5.2.2))':
     dependencies:
@@ -5279,9 +5279,9 @@ snapshots:
       vue: 3.4.31(typescript@5.2.2)
       vue-demi: 0.14.8(vue@3.4.31(typescript@5.2.2))
 
-  '@tanstack/vue-table@8.19.2(vue@3.4.31(typescript@5.2.2))':
+  '@tanstack/vue-table@8.19.3(vue@3.4.31(typescript@5.2.2))':
     dependencies:
-      '@tanstack/table-core': 8.19.2
+      '@tanstack/table-core': 8.19.3
       vue: 3.4.31(typescript@5.2.2)
 
   '@testing-library/dom@9.3.4':
