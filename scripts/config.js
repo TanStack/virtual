@@ -42,16 +42,10 @@ export const branchConfigs = {
   main: {
     prerelease: false,
   },
-  next: {
-    prerelease: true,
-  },
-  beta: {
-    prerelease: true,
-  },
   alpha: {
     prerelease: true,
   },
-  rc: {
+  beta: {
     prerelease: true,
   },
 }
