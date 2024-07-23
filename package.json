@@ -45,7 +45,7 @@
     "nx": "^19.5.1",
     "prettier": "^3.3.3",
     "prettier-plugin-svelte": "^3.2.6",
-    "publint": "^0.2.8",
+    "publint": "^0.2.9",
     "rimraf": "^5.0.9",
     "sherif": "^0.10.0",
     "typescript": "5.2.2",
