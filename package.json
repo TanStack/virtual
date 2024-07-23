@@ -31,7 +31,6 @@
   },
   "nx": {
     "includedScripts": [
-      "test:format",
       "test:knip",
       "test:sherif"
     ]
@@ -45,6 +44,7 @@
     "knip": "^5.26.0",
     "nx": "^19.4.3",
     "prettier": "^3.3.3",
+    "prettier-plugin-svelte": "^3.2.3",
     "publint": "^0.2.8",
     "rimraf": "^5.0.9",
     "sherif": "^0.10.0",
