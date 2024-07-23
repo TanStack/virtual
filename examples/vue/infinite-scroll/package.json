@@ -8,15 +8,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tanstack/vue-query": "^5.51.1",
+    "@tanstack/vue-query": "^5.51.9",
     "@tanstack/vue-virtual": "^3.8.3",
-    "vue": "^3.4.31"
+    "vue": "^3.4.33"
   },
   "devDependencies": {
     "@codesandbox/vue-preview": "^0.1.1-alpha.16",
     "@vitejs/plugin-vue": "^5.0.5",
     "typescript": "5.2.2",
-    "vite": "^5.3.3",
-    "vue-tsc": "^2.0.26"
+    "vite": "^5.3.4",
+    "vue-tsc": "^2.0.28"
   }
 }
