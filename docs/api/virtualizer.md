@@ -276,7 +276,7 @@ scrollToIndex: (
   index: number,
   options?: {
     align?: 'start' | 'center' | 'end' | 'auto',
-    behavior?: 'auto' | 'scroll'
+    behavior?: 'auto' | 'smooth'
   }
 ) => void
 ```
