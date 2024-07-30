@@ -157,7 +157,13 @@ function ColumnVirtualizerVariable({ columns }: { columns: Array<number> }) {
   )
 }
 
-function GridVirtualizerVariable({ rows, columns }: { rows: Array<number>; columns: Array<number> }) {
+function GridVirtualizerVariable({
+  rows,
+  columns,
+}: {
+  rows: Array<number>
+  columns: Array<number>
+}) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
@@ -278,7 +284,11 @@ function MasonryVerticalVirtualizerVariable({ rows }: { rows: Array<number> }) {
   )
 }
 
-function MasonryHorizontalVirtualizerVariable({ rows }: { rows: Array<number> }) {
+function MasonryHorizontalVirtualizerVariable({
+  rows,
+}: {
+  rows: Array<number>
+}) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const columnVirtualizer = useVirtualizer({

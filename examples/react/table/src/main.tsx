@@ -9,11 +9,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { makeData } from './makeData'
-import type {
-  ColumnDef,
-  Row,
-  SortingState} from '@tanstack/react-table';
-import type { Person } from './makeData';
+import type { ColumnDef, Row, SortingState } from '@tanstack/react-table'
+import type { Person } from './makeData'
 import './index.css'
 
 function ReactTableVirtualized() {

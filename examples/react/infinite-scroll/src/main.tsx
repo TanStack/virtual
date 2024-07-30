@@ -89,7 +89,7 @@ function App() {
       {status === 'pending' ? (
         <p>Loading...</p>
       ) : status === 'error' ? (
-        <span>Error: {(error).message}</span>
+        <span>Error: {error.message}</span>
       ) : (
         <div
           ref={parentRef}

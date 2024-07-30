@@ -3,12 +3,8 @@ import ReactDOM from 'react-dom'
 
 import './index.css'
 
-import {
-  elementScroll,
-  useVirtualizer
-} from '@tanstack/react-virtual'
-import type {
-  VirtualizerOptions} from '@tanstack/react-virtual';
+import { elementScroll, useVirtualizer } from '@tanstack/react-virtual'
+import type { VirtualizerOptions } from '@tanstack/react-virtual'
 
 function easeInOutQuint(t: number) {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t

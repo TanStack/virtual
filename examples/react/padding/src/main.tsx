@@ -39,7 +39,7 @@ function App() {
   )
 }
 
-function RowVirtualizerDynamic({ rows }: {rows: Array<number>}) {
+function RowVirtualizerDynamic({ rows }: { rows: Array<number> }) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
@@ -91,7 +91,7 @@ function RowVirtualizerDynamic({ rows }: {rows: Array<number>}) {
   )
 }
 
-function ColumnVirtualizerDynamic({ columns }: {columns: Array<number>}) {
+function ColumnVirtualizerDynamic({ columns }: { columns: Array<number> }) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const columnVirtualizer = useVirtualizer({
@@ -146,7 +146,13 @@ function ColumnVirtualizerDynamic({ columns }: {columns: Array<number>}) {
   )
 }
 
-function GridVirtualizerDynamic({ rows, columns }: {rows: Array<number>; columns: Array<number>}) {
+function GridVirtualizerDynamic({
+  rows,
+  columns,
+}: {
+  rows: Array<number>
+  columns: Array<number>
+}) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
