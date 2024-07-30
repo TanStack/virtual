@@ -5,22 +5,23 @@ import './index.css'
 
 import {
   elementScroll,
-  useVirtualizer,
-  VirtualizerOptions,
+  useVirtualizer
 } from '@tanstack/react-virtual'
+import type {
+  VirtualizerOptions} from '@tanstack/react-virtual';
 
-function easeInOutQuint(t) {
+function easeInOutQuint(t: number) {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
 }
 
 function App() {
-  const parentRef = React.useRef<HTMLDivElement>()
+  const parentRef = React.useRef<HTMLDivElement>(null)
   const scrollingRef = React.useRef<number>()
 
   const scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] =
     React.useCallback((offset, canSmooth, instance) => {
       const duration = 1000
-      const start = parentRef.current.scrollTop
+      const start = parentRef.current?.scrollTop || 0
       const startTime = (scrollingRef.current = Date.now())
 
       const run = () => {

@@ -15,7 +15,7 @@ const queryClient = new QueryClient()
 async function fetchServerPage(
   limit: number,
   offset: number = 0,
-): Promise<{ rows: string[]; nextOffset: number }> {
+): Promise<{ rows: Array<string>; nextOffset: number }> {
   const rows = new Array(limit)
     .fill(0)
     .map((e, i) => `Async loaded row #${i + offset * limit}`)
@@ -43,7 +43,7 @@ function App() {
 
   const allRows = data ? data.pages.flatMap((d) => d.rows) : []
 
-  const parentRef = React.useRef()
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? allRows.length + 1 : allRows.length,
@@ -89,7 +89,7 @@ function App() {
       {status === 'pending' ? (
         <p>Loading...</p>
       ) : status === 'error' ? (
-        <span>Error: {(error as Error).message}</span>
+        <span>Error: {(error).message}</span>
       ) : (
         <div
           ref={parentRef}

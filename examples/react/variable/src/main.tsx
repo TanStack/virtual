@@ -54,8 +54,8 @@ function App() {
   )
 }
 
-function RowVirtualizerVariable({ rows }) {
-  const parentRef = React.useRef()
+function RowVirtualizerVariable({ rows }: { rows: Array<number> }) {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
@@ -104,8 +104,8 @@ function RowVirtualizerVariable({ rows }) {
   )
 }
 
-function ColumnVirtualizerVariable({ columns }) {
-  const parentRef = React.useRef()
+function ColumnVirtualizerVariable({ columns }: { columns: Array<number> }) {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
@@ -157,8 +157,8 @@ function ColumnVirtualizerVariable({ columns }) {
   )
 }
 
-function GridVirtualizerVariable({ rows, columns }) {
-  const parentRef = React.useRef()
+function GridVirtualizerVariable({ rows, columns }: { rows: Array<number>; columns: Array<number> }) {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
@@ -227,8 +227,8 @@ function GridVirtualizerVariable({ rows, columns }) {
   )
 }
 
-function MasonryVerticalVirtualizerVariable({ rows }) {
-  const parentRef = React.useRef()
+function MasonryVerticalVirtualizerVariable({ rows }: { rows: Array<number> }) {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
@@ -278,8 +278,8 @@ function MasonryVerticalVirtualizerVariable({ rows }) {
   )
 }
 
-function MasonryHorizontalVirtualizerVariable({ rows }) {
-  const parentRef = React.useRef()
+function MasonryHorizontalVirtualizerVariable({ rows }: { rows: Array<number> }) {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
