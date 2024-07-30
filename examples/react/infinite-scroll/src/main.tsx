@@ -35,9 +35,10 @@ function App() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: 'projects',
+    queryKey: ['projects'],
     queryFn: (ctx) => fetchServerPage(10, ctx.pageParam),
     getNextPageParam: (_lastGroup, groups) => groups.length,
+    initialPageParam: 1,
   })
 
   const allRows = data ? data.pages.flatMap((d) => d.rows) : []
@@ -85,7 +86,7 @@ function App() {
       <br />
       <br />
 
-      {status === 'loading' ? (
+      {status === 'pending' ? (
         <p>Loading...</p>
       ) : status === 'error' ? (
         <span>Error: {(error as Error).message}</span>
