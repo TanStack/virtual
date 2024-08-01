@@ -3,21 +3,20 @@ import { createRoot } from 'react-dom/client'
 
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
-  Row,
-  SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { makeData, Person } from './makeData'
+import { makeData } from './makeData'
+import type { ColumnDef, Row, SortingState } from '@tanstack/react-table'
+import type { Person } from './makeData'
 import './index.css'
 
 function ReactTableVirtualized() {
   const [sorting, setSorting] = React.useState<SortingState>([])
 
-  const columns = React.useMemo<ColumnDef<Person>[]>(
+  const columns = React.useMemo<Array<ColumnDef<Person>>>(
     () => [
       {
         accessorKey: 'id',
@@ -128,7 +127,7 @@ function ReactTableVirtualized() {
           </thead>
           <tbody>
             {virtualizer.getVirtualItems().map((virtualRow, index) => {
-              const row = rows[virtualRow.index] as Row<Person>
+              const row = rows[virtualRow.index]
               return (
                 <tr
                   key={row.id}
