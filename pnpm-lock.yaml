@@ -1619,8 +1619,8 @@ packages:
   '@types/chai-dom@1.11.3':
     resolution: {integrity: sha512-EUEZI7uID4ewzxnU7DJXtyvykhQuwe+etJ1wwOiJyQRTH/ifMWKX+ghiXkxCUvNJ6IQDodf0JXhuP6zZcy2qXQ==}
 
-  '@types/chai@4.3.16':
-    resolution: {integrity: sha512-PatH4iOdyh3MyWtmHVFXLWCCIhUbopaltqddG9BzB+gMIzee2MJrvd+jouii9Z3wzQJruGWAm7WOMjgfG8hQlQ==}
+  '@types/chai@4.3.17':
+    resolution: {integrity: sha512-zmZ21EWzR71B4Sscphjief5djsLre50M6lI622OSySTmn9DB3j+C3kWroHfBQWXbOBwbgg/M8CG/hUxDLIloow==}
 
   '@types/co-body@6.1.3':
     resolution: {integrity: sha512-UhuhrQ5hclX6UJctv5m4Rfp52AfG9o9+d9/HwjxhVB5NjXxr5t9oKgJxN8xRHgr35oo8meUEHUPFWiKg6y71aA==}
@@ -4838,7 +4838,7 @@ snapshots:
 
   '@esm-bundle/chai@4.3.4-fix.0':
     dependencies:
-      '@types/chai': 4.3.16
+      '@types/chai': 4.3.17
 
   '@faker-js/faker@8.4.1': {}
 
@@ -5001,7 +5001,7 @@ snapshots:
 
   '@open-wc/semantic-dom-diff@0.20.1':
     dependencies:
-      '@types/chai': 4.3.16
+      '@types/chai': 4.3.17
       '@web/test-runner-commands': 0.9.0
     transitivePeerDependencies:
       - bufferutil
@@ -5333,9 +5333,9 @@ snapshots:
 
   '@types/chai-dom@1.11.3':
     dependencies:
-      '@types/chai': 4.3.16
+      '@types/chai': 4.3.17
 
-  '@types/chai@4.3.16': {}
+  '@types/chai@4.3.17': {}
 
   '@types/co-body@6.1.3':
     dependencies:
@@ -5461,7 +5461,7 @@ snapshots:
 
   '@types/sinon-chai@3.2.12':
     dependencies:
-      '@types/chai': 4.3.16
+      '@types/chai': 4.3.17
       '@types/sinon': 17.0.3
 
   '@types/sinon@17.0.3':
