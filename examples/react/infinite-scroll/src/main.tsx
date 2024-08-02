@@ -18,7 +18,7 @@ async function fetchServerPage(
 ): Promise<{ rows: Array<string>; nextOffset: number }> {
   const rows = new Array(limit)
     .fill(0)
-    .map((e, i) => `Async loaded row #${i + offset * limit}`)
+    .map((_, i) => `Async loaded row #${i + offset * limit}`)
 
   await new Promise((r) => setTimeout(r, 500))
 
@@ -37,8 +37,8 @@ function App() {
   } = useInfiniteQuery({
     queryKey: ['projects'],
     queryFn: (ctx) => fetchServerPage(10, ctx.pageParam),
-    getNextPageParam: (_lastGroup, groups) => groups.length,
-    initialPageParam: 1,
+    getNextPageParam: (lastGroup) => lastGroup.nextOffset,
+    initialPageParam: 0,
   })
 
   const allRows = data ? data.pages.flatMap((d) => d.rows) : []
