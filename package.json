@@ -43,14 +43,14 @@
     "eslint": "^8.57.0",
     "jsdom": "^24.1.1",
     "knip": "^5.27.0",
-    "nx": "^19.5.3",
+    "nx": "^19.5.6",
     "prettier": "^3.3.3",
     "prettier-plugin-svelte": "^3.2.6",
     "publint": "^0.2.9",
-    "rimraf": "^5.0.9",
+    "rimraf": "^5.0.10",
     "sherif": "^0.10.0",
     "typescript": "5.2.2",
     "vite": "^5.3.5",
-    "vitest": "^2.0.4"
+    "vitest": "^2.0.5"
   }
 }
