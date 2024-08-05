@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@tanstack/svelte-query": "^5.51.21",
-    "@tanstack/svelte-virtual": "^3.8.4"
+    "@tanstack/svelte-virtual": "^3.8.5"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.1",
