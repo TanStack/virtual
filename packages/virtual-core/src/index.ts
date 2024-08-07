@@ -156,7 +156,10 @@ export const observeElementOffset = <T extends Element>(
       )
 
   const createHandler = (isScrolling: boolean) => () => {
-    offset = element[instance.options.horizontal ? 'scrollLeft' : 'scrollTop']
+    const { horizontal, isRtl } = instance.options
+    offset = horizontal
+      ? element['scrollLeft'] * (isRtl && -1 || 1)
+      : element['scrollTop']
     fallback()
     cb(offset, isScrolling)
   }
@@ -320,6 +323,7 @@ export interface VirtualizerOptions<
   lanes?: number
   isScrollingResetDelay?: number
   enabled?: boolean
+  isRtl?: boolean
 }
 
 export class Virtualizer<
@@ -405,6 +409,7 @@ export class Virtualizer<
       lanes: 1,
       isScrollingResetDelay: 150,
       enabled: true,
+      isRtl: false,
       ...opts,
     }
   }
