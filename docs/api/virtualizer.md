@@ -227,6 +227,14 @@ This option allows you to specify the duration to wait after the last scroll eve
 
 The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
 
+### `isRtl`
+
+```tsx
+isRtl: boolean
+```
+
+Whether to invert horizontal scrolling to support right-to-left language locales.
+
 ## Virtualizer Instance
 
 The following properties and methods are available on the virtualizer instance:
