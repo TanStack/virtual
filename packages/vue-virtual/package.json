@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/vue-virtual",
-  "version": "3.8.5",
+  "version": "3.8.6",
   "description": "Headless UI for virtualizing scrollable elements in Vue",
   "author": "Tanner Linsley",
   "license": "MIT",

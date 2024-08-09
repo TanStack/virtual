@@ -60,10 +60,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.1.4
@@ -85,10 +85,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.1.4
@@ -110,7 +110,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -141,7 +141,7 @@ importers:
   examples/react/fixed:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -175,7 +175,7 @@ importers:
         specifier: ^5.51.21
         version: 5.51.21(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -200,7 +200,7 @@ importers:
   examples/react/padding:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -228,7 +228,7 @@ importers:
         specifier: ^24.0.4
         version: 24.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -253,7 +253,7 @@ importers:
   examples/react/smooth-scroll:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -281,7 +281,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       lodash:
         specifier: ^4.17.21
@@ -318,7 +318,7 @@ importers:
         specifier: ^8.20.1
         version: 8.20.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -343,7 +343,7 @@ importers:
   examples/react/variable:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -368,7 +368,7 @@ importers:
   examples/react/window:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.8.4
+        specifier: ^3.8.6
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -402,7 +402,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -430,7 +430,7 @@ importers:
   examples/svelte/fixed:
     dependencies:
       '@tanstack/svelte-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -461,7 +461,7 @@ importers:
         specifier: ^5.51.21
         version: 5.51.21(svelte@4.2.18)
       '@tanstack/svelte-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -492,7 +492,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -523,7 +523,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/svelte-virtual
       lodash:
         specifier: ^4.17.21
@@ -560,7 +560,7 @@ importers:
         specifier: ^8.20.1
         version: 8.20.1(svelte@4.2.18)
       '@tanstack/svelte-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -591,7 +591,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.4.35
@@ -616,7 +616,7 @@ importers:
   examples/vue/fixed:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.4.35
@@ -644,7 +644,7 @@ importers:
         specifier: ^5.51.21
         version: 5.51.21(vue@3.4.35(typescript@5.2.2))
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.4.35
@@ -669,7 +669,7 @@ importers:
   examples/vue/padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.4.35
@@ -694,7 +694,7 @@ importers:
   examples/vue/scroll-padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       '@vueuse/core':
         specifier: ^10.11.0
@@ -722,7 +722,7 @@ importers:
   examples/vue/smooth-scroll:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.4.35
@@ -750,7 +750,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       lodash:
         specifier: ^4.17.21
@@ -787,7 +787,7 @@ importers:
         specifier: ^8.20.1
         version: 8.20.1(vue@3.4.35(typescript@5.2.2))
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.4.35
@@ -812,7 +812,7 @@ importers:
   examples/vue/variable:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.8.5
+        specifier: ^3.8.6
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.4.35
