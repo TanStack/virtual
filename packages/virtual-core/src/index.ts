@@ -825,7 +825,7 @@ export class Virtualizer<
       return virtualItems
     },
     {
-      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getVirtualItems',
       debug: () => this.options.debug,
     },
   )
