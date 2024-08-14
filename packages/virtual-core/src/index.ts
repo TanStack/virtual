@@ -158,7 +158,7 @@ export const observeElementOffset = <T extends Element>(
   const createHandler = (isScrolling: boolean) => () => {
     const { horizontal, isRtl } = instance.options
     offset = horizontal
-      ? element['scrollLeft'] * (isRtl && -1 || 1)
+      ? element['scrollLeft'] * ((isRtl && -1) || 1)
       : element['scrollTop']
     fallback()
     cb(offset, isScrolling)
