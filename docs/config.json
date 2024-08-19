@@ -23,6 +23,15 @@
           ]
         },
         {
+          "label": "angular",
+          "children": [
+            {
+              "label": "Angular Virtual",
+              "to": "framework/angular/angular-virtual"
+            }
+          ]
+        },
+        {
           "label": "solid",
           "children": [
             { "label": "Solid Virtual", "to": "framework/solid/solid-virtual" }
@@ -59,6 +68,47 @@
       "label": "Examples",
       "children": [],
       "frameworks": [
+        {
+          "label": "angular",
+          "children": [
+            {
+              "to": "framework/angular/examples/fixed",
+              "label": "Fixed"
+            },
+            {
+              "to": "framework/angular/examples/variable",
+              "label": "Variable"
+            },
+            {
+              "to": "framework/angular/examples/dynamic",
+              "label": "Dynamic"
+            },
+            {
+              "to": "framework/angular/examples/padding",
+              "label": "Padding"
+            },
+            {
+              "to": "framework/angular/examples/sticky",
+              "label": "Sticky"
+            },
+            {
+              "to": "framework/angular/examples/infinite-scroll",
+              "label": "Infinite Scroll"
+            },
+            {
+              "to": "framework/angular/examples/smooth-scroll",
+              "label": "Smooth Scroll"
+            },
+            {
+              "to": "framework/angular/examples/table",
+              "label": "Table"
+            },
+            {
+              "to": "framework/angular/examples/window",
+              "label": "Window"
+            }
+          ]
+        },
         {
           "label": "react",
           "children": [
