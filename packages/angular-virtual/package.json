@@ -6,10 +6,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tanstack/virtual.git",
+    "url": "https://github.com/TanStack/virtual.git",
     "directory": "packages/angular-virtual"
   },
-  "homepage": "https://github.com/tanstack/virtual",
+  "homepage": "https://tanstack.com/virtual",
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/tannerlinsley"
