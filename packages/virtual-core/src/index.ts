@@ -615,38 +615,6 @@ export class Virtualizer<
       const measurements = this.measurementsCache.slice(0, min)
 
       for (let i = min; i < count; i++) {
-        let measureElement = this.measurementsCache[i]?.measureElement
-
-        if (!measureElement) {
-          measureElement = (node: TItemElement | null | undefined) => {
-            const key = getItemKey(i)
-            const prevNode = this.elementsCache.get(key)
-
-            if (!node) {
-              if (prevNode) {
-                this.observer.unobserve(prevNode)
-                this.elementsCache.delete(key)
-              }
-              return
-            }
-
-            if (prevNode !== node) {
-              if (prevNode) {
-                this.observer.unobserve(prevNode)
-              }
-              this.observer.observe(node)
-              this.elementsCache.set(key, node)
-            }
-
-            if (node.isConnected) {
-              this.resizeItem(
-                i,
-                this.options.measureElement(node, undefined, this),
-              )
-            }
-          }
-        }
-
         const key = getItemKey(i)
 
         const furthestMeasurement =
@@ -677,7 +645,7 @@ export class Virtualizer<
           end,
           key,
           lane,
-          measureElement,
+          measureElement: this.measureElement,
         }
       }
 
@@ -750,30 +718,22 @@ export class Virtualizer<
     node: TItemElement,
     entry: ResizeObserverEntry | undefined,
   ) => {
-    const i = this.indexFromElement(node)
-    const item = this.getMeasurements()[i]
+    const index = this.indexFromElement(node)
+    const key = this.options.getItemKey(index)
 
-    if (!item || !node.isConnected) {
-      this.elementsCache.forEach((cached, key) => {
-        if (cached === node) {
-          this.observer.unobserve(node)
-          this.elementsCache.delete(key)
-        }
-      })
-      return
-    }
-
-    const prevNode = this.elementsCache.get(item.key)
+    const prevNode = this.elementsCache.get(key)
 
     if (prevNode !== node) {
       if (prevNode) {
         this.observer.unobserve(prevNode)
       }
       this.observer.observe(node)
-      this.elementsCache.set(item.key, node)
+      this.elementsCache.set(key, node)
     }
 
-    this.resizeItem(i, this.options.measureElement(node, entry, this))
+    if (node.isConnected) {
+      this.resizeItem(index, this.options.measureElement(node, entry, this))
+    }
   }
 
   resizeItem = (index: number, size: number) => {
@@ -809,6 +769,12 @@ export class Virtualizer<
 
   measureElement = (node: TItemElement | null | undefined) => {
     if (!node) {
+      this.elementsCache.forEach((cached, key) => {
+        if (!cached.isConnected) {
+          this.observer.unobserve(cached)
+          this.elementsCache.delete(key)
+        }
+      })
       return
     }
 
