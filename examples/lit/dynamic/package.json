@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@tanstack/lit-virtual": "^3.9.0",
-    "@tanstack/virtual-core": "^3.9.0",
+    "@tanstack/lit-virtual": "^3.10.1",
+    "@tanstack/virtual-core": "^3.10.1",
     "lit": "^3.2.0"
   },
   "devDependencies": {

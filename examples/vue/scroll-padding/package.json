@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tanstack/vue-virtual": "^3.9.0",
+    "@tanstack/vue-virtual": "^3.10.1",
     "@vueuse/core": "^10.11.1",
     "vue": "^3.4.38"
   },
