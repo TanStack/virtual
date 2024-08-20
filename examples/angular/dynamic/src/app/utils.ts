@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker'
 
 export const generateRandomNumber = (min: number, max: number) =>
-  faker.datatype.number({ min, max })
+  faker.number.int({ min, max })
 
 // 1000 because 10000 takes many seconds
 export const sentences = new Array(1000)

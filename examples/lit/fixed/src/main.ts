@@ -15,7 +15,7 @@ interface Column {
 }
 
 function randomNumber(min: number, max: number) {
-  return faker.datatype.number({ min, max })
+  return faker.number.int({ min, max })
 }
 
 const sentences = new Array(10000)
