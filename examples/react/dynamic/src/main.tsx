@@ -7,7 +7,7 @@ import { useVirtualizer, useWindowVirtualizer } from '@tanstack/react-virtual'
 import './index.css'
 
 const randomNumber = (min: number, max: number) =>
-  faker.datatype.number({ min, max })
+  faker.number.int({ min, max })
 
 const sentences = new Array(10000)
   .fill(true)
