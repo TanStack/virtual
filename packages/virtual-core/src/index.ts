@@ -28,14 +28,13 @@ export interface Range {
 
 type Key = number | string
 
-export interface VirtualItem<TItemElement extends Element> {
+export interface VirtualItem {
   key: Key
   index: number
   start: number
   end: number
   size: number
   lane: number
-  measureElement: (node: TItemElement | null | undefined) => void
 }
 
 export interface Rect {
@@ -319,7 +318,7 @@ export interface VirtualizerOptions<
   scrollMargin?: number
   gap?: number
   indexAttribute?: string
-  initialMeasurementsCache?: Array<VirtualItem<TItemElement>>
+  initialMeasurementsCache?: Array<VirtualItem>
   lanes?: number
   isScrollingResetDelay?: number
   enabled?: boolean
@@ -336,7 +335,7 @@ export class Virtualizer<
   targetWindow: (Window & typeof globalThis) | null = null
   isScrolling = false
   private scrollToIndexTimeoutId: number | null = null
-  measurementsCache: Array<VirtualItem<TItemElement>> = []
+  measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
   private pendingMeasuredCacheIndexes: Array<number> = []
   scrollRect: Rect | null = null
@@ -346,7 +345,7 @@ export class Virtualizer<
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
-        item: VirtualItem<TItemElement>,
+        item: VirtualItem,
         delta: number,
         instance: Virtualizer<TScrollElement, TItemElement>,
       ) => boolean)
@@ -534,11 +533,11 @@ export class Virtualizer<
   }
 
   private getFurthestMeasurement = (
-    measurements: Array<VirtualItem<TItemElement>>,
+    measurements: Array<VirtualItem>,
     index: number,
   ) => {
     const furthestMeasurementsFound = new Map<number, true>()
-    const furthestMeasurements = new Map<number, VirtualItem<TItemElement>>()
+    const furthestMeasurements = new Map<number, VirtualItem>()
     for (let m = index - 1; m >= 0; m--) {
       const measurement = measurements[m]!
 
@@ -655,7 +654,6 @@ export class Virtualizer<
           end,
           key,
           lane,
-          measureElement: this.measureElement,
         }
       }
 
@@ -794,7 +792,7 @@ export class Virtualizer<
   getVirtualItems = memo(
     () => [this.getIndexes(), this.getMeasurements()],
     (indexes, measurements) => {
-      const virtualItems: Array<VirtualItem<TItemElement>> = []
+      const virtualItems: Array<VirtualItem> = []
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
@@ -1044,12 +1042,12 @@ const findNearestBinarySearch = (
   }
 }
 
-function calculateRange<TItemElement extends Element>({
+function calculateRange({
   measurements,
   outerSize,
   scrollOffset,
 }: {
-  measurements: Array<VirtualItem<TItemElement>>
+  measurements: Array<VirtualItem>
   outerSize: number
   scrollOffset: number
 }) {

@@ -70,8 +70,9 @@ function RowVirtualizerDynamic({ rows }: { rows: Array<number> }) {
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => (
             <div
-              key={virtualRow.index}
-              ref={virtualRow.measureElement}
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
               className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
               style={{
                 position: 'absolute',
@@ -123,8 +124,9 @@ function ColumnVirtualizerDynamic({ columns }: { columns: Array<number> }) {
         >
           {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
             <div
-              key={virtualColumn.index}
-              ref={virtualColumn.measureElement}
+              key={virtualColumn.key}
+              data-index={virtualColumn.index}
+              ref={columnVirtualizer.measureElement}
               className={
                 virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'
               }
@@ -161,6 +163,7 @@ function GridVirtualizerDynamic({
     estimateSize: () => 50,
     paddingStart: 200,
     paddingEnd: 200,
+    indexAttribute: 'data-row-index',
   })
 
   const columnVirtualizer = useVirtualizer({
@@ -170,6 +173,7 @@ function GridVirtualizerDynamic({
     estimateSize: () => 50,
     paddingStart: 200,
     paddingEnd: 200,
+    indexAttribute: 'data-column-index',
   })
 
   const [show, setShow] = React.useState(true)
@@ -203,13 +207,15 @@ function GridVirtualizerDynamic({
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-              <React.Fragment key={virtualRow.index}>
+              <React.Fragment key={virtualRow.key}>
                 {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
                   <div
-                    key={virtualColumn.index}
+                    key={virtualColumn.key}
+                    data-row-index={virtualRow.index}
+                    data-column-index={virtualColumn.index}
                     ref={(el) => {
-                      virtualRow.measureElement(el)
-                      virtualColumn.measureElement(el)
+                      rowVirtualizer.measureElement(el)
+                      columnVirtualizer.measureElement(el)
                     }}
                     className={
                       virtualColumn.index % 2

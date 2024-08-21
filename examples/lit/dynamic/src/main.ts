@@ -167,7 +167,7 @@ class ColumnVirtualizerDynamic extends LitElement {
                 <div
                   data-index="${virtualColumn.index}"
                   style="position:absolute;top:0;left:0;height:100%;transform:translateX(${virtualColumn.start}px)"
-                  ${ref(virtualColumn.measureElement)}
+                  ${ref(virtualizer.measureElement)}
                   class="${virtualColumn.index % 2 === 0
                     ? 'list-item-even'
                     : 'list-item-odd'}"
