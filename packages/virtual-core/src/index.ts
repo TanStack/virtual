@@ -745,7 +745,7 @@ export class Virtualizer<
   }
 
   resizeItem = (index: number, size: number) => {
-    const item = this.getMeasurements()[index]
+    const item = this.measurementsCache[index]
     if (!item) {
       return
     }
