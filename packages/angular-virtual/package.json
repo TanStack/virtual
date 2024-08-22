@@ -37,17 +37,12 @@
     "node": ">=12"
   },
   "files": [
-    "build",
-    "!**/*.d.ts",
-    "!**/*.d.ts.map"
+    "build"
   ],
   "scripts": {
     "clean": "rimraf ./build",
     "test:types": "tsc --noEmit",
-    "build": "ng-packagr -p ng-package.json -c tsconfig.build.json",
-    "build-no-package-json": "pnpm run build && rimraf ./build/package.json",
-    "BAK": "ng-packagr -p ng-package.json -c tsconfig.build.json",
-    "build:types": "tsc --emitDeclarationOnly"
+    "build": "ng-packagr -p ng-package.json -c tsconfig.build.json"
   },
   "dependencies": {
     "@tanstack/virtual-core": "workspace:*",
