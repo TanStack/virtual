@@ -865,7 +865,7 @@ export class Virtualizer<
   getOffsetForIndex = (index: number, align: ScrollAlignment = 'auto') => {
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
-    const item = this.getMeasurements()[index]
+    const item = this.measurementsCache[index]
     if (!item) {
       return undefined
     }

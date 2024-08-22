@@ -184,8 +184,9 @@ An optional function that if provided is called when the scrollElement changes a
 
 ```tsx
 measureElement?: (
-  el: TItemElement,
-  instance: Virtualizer<TScrollElement, TItemElement>
+  element: TItemElement,
+  entry: ResizeObserverEntry | undefined,
+  instance: Virtualizer<TScrollElement, TItemElement>,
 ) => number
 ```
 
