@@ -184,12 +184,13 @@ An optional function that if provided is called when the scrollElement changes a
 
 ```tsx
 measureElement?: (
-  el: TItemElement,
-  instance: Virtualizer<TScrollElement, TItemElement>
+  element: TItemElement,
+  entry: ResizeObserverEntry | undefined,
+  instance: Virtualizer<TScrollElement, TItemElement>,
 ) => number
 ```
 
-This optional function is called when the virtualizer needs to dynamically measure the size (width or height) of an item when `virtualItem.measureElement` is called. It's passed the element given when you call `virtualItem.measureElement(TItemElement)` and the virtualizer instance. It should return the size of the element as a `number`.
+This optional function is called when the virtualizer needs to dynamically measure the size (width or height) of an item.
 
 > 🧠 You can use `instance.options.horizontal` to determine if the width or height of the item should be measured.
 

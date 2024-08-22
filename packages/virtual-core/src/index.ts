@@ -28,14 +28,13 @@ export interface Range {
 
 type Key = number | string
 
-export interface VirtualItem<TItemElement extends Element> {
+export interface VirtualItem {
   key: Key
   index: number
   start: number
   end: number
   size: number
   lane: number
-  measureElement: (node: TItemElement | null | undefined) => void
 }
 
 export interface Rect {
@@ -319,7 +318,7 @@ export interface VirtualizerOptions<
   scrollMargin?: number
   gap?: number
   indexAttribute?: string
-  initialMeasurementsCache?: Array<VirtualItem<TItemElement>>
+  initialMeasurementsCache?: Array<VirtualItem>
   lanes?: number
   isScrollingResetDelay?: number
   enabled?: boolean
@@ -336,7 +335,7 @@ export class Virtualizer<
   targetWindow: (Window & typeof globalThis) | null = null
   isScrolling = false
   private scrollToIndexTimeoutId: number | null = null
-  measurementsCache: Array<VirtualItem<TItemElement>> = []
+  measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
   private pendingMeasuredCacheIndexes: Array<number> = []
   scrollRect: Rect | null = null
@@ -346,7 +345,7 @@ export class Virtualizer<
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
-        item: VirtualItem<TItemElement>,
+        item: VirtualItem,
         delta: number,
         instance: Virtualizer<TScrollElement, TItemElement>,
       ) => boolean)
@@ -414,21 +413,33 @@ export class Virtualizer<
     }
   }
 
-  private notify = (force: boolean, sync: boolean) => {
-    const { startIndex, endIndex } = this.range ?? {
-      startIndex: undefined,
-      endIndex: undefined,
-    }
-    const range = this.calculateRange()
-
-    if (
-      force ||
-      startIndex !== range?.startIndex ||
-      endIndex !== range?.endIndex
-    ) {
-      this.options.onChange?.(this, sync)
-    }
+  private notify = (sync: boolean) => {
+    this.options.onChange?.(this, sync)
   }
+
+  private maybeNotify = memo(
+    () => {
+      this.calculateRange()
+
+      return [
+        this.isScrolling,
+        this.range ? this.range.startIndex : null,
+        this.range ? this.range.endIndex : null,
+      ]
+    },
+    (isScrolling) => {
+      this.notify(isScrolling)
+    },
+    {
+      key: process.env.NODE_ENV !== 'production' && 'maybeNotify',
+      debug: () => this.options.debug,
+      initialDeps: [
+        this.isScrolling,
+        this.range ? this.range.startIndex : null,
+        this.range ? this.range.endIndex : null,
+      ] as [boolean, number | null, number | null],
+    },
+  )
 
   private cleanup = () => {
     this.unsubs.filter(Boolean).forEach((d) => d!())
@@ -454,7 +465,7 @@ export class Virtualizer<
       this.cleanup()
 
       if (!scrollElement) {
-        this.notify(false, false)
+        this.maybeNotify()
         return
       }
 
@@ -474,7 +485,7 @@ export class Virtualizer<
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
           this.scrollRect = rect
-          this.notify(false, false)
+          this.maybeNotify()
         }),
       )
 
@@ -487,11 +498,9 @@ export class Virtualizer<
               : 'backward'
             : null
           this.scrollOffset = offset
-
-          const prevIsScrolling = this.isScrolling
           this.isScrolling = isScrolling
 
-          this.notify(prevIsScrolling !== isScrolling, isScrolling)
+          this.maybeNotify()
         }),
       )
     }
@@ -524,11 +533,11 @@ export class Virtualizer<
   }
 
   private getFurthestMeasurement = (
-    measurements: Array<VirtualItem<TItemElement>>,
+    measurements: Array<VirtualItem>,
     index: number,
   ) => {
     const furthestMeasurementsFound = new Map<number, true>()
-    const furthestMeasurements = new Map<number, VirtualItem<TItemElement>>()
+    const furthestMeasurements = new Map<number, VirtualItem>()
     for (let m = index - 1; m >= 0; m--) {
       const measurement = measurements[m]!
 
@@ -645,7 +654,6 @@ export class Virtualizer<
           end,
           key,
           lane,
-          measureElement: this.measureElement,
         }
       }
 
@@ -737,7 +745,7 @@ export class Virtualizer<
   }
 
   resizeItem = (index: number, size: number) => {
-    const item = this.getMeasurements()[index]
+    const item = this.measurementsCache[index]
     if (!item) {
       return
     }
@@ -763,7 +771,7 @@ export class Virtualizer<
       this.pendingMeasuredCacheIndexes.push(item.index)
       this.itemSizeCache = new Map(this.itemSizeCache.set(item.key, size))
 
-      this.notify(true, false)
+      this.notify(false)
     }
   }
 
@@ -784,7 +792,7 @@ export class Virtualizer<
   getVirtualItems = memo(
     () => [this.getIndexes(), this.getMeasurements()],
     (indexes, measurements) => {
-      const virtualItems: Array<VirtualItem<TItemElement>> = []
+      const virtualItems: Array<VirtualItem> = []
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
@@ -857,7 +865,7 @@ export class Virtualizer<
   getOffsetForIndex = (index: number, align: ScrollAlignment = 'auto') => {
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
-    const item = this.getMeasurements()[index]
+    const item = this.measurementsCache[index]
     if (!item) {
       return undefined
     }
@@ -1004,7 +1012,7 @@ export class Virtualizer<
 
   measure = () => {
     this.itemSizeCache = new Map()
-    this.options.onChange?.(this, false)
+    this.notify(false)
   }
 }
 
@@ -1034,12 +1042,12 @@ const findNearestBinarySearch = (
   }
 }
 
-function calculateRange<TItemElement extends Element>({
+function calculateRange({
   measurements,
   outerSize,
   scrollOffset,
 }: {
-  measurements: Array<VirtualItem<TItemElement>>
+  measurements: Array<VirtualItem>
   outerSize: number
   scrollOffset: number
 }) {
