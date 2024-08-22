@@ -296,7 +296,7 @@ export interface VirtualizerOptions<
   ) => void | (() => void)
 
   // Optional
-  debug?: any
+  debug?: boolean
   initialRect?: Rect
   onChange?: (
     instance: Virtualizer<TScrollElement, TItemElement>,
