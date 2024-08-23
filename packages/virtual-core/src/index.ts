@@ -727,8 +727,11 @@ export class Virtualizer<
     entry: ResizeObserverEntry | undefined,
   ) => {
     const index = this.indexFromElement(node)
-    const key = this.options.getItemKey(index)
-
+    const item = this.measurementsCache[index]
+    if (!item) {
+      return
+    }
+    const key = item.key
     const prevNode = this.elementsCache.get(key)
 
     if (prevNode !== node) {
