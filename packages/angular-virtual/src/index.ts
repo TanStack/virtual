@@ -1,31 +1,31 @@
 import {
+  AfterRenderPhase,
+  DestroyRef,
+  type ElementRef,
+  type Signal,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core'
+import {
+  type PartialKeys,
+  Virtualizer,
+  type VirtualizerOptions,
   elementScroll,
   observeElementOffset,
   observeElementRect,
   observeWindowOffset,
   observeWindowRect,
-  PartialKeys,
-  Virtualizer,
-  VirtualizerOptions,
   windowScroll,
 } from '@tanstack/virtual-core'
+import { proxyVirtualizer } from './proxy'
+import type { AngularVirtualizer } from './types'
+
 export * from '@tanstack/virtual-core'
 export * from './types'
-
-import {
-  signal,
-  inject,
-  DestroyRef,
-  computed,
-  Signal,
-  effect,
-  ElementRef,
-  afterNextRender,
-  untracked,
-  AfterRenderPhase,
-} from '@angular/core'
-import { AngularVirtualizer } from './types'
-import { proxyVirtualizer } from './proxy'
 
 function createVirtualizerBase<
   TScrollElement extends Element | Window,

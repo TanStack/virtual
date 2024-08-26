@@ -42,6 +42,7 @@
   "scripts": {
     "clean": "rimraf ./build",
     "test:types": "tsc --noEmit",
+    "test:eslint": "eslint ./src",
     "build": "ng-packagr -p ng-package.json -c tsconfig.build.json"
   },
   "dependencies": {

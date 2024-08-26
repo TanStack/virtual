@@ -1,6 +1,11 @@
-import { Signal, WritableSignal, computed, untracked } from '@angular/core'
-import { Virtualizer } from '@tanstack/virtual-core'
-import { AngularVirtualizer } from './types'
+import {
+  type Signal,
+  type WritableSignal,
+  computed,
+  untracked,
+} from '@angular/core'
+import { type Virtualizer } from '@tanstack/virtual-core'
+import { type AngularVirtualizer } from './types'
 
 export function proxyVirtualizer<
   V extends Virtualizer<any, any>,
@@ -94,7 +99,7 @@ function toComputed<V extends Virtualizer<any, any>>(
 ) {
   const computedCache: Record<string, Signal<unknown>> = {}
 
-  return (...args: any[]) => {
+  return (...args: Array<any>) => {
     // Cache computeds by their arguments to avoid re-creating the computed on each call
     const serializedArgs = serializeArgs(...args)
     if (computedCache.hasOwnProperty(serializedArgs)) {
@@ -111,6 +116,6 @@ function toComputed<V extends Virtualizer<any, any>>(
   }
 }
 
-function serializeArgs(...args: any[]) {
+function serializeArgs(...args: Array<any>) {
   return JSON.stringify(args)
 }
