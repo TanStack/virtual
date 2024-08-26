@@ -46,10 +46,10 @@
   },
   "dependencies": {
     "@tanstack/virtual-core": "workspace:*",
-    "tslib": "^2.6.3"
+    "tslib": "^2.7.0"
   },
   "devDependencies": {
-    "@angular/core": "^17.3.0",
+    "@angular/core": "^17.3.12",
     "ng-packagr": "^17.3.0",
     "typescript": "5.2.2"
   },
