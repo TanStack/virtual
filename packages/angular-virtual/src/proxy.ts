@@ -63,7 +63,7 @@ export function proxyVirtualizer<
           'indexFromElement',
         ].includes(property)
       ) {
-        const fn = untypedTarget[property] as Function
+        const fn = virtualizer[property as keyof V] as Function
         Object.defineProperty(untypedTarget, property, {
           value: toComputed(virtualizerSignal, fn),
           configurable: true,
