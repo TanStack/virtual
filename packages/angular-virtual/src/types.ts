@@ -1,5 +1,5 @@
-import { Signal } from '@angular/core'
-import { Virtualizer } from '@tanstack/virtual-core'
+import type { Signal } from '@angular/core'
+import type { Virtualizer } from '@tanstack/virtual-core'
 
 export type AngularVirtualizer<
   TScrollElement extends Element | Window,
