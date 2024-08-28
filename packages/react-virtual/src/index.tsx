@@ -47,7 +47,8 @@ function useVirtualizerBase<
   }, [])
 
   useIsomorphicLayoutEffect(() => {
-    return instance._willUpdate()
+    instance._willUpdate()
+    instance.measureElement = instance.measureElement.bind(instance)
   })
 
   return instance
