@@ -26,7 +26,7 @@ export interface Range {
   count: number
 }
 
-type Key = number | string
+type Key = number | string | bigint
 
 export interface VirtualItem {
   key: Key
