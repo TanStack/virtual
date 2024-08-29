@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@tanstack/vue-virtual": "^3.10.5",
-    "@vueuse/core": "^10.11.1",
+    "@vueuse/core": "^11.0.3",
     "vue": "^3.4.38"
   },
   "devDependencies": {
