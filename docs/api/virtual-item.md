@@ -6,7 +6,7 @@ The `VirtualItem` object represents a single item returned by the virtualizer. I
 
 ```tsx
 export interface VirtualItem {
-  key: string | number
+  key: string | number | bigint
   index: number
   start: number
   end: number
@@ -19,7 +19,7 @@ The following properties and methods are available on each VirtualItem object:
 ### `key`
 
 ```tsx
-key: string | number
+key: string | number | bigint
 ```
 
 The unique key for the item. By default this is the item index, but should be configured via the `getItemKey` Virtualizer option.
