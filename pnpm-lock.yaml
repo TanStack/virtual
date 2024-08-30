@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@tanstack/config':
-        specifier: ^0.13.0
-        version: 0.13.0(@types/node@18.19.42)(esbuild@0.21.5)(eslint@9.9.1(jiti@1.21.6))(rollup@4.21.0)(typescript@5.2.2)(vite@5.4.2(@types/node@18.19.42)(less@4.2.0)(sass@1.77.8)(terser@5.29.1))
+        specifier: ^0.13.1
+        version: 0.13.1(@types/node@18.19.42)(esbuild@0.21.5)(eslint@9.9.1(jiti@1.21.6))(rollup@4.21.0)(typescript@5.2.2)(vite@5.4.2(@types/node@18.19.42)(less@4.2.0)(sass@1.77.8)(terser@5.29.1))
       '@testing-library/jest-dom':
         specifier: ^6.5.0
         version: 6.5.0
@@ -3253,8 +3253,8 @@ packages:
     peerDependencies:
       '@angular/core': '>=17'
 
-  '@tanstack/config@0.13.0':
-    resolution: {integrity: sha512-vkPmNYH/Ee8Zqn9f0lwB2tyi/Erg9kKmaywQZGBWRfaHwXUGahMWc0S8Fb2iS/SMa8YOkUUl1w79J0hELTY65A==}
+  '@tanstack/config@0.13.1':
+    resolution: {integrity: sha512-p8K5lrwZPGjvfPuvP1UxHyucDmdADrHOqzpO/zRAhjqV6uBZBatZ2CTKR8Zlvekmb2bdXKjqBGoiyIuLiT0xTA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -9683,7 +9683,7 @@ snapshots:
       '@tanstack/table-core': 8.20.5
       tslib: 2.7.0
 
-  '@tanstack/config@0.13.0(@types/node@18.19.42)(esbuild@0.21.5)(eslint@9.9.1(jiti@1.21.6))(rollup@4.21.0)(typescript@5.2.2)(vite@5.4.2(@types/node@18.19.42)(less@4.2.0)(sass@1.77.8)(terser@5.29.1))':
+  '@tanstack/config@0.13.1(@types/node@18.19.42)(esbuild@0.21.5)(eslint@9.9.1(jiti@1.21.6))(rollup@4.21.0)(typescript@5.2.2)(vite@5.4.2(@types/node@18.19.42)(less@4.2.0)(sass@1.77.8)(terser@5.29.1))':
     dependencies:
       '@commitlint/parse': 19.0.3
       '@eslint/js': 9.9.1

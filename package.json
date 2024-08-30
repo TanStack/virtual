@@ -37,7 +37,7 @@
     ]
   },
   "devDependencies": {
-    "@tanstack/config": "^0.13.0",
+    "@tanstack/config": "^0.13.1",
     "@testing-library/jest-dom": "^6.5.0",
     "@types/node": "^18.19.3",
     "eslint": "^9.9.1",
