@@ -1,11 +1,7 @@
-import {
-  type Signal,
-  type WritableSignal,
-  computed,
-  untracked,
-} from '@angular/core'
-import { type Virtualizer } from '@tanstack/virtual-core'
-import { type AngularVirtualizer } from './types'
+import { computed, untracked } from '@angular/core'
+import type { Signal, WritableSignal } from '@angular/core'
+import type { Virtualizer } from '@tanstack/virtual-core'
+import type { AngularVirtualizer } from './types'
 
 export function proxyVirtualizer<
   V extends Virtualizer<any, any>,

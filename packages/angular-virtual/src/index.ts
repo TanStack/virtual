@@ -1,8 +1,6 @@
 import {
   AfterRenderPhase,
   DestroyRef,
-  type ElementRef,
-  type Signal,
   afterNextRender,
   computed,
   effect,
@@ -11,9 +9,7 @@ import {
   untracked,
 } from '@angular/core'
 import {
-  type PartialKeys,
   Virtualizer,
-  type VirtualizerOptions,
   elementScroll,
   observeElementOffset,
   observeElementRect,
@@ -22,6 +18,8 @@ import {
   windowScroll,
 } from '@tanstack/virtual-core'
 import { proxyVirtualizer } from './proxy'
+import type { ElementRef, Signal } from '@angular/core'
+import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 import type { AngularVirtualizer } from './types'
 
 export * from '@tanstack/virtual-core'
