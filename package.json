@@ -37,10 +37,10 @@
     ]
   },
   "devDependencies": {
-    "@tanstack/config": "^0.11.2",
+    "@tanstack/config": "^0.13.0",
     "@testing-library/jest-dom": "^6.5.0",
     "@types/node": "^18.19.3",
-    "eslint": "^8.57.0",
+    "eslint": "^9.9.1",
     "jsdom": "^25.0.0",
     "knip": "^5.27.4",
     "nx": "^19.6.2",

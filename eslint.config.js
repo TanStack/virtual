@@ -8,9 +8,9 @@ export default [
   {
     name: 'tanstack/temp',
     rules: {
-      '@typescript-eslint/ban-types': 'off',
       '@typescript-eslint/naming-convention': 'off',
       '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
       'no-self-assign': 'off',
     },
   },
