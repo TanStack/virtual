@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/solid-virtual",
-  "version": "3.10.6",
+  "version": "3.10.7",
   "description": "Headless UI for virtualizing scrollable elements in Solid",
   "author": "Tanner Linsley",
   "license": "MIT",
