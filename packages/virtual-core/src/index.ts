@@ -370,7 +370,10 @@ export class Virtualizer<
     }
 
     return {
-      disconnect: () => get()?.disconnect(),
+      disconnect: () => {
+        get()?.disconnect()
+        _ro = null
+      },
       observe: (target: Element) =>
         get()?.observe(target, { box: 'border-box' }),
       unobserve: (target: Element) => get()?.unobserve(target),
@@ -444,10 +447,9 @@ export class Virtualizer<
   private cleanup = () => {
     this.unsubs.filter(Boolean).forEach((d) => d!())
     this.unsubs = []
+    this.observer.disconnect()
     this.scrollElement = null
     this.targetWindow = null
-    this.observer.disconnect()
-    this.elementsCache.clear()
   }
 
   _didMount = () => {
@@ -476,6 +478,10 @@ export class Virtualizer<
       } else {
         this.targetWindow = this.scrollElement?.window ?? null
       }
+
+      this.elementsCache.forEach((cached) => {
+        this.observer.observe(cached)
+      })
 
       this._scrollToOffset(this.getScrollOffset(), {
         adjustments: undefined,
