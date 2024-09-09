@@ -40,17 +40,17 @@
     "@tanstack/config": "^0.13.1",
     "@testing-library/jest-dom": "^6.5.0",
     "@types/node": "^18.19.3",
-    "eslint": "^9.9.1",
+    "eslint": "^9.10.0",
     "jsdom": "^25.0.0",
-    "knip": "^5.29.1",
-    "nx": "^19.6.4",
+    "knip": "^5.30.0",
+    "nx": "^19.6.5",
     "prettier": "^3.3.3",
     "prettier-plugin-svelte": "^3.2.6",
     "publint": "^0.2.10",
     "rimraf": "^5.0.10",
     "sherif": "^0.11.0",
     "typescript": "5.2.2",
-    "vite": "^5.4.2",
+    "vite": "^5.4.3",
     "vitest": "^2.0.5"
   }
 }
