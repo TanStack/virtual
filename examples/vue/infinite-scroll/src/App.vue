@@ -60,7 +60,7 @@ watchEffect(() => {
 
   if (
     lastItem.index >= allRows.value.length - 1 &&
-    hasNextPage &&
+    hasNextPage.value &&
     !isFetchingNextPage.value
   ) {
     fetchNextPage()
