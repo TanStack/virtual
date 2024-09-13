@@ -1003,7 +1003,10 @@ export class Virtualizer<
             )
     }
 
-    return end - this.options.scrollMargin + this.options.paddingEnd
+    return Math.max(
+      end - this.options.scrollMargin + this.options.paddingEnd,
+      0,
+    )
   }
 
   private _scrollToOffset = (
