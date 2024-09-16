@@ -154,7 +154,13 @@ scrollToFn?: (
 ) => void
 ```
 
-An optional function that if provided should implement the scrolling behavior for your scrollElement. It will be called with the offset to scroll to, a boolean indicating if the scrolling is allowed to be smoothed, and the virtualizer instance. Built-in scroll implementations are exported as `elementScroll` and `windowScroll` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `useWindowVirtualizer`.
+An optional function that (if provided) should implement the scrolling behavior for your scrollElement. It will be called with the following arguments: 
+
+- An `offset` (in pixels) to scroll towards.
+- An object indicating whether there was a difference between the estimated size and actual size (`adjustments`) and/or whether scrolling was called with a smooth animation (`behaviour`).
+- The virtualizer instance itself. 
+
+Note that built-in scroll implementations are exported as `elementScroll` and `windowScroll`, which are automatically configured by the framework adapter functions like `useVirtualizer` or `useWindowVirtualizer`.
 
 > ⚠️ Attempting to use smoothScroll with dynamically measured elements will not work.
 
