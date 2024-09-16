@@ -9,16 +9,16 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@tanstack/svelte-query": "^5.55.2",
+    "@tanstack/svelte-query": "^5.56.2",
     "@tanstack/svelte-virtual": "^3.10.7"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "@tsconfig/svelte": "^5.0.4",
     "svelte": "^4.2.19",
-    "svelte-check": "^4.0.1",
+    "svelte-check": "^4.0.2",
     "tslib": "^2.7.0",
     "typescript": "5.2.2",
-    "vite": "^5.4.3"
+    "vite": "^5.4.5"
   }
 }
