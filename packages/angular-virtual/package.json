@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/angular-virtual",
-  "version": "3.10.7",
+  "version": "3.10.8",
   "description": "Headless UI for virtualizing scrollable elements in Angular",
   "author": "Garrett Darnell",
   "license": "MIT",
