@@ -84,15 +84,17 @@ export const observeElementRect = <T extends Element>(
   }
 
   const observer = new targetWindow.ResizeObserver((entries) => {
-    const entry = entries[0]
-    if (entry?.borderBoxSize) {
-      const box = entry.borderBoxSize[0]
-      if (box) {
-        handler({ width: box.inlineSize, height: box.blockSize })
-        return
+    window.requestAnimationFrame(() => {
+      const entry = entries[0]
+      if (entry?.borderBoxSize) {
+        const box = entry.borderBoxSize[0]
+        if (box) {
+          handler({ width: box.inlineSize, height: box.blockSize })
+          return
+        }
       }
-    }
-    handler(element.getBoundingClientRect())
+      handler(element.getBoundingClientRect())
+    })
   })
 
   observer.observe(element, { box: 'border-box' })
@@ -363,8 +365,10 @@ export class Virtualizer<
       }
 
       return (_ro = new this.targetWindow.ResizeObserver((entries) => {
-        entries.forEach((entry) => {
-          this._measureElement(entry.target as TItemElement, entry)
+        window.requestAnimationFrame(() => {
+          entries.forEach((entry) => {
+            this._measureElement(entry.target as TItemElement, entry)
+          })
         })
       }))
     }
