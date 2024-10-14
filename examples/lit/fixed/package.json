@@ -11,7 +11,7 @@
     "@faker-js/faker": "^8.4.1",
     "@tanstack/lit-virtual": "^3.10.8",
     "@tanstack/virtual-core": "^3.10.8",
-    "lit": "^3.2.0"
+    "lit": "^3.2.1"
   },
   "devDependencies": {
     "@types/node": "^18.19.3",

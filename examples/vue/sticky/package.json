@@ -11,7 +11,7 @@
     "@faker-js/faker": "^8.4.1",
     "@tanstack/vue-virtual": "^3.10.8",
     "lodash": "^4.17.21",
-    "vue": "^3.5.11"
+    "vue": "^3.5.12"
   },
   "devDependencies": {
     "@codesandbox/vue-preview": "^0.1.1-alpha.16",
