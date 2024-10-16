@@ -48,7 +48,7 @@
     "prettier-plugin-svelte": "^3.2.7",
     "publint": "^0.2.11",
     "rimraf": "^5.0.10",
-    "sherif": "^0.11.0",
+    "sherif": "^1.0.1",
     "typescript": "5.2.2",
     "vite": "^5.4.8",
     "vitest": "^2.1.2"
