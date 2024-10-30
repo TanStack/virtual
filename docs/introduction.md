@@ -15,7 +15,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 
 function App() {
   // The scrollable element for your list
-  const parentRef = React.useRef()
+  const parentRef = React.useRef(null)
 
   // The virtualizer
   const rowVirtualizer = useVirtualizer({
