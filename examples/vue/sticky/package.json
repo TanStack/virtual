@@ -15,10 +15,10 @@
   },
   "devDependencies": {
     "@codesandbox/vue-preview": "^0.1.1-alpha.16",
-    "@types/lodash": "^4.17.12",
+    "@types/lodash": "^4.17.13",
     "@vitejs/plugin-vue": "^5.1.4",
     "typescript": "5.2.2",
     "vite": "^5.4.10",
-    "vue-tsc": "^2.1.8"
+    "vue-tsc": "^2.1.10"
   }
 }
