@@ -240,6 +240,16 @@ This option allows you to specify the duration to wait after the last scroll eve
 
 The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
 
+### `useScrollendEvent`
+
+```tsx
+useScrollendEvent: boolean
+```
+
+This option allows you to switch to use debounced fallback to reset the isScrolling instance property after `isScrollingResetDelay` milliseconds. The default value is `true`. 
+
+The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
+
 ### `isRtl`
 
 ```tsx
