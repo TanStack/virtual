@@ -133,6 +133,7 @@ const supportsScrollend =
 export const observeElementOffset = <T extends Element>(
   instance: Virtualizer<T, any>,
   cb: (offset: number, isScrolling: boolean) => void,
+  debounceFallbackEnabled = false,
 ) => {
   const element = instance.scrollElement
   if (!element) {
@@ -144,15 +145,16 @@ export const observeElementOffset = <T extends Element>(
   }
 
   let offset = 0
-  const fallback = supportsScrollend
-    ? () => undefined
-    : debounce(
-        targetWindow,
-        () => {
-          cb(offset, false)
-        },
-        instance.options.isScrollingResetDelay,
-      )
+  const fallback =
+    !debounceFallbackEnabled && supportsScrollend
+      ? () => undefined
+      : debounce(
+          targetWindow,
+          () => {
+            cb(offset, false)
+          },
+          instance.options.isScrollingResetDelay,
+        )
 
   const createHandler = (isScrolling: boolean) => () => {
     const { horizontal, isRtl } = instance.options
@@ -292,6 +294,7 @@ export interface VirtualizerOptions<
   observeElementOffset: (
     instance: Virtualizer<TScrollElement, TItemElement>,
     cb: (offset: number, isScrolling: boolean) => void,
+    debounceFallbackEnabled?: boolean,
   ) => void | (() => void)
 
   // Optional
@@ -334,6 +337,7 @@ export class Virtualizer<
   scrollElement: TScrollElement | null = null
   targetWindow: (Window & typeof globalThis) | null = null
   isScrolling = false
+  debounceFallbackEnabled = false
   private scrollToIndexTimeoutId: number | null = null
   measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
@@ -496,18 +500,22 @@ export class Virtualizer<
       )
 
       this.unsubs.push(
-        this.options.observeElementOffset(this, (offset, isScrolling) => {
-          this.scrollAdjustments = 0
-          this.scrollDirection = isScrolling
-            ? this.getScrollOffset() < offset
-              ? 'forward'
-              : 'backward'
-            : null
-          this.scrollOffset = offset
-          this.isScrolling = isScrolling
+        this.options.observeElementOffset(
+          this,
+          (offset, isScrolling) => {
+            this.scrollAdjustments = 0
+            this.scrollDirection = isScrolling
+              ? this.getScrollOffset() < offset
+                ? 'forward'
+                : 'backward'
+              : null
+            this.scrollOffset = offset
+            this.isScrolling = isScrolling
 
-          this.maybeNotify()
-        }),
+            this.maybeNotify()
+          },
+          this.debounceFallbackEnabled,
+        ),
       )
     }
   }
