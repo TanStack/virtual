@@ -130,9 +130,11 @@ export const observeWindowRect = (
 const supportsScrollend =
   typeof window == 'undefined' ? true : 'onscrollend' in window
 
+type ObserveOffsetCallBack = (offset: number, isScrolling: boolean) => void
+
 export const observeElementOffset = <T extends Element>(
   instance: Virtualizer<T, any>,
-  cb: (offset: number, isScrolling: boolean) => void,
+  cb: ObserveOffsetCallBack,
 ) => {
   const element = instance.scrollElement
   if (!element) {
@@ -178,7 +180,7 @@ export const observeElementOffset = <T extends Element>(
 
 export const observeWindowOffset = (
   instance: Virtualizer<Window, any>,
-  cb: (offset: number, isScrolling: boolean) => void,
+  cb: ObserveOffsetCallBack,
 ) => {
   const element = instance.scrollElement
   if (!element) {
@@ -190,15 +192,16 @@ export const observeWindowOffset = (
   }
 
   let offset = 0
-  const fallback = supportsScrollend
-    ? () => undefined
-    : debounce(
-        targetWindow,
-        () => {
-          cb(offset, false)
-        },
-        instance.options.isScrollingResetDelay,
-      )
+  const fallback =
+    instance.options.useScrollendEvent && supportsScrollend
+      ? () => undefined
+      : debounce(
+          targetWindow,
+          () => {
+            cb(offset, false)
+          },
+          instance.options.isScrollingResetDelay,
+        )
 
   const createHandler = (isScrolling: boolean) => () => {
     offset = element[instance.options.horizontal ? 'scrollX' : 'scrollY']
@@ -292,7 +295,7 @@ export interface VirtualizerOptions<
   ) => void | (() => void)
   observeElementOffset: (
     instance: Virtualizer<TScrollElement, TItemElement>,
-    cb: (offset: number, isScrolling: boolean) => void,
+    cb: ObserveOffsetCallBack,
   ) => void | (() => void)
   // Optional
   debug?: boolean
