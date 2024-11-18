@@ -11,13 +11,13 @@
     "@faker-js/faker": "^8.4.1",
     "@tanstack/vue-table": "^8.20.5",
     "@tanstack/vue-virtual": "^3.10.9",
-    "vue": "^3.5.12"
+    "vue": "^3.5.13"
   },
   "devDependencies": {
     "@codesandbox/vue-preview": "^0.1.1-alpha.16",
-    "@vitejs/plugin-vue": "^5.1.5",
+    "@vitejs/plugin-vue": "^5.2.0",
     "typescript": "5.2.2",
-    "vite": "^5.4.10",
+    "vite": "^5.4.11",
     "vue-tsc": "^2.1.10"
   }
 }
