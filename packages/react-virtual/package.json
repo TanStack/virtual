@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/react-virtual",
-  "version": "3.10.9",
+  "version": "3.11.0",
   "description": "Headless UI for virtualizing scrollable elements in React",
   "author": "Tanner Linsley",
   "license": "MIT",
@@ -66,7 +66,7 @@
     "resize-observer-polyfill": "^1.5.1"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
   }
 }
