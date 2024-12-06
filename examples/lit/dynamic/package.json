@@ -14,7 +14,7 @@
     "lit": "^3.2.1"
   },
   "devDependencies": {
-    "@types/node": "^18.19.3",
+    "@types/node": "^22.10.1",
     "typescript": "5.2.2",
     "vite": "^5.4.11"
   }
