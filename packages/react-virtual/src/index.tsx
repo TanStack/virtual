@@ -43,6 +43,10 @@ function useVirtualizerBase<
   instance.setOptions(resolvedOptions)
 
   React.useEffect(() => {
+    if (!instance.scrollElement) {
+      instance._willUpdate()
+    }
+
     return instance._didMount()
   }, [])
 
