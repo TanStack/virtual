@@ -12,8 +12,8 @@
     <div>
       <button
         @click="
-          rowVirtualizer.scrollToIndex(randomIndex),
-            (randomIndex = generateRandomIndex())
+          (rowVirtualizer.scrollToIndex(randomIndex),
+          (randomIndex = generateRandomIndex()))
         "
       >
         Scroll To Random Index ({{ randomIndex }})

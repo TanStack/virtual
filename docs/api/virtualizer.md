@@ -206,7 +206,13 @@ This optional function is called when the virtualizer needs to dynamically measu
 scrollMargin?: number
 ```
 
-With this option, you can specify where the scroll offset should originate. Typically, this value represents the space between the beginning of the scrolling element and the start of the list. This is especially useful in common scenarios such as when you have a header preceding a window virtualizer or when multiple virtualizers are utilized within a single scrolling element.
+With this option, you can specify where the scroll offset should originate. Typically, this value represents the space between the beginning of the scrolling element and the start of the list. This is especially useful in common scenarios such as when you have a header preceding a window virtualizer or when multiple virtualizers are utilized within a single scrolling element. If you are using absolute positioning of elements, you should take into account the `scrollMargin` in your CSS transform:
+```tsx
+transform: `translateY(${
+   virtualRow.start - rowVirtualizer.options.scrollMargin
+}px)` 
+``` 
+To dynamically measure value for `scrollMargin` you can use `getBoundingClientRect()` or ResizeObserver. This is helpful in scenarios when items above your virtual list might change their height.   
 
 ### `gap`
 
@@ -231,6 +237,16 @@ isScrollingResetDelay: number
 ```
 
 This option allows you to specify the duration to wait after the last scroll event before resetting the isScrolling instance property. The default value is 150 milliseconds. 
+
+The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
+
+### `useScrollendEvent`
+
+```tsx
+useScrollendEvent: boolean
+```
+
+This option allows you to switch to use debounced fallback to reset the isScrolling instance property after `isScrollingResetDelay` milliseconds. The default value is `true`. 
 
 The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
 
