@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@tanstack/svelte-virtual": "^3.10.9",
+    "@tanstack/svelte-virtual": "^3.11.2",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
