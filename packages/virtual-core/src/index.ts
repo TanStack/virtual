@@ -851,7 +851,7 @@ export class Virtualizer<
     }
 
     if (align === 'end') {
-        toOffset -= size
+      toOffset -= size
     }
 
     const scrollSizeProp = this.options.horizontal
@@ -889,15 +889,28 @@ export class Virtualizer<
       }
     }
 
-    const centerOffset = item.start - this.options.scrollPaddingStart + (item.size - size) / 2
+    const centerOffset =
+      item.start - this.options.scrollPaddingStart + (item.size - size) / 2
 
     switch (align) {
       case 'center':
         return [this.getOffsetForAlignment(centerOffset, align), align] as const
       case 'end':
-        return [this.getOffsetForAlignment(item.end + this.options.scrollPaddingEnd, align), align] as const
+        return [
+          this.getOffsetForAlignment(
+            item.end + this.options.scrollPaddingEnd,
+            align,
+          ),
+          align,
+        ] as const
       default:
-        return [this.getOffsetForAlignment(item.start - this.options.scrollPaddingStart, align), align] as const
+        return [
+          this.getOffsetForAlignment(
+            item.start - this.options.scrollPaddingStart,
+            align,
+          ),
+          align,
+        ] as const
     }
   }
 
