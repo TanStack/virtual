@@ -845,21 +845,13 @@ export class Virtualizer<
     const scrollOffset = this.getScrollOffset()
 
     if (align === 'auto') {
-      if (toOffset <= scrollOffset) {
-        align = 'start'
-      } else if (toOffset >= scrollOffset + size) {
+      if (toOffset >= scrollOffset + size) {
         align = 'end'
-      } else {
-        align = 'start'
       }
     }
 
-    if (align === 'start') {
-      toOffset = toOffset
-    } else if (align === 'end') {
-      toOffset = toOffset - size
-    } else if (align === 'center') {
-      toOffset = toOffset - size / 2
+    if (align === 'end') {
+      toOffset -= size
     }
 
     const scrollSizeProp = this.options.horizontal
@@ -897,12 +889,29 @@ export class Virtualizer<
       }
     }
 
-    const toOffset =
-      align === 'end'
-        ? item.end + this.options.scrollPaddingEnd
-        : item.start - this.options.scrollPaddingStart
+    const centerOffset =
+      item.start - this.options.scrollPaddingStart + (item.size - size) / 2
 
-    return [this.getOffsetForAlignment(toOffset, align), align] as const
+    switch (align) {
+      case 'center':
+        return [this.getOffsetForAlignment(centerOffset, align), align] as const
+      case 'end':
+        return [
+          this.getOffsetForAlignment(
+            item.end + this.options.scrollPaddingEnd,
+            align,
+          ),
+          align,
+        ] as const
+      default:
+        return [
+          this.getOffsetForAlignment(
+            item.start - this.options.scrollPaddingStart,
+            align,
+          ),
+          align,
+        ] as const
+    }
   }
 
   private isDynamicMode = () => this.elementsCache.size > 0
