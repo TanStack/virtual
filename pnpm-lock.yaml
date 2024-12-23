@@ -24,11 +24,11 @@ importers:
         specifier: ^25.0.1
         version: 25.0.1
       knip:
-        specifier: ^5.40.0
-        version: 5.40.0(@types/node@22.10.1)(typescript@5.2.2)
+        specifier: ^5.41.1
+        version: 5.41.1(@types/node@22.10.1)(typescript@5.2.2)
       nx:
-        specifier: ^20.2.2
-        version: 20.2.2
+        specifier: ^20.3.0
+        version: 20.3.0
       prettier:
         specifier: ^3.4.2
         version: 3.4.2
@@ -188,8 +188,8 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(rxjs@7.8.1)
       '@tanstack/angular-query-experimental':
-        specifier: 5.62.7
-        version: 5.62.7(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))
+        specifier: 5.62.8
+        version: 5.62.8(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))
       '@tanstack/angular-virtual':
         specifier: ^3.11.2
         version: link:../../../packages/angular-virtual
@@ -606,11 +606,11 @@ importers:
         specifier: ^22.10.1
         version: 22.10.1
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -637,11 +637,11 @@ importers:
         specifier: ^22.10.1
         version: 22.10.1
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -655,8 +655,8 @@ importers:
   examples/react/infinite-scroll:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.62.7
-        version: 5.62.7(react@18.3.1)
+        specifier: ^5.62.8
+        version: 5.62.8(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.11.2
         version: link:../../../packages/react-virtual
@@ -668,11 +668,11 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -693,11 +693,11 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -721,11 +721,11 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -746,11 +746,11 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -780,11 +780,11 @@ importers:
         specifier: ^4.17.13
         version: 4.17.13
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -811,11 +811,11 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -836,11 +836,11 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -864,11 +864,11 @@ importers:
         specifier: ^22.10.1
         version: 22.10.1
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -941,8 +941,8 @@ importers:
   examples/svelte/infinite-scroll:
     dependencies:
       '@tanstack/svelte-query':
-        specifier: ^5.62.7
-        version: 5.62.7(svelte@4.2.19)
+        specifier: ^5.62.8
+        version: 5.62.8(svelte@4.2.19)
       '@tanstack/svelte-virtual':
         specifier: ^3.11.2
         version: link:../../../packages/svelte-virtual
@@ -1124,8 +1124,8 @@ importers:
   examples/vue/infinite-scroll:
     dependencies:
       '@tanstack/vue-query':
-        specifier: ^5.62.7
-        version: 5.62.7(vue@3.5.13(typescript@5.2.2))
+        specifier: ^5.62.8
+        version: 5.62.8(vue@3.5.13(typescript@5.2.2))
       '@tanstack/vue-virtual':
         specifier: ^3.11.2
         version: link:../../../packages/vue-virtual
@@ -1357,13 +1357,13 @@ importers:
     devDependencies:
       '@testing-library/react':
         specifier: ^16.1.0
-        version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.5(@types/react@18.3.16))(@types/react@18.3.16)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
-        specifier: ^18.3.16
-        version: 18.3.16
+        specifier: ^18.3.18
+        version: 18.3.18
       '@types/react-dom':
         specifier: ^18.3.5
-        version: 18.3.5(@types/react@18.3.16)
+        version: 18.3.5(@types/react@18.3.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.3.4(vite@5.4.11(@types/node@22.10.1)(less@4.2.0)(sass@1.80.5)(terser@5.29.1))
@@ -3056,62 +3056,62 @@ packages:
     resolution: {integrity: sha512-9ApYM/3+rBt9V80aYg6tZfzj3UWdiYyCt7gJUD1VJKvWF5nwKDSICXbYIQbspFTq6TOpbsEtIC0LArB8d9PFmg==}
     engines: {node: ^16.14.0 || >=18.0.0}
 
-  '@nx/nx-darwin-arm64@20.2.2':
-    resolution: {integrity: sha512-gnS5mtbaBAO5TJkl4T68rQaN/79MMWePavw2SOcFyFnIdAriGEZ+ZFDUE0B/xYJSs9CPWLaGHf+n7oqyxaGd9A==}
+  '@nx/nx-darwin-arm64@20.3.0':
+    resolution: {integrity: sha512-9PqSe1Sh7qNqA4GL0cZH0t3S0EZzb2Xn14XY9au7yf0+eoxyag1oETjjULrxLeUmSoXW2hDxzNtoqKFE9zF07Q==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@nx/nx-darwin-x64@20.2.2':
-    resolution: {integrity: sha512-IctvdQon+K8mlhl06zIq1xTPwf5L4OuS7crzCmK26p5F/lV6iz/UXSPCcgn+bYKOL/q3QCLNR7UasQMjzgCNkQ==}
+  '@nx/nx-darwin-x64@20.3.0':
+    resolution: {integrity: sha512-gsGGhJVvi5QZVVTZie5sNMo1zOAU+A2edm6DGegObdFRLV41Ju/Yrm/gTaSp4yUtywd3UU4S/30C/nI2c55adA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@nx/nx-freebsd-x64@20.2.2':
-    resolution: {integrity: sha512-4/Blg9Y6LVU8tS8yoa2BEXPHWsorpvCuZRH0gXPh96i6b71o4ORPafyLOHp08o3WjtUZb4jl5TfDryE+8y62ZA==}
+  '@nx/nx-freebsd-x64@20.3.0':
+    resolution: {integrity: sha512-DiymYZBBu0upbiskdfn9KRyoXdyvKohezJiV3j4VkeRE8KR2p04NgwRQviDFbeD1cjWrDy9wk8y+G5PabLlqAA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [freebsd]
 
-  '@nx/nx-linux-arm-gnueabihf@20.2.2':
-    resolution: {integrity: sha512-AVAxbUXi6q+inmp8re3OV7HzH6fbkKnnMKvjDLnkzK8dA2Mv4JFl/gz++rgkYfEsBk20lcB1i3unqNrtOvzS7Q==}
+  '@nx/nx-linux-arm-gnueabihf@20.3.0':
+    resolution: {integrity: sha512-Aksx66e8jmt/4rGJ/5z34SWXbPcYr9Ht52UonEeuCdQdoEvAOs7yBUbllYOjIcUsfZikEyZgvqfiQslsggSJdQ==}
     engines: {node: '>= 10'}
     cpu: [arm]
     os: [linux]
 
-  '@nx/nx-linux-arm64-gnu@20.2.2':
-    resolution: {integrity: sha512-h04SLH464Oh/k/1mpAfsMhTVlnc1NJItx4N5DLZb2VuOOY+Tquhrp7HBJLyAhU0Q74JG0LevGFO6wdxliHupmA==}
+  '@nx/nx-linux-arm64-gnu@20.3.0':
+    resolution: {integrity: sha512-Y5wmYEwF1bl014Ps8QjagI911VbViQSFHSTVOCNSObdAzig9E5o6NOkoWe+doT1UZLrrInnlkrggQUsbtdKjOg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@nx/nx-linux-arm64-musl@20.2.2':
-    resolution: {integrity: sha512-rnRXDLvHHj66rCslD4ShDq6KBOVsQ+X63GWTGKM0pnTIIDje9+ltZCoAByieCUm4BvFfCWMUf9y0mGfZvLVKSw==}
+  '@nx/nx-linux-arm64-musl@20.3.0':
+    resolution: {integrity: sha512-yGcIkmImyOMfPkQSYH2EVjPmFE0VkLcO71Bbkpr3RlJ1N/vjYxsGbdnqPiBb8Wshib/hmwpiMHf/yzQtKH0SQw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@nx/nx-linux-x64-gnu@20.2.2':
-    resolution: {integrity: sha512-K1Z2DVTnyCGl4nolhZ8fvHEixoe1pZOY256LD6D0lGca4Fsi3mHQ7lDU237Pzyc91+cfLva/OAvrivRPeU+DMA==}
+  '@nx/nx-linux-x64-gnu@20.3.0':
+    resolution: {integrity: sha512-nkA2DLI+rpmiuiy7dyXP4l9s7dgHkQWDX7lG1XltiT41RzAReJF1h8qBE6XrsAYE1CtI76DRWVphnc93+iZr+A==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@nx/nx-linux-x64-musl@20.2.2':
-    resolution: {integrity: sha512-pyWe+d2Y2pJVgPZf27KkDBufhFPq+Xhs3/zAQdJbicMvym7uhw0qMTV+lmoMXgfx52WZzhqTfG8JQcDqHjExJw==}
+  '@nx/nx-linux-x64-musl@20.3.0':
+    resolution: {integrity: sha512-sPMtTt9iTrCmFEIp9Qv27UX9PeL1aqKck2dz2TAFbXKVtF6+djOdTcNnTYw45KIP6izcUcOXXAq4G0QSQE7CLg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@nx/nx-win32-arm64-msvc@20.2.2':
-    resolution: {integrity: sha512-zqSoVrV34tx6qhQo/PwD9IMGhzoNSaFQxjTjNCY61sE7iwi5Qt4dDs3Rlh1ZFCBFnrjziymRPY2RryArgeK8Bw==}
+  '@nx/nx-win32-arm64-msvc@20.3.0':
+    resolution: {integrity: sha512-ppfNa/8OfpWA9o26Pz3vArN4ulAC+Hx70/ghPRCP7ed1Mb3Z6yR2Ry9KfBRImbqajvuAExM0TePKMGq9LCdXmg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@nx/nx-win32-x64-msvc@20.2.2':
-    resolution: {integrity: sha512-IfQf2axmCuSArhFGaocIDt8ajWDHXoVut5NOQH4eV2q9whP1j/LVB8EehEaolF5UenM7rhL4V25PXPuuBaUq4A==}
+  '@nx/nx-win32-x64-msvc@20.3.0':
+    resolution: {integrity: sha512-8FOejZ4emtLSVn3pYWs4PIc3n4//qMbwMDPVxmPE8us3ir91Qh0bzr5zRj7Q8sEdSgvneXRXqtBp2grY2KMJsw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -3442,8 +3442,8 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       vite: ^5.0.0
 
-  '@tanstack/angular-query-experimental@5.62.7':
-    resolution: {integrity: sha512-ZDPZYVhwu4ym+2b+G7UwdKX5vqiYyopFxYe7549bBjOT/DO4o8JK4fiXxQgE92JbgKSi6HR1EXvxTtvg55LDPg==}
+  '@tanstack/angular-query-experimental@5.62.8':
+    resolution: {integrity: sha512-4p+9lZBE61+2SO6b4uQCbiNGX4zzxQidrSEZ6oyrZdY+WhR6zWnE6C66WCDBJrKKtUbTbX7mNz09jSOdjKK/tg==}
     peerDependencies:
       '@angular/common': '>=16.0.0'
       '@angular/core': '>=16.0.0'
@@ -3463,14 +3463,14 @@ packages:
     resolution: {integrity: sha512-Wo1iKt2b9OT7d+YGhvEPD3DXvPv2etTusIMhMUoG7fbhmxcXCtIjJDEygy91Y2JFlwGyjqiBPRozme7UD8hoqg==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.62.7':
-    resolution: {integrity: sha512-fgpfmwatsrUal6V+8EC2cxZIQVl9xvL7qYa03gsdsCy985UTUlS4N+/3hCzwR0PclYDqisca2AqR1BVgJGpUDA==}
+  '@tanstack/query-core@5.62.8':
+    resolution: {integrity: sha512-4fV31vDsUyvNGrKIOUNPrZztoyL187bThnoQOvAXEVlZbSiuPONpfx53634MKKdvsDir5NyOGm80ShFaoHS/mw==}
 
   '@tanstack/query-devtools@5.61.4':
     resolution: {integrity: sha512-21Tw+u8E3IJJj4A/Bct4H0uBaDTEu7zBrR79FeSyY+mS2gx5/m316oDtJiKkILc819VSTYt+sFzODoJNcpPqZQ==}
 
-  '@tanstack/react-query@5.62.7':
-    resolution: {integrity: sha512-+xCtP4UAFDTlRTYyEjLx0sRtWyr5GIk7TZjZwBu4YaNahi3Rt2oMyRqfpfVrtwsqY2sayP4iXVCwmC+ZqqFmuw==}
+  '@tanstack/react-query@5.62.8':
+    resolution: {integrity: sha512-8TUstKxF/fysHonZsWg/hnlDVgasTdHx6Q+f1/s/oPKJBJbKUWPZEHwLTMOZgrZuroLMiqYKJ9w69Abm8mWP0Q==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -3481,8 +3481,8 @@ packages:
       react: '>=16.8'
       react-dom: '>=16.8'
 
-  '@tanstack/svelte-query@5.62.7':
-    resolution: {integrity: sha512-WTu70TtgX90r8OVlvQbRhDAnj12mvQRQ5Sp+2Dgsvdq1b3uDWwjV9ufhyhAM/2YkY03Gtlfs2GL1fyMhSx9tbQ==}
+  '@tanstack/svelte-query@5.62.8':
+    resolution: {integrity: sha512-rnvxyK4591Bv0fBpWssUo4HcqbiR6B6iEwhnQuRHnqPmI5IvnCX/A7VGEzuhpPw/Z/wQqkYyMAnpjPByErZiXQ==}
     peerDependencies:
       svelte: ^3.54.0 || ^4.0.0 || ^5.0.0-next.0
 
@@ -3496,8 +3496,8 @@ packages:
     resolution: {integrity: sha512-P9dF7XbibHph2PFRz8gfBKEXEY/HJPOhym8CHmjF8y3q5mWpKx9xtZapXQUWCgkqvsK0R46Azuz+VaxD4Xl+Tg==}
     engines: {node: '>=12'}
 
-  '@tanstack/vue-query@5.62.7':
-    resolution: {integrity: sha512-FVSnVw2fw9BHciCbWWSfPMB3PRtGHbGf4Q1Gq7mFlieojiKZBF5Nz5AKFQLKs+IGnrVDTKqfU8ojjPfthPTYxQ==}
+  '@tanstack/vue-query@5.62.8':
+    resolution: {integrity: sha512-kOKTV6tu5iffq5/hOUpbohfwWH8nGhbCc9wf4UvihlhROILsWLrIPA5fOvdvc5VyozwKokdrubSdEukPZxpwXQ==}
     peerDependencies:
       '@vue/composition-api': ^1.1.2
       vue: ^2.6.0 || ^3.3.0
@@ -3691,8 +3691,8 @@ packages:
     peerDependencies:
       '@types/react': ^18.0.0
 
-  '@types/react@18.3.16':
-    resolution: {integrity: sha512-oh8AMIC4Y2ciKufU8hnKgs+ufgbA/dhPTACaZPM86AbwX9QwnFtSoPWEeRUj8fge+v6kFt78BXcDhAU1SrrAsw==}
+  '@types/react@18.3.18':
+    resolution: {integrity: sha512-t4yC+vtgnkYjNSKlFx1jkAhH8LgTo2N/7Qvi83kdEaUtMDiwpbLAktKDaAMlRcJ5eSxZkH74eEGt1ky31d7kfQ==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -5718,8 +5718,8 @@ packages:
     resolution: {integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==}
     engines: {node: '>= 8'}
 
-  knip@5.40.0:
-    resolution: {integrity: sha512-EzBfQDz4YBzYnMLueWnaaVr15mneqZs1c3RanttciuVuRcodlNjzAmR2nch/khlRdVABAxAdMGFxfSvhvcH1NA==}
+  knip@5.41.1:
+    resolution: {integrity: sha512-yNpCCe2REU7U3VRvMASnXSEtfEC2HmOoDW9Vp9teQ9FktJYnuagvSZD3xWq8Ru7sPABkmvbC5TVWuMzIaeADNA==}
     engines: {node: '>=18.6.0'}
     hasBin: true
     peerDependencies:
@@ -6225,8 +6225,8 @@ packages:
   nwsapi@2.2.13:
     resolution: {integrity: sha512-cTGB9ptp9dY9A5VbMSe7fQBcl/tt22Vcqdq8+eN93rblOuE0aCFu4aZ2vMwct/2t+lFnosm8RkQW1I0Omb1UtQ==}
 
-  nx@20.2.2:
-    resolution: {integrity: sha512-wHgC/NQ82Q3LOeUZXPI2j/JhpZwb7JjRc0uDn3kQU+lN/ulySCJHTHCf4CIglW4NjZeN1WZZ7YMeddtFWETGGA==}
+  nx@20.3.0:
+    resolution: {integrity: sha512-Nzi4k7tV22zwO2iBLk+pHxorLEWPJpPrVCACtz0SQ63j/LiAgfhoqruJO+VU+V+E9qdyPsvmqIL/Iaf/GRQlqA==}
     hasBin: true
     peerDependencies:
       '@swc-node/register': ^1.8.0
@@ -6749,6 +6749,10 @@ packages:
   resolve-url-loader@5.0.0:
     resolution: {integrity: sha512-uZtduh8/8srhBoMx//5bwqjQ+rfYOUq8zC9NrMUGtjBiGTtFJM42s58/36+hTqeqINcnYe08Nj3LkK9lW4N8Xg==}
     engines: {node: '>=12'}
+
+  resolve.exports@2.0.3:
+    resolution: {integrity: sha512-OcXjMsGdhL4XnbShKpAcSqPMzQoYkYyhbEaeSko47MjRP9NfEQMhZkXL1DoFlt9LWQn4YttrdnV6X2OiyzBi+A==}
+    engines: {node: '>=10'}
 
   resolve@1.22.8:
     resolution: {integrity: sha512-oKWePCxqpd6FlLvGV1VU0x7bkPmmCNolxzjMf4NczoDnQcIWrAF+cPtZn5i6n+RfD2d9i0tzpKnG6Yk168yIyw==}
@@ -9586,34 +9590,34 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@nx/nx-darwin-arm64@20.2.2':
+  '@nx/nx-darwin-arm64@20.3.0':
     optional: true
 
-  '@nx/nx-darwin-x64@20.2.2':
+  '@nx/nx-darwin-x64@20.3.0':
     optional: true
 
-  '@nx/nx-freebsd-x64@20.2.2':
+  '@nx/nx-freebsd-x64@20.3.0':
     optional: true
 
-  '@nx/nx-linux-arm-gnueabihf@20.2.2':
+  '@nx/nx-linux-arm-gnueabihf@20.3.0':
     optional: true
 
-  '@nx/nx-linux-arm64-gnu@20.2.2':
+  '@nx/nx-linux-arm64-gnu@20.3.0':
     optional: true
 
-  '@nx/nx-linux-arm64-musl@20.2.2':
+  '@nx/nx-linux-arm64-musl@20.3.0':
     optional: true
 
-  '@nx/nx-linux-x64-gnu@20.2.2':
+  '@nx/nx-linux-x64-gnu@20.3.0':
     optional: true
 
-  '@nx/nx-linux-x64-musl@20.2.2':
+  '@nx/nx-linux-x64-musl@20.3.0':
     optional: true
 
-  '@nx/nx-win32-arm64-msvc@20.2.2':
+  '@nx/nx-win32-arm64-msvc@20.3.0':
     optional: true
 
-  '@nx/nx-win32-x64-msvc@20.2.2':
+  '@nx/nx-win32-x64-msvc@20.3.0':
     optional: true
 
   '@open-wc/dedupe-mixin@1.4.0': {}
@@ -9936,11 +9940,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@tanstack/angular-query-experimental@5.62.7(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))':
+  '@tanstack/angular-query-experimental@5.62.8(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))':
     dependencies:
       '@angular/common': 17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)
       '@angular/core': 17.3.12(rxjs@7.8.1)(zone.js@0.15.0)
-      '@tanstack/query-core': 5.62.7
+      '@tanstack/query-core': 5.62.8
       '@tanstack/query-devtools': 5.61.4
 
   '@tanstack/angular-table@8.20.5(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))':
@@ -9988,13 +9992,13 @@ snapshots:
     dependencies:
       remove-accents: 0.5.0
 
-  '@tanstack/query-core@5.62.7': {}
+  '@tanstack/query-core@5.62.8': {}
 
   '@tanstack/query-devtools@5.61.4': {}
 
-  '@tanstack/react-query@5.62.7(react@18.3.1)':
+  '@tanstack/react-query@5.62.8(react@18.3.1)':
     dependencies:
-      '@tanstack/query-core': 5.62.7
+      '@tanstack/query-core': 5.62.8
       react: 18.3.1
 
   '@tanstack/react-table@8.20.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -10003,9 +10007,9 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tanstack/svelte-query@5.62.7(svelte@4.2.19)':
+  '@tanstack/svelte-query@5.62.8(svelte@4.2.19)':
     dependencies:
-      '@tanstack/query-core': 5.62.7
+      '@tanstack/query-core': 5.62.8
       svelte: 4.2.19
 
   '@tanstack/svelte-table@8.20.5(svelte@4.2.19)':
@@ -10015,10 +10019,10 @@ snapshots:
 
   '@tanstack/table-core@8.20.5': {}
 
-  '@tanstack/vue-query@5.62.7(vue@3.5.13(typescript@5.2.2))':
+  '@tanstack/vue-query@5.62.8(vue@3.5.13(typescript@5.2.2))':
     dependencies:
       '@tanstack/match-sorter-utils': 8.19.4
-      '@tanstack/query-core': 5.62.7
+      '@tanstack/query-core': 5.62.8
       '@vue/devtools-api': 6.6.4
       vue: 3.5.13(typescript@5.2.2)
       vue-demi: 0.14.10(vue@3.5.13(typescript@5.2.2))
@@ -10049,15 +10053,15 @@ snapshots:
       lodash: 4.17.21
       redent: 3.0.0
 
-  '@testing-library/react@16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.5(@types/react@18.3.16))(@types/react@18.3.16)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@testing-library/react@16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.26.0
       '@testing-library/dom': 10.4.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     optionalDependencies:
-      '@types/react': 18.3.16
-      '@types/react-dom': 18.3.5(@types/react@18.3.16)
+      '@types/react': 18.3.18
+      '@types/react-dom': 18.3.5(@types/react@18.3.18)
 
   '@tsconfig/svelte@5.0.4': {}
 
@@ -10246,11 +10250,11 @@ snapshots:
 
   '@types/range-parser@1.2.7': {}
 
-  '@types/react-dom@18.3.5(@types/react@18.3.16)':
+  '@types/react-dom@18.3.5(@types/react@18.3.18)':
     dependencies:
-      '@types/react': 18.3.16
+      '@types/react': 18.3.18
 
-  '@types/react@18.3.16':
+  '@types/react@18.3.18':
     dependencies:
       '@types/prop-types': 15.7.13
       csstype: 3.1.3
@@ -12602,7 +12606,7 @@ snapshots:
 
   klona@2.0.6: {}
 
-  knip@5.40.0(@types/node@22.10.1)(typescript@5.2.2):
+  knip@5.41.1(@types/node@22.10.1)(typescript@5.2.2):
     dependencies:
       '@nodelib/fs.walk': 1.2.8
       '@snyk/github-codeowners': 1.1.0
@@ -13189,7 +13193,7 @@ snapshots:
 
   nwsapi@2.2.13: {}
 
-  nx@20.2.2:
+  nx@20.3.0:
     dependencies:
       '@napi-rs/wasm-runtime': 0.2.4
       '@yarnpkg/lockfile': 1.1.0
@@ -13215,6 +13219,7 @@ snapshots:
       npm-run-path: 4.0.1
       open: 8.4.2
       ora: 5.3.0
+      resolve.exports: 2.0.3
       semver: 7.6.3
       string-width: 4.2.3
       tar-stream: 2.2.0
@@ -13225,16 +13230,16 @@ snapshots:
       yargs: 17.7.2
       yargs-parser: 21.1.1
     optionalDependencies:
-      '@nx/nx-darwin-arm64': 20.2.2
-      '@nx/nx-darwin-x64': 20.2.2
-      '@nx/nx-freebsd-x64': 20.2.2
-      '@nx/nx-linux-arm-gnueabihf': 20.2.2
-      '@nx/nx-linux-arm64-gnu': 20.2.2
-      '@nx/nx-linux-arm64-musl': 20.2.2
-      '@nx/nx-linux-x64-gnu': 20.2.2
-      '@nx/nx-linux-x64-musl': 20.2.2
-      '@nx/nx-win32-arm64-msvc': 20.2.2
-      '@nx/nx-win32-x64-msvc': 20.2.2
+      '@nx/nx-darwin-arm64': 20.3.0
+      '@nx/nx-darwin-x64': 20.3.0
+      '@nx/nx-freebsd-x64': 20.3.0
+      '@nx/nx-linux-arm-gnueabihf': 20.3.0
+      '@nx/nx-linux-arm64-gnu': 20.3.0
+      '@nx/nx-linux-arm64-musl': 20.3.0
+      '@nx/nx-linux-x64-gnu': 20.3.0
+      '@nx/nx-linux-x64-musl': 20.3.0
+      '@nx/nx-win32-arm64-msvc': 20.3.0
+      '@nx/nx-win32-x64-msvc': 20.3.0
     transitivePeerDependencies:
       - debug
 
@@ -13753,6 +13758,8 @@ snapshots:
       loader-utils: 2.0.4
       postcss: 8.4.49
       source-map: 0.6.1
+
+  resolve.exports@2.0.3: {}
 
   resolve@1.22.8:
     dependencies:
