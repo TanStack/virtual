@@ -697,18 +697,28 @@ export class Virtualizer<
   )
 
   private getIndexes = memo(
-    () => [
-      this.options.rangeExtractor,
-      this.calculateRange(),
-      this.options.overscan,
-      this.options.count,
-    ],
-    (rangeExtractor, range, overscan, count) => {
-      return range === null
+    () => {
+      let startIndex: number | null = null
+      let endIndex: number | null = null
+      const range = this.calculateRange()
+      if (range) {
+        startIndex = range.startIndex
+        endIndex = range.endIndex
+      }
+      return [
+        this.options.rangeExtractor,
+        this.options.overscan,
+        this.options.count,
+        startIndex,
+        endIndex,
+      ]
+    },
+    (rangeExtractor, overscan, count, startIndex, endIndex) => {
+      return startIndex === null || endIndex === null
         ? []
         : rangeExtractor({
-            startIndex: range.startIndex,
-            endIndex: range.endIndex,
+            startIndex,
+            endIndex,
             overscan,
             count,
           })
