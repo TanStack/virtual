@@ -18,7 +18,7 @@
     "@types/lodash": "^4.17.14",
     "@vitejs/plugin-vue": "^5.2.1",
     "typescript": "5.2.2",
-    "vite": "^5.4.11",
+    "vite": "^5.4.14",
     "vue-tsc": "^2.2.0"
   }
 }

@@ -37,20 +37,20 @@
     ]
   },
   "devDependencies": {
-    "@tanstack/config": "^0.16.0",
+    "@tanstack/config": "^0.16.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/node": "^22.10.1",
-    "eslint": "^9.18.0",
+    "eslint": "^9.19.0",
     "jsdom": "^25.0.1",
-    "knip": "^5.42.2",
-    "nx": "^20.3.2",
+    "knip": "^5.43.3",
+    "nx": "^20.3.3",
     "prettier": "^3.4.2",
     "prettier-plugin-svelte": "^3.3.3",
     "publint": "^0.3.2",
     "rimraf": "^5.0.10",
-    "sherif": "^1.1.1",
+    "sherif": "^1.2.0",
     "typescript": "5.2.2",
-    "vite": "^5.4.11",
+    "vite": "^5.4.14",
     "vitest": "^2.1.8"
   }
 }
