@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/svelte-virtual",
-  "version": "3.11.2",
+  "version": "3.11.3",
   "description": "Headless UI for virtualizing scrollable elements in Svelte",
   "author": "Tanner Linsley",
   "license": "MIT",

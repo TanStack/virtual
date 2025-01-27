@@ -11,7 +11,7 @@
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
     "@tanstack/svelte-table": "^8.20.5",
-    "@tanstack/svelte-virtual": "^3.11.2"
+    "@tanstack/svelte-virtual": "^3.11.3"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
