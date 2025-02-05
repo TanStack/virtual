@@ -156,7 +156,8 @@ function ReactTableVirtualized() {
           </tbody>
         </table>
       </div>
-    // </div>
+      //{' '}
+    </div>
   )
 }
 
