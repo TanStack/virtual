@@ -16,7 +16,11 @@ import {
   onMount,
 } from 'solid-js'
 import { createStore, reconcile } from 'solid-js/store'
-import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  NotifySource,
+  PartialKeys,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
 
@@ -69,6 +73,7 @@ function createVirtualizerBase<
         onChange: (
           instance: Virtualizer<TScrollElement, TItemElement>,
           sync: boolean,
+          source: NotifySource,
         ) => {
           instance._willUpdate()
           setVirtualItems(
@@ -77,7 +82,7 @@ function createVirtualizerBase<
             }),
           )
           setTotalSize(instance.getTotalSize())
-          options.onChange?.(instance, sync)
+          options.onChange?.(instance, sync, source)
         },
       }),
     )

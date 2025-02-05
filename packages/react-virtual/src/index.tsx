@@ -9,7 +9,11 @@ import {
   observeWindowRect,
   windowScroll,
 } from '@tanstack/virtual-core'
-import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  NotifySource,
+  PartialKeys,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
 
@@ -20,19 +24,31 @@ function useVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 >(
-  options: VirtualizerOptions<TScrollElement, TItemElement>,
+  options: VirtualizerOptions<TScrollElement, TItemElement> & {
+    _experimental_subscribeToEvents?: boolean | Array<NotifySource>
+  },
 ): Virtualizer<TScrollElement, TItemElement> {
   const rerender = React.useReducer(() => ({}), {})[1]
 
   const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
     ...options,
-    onChange: (instance, sync) => {
+    onChange: (instance, sync, source) => {
+      const subscribeToEvents = options._experimental_subscribeToEvents ?? true
+
+      if (
+        subscribeToEvents === false ||
+        (Array.isArray(subscribeToEvents) &&
+          !subscribeToEvents.includes(source))
+      ) {
+        return
+      }
+
       if (sync) {
         flushSync(rerender)
       } else {
         rerender()
       }
-      options.onChange?.(instance, sync)
+      options.onChange?.(instance, sync, source)
     },
   }
 

@@ -52,16 +52,16 @@ function ReactTableVirtualized() {
         header: 'Profile Progress',
         size: 80,
       },
-      {
-        accessorKey: 'createdAt',
-        header: 'Created At',
-        cell: (info) => info.getValue<Date>().toLocaleString(),
-      },
+      // {
+      //   accessorKey: 'createdAt',
+      //   header: 'Created At',
+      //   cell: (info) => info.getValue<Date>().toLocaleString(),
+      // },
     ],
     [],
   )
 
-  const [data, setData] = React.useState(() => makeData(50_000))
+  const [data] = React.useState(() => makeData(50_000))
 
   const table = useReactTable({
     data,
@@ -82,9 +82,11 @@ function ReactTableVirtualized() {
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 34,
+    estimateSize: () => 200,
     overscan: 20,
   })
+
+  console.log(virtualizer.isScrolling)
 
   return (
     <div ref={parentRef} className="container">
@@ -154,7 +156,7 @@ function ReactTableVirtualized() {
           </tbody>
         </table>
       </div>
-    </div>
+    // </div>
   )
 }
 

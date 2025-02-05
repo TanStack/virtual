@@ -8,11 +8,11 @@ export type Person = {
   visits: number
   progress: number
   status: 'relationship' | 'complicated' | 'single'
-  createdAt: Date
+  // createdAt: Date
 }
 
 const range = (len: number) => {
-  const arr: number[] = []
+  const arr: Array<number> = []
   for (let i = 0; i < len; i++) {
     arr.push(i)
   }
@@ -22,23 +22,23 @@ const range = (len: number) => {
 const newPerson = (index: number): Person => {
   return {
     id: index + 1,
-    firstName: faker.name.firstName(),
-    lastName: faker.name.lastName(),
+    firstName: faker.person.firstName(),
+    lastName: faker.person.lastName(),
     age: faker.number.int(40),
     visits: faker.number.int(1000),
     progress: faker.number.int(100),
-    createdAt: faker.datatype.datetime({ max: new Date().getTime() }),
+    // createdAt: faker.datatype.datetime({ max: new Date().getTime() }),
     status: faker.helpers.shuffle<Person['status']>([
       'relationship',
       'complicated',
       'single',
-    ])[0]!,
+    ])[0],
   }
 }
 
-export function makeData(...lens: number[]) {
-  const makeDataLevel = (depth = 0): Person[] => {
-    const len = lens[depth]!
+export function makeData(...lens: Array<number>) {
+  const makeDataLevel = (depth = 0): Array<Person> => {
+    const len = lens[depth]
     return range(len).map((d): Person => {
       return {
         ...newPerson(d),
