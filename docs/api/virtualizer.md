@@ -286,6 +286,14 @@ type getVirtualItems = () => VirtualItem[]
 
 Returns the virtual items for the current state of the virtualizer.
 
+### `getVirtualIndexes`
+
+```tsx
+type getVirtualIndexes = () => number[]
+```
+
+Returns the virtual row indexes for the current state of the virtualizer.
+
 ### `scrollToOffset`
 
 ```tsx

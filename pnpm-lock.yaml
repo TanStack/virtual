@@ -24,11 +24,11 @@ importers:
         specifier: ^25.0.1
         version: 25.0.1
       knip:
-        specifier: ^5.43.3
-        version: 5.43.3(@types/node@22.10.3)(typescript@5.2.2)
+        specifier: ^5.43.6
+        version: 5.43.6(@types/node@22.10.3)(typescript@5.2.2)
       nx:
-        specifier: ^20.3.3
-        version: 20.3.3
+        specifier: ^20.4.0
+        version: 20.4.0
       prettier:
         specifier: ^3.4.2
         version: 3.4.2
@@ -84,7 +84,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -136,7 +136,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(rxjs@7.8.1)
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -188,10 +188,10 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(rxjs@7.8.1)
       '@tanstack/angular-query-experimental':
-        specifier: 5.64.2
-        version: 5.64.2(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))
+        specifier: 5.66.0
+        version: 5.66.0(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -243,7 +243,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(rxjs@7.8.1)
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -295,7 +295,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(rxjs@7.8.1)
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -350,7 +350,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -408,7 +408,7 @@ importers:
         specifier: 8.21.0
         version: 8.21.0(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -460,7 +460,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(rxjs@7.8.1)
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -512,7 +512,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0)))(rxjs@7.8.1)
       '@tanstack/angular-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.1
@@ -543,10 +543,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.2.1
@@ -568,10 +568,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.2.1
@@ -593,7 +593,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -624,7 +624,7 @@ importers:
   examples/react/fixed:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -655,10 +655,10 @@ importers:
   examples/react/infinite-scroll:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.64.2
-        version: 5.64.2(react@18.3.1)
+        specifier: ^5.66.0
+        version: 5.66.0(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -683,7 +683,7 @@ importers:
   examples/react/padding:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -711,7 +711,7 @@ importers:
         specifier: ^24.0.4
         version: 24.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -736,7 +736,7 @@ importers:
   examples/react/smooth-scroll:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -764,7 +764,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       lodash:
         specifier: ^4.17.21
@@ -777,8 +777,8 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/lodash':
-        specifier: ^4.17.14
-        version: 4.17.14
+        specifier: ^4.17.15
+        version: 4.17.15
       '@types/react':
         specifier: ^18.3.18
         version: 18.3.18
@@ -801,7 +801,7 @@ importers:
         specifier: ^8.20.6
         version: 8.20.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -826,7 +826,7 @@ importers:
   examples/react/variable:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -851,7 +851,7 @@ importers:
   examples/react/window:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -885,7 +885,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -913,7 +913,7 @@ importers:
   examples/svelte/fixed:
     dependencies:
       '@tanstack/svelte-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -941,10 +941,10 @@ importers:
   examples/svelte/infinite-scroll:
     dependencies:
       '@tanstack/svelte-query':
-        specifier: ^5.64.2
-        version: 5.64.2(svelte@4.2.19)
+        specifier: ^5.66.0
+        version: 5.66.0(svelte@4.2.19)
       '@tanstack/svelte-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -975,7 +975,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1006,7 +1006,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/svelte-virtual
       lodash:
         specifier: ^4.17.21
@@ -1043,7 +1043,7 @@ importers:
         specifier: ^8.20.5
         version: 8.20.5(svelte@4.2.19)
       '@tanstack/svelte-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1074,7 +1074,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1099,7 +1099,7 @@ importers:
   examples/vue/fixed:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1124,10 +1124,10 @@ importers:
   examples/vue/infinite-scroll:
     dependencies:
       '@tanstack/vue-query':
-        specifier: ^5.64.2
-        version: 5.64.2(vue@3.5.13(typescript@5.2.2))
+        specifier: ^5.66.0
+        version: 5.66.0(vue@3.5.13(typescript@5.2.2))
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1152,7 +1152,7 @@ importers:
   examples/vue/padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1177,7 +1177,7 @@ importers:
   examples/vue/scroll-padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       '@vueuse/core':
         specifier: ^11.3.0
@@ -1205,7 +1205,7 @@ importers:
   examples/vue/smooth-scroll:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1233,7 +1233,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       lodash:
         specifier: ^4.17.21
@@ -1246,8 +1246,8 @@ importers:
         specifier: ^0.1.1-alpha.16
         version: 0.1.1-alpha.16
       '@types/lodash':
-        specifier: ^4.17.14
-        version: 4.17.14
+        specifier: ^4.17.15
+        version: 4.17.15
       '@vitejs/plugin-vue':
         specifier: ^5.2.1
         version: 5.2.1(vite@5.4.14(@types/node@22.10.3)(less@4.2.1)(sass@1.83.0)(terser@5.37.0))(vue@3.5.13(typescript@5.2.2))
@@ -1270,7 +1270,7 @@ importers:
         specifier: ^8.20.5
         version: 8.20.5(vue@3.5.13(typescript@5.2.2))
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1295,7 +1295,7 @@ importers:
   examples/vue/variable:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.11.3
+        specifier: ^3.12.0
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -3060,62 +3060,62 @@ packages:
     resolution: {integrity: sha512-9ApYM/3+rBt9V80aYg6tZfzj3UWdiYyCt7gJUD1VJKvWF5nwKDSICXbYIQbspFTq6TOpbsEtIC0LArB8d9PFmg==}
     engines: {node: ^16.14.0 || >=18.0.0}
 
-  '@nx/nx-darwin-arm64@20.3.3':
-    resolution: {integrity: sha512-4C7ShMrqp1vbH1ZgvSlkt0f35hJcqKtRcf8n/tCck46rnMkj4egXi3K1dE6uQcOorwiD1ttAr0DHcI1TTqcNXw==}
+  '@nx/nx-darwin-arm64@20.4.0':
+    resolution: {integrity: sha512-w07StYKNUIiH1koqBZY9Ew57d0wACyNdKpX96og4oiuSFYTTb+QhL4+vX2GOIYyEDfX7A97mA4lXcYUvN6R4zQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@nx/nx-darwin-x64@20.3.3':
-    resolution: {integrity: sha512-OUtJ7gA09pJC+a+RcZf1bGbMM4T7a/IcPb97z1xOoxr5Wm2s8BGBQUW2CKJ5gCp5iI1pGo44F12u0G9gbYClow==}
+  '@nx/nx-darwin-x64@20.4.0':
+    resolution: {integrity: sha512-HS9SfQs9BKZm3mXnOggmDrsVPTdJOr4RYa0k8zhXd0GKOdAOmgvWYsCAFxHB1BV4FGq7wfc4YskXRYHra4Ornw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@nx/nx-freebsd-x64@20.3.3':
-    resolution: {integrity: sha512-q4SABgKYWPGOcdfRZne6n8HF4CzltRL5nJ3q093jQAUO93yPXtWzhQBaKZIZr6aPoqq0/NuH6xY4gNo4w9F8Bg==}
+  '@nx/nx-freebsd-x64@20.4.0':
+    resolution: {integrity: sha512-5Ex4dV9YKbmO+4ZNI7qXOPvVD7A0t/guPUMcye/Rk/vJVx3Ixr/PZlc2SpBDXDLXye4quiTqICV92VrOrVBj8Q==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [freebsd]
 
-  '@nx/nx-linux-arm-gnueabihf@20.3.3':
-    resolution: {integrity: sha512-e07PJcVsBT/Aelo/Vj6hLplDZamGCZ3zOJpW3XVBhdG4DC4sn+jodsdrIASoEpmF70VB89lzQsm9GrAgQPaWOA==}
+  '@nx/nx-linux-arm-gnueabihf@20.4.0':
+    resolution: {integrity: sha512-mWu0QPZ4WQS39NuFOhbKy6Dwiytgn4SCzadZs/raXs/Sl9A1JtXIojMe5vy49rZocjhbpDuXCuKzHeFOi24TpA==}
     engines: {node: '>= 10'}
     cpu: [arm]
     os: [linux]
 
-  '@nx/nx-linux-arm64-gnu@20.3.3':
-    resolution: {integrity: sha512-1Z9chlN0/hWzliMer7TvdLT8cb6BKpGjZ15a+rQuUbO/CyLhY21Ct+lXtnaBERnNPYJpNOJlrbBDuF/9wpZ4CQ==}
+  '@nx/nx-linux-arm64-gnu@20.4.0':
+    resolution: {integrity: sha512-5ZOMKtEPoAQfSXgWYgQvMt+8JreWfnHC1rHBhQznb/66DyimKlPFv5TprzKCTqg2ElrYMe5NT5usU5fO94NDnA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@nx/nx-linux-arm64-musl@20.3.3':
-    resolution: {integrity: sha512-RrLgujPU5NfDrsDRa7Y2isxGb8XkoQeJkTMUl1xmBK2Qnf4jAUn0PH0ULWrRMNgChi4nYUTn/Sf+2m6Uyoqcfw==}
+  '@nx/nx-linux-arm64-musl@20.4.0':
+    resolution: {integrity: sha512-RBF3KoBYEs0q9YZ1yBidKhcszI8x4znAfcZI+RQ1zWa/kT/GlnQKamdxinri4ov8/bEo9E4YTx4ITLg4RuVHLg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
 
-  '@nx/nx-linux-x64-gnu@20.3.3':
-    resolution: {integrity: sha512-/WmCnPxv1eR8tyYiFp4XoMbcXrJ8a/OIw1rpZZ5ceMKgH8lPaF2/KFf04JZZygrCKletEdqqIojBXz4AHoaueQ==}
+  '@nx/nx-linux-x64-gnu@20.4.0':
+    resolution: {integrity: sha512-RSYAfAmulCatDIKXXbWDhLU/fm03YrAMTD5FtS5IeEvMGEHkQ3scmXEXTxkOF4q5LuqSrutjdb3s8wHkbFRVqw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@nx/nx-linux-x64-musl@20.3.3':
-    resolution: {integrity: sha512-y4BJsR0fgJrXY3P7GkWfUZAeQEHMTXvaRHvzJfBSBPmnVcVZDYNTfEQYnslp8m8ahKdlJwtflxzykJ4Bwf55fw==}
+  '@nx/nx-linux-x64-musl@20.4.0':
+    resolution: {integrity: sha512-0eup79jxSzHoYEGl6OU3wb02wWQbEt4ZfOA58fiZ7c5mvCpKXQV9kg7Tu38zIA8nkcEXGb8JaR1R9TgMiAIZsw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
 
-  '@nx/nx-win32-arm64-msvc@20.3.3':
-    resolution: {integrity: sha512-BHqZitBaGT9ybv386B5QKxP5N66+xpTiYlKClzQ44o6Ca8QxnkugI64exBdcQyj+DRiL6HJhN14kaPJ1KrsKRA==}
+  '@nx/nx-win32-arm64-msvc@20.4.0':
+    resolution: {integrity: sha512-EeHJL9YPVqi3ad9hXVCr1xDM2/PNgZIJvOlJ/ND6r9dVZ+UWw2Kk7G2r13zz4j4QAhrhQJ+kzrvXYkQlhiSH6g==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@nx/nx-win32-x64-msvc@20.3.3':
-    resolution: {integrity: sha512-6HcbAKghEypt4aMAoDjPn2sa6FG0MyiDabpV/cVLKokK09ngyy6qQDa5vSCUSDwI542XBxqtcv0AcZi7Ez+XUQ==}
+  '@nx/nx-win32-x64-msvc@20.4.0':
+    resolution: {integrity: sha512-IUeCeLdehVocLML6Wub7OZVM96Sk97AshiWmeNnozI6/OYdS34hQ2+thH7ETUZas9nkC2nNkJ5jLwuAHm+5/vw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -3461,8 +3461,8 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       vite: ^5.0.0
 
-  '@tanstack/angular-query-experimental@5.64.2':
-    resolution: {integrity: sha512-MUwEg1FzF1rqw2CSliF1fhStQGnYmn5uDhia6E2F6RSO+8fOyCx8l3Cwtk1vRkQgWB7rh9/FJZoD2ej23ioKZQ==}
+  '@tanstack/angular-query-experimental@5.66.0':
+    resolution: {integrity: sha512-wECwAbsIQWXiKXNOjvAWeyw44KZJ/q0hWdWUy4SV3vp8eFW3f0LvAlkuLvUSA8jdcC5NvO2VO8T/gLRE9YjArg==}
     peerDependencies:
       '@angular/common': '>=16.0.0'
       '@angular/core': '>=16.0.0'
@@ -3482,14 +3482,14 @@ packages:
     resolution: {integrity: sha512-Wo1iKt2b9OT7d+YGhvEPD3DXvPv2etTusIMhMUoG7fbhmxcXCtIjJDEygy91Y2JFlwGyjqiBPRozme7UD8hoqg==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.64.2':
-    resolution: {integrity: sha512-hdO8SZpWXoADNTWXV9We8CwTkXU88OVWRBcsiFrk7xJQnhm6WRlweDzMD+uH+GnuieTBVSML6xFa17C2cNV8+g==}
+  '@tanstack/query-core@5.66.0':
+    resolution: {integrity: sha512-J+JeBtthiKxrpzUu7rfIPDzhscXF2p5zE/hVdrqkACBP8Yu0M96mwJ5m/8cPPYQE9aRNvXztXHlNwIh4FEeMZw==}
 
-  '@tanstack/query-devtools@5.64.2':
-    resolution: {integrity: sha512-3DautR5UpVZdk/qNIhioZVF7g8fdQZ1U98sBEEk4Tzz3tihSBNMPgwlP40nzgbPEDBIrn/j/oyyvNBVSo083Vw==}
+  '@tanstack/query-devtools@5.65.0':
+    resolution: {integrity: sha512-g5y7zc07U9D3esMdqUfTEVu9kMHoIaVBsD0+M3LPdAdD710RpTcLiNvJY1JkYXqkq9+NV+CQoemVNpQPBXVsJg==}
 
-  '@tanstack/react-query@5.64.2':
-    resolution: {integrity: sha512-3pakNscZNm8KJkxmovvtZ4RaXLyiYYobwleTMvpIGUoKRa8j8VlrQKNl5W8VUEfVfZKkikvXVddLuWMbcSCA1Q==}
+  '@tanstack/react-query@5.66.0':
+    resolution: {integrity: sha512-z3sYixFQJe8hndFnXgWu7C79ctL+pI0KAelYyW+khaNJ1m22lWrhJU2QrsTcRKMuVPtoZvfBYrTStIdKo+x0Xw==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -3500,8 +3500,8 @@ packages:
       react: '>=16.8'
       react-dom: '>=16.8'
 
-  '@tanstack/svelte-query@5.64.2':
-    resolution: {integrity: sha512-0Jdw33u/zSmB8bwADyx9ASdMO4KVcvZqjx5q1k9cOS/HeoMFU8eCnr6xA8Pxz5mGVSji+kM7e6zIKOAQdoj6Mw==}
+  '@tanstack/svelte-query@5.66.0':
+    resolution: {integrity: sha512-imsll2H04qoW8E8C/UWvN+YfVFov+kZyH5I7uXBNi5oKP8MyWSDgorRSTmz6MTSPE6dQJHXgYw19CZc5JZbsTA==}
     peerDependencies:
       svelte: ^3.54.0 || ^4.0.0 || ^5.0.0-next.0
 
@@ -3515,8 +3515,8 @@ packages:
     resolution: {integrity: sha512-P9dF7XbibHph2PFRz8gfBKEXEY/HJPOhym8CHmjF8y3q5mWpKx9xtZapXQUWCgkqvsK0R46Azuz+VaxD4Xl+Tg==}
     engines: {node: '>=12'}
 
-  '@tanstack/vue-query@5.64.2':
-    resolution: {integrity: sha512-W5jvqLKK8VUeTqK1tQ1CF7fV8Z7w0oAxYiYHdcJyBRmhPVVHuSsgjIh1DX8uwbr8fTSQDt7iGboT7HqkIkPziA==}
+  '@tanstack/vue-query@5.66.0':
+    resolution: {integrity: sha512-P0IIpP2n0Ovn2aRfjn9fyb3Agse5JNZOhCkML+arVkTu6sOSc5QlZkha5R06viE3vGnGGOLHVBTTzm4dBz/USQ==}
     peerDependencies:
       '@vue/composition-api': ^1.1.2
       vue: ^2.6.0 || ^3.3.0
@@ -3684,8 +3684,8 @@ packages:
   '@types/koa@2.15.0':
     resolution: {integrity: sha512-7QFsywoE5URbuVnG3loe03QXuGajrnotr3gQkXcEBShORai23MePfFYdhz90FEtBBpkyIYQbVD+evKtloCgX3g==}
 
-  '@types/lodash@4.17.14':
-    resolution: {integrity: sha512-jsxagdikDiDBeIRaPYtArcT8my4tN1og7MtMRquFT3XNA6axxyHDRUemqDz/taRDdOUn0GnGHRCuff4q48sW9A==}
+  '@types/lodash@4.17.15':
+    resolution: {integrity: sha512-w/P33JFeySuhN6JLkysYUK2gEmy9kHHFN7E8ro0tkfmlDOgxBDzWEZ/J8cWA+fHqFevpswDTFZnDx+R9lbL6xw==}
 
   '@types/mime@1.3.5':
     resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
@@ -5729,8 +5729,8 @@ packages:
     resolution: {integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==}
     engines: {node: '>= 8'}
 
-  knip@5.43.3:
-    resolution: {integrity: sha512-rCSc7X1jQs+ZIc08lQF3c3nS/nKzsg9UPIbY+qQUMh+FVF5ojdiT3bJNypRlSm2pMLQVeE7XWxXrtT4sdg6nfA==}
+  knip@5.43.6:
+    resolution: {integrity: sha512-bUCFlg44imdV5vayYxu0pIAB373S8Ufjda0qaI9oRZDH6ltJFwUoAO2j7nafxDmo5G0ZeP4IiLAHqlc3wYIONQ==}
     engines: {node: '>=18.18.0'}
     hasBin: true
     peerDependencies:
@@ -6221,8 +6221,8 @@ packages:
   nwsapi@2.2.16:
     resolution: {integrity: sha512-F1I/bimDpj3ncaNDhfyMWuFqmQDBwDB0Fogc2qpL3BWvkQteFD/8BzWuIRl83rq0DXfm8SGt/HFhLXZyljTXcQ==}
 
-  nx@20.3.3:
-    resolution: {integrity: sha512-IUu2D8/bVa7aSr3ViRcrmpTGO2FKqzJoio6gjeq/YbyUHyjrrq5HUmHFx30Wm2vmC1BGm0MeyakTNUJzQvfAog==}
+  nx@20.4.0:
+    resolution: {integrity: sha512-barpwhq8noc30U0d5j2bSp9x/HDL33TCYsP2fl6FvpssbL64PwLOSBqIdZ9ATxVxAE/xAc/s+z72cYDkaYouPA==}
     hasBin: true
     peerDependencies:
       '@swc-node/register': ^1.8.0
@@ -9594,34 +9594,34 @@ snapshots:
       - bluebird
       - supports-color
 
-  '@nx/nx-darwin-arm64@20.3.3':
+  '@nx/nx-darwin-arm64@20.4.0':
     optional: true
 
-  '@nx/nx-darwin-x64@20.3.3':
+  '@nx/nx-darwin-x64@20.4.0':
     optional: true
 
-  '@nx/nx-freebsd-x64@20.3.3':
+  '@nx/nx-freebsd-x64@20.4.0':
     optional: true
 
-  '@nx/nx-linux-arm-gnueabihf@20.3.3':
+  '@nx/nx-linux-arm-gnueabihf@20.4.0':
     optional: true
 
-  '@nx/nx-linux-arm64-gnu@20.3.3':
+  '@nx/nx-linux-arm64-gnu@20.4.0':
     optional: true
 
-  '@nx/nx-linux-arm64-musl@20.3.3':
+  '@nx/nx-linux-arm64-musl@20.4.0':
     optional: true
 
-  '@nx/nx-linux-x64-gnu@20.3.3':
+  '@nx/nx-linux-x64-gnu@20.4.0':
     optional: true
 
-  '@nx/nx-linux-x64-musl@20.3.3':
+  '@nx/nx-linux-x64-musl@20.4.0':
     optional: true
 
-  '@nx/nx-win32-arm64-msvc@20.3.3':
+  '@nx/nx-win32-arm64-msvc@20.4.0':
     optional: true
 
-  '@nx/nx-win32-x64-msvc@20.3.3':
+  '@nx/nx-win32-x64-msvc@20.4.0':
     optional: true
 
   '@open-wc/dedupe-mixin@1.4.0': {}
@@ -9954,12 +9954,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@tanstack/angular-query-experimental@5.64.2(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))':
+  '@tanstack/angular-query-experimental@5.66.0(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1))(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))':
     dependencies:
       '@angular/common': 17.3.12(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))(rxjs@7.8.1)
       '@angular/core': 17.3.12(rxjs@7.8.1)(zone.js@0.15.0)
-      '@tanstack/query-core': 5.64.2
-      '@tanstack/query-devtools': 5.64.2
+      '@tanstack/query-core': 5.66.0
+      '@tanstack/query-devtools': 5.65.0
 
   '@tanstack/angular-table@8.21.0(@angular/core@17.3.12(rxjs@7.8.1)(zone.js@0.15.0))':
     dependencies:
@@ -10006,13 +10006,13 @@ snapshots:
     dependencies:
       remove-accents: 0.5.0
 
-  '@tanstack/query-core@5.64.2': {}
+  '@tanstack/query-core@5.66.0': {}
 
-  '@tanstack/query-devtools@5.64.2': {}
+  '@tanstack/query-devtools@5.65.0': {}
 
-  '@tanstack/react-query@5.64.2(react@18.3.1)':
+  '@tanstack/react-query@5.66.0(react@18.3.1)':
     dependencies:
-      '@tanstack/query-core': 5.64.2
+      '@tanstack/query-core': 5.66.0
       react: 18.3.1
 
   '@tanstack/react-table@8.20.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -10021,9 +10021,9 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tanstack/svelte-query@5.64.2(svelte@4.2.19)':
+  '@tanstack/svelte-query@5.66.0(svelte@4.2.19)':
     dependencies:
-      '@tanstack/query-core': 5.64.2
+      '@tanstack/query-core': 5.66.0
       svelte: 4.2.19
 
   '@tanstack/svelte-table@8.20.5(svelte@4.2.19)':
@@ -10033,10 +10033,10 @@ snapshots:
 
   '@tanstack/table-core@8.20.5': {}
 
-  '@tanstack/vue-query@5.64.2(vue@3.5.13(typescript@5.2.2))':
+  '@tanstack/vue-query@5.66.0(vue@3.5.13(typescript@5.2.2))':
     dependencies:
       '@tanstack/match-sorter-utils': 8.19.4
-      '@tanstack/query-core': 5.64.2
+      '@tanstack/query-core': 5.66.0
       '@vue/devtools-api': 6.6.4
       vue: 3.5.13(typescript@5.2.2)
       vue-demi: 0.14.10(vue@3.5.13(typescript@5.2.2))
@@ -10246,7 +10246,7 @@ snapshots:
       '@types/koa-compose': 3.2.8
       '@types/node': 22.10.3
 
-  '@types/lodash@4.17.14': {}
+  '@types/lodash@4.17.15': {}
 
   '@types/mime@1.3.5': {}
 
@@ -12614,7 +12614,7 @@ snapshots:
 
   klona@2.0.6: {}
 
-  knip@5.43.3(@types/node@22.10.3)(typescript@5.2.2):
+  knip@5.43.6(@types/node@22.10.3)(typescript@5.2.2):
     dependencies:
       '@nodelib/fs.walk': 3.0.1
       '@snyk/github-codeowners': 1.1.0
@@ -13192,7 +13192,7 @@ snapshots:
 
   nwsapi@2.2.16: {}
 
-  nx@20.3.3:
+  nx@20.4.0:
     dependencies:
       '@napi-rs/wasm-runtime': 0.2.4
       '@yarnpkg/lockfile': 1.1.0
@@ -13229,16 +13229,16 @@ snapshots:
       yargs: 17.7.2
       yargs-parser: 21.1.1
     optionalDependencies:
-      '@nx/nx-darwin-arm64': 20.3.3
-      '@nx/nx-darwin-x64': 20.3.3
-      '@nx/nx-freebsd-x64': 20.3.3
-      '@nx/nx-linux-arm-gnueabihf': 20.3.3
-      '@nx/nx-linux-arm64-gnu': 20.3.3
-      '@nx/nx-linux-arm64-musl': 20.3.3
-      '@nx/nx-linux-x64-gnu': 20.3.3
-      '@nx/nx-linux-x64-musl': 20.3.3
-      '@nx/nx-win32-arm64-msvc': 20.3.3
-      '@nx/nx-win32-x64-msvc': 20.3.3
+      '@nx/nx-darwin-arm64': 20.4.0
+      '@nx/nx-darwin-x64': 20.4.0
+      '@nx/nx-freebsd-x64': 20.4.0
+      '@nx/nx-linux-arm-gnueabihf': 20.4.0
+      '@nx/nx-linux-arm64-gnu': 20.4.0
+      '@nx/nx-linux-arm64-musl': 20.4.0
+      '@nx/nx-linux-x64-gnu': 20.4.0
+      '@nx/nx-linux-x64-musl': 20.4.0
+      '@nx/nx-win32-arm64-msvc': 20.4.0
+      '@nx/nx-win32-x64-msvc': 20.4.0
     transitivePeerDependencies:
       - debug
 

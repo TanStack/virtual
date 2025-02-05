@@ -704,7 +704,7 @@ export class Virtualizer<
     },
   )
 
-  private getIndexes = memo(
+  getVirtualIndexes = memo(
     () => {
       let startIndex: number | null = null
       let endIndex: number | null = null
@@ -732,7 +732,7 @@ export class Virtualizer<
           })
     },
     {
-      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getVirtualIndexes',
       debug: () => this.options.debug,
     },
   )
@@ -822,7 +822,7 @@ export class Virtualizer<
   }
 
   getVirtualItems = memo(
-    () => [this.getIndexes(), this.getMeasurements()],
+    () => [this.getVirtualIndexes(), this.getMeasurements()],
     (indexes, measurements) => {
       const virtualItems: Array<VirtualItem> = []
 
