@@ -42,14 +42,6 @@ export interface Rect {
   height: number
 }
 
-export type NotifySource =
-  | 'noScrollElement'
-  | 'observeElementRect'
-  | 'observeElementOffset'
-  | 'measureItem'
-  | 'resizeItem'
-  | 'measure'
-
 //
 
 export const defaultKeyExtractor = (index: number) => index
@@ -311,7 +303,6 @@ export interface VirtualizerOptions<
   onChange?: (
     instance: Virtualizer<TScrollElement, TItemElement>,
     sync: boolean,
-    source: NotifySource,
   ) => void
   measureElement?: (
     element: TItemElement,
@@ -430,8 +421,8 @@ export class Virtualizer<
     }
   }
 
-  private notify = (sync: boolean, source: NotifySource) => {
-    this.options.onChange?.(this, sync, source)
+  private notify = (sync: boolean) => {
+    this.options.onChange?.(this, sync)
   }
 
   private maybeNotify = memo(
@@ -444,8 +435,8 @@ export class Virtualizer<
         this.range ? this.range.endIndex : null,
       ]
     },
-    (isScrolling) => (source: NotifySource) => {
-      this.notify(isScrolling, source)
+    (isScrolling) => {
+      this.notify(isScrolling)
     },
     {
       key: process.env.NODE_ENV !== 'production' && 'maybeNotify',
@@ -481,7 +472,7 @@ export class Virtualizer<
       this.cleanup()
 
       if (!scrollElement) {
-        this.maybeNotify()('noScrollElement')
+        this.maybeNotify()
         return
       }
 
@@ -505,7 +496,7 @@ export class Virtualizer<
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
           this.scrollRect = rect
-          this.maybeNotify()('observeElementRect')
+          this.maybeNotify()
         }),
       )
 
@@ -519,7 +510,8 @@ export class Virtualizer<
             : null
           this.scrollOffset = offset
           this.isScrolling = isScrolling
-          this.maybeNotify()('observeElementOffset')
+
+          this.maybeNotify()
         }),
       )
     }
@@ -803,7 +795,7 @@ export class Virtualizer<
       this.pendingMeasuredCacheIndexes.push(item.index)
       this.itemSizeCache = new Map(this.itemSizeCache.set(item.key, size))
 
-      this.notify(false, 'resizeItem')
+      this.notify(false)
     }
   }
 
@@ -1056,7 +1048,7 @@ export class Virtualizer<
 
   measure = () => {
     this.itemSizeCache = new Map()
-    this.notify(false, 'measure')
+    this.notify(false)
   }
 }
 

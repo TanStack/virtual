@@ -8,11 +8,7 @@ import {
   windowScroll,
 } from '@tanstack/virtual-core'
 import { derived, writable } from 'svelte/store'
-import type {
-  NotifySource,
-  PartialKeys,
-  VirtualizerOptions,
-} from '@tanstack/virtual-core'
+import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 import type { Readable, Writable } from 'svelte/store'
 
 export * from '@tanstack/virtual-core'
@@ -51,10 +47,9 @@ function createVirtualizerBase<
       onChange: (
         instance: Virtualizer<TScrollElement, TItemElement>,
         sync: boolean,
-        source: NotifySource,
       ) => {
         virtualizerWritable.set(instance)
-        resolvedOptions.onChange?.(instance, sync, source)
+        resolvedOptions.onChange?.(instance, sync)
       },
     })
     virtualizer._willUpdate()

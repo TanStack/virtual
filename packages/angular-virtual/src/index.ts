@@ -47,10 +47,10 @@ function createVirtualizerBase<
       virtualizerSignal.set(virtualizer)
       virtualizer.setOptions({
         ..._options,
-        onChange: (instance, sync, source) => {
+        onChange: (instance, sync) => {
           // update virtualizerSignal so that dependent computeds recompute.
           virtualizerSignal.set(instance)
-          _options.onChange?.(instance, sync, source)
+          _options.onChange?.(instance, sync)
         },
       })
       // update virtualizerSignal so that dependent computeds recompute.

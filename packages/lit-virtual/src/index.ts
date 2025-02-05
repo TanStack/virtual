@@ -29,9 +29,9 @@ class VirtualizerControllerBase<
 
     const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
       ...options,
-      onChange: (instance, sync, source) => {
+      onChange: (instance, sync) => {
         this.host.updateComplete.then(() => this.host.requestUpdate())
-        options.onChange?.(instance, sync, source)
+        options.onChange?.(instance, sync)
       },
     }
     this.virtualizer = new Virtualizer(resolvedOptions)
