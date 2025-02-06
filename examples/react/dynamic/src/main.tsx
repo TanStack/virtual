@@ -9,27 +9,40 @@ import './index.css'
 const randomNumber = (min: number, max: number) =>
   faker.number.int({ min, max })
 
-const sentences = new Array(10000)
-  .fill(true)
-  .map(() => faker.lorem.sentence(randomNumber(20, 70)))
+const getSentences = () =>
+  new Array(randomNumber(1, 1000))
+    .fill(true)
+    .map(() => faker.lorem.sentence(randomNumber(20, 70)))
 
 function RowVirtualizerDynamic() {
+  const [sentences, setSentences] = React.useState(getSentences())
   const parentRef = React.useRef<HTMLDivElement>(null)
+  const innerRef = React.useRef<HTMLDivElement>(null)
 
   const [enabled, setEnabled] = React.useState(true)
 
   const count = sentences.length
+
+  // This only rerenders when indexes change
   const virtualizer = useVirtualizer({
     count,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 45,
+    getInnerElement: () => innerRef.current,
+    estimateSize: () => 100,
     enabled,
   })
 
-  const items = virtualizer.getVirtualItems()
+  console.count('render')
 
   return (
     <div>
+      <button
+        onClick={() => {
+          setSentences(getSentences())
+        }}
+      >
+        randomize sizes
+      </button>
       <button
         onClick={() => {
           virtualizer.scrollToIndex(0)
@@ -61,6 +74,14 @@ function RowVirtualizerDynamic() {
       >
         turn {enabled ? 'off' : 'on'} virtualizer
       </button>
+      <span style={{ padding: '0 4px' }} />
+      <button
+        onClick={() => {
+          virtualizer.measure()
+        }}
+      >
+        measure
+      </button>
       <hr />
       <div
         ref={parentRef}
@@ -73,37 +94,31 @@ function RowVirtualizerDynamic() {
         }}
       >
         <div
+          ref={innerRef}
           style={{
-            height: virtualizer.getTotalSize(),
             width: '100%',
             position: 'relative',
           }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${items[0]?.start ?? 0}px)`,
-            }}
-          >
-            {items.map((virtualRow) => (
-              <div
-                key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                className={
-                  virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'
-                }
-              >
-                <div style={{ padding: '10px 0' }}>
-                  <div>Row {virtualRow.index}</div>
-                  <div>{sentences[virtualRow.index]}</div>
-                </div>
+          {virtualizer.indexes.map((index) => (
+            <div
+              key={index}
+              data-index={index}
+              ref={virtualizer.handleElement}
+              className={index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+              }}
+            >
+              <div style={{ padding: '10px 0' }}>
+                <div>Row {index}</div>
+                <div>{sentences[index]}</div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
