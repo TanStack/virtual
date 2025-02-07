@@ -258,6 +258,16 @@ isRtl: boolean
 
 Whether to invert horizontal scrolling to support right-to-left language locales.
 
+### `useAnimationFrameWithResizeObserver`
+
+```tsx
+useAnimationFrameWithResizeObserver: boolean
+```
+
+This option enables wrapping ResizeObserver measurements in requestAnimationFrame for smoother updates and reduced layout thrashing. The default value is `false`. 
+
+It helps prevent the "ResizeObserver loop completed with undelivered notifications" error by ensuring that measurements align with the rendering cycle. This can improve performance and reduce UI jitter, especially when resizing elements dynamically. However, since ResizeObserver already runs asynchronously, adding requestAnimationFrame may introduce a slight delay in measurements, which could be noticeable in some cases. If resizing operations are lightweight and do not cause reflows, enabling this option may not provide significant benefits.
+
 ## Virtualizer Instance
 
 The following properties and methods are available on the virtualizer instance:
