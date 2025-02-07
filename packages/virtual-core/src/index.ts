@@ -170,11 +170,16 @@ export const observeElementOffset = <T extends Element>(
   endHandler()
 
   element.addEventListener('scroll', handler, addEventListenerOptions)
-  element.addEventListener('scrollend', endHandler, addEventListenerOptions)
-
+  const registerScrollendEvent =
+    instance.options.useScrollendEvent && supportsScrollend
+  if (registerScrollendEvent) {
+    element.addEventListener('scrollend', endHandler, addEventListenerOptions)
+  }
   return () => {
     element.removeEventListener('scroll', handler)
-    element.removeEventListener('scrollend', endHandler)
+    if (registerScrollendEvent) {
+      element.removeEventListener('scrollend', endHandler)
+    }
   }
 }
 
@@ -213,11 +218,16 @@ export const observeWindowOffset = (
   endHandler()
 
   element.addEventListener('scroll', handler, addEventListenerOptions)
-  element.addEventListener('scrollend', endHandler, addEventListenerOptions)
-
+  const registerScrollendEvent =
+    instance.options.useScrollendEvent && supportsScrollend
+  if (registerScrollendEvent) {
+    element.addEventListener('scrollend', endHandler, addEventListenerOptions)
+  }
   return () => {
     element.removeEventListener('scroll', handler)
-    element.removeEventListener('scrollend', endHandler)
+    if (registerScrollendEvent) {
+      element.removeEventListener('scrollend', endHandler)
+    }
   }
 }
 
