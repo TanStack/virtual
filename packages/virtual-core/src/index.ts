@@ -84,15 +84,21 @@ export const observeElementRect = <T extends Element>(
   }
 
   const observer = new targetWindow.ResizeObserver((entries) => {
-    const entry = entries[0]
-    if (entry?.borderBoxSize) {
-      const box = entry.borderBoxSize[0]
-      if (box) {
-        handler({ width: box.inlineSize, height: box.blockSize })
-        return
+    const run = () => {
+      const entry = entries[0]
+      if (entry?.borderBoxSize) {
+        const box = entry.borderBoxSize[0]
+        if (box) {
+          handler({ width: box.inlineSize, height: box.blockSize })
+          return
+        }
       }
+      handler(element.getBoundingClientRect())
     }
-    handler(element.getBoundingClientRect())
+
+    instance.options.useAnimationFrameWithResizeObserver
+      ? requestAnimationFrame(run)
+      : run()
   })
 
   observer.observe(element, { box: 'border-box' })
@@ -337,6 +343,7 @@ export interface VirtualizerOptions<
   useScrollendEvent?: boolean
   enabled?: boolean
   isRtl?: boolean
+  useAnimationFrameWithResizeObserver?: boolean
 }
 
 export class Virtualizer<
@@ -378,7 +385,12 @@ export class Virtualizer<
 
       return (_ro = new this.targetWindow.ResizeObserver((entries) => {
         entries.forEach((entry) => {
-          this._measureElement(entry.target as TItemElement, entry)
+          const run = () => {
+            this._measureElement(entry.target as TItemElement, entry)
+          }
+          this.options.useAnimationFrameWithResizeObserver
+            ? requestAnimationFrame(run)
+            : run()
         })
       }))
     }
@@ -427,6 +439,7 @@ export class Virtualizer<
       enabled: true,
       isRtl: false,
       useScrollendEvent: true,
+      useAnimationFrameWithResizeObserver: false,
       ...opts,
     }
   }
