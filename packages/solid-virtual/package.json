@@ -55,8 +55,8 @@
     "@tanstack/virtual-core": "workspace:*"
   },
   "devDependencies": {
-    "solid-js": "^1.9.4",
-    "vite-plugin-solid": "^2.11.1"
+    "solid-js": "^1.9.5",
+    "vite-plugin-solid": "^2.11.2"
   },
   "peerDependencies": {
     "solid-js": "^1.3.0"
