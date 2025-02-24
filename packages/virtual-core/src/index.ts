@@ -702,7 +702,12 @@ export class Virtualizer<
   )
 
   calculateRange = memo(
-    () => [this.getMeasurements(), this.getSize(), this.getScrollOffset(), this.options.lanes],
+    () => [
+      this.getMeasurements(),
+      this.getSize(),
+      this.getScrollOffset(),
+      this.options.lanes,
+    ],
     (measurements, outerSize, scrollOffset, lanes) => {
       return (this.range =
         measurements.length > 0 && outerSize > 0
@@ -710,7 +715,7 @@ export class Virtualizer<
               measurements,
               outerSize,
               scrollOffset,
-              lanes
+              lanes,
             })
           : null)
     },
@@ -1106,17 +1111,22 @@ function calculateRange({
   measurements,
   outerSize,
   scrollOffset,
-  lanes
+  lanes,
 }: {
   measurements: Array<VirtualItem>
   outerSize: number
-  scrollOffset: number,
+  scrollOffset: number
   lanes: number
 }) {
   const lastIndex = measurements.length - 1
   const getOffset = (index: number) => measurements[index]!.start
 
-  let startIndex = findNearestBinarySearch(0, lastIndex, getOffset, scrollOffset)
+  let startIndex = findNearestBinarySearch(
+    0,
+    lastIndex,
+    getOffset,
+    scrollOffset,
+  )
   let endIndex = startIndex
 
   while (
