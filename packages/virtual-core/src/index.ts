@@ -1126,7 +1126,7 @@ function calculateRange({
     endIndex++
   }
 
-  if (lanes != 1) {
+  if (lanes > 1) {
     // Align startIndex to the beginning of its lane
     startIndex = Math.max(0, startIndex - (startIndex % lanes))
     // Align endIndex to the end of its lane
