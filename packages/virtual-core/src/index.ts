@@ -873,17 +873,23 @@ export class Virtualizer<
     )
   }
 
-  getOffsetForAlignment = (toOffset: number, align: ScrollAlignment) => {
+  getOffsetForAlignment = (
+    toOffset: number,
+    align: ScrollAlignment,
+    itemSize = 0,
+  ) => {
     const size = this.getSize()
     const scrollOffset = this.getScrollOffset()
 
     if (align === 'auto') {
-      if (toOffset >= scrollOffset + size) {
-        align = 'end'
-      }
+      align = toOffset >= scrollOffset + size ? 'end' : 'start'
     }
 
-    if (align === 'end') {
+    if (align === 'center') {
+      // When aligning to a particular item (e.g. with scrollToIndex),
+      // adjust offset by the size of the item to center on the item
+      toOffset += (itemSize - size) / 2
+    } else if (align === 'end') {
       toOffset -= size
     }
 
@@ -922,29 +928,15 @@ export class Virtualizer<
       }
     }
 
-    const centerOffset =
-      item.start - this.options.scrollPaddingStart + (item.size - size) / 2
+    const toOffset =
+      align === 'end'
+        ? item.end + this.options.scrollPaddingEnd
+        : item.start - this.options.scrollPaddingStart
 
-    switch (align) {
-      case 'center':
-        return [this.getOffsetForAlignment(centerOffset, align), align] as const
-      case 'end':
-        return [
-          this.getOffsetForAlignment(
-            item.end + this.options.scrollPaddingEnd,
-            align,
-          ),
-          align,
-        ] as const
-      default:
-        return [
-          this.getOffsetForAlignment(
-            item.start - this.options.scrollPaddingStart,
-            align,
-          ),
-          align,
-        ] as const
-    }
+    return [
+      this.getOffsetForAlignment(toOffset, align, item.size),
+      align,
+    ] as const
   }
 
   private isDynamicMode = () => this.elementsCache.size > 0
