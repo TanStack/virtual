@@ -702,14 +702,20 @@ export class Virtualizer<
   )
 
   calculateRange = memo(
-    () => [this.getMeasurements(), this.getSize(), this.getScrollOffset()],
-    (measurements, outerSize, scrollOffset) => {
+    () => [
+      this.getMeasurements(),
+      this.getSize(),
+      this.getScrollOffset(),
+      this.options.lanes,
+    ],
+    (measurements, outerSize, scrollOffset, lanes) => {
       return (this.range =
         measurements.length > 0 && outerSize > 0
           ? calculateRange({
               measurements,
               outerSize,
               scrollOffset,
+              lanes,
             })
           : null)
     },
@@ -1105,22 +1111,36 @@ function calculateRange({
   measurements,
   outerSize,
   scrollOffset,
+  lanes,
 }: {
   measurements: Array<VirtualItem>
   outerSize: number
   scrollOffset: number
+  lanes: number
 }) {
-  const count = measurements.length - 1
+  const lastIndex = measurements.length - 1
   const getOffset = (index: number) => measurements[index]!.start
 
-  const startIndex = findNearestBinarySearch(0, count, getOffset, scrollOffset)
+  let startIndex = findNearestBinarySearch(
+    0,
+    lastIndex,
+    getOffset,
+    scrollOffset,
+  )
   let endIndex = startIndex
 
   while (
-    endIndex < count &&
+    endIndex < lastIndex &&
     measurements[endIndex]!.end < scrollOffset + outerSize
   ) {
     endIndex++
+  }
+
+  if (lanes > 1) {
+    // Align startIndex to the beginning of its lane
+    startIndex = Math.max(0, startIndex - (startIndex % lanes))
+    // Align endIndex to the end of its lane
+    endIndex = Math.min(lastIndex, endIndex + (lanes - 1 - (endIndex % lanes)))
   }
 
   return { startIndex, endIndex }
