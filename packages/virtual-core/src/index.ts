@@ -1043,9 +1043,7 @@ export class Virtualizer<
       end =
         this.options.lanes === 1
           ? (measurements[measurements.length - 1]?.end ?? 0)
-          : Math.max(
-              ...measurements.slice(-this.options.lanes).map((m) => m.end),
-            )
+          : measurements.reduce((a, { end: b }) => Math.max(a, b), -Infinity)
     }
 
     return Math.max(
