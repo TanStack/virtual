@@ -1036,14 +1036,25 @@ export class Virtualizer<
 
     let end: number
     // If there are no measurements, set the end to paddingStart
+    // If there is only one lane, use the last measurement's end
+    // Otherwise find the maximum end value among all measurements
     if (measurements.length === 0) {
       end = this.options.paddingStart
+    } else if (this.options.lanes === 1) {
+      end = measurements[measurements.length - 1]?.end ?? 0
     } else {
-      // If lanes is 1, use the last measurement's end, otherwise find the maximum end value among all measurements
-      end =
-        this.options.lanes === 1
-          ? (measurements[measurements.length - 1]?.end ?? 0)
-          : measurements.reduce((a, { end: b }) => Math.max(a, b), -Infinity)
+      const endByLane = Array<number | null>(this.options.lanes).fill(null)
+      let endIndex = measurements.length - 1
+      while (endIndex > 0 && endByLane.some((val) => val === null)) {
+        const item = measurements[endIndex]!
+        if (endByLane[item.lane] === null) {
+          endByLane[item.lane] = item.end
+        }
+
+        endIndex--
+      }
+
+      end = Math.max(...(endByLane as Array<number>))
     }
 
     return Math.max(
