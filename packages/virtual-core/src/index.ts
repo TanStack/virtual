@@ -1119,14 +1119,35 @@ function calculateRange({
   )
   let endIndex = startIndex
 
-  while (
-    endIndex < lastIndex &&
-    measurements[endIndex]!.end < scrollOffset + outerSize
-  ) {
-    endIndex++
-  }
+  if (lanes === 1) {
+    while (
+      endIndex < lastIndex &&
+      measurements[endIndex]!.end < scrollOffset + outerSize
+    ) {
+      endIndex++
+    }
+  } else if (lanes > 1) {
+    // Expand forward until we include the visible items from all lanes
+    // which are closer to the end of the virtualizer window
+    const endPerLane = Array(lanes).fill(0)
+    while (
+      endIndex < lastIndex &&
+      endPerLane.some((pos) => pos < scrollOffset + outerSize)
+    ) {
+      const item = measurements[endIndex]!
+      endPerLane[item.lane] = item.end
+      endIndex++
+    }
 
-  if (lanes > 1) {
+    // Expand backward until we include all lanes' visible items
+    // closer to the top
+    const startPerLane = Array(lanes).fill(scrollOffset + outerSize)
+    while (startIndex > 0 && startPerLane.some((pos) => pos >= scrollOffset)) {
+      const item = measurements[startIndex]!
+      startPerLane[item.lane] = item.start
+      startIndex--
+    }
+
     // Align startIndex to the beginning of its lane
     startIndex = Math.max(0, startIndex - (startIndex % lanes))
     // Align endIndex to the end of its lane
