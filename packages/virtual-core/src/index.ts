@@ -1054,7 +1054,7 @@ export class Virtualizer<
         endIndex--
       }
 
-      end = Math.max(...(endByLane as Array<number>))
+      end = Math.max(...endByLane.filter((val): val is number => val !== null))
     }
 
     return Math.max(
