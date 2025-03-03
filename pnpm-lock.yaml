@@ -24,26 +24,26 @@ importers:
         specifier: ^25.0.1
         version: 25.0.1
       knip:
-        specifier: ^5.44.5
+        specifier: ^5.45.0
         version: 5.45.0(@types/node@22.13.7)(typescript@5.2.2)
       nx:
         specifier: ^20.4.6
         version: 20.4.6
       prettier:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.5.3
+        version: 3.5.3
       prettier-plugin-svelte:
         specifier: ^3.3.3
-        version: 3.3.3(prettier@3.5.2)(svelte@4.2.19)
+        version: 3.3.3(prettier@3.5.3)(svelte@4.2.19)
       publint:
-        specifier: ^0.3.6
+        specifier: ^0.3.7
         version: 0.3.7
       rimraf:
         specifier: ^5.0.10
         version: 5.0.10
       sherif:
-        specifier: ^1.3.0
-        version: 1.3.0
+        specifier: ^1.4.0
+        version: 1.4.0
       typescript:
         specifier: 5.2.2
         version: 5.2.2
@@ -188,8 +188,8 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@tanstack/angular-query-experimental':
-        specifier: 5.66.9
-        version: 5.66.9(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))
+        specifier: 5.66.11
+        version: 5.66.11(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))
       '@tanstack/angular-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/angular-virtual
@@ -655,7 +655,7 @@ importers:
   examples/react/infinite-scroll:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.66.9
+        specifier: ^5.66.11
         version: 5.66.11(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.13.2
@@ -777,8 +777,8 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/lodash':
-        specifier: ^4.17.15
-        version: 4.17.15
+        specifier: ^4.17.16
+        version: 4.17.16
       '@types/react':
         specifier: ^18.3.18
         version: 18.3.18
@@ -941,7 +941,7 @@ importers:
   examples/svelte/infinite-scroll:
     dependencies:
       '@tanstack/svelte-query':
-        specifier: ^5.66.9
+        specifier: ^5.66.11
         version: 5.66.11(svelte@4.2.19)
       '@tanstack/svelte-virtual':
         specifier: ^3.13.2
@@ -1093,8 +1093,8 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   examples/vue/fixed:
     dependencies:
@@ -1118,13 +1118,13 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   examples/vue/infinite-scroll:
     dependencies:
       '@tanstack/vue-query':
-        specifier: ^5.66.9
+        specifier: ^5.66.11
         version: 5.66.11(vue@3.5.13(typescript@5.2.2))
       '@tanstack/vue-virtual':
         specifier: ^3.13.2
@@ -1146,8 +1146,8 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   examples/vue/padding:
     dependencies:
@@ -1171,8 +1171,8 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   examples/vue/scroll-padding:
     dependencies:
@@ -1199,8 +1199,8 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   examples/vue/smooth-scroll:
     dependencies:
@@ -1224,8 +1224,8 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   examples/vue/sticky:
     dependencies:
@@ -1246,8 +1246,8 @@ importers:
         specifier: ^0.1.1-alpha.16
         version: 0.1.1-alpha.16
       '@types/lodash':
-        specifier: ^4.17.15
-        version: 4.17.15
+        specifier: ^4.17.16
+        version: 4.17.16
       '@vitejs/plugin-vue':
         specifier: ^5.2.1
         version: 5.2.1(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))(vue@3.5.13(typescript@5.2.2))
@@ -1258,8 +1258,8 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   examples/vue/table:
     dependencies:
@@ -1289,8 +1289,8 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   examples/vue/variable:
     dependencies:
@@ -1314,8 +1314,8 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
       vue-tsc:
-        specifier: ^2.2.4
-        version: 2.2.4(typescript@5.2.2)
+        specifier: ^2.2.8
+        version: 2.2.8(typescript@5.2.2)
 
   packages/angular-virtual:
     dependencies:
@@ -1387,7 +1387,7 @@ importers:
         specifier: ^1.9.5
         version: 1.9.5
       vite-plugin-solid:
-        specifier: ^2.11.2
+        specifier: ^2.11.6
         version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
 
   packages/svelte-virtual:
@@ -3354,8 +3354,8 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       vite: ^5.0.0
 
-  '@tanstack/angular-query-experimental@5.66.9':
-    resolution: {integrity: sha512-Hvd9HX4RVeoet6sYLT1cK6AIk5hGfeZKlgInyS/lGil44jmx7YJep2JSrGZPsqi7FroXNOsdt9u+U2WkBpfWug==}
+  '@tanstack/angular-query-experimental@5.66.11':
+    resolution: {integrity: sha512-vyJr13rvwOGPm220CO/c+n1vYjmRK2vY5ux7eOfvUmTg4AR5a5BvJW46UFZvZefcbiLqx8d8G0d83AxlZJBeKQ==}
     peerDependencies:
       '@angular/common': '>=16.0.0'
       '@angular/core': '>=16.0.0'
@@ -3377,9 +3377,6 @@ packages:
 
   '@tanstack/query-core@5.66.11':
     resolution: {integrity: sha512-ZEYxgHUcohj3sHkbRaw0gYwFxjY5O6M3IXOYXEun7E1rqNhsP8fOtqjJTKPZpVHcdIdrmX4lzZctT4+pts0OgA==}
-
-  '@tanstack/query-core@5.66.4':
-    resolution: {integrity: sha512-skM/gzNX4shPkqmdTCSoHtJAPMTtmIJNS0hE+xwTTUVYwezArCT34NMermABmBVUg5Ls5aiUXEDXfqwR1oVkcA==}
 
   '@tanstack/query-devtools@5.65.0':
     resolution: {integrity: sha512-g5y7zc07U9D3esMdqUfTEVu9kMHoIaVBsD0+M3LPdAdD710RpTcLiNvJY1JkYXqkq9+NV+CQoemVNpQPBXVsJg==}
@@ -3580,8 +3577,8 @@ packages:
   '@types/koa@2.15.0':
     resolution: {integrity: sha512-7QFsywoE5URbuVnG3loe03QXuGajrnotr3gQkXcEBShORai23MePfFYdhz90FEtBBpkyIYQbVD+evKtloCgX3g==}
 
-  '@types/lodash@4.17.15':
-    resolution: {integrity: sha512-w/P33JFeySuhN6JLkysYUK2gEmy9kHHFN7E8ro0tkfmlDOgxBDzWEZ/J8cWA+fHqFevpswDTFZnDx+R9lbL6xw==}
+  '@types/lodash@4.17.16':
+    resolution: {integrity: sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==}
 
   '@types/mime@1.3.5':
     resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
@@ -3784,8 +3781,8 @@ packages:
       typescript:
         optional: true
 
-  '@vue/language-core@2.2.4':
-    resolution: {integrity: sha512-eGGdw7eWUwdIn9Fy/irJ7uavCGfgemuHQABgJ/hU1UgZFnbTg9VWeXvHQdhY+2SPQZWJqWXvRWIg67t4iWEa+Q==}
+  '@vue/language-core@2.2.8':
+    resolution: {integrity: sha512-rrzB0wPGBvcwaSNRriVWdNAbHQWSf0NlGqgKHK5mEkXpefjUlVRP62u03KvwZpvKVjRnBIQ/Lwre+Mx9N6juUQ==}
     peerDependencies:
       typescript: '*'
     peerDependenciesMeta:
@@ -6450,8 +6447,8 @@ packages:
       prettier: ^3.0.0
       svelte: ^3.2.0 || ^4.0.0-next.0 || ^5.0.0-next.0
 
-  prettier@3.5.2:
-    resolution: {integrity: sha512-lc6npv5PH7hVqozBR7lkBNOGXV9vMwROAPlumdBkX0wTbbzPu/U1hk5yL8p2pt4Xoc+2mkT8t/sow2YrV/M5qg==}
+  prettier@3.5.3:
+    resolution: {integrity: sha512-QQtaxnoDJeAkDvDKWCLiwIXkTgRhwYDEQCghU9Z6q03iyek/rxRh/2lC3HB7P8sWT2xC/y5JDctPLBIGzHKbhw==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -6873,38 +6870,38 @@ packages:
     resolution: {integrity: sha512-AzqKpGKjrj7EM6rKVQEPpB288oCfnrEIuyoT9cyF4nmGa7V8Zk6f7RRqYisX8X9m+Q7bd632aZW4ky7EhbQztA==}
     engines: {node: '>= 0.4'}
 
-  sherif-darwin-arm64@1.3.0:
-    resolution: {integrity: sha512-vwt1txYQYxETI8390pHptuS2+TckM3rZRdSvuDlI+1bA9Pbqc1Ad9bXq7iNGZcb+0eFbimoIqJWqi0d5ailDew==}
+  sherif-darwin-arm64@1.4.0:
+    resolution: {integrity: sha512-7PTK+BMC7zHxie3dDi/TPJXrHvCVs+Kf80NO6G9dm/DHFwLi/EJpw/i49H9W3NgN2ND9+MlR0/q0g2rSiaCmkg==}
     cpu: [arm64]
     os: [darwin]
 
-  sherif-darwin-x64@1.3.0:
-    resolution: {integrity: sha512-POrNEfVQ+HJYWiiDwC9fVAumc/MIRqYrnmW+zvY2khusWr1sQitNcc4qAtz/iDJktqQqFIQ4J0h+pSWa84sxDg==}
+  sherif-darwin-x64@1.4.0:
+    resolution: {integrity: sha512-r4pwDHjPgeothxvl+d58BvJ1WhSiWfiukivltJJXgQDg4p64K4nv9dsQw1+zO4I2gYSlsUOXA9LDYlka79JyTA==}
     cpu: [x64]
     os: [darwin]
 
-  sherif-linux-arm64@1.3.0:
-    resolution: {integrity: sha512-kftGHdZRat1p2PntW6vXC+TqPQI6Sm55Zxi3gfXZiz1knFY53dJHr+MaP1W6DlzJ+DhOuZzJ4HkfT/K3/5BPUA==}
+  sherif-linux-arm64@1.4.0:
+    resolution: {integrity: sha512-cABgykKbFYruIZkU07ubiKgJS6qooIbMpwBTpivCb7/5Xwgw2Jm1oryhKFFv4i8I3R1TPdNxHpz2yyGuaW+7Uw==}
     cpu: [arm64]
     os: [linux]
 
-  sherif-linux-x64@1.3.0:
-    resolution: {integrity: sha512-9nbK5wqazisbhHGJ+t/DQM8Cr1QEgOSJ4J071wrLrYNEcvr/9PMkKXmX2YJdY9VWKz+AIohXJ2ZkXtB/oEyPDQ==}
+  sherif-linux-x64@1.4.0:
+    resolution: {integrity: sha512-igofjXjgov2QTyivMCkPuXklqBHfVDikicyilQlPTEMO3ZIsz1uE6D6IC1iq7iDV/cbx0IYJo6v0cSSpiYTrSA==}
     cpu: [x64]
     os: [linux]
 
-  sherif-windows-arm64@1.3.0:
-    resolution: {integrity: sha512-q+tkYx0kSAm8bUpt8jAv1JQMZolG4sTXwVH/CAU47ukPO8t4ghzEEhPZDdJYcDf6co7D2V1JbXdfaG9u1+3d+w==}
+  sherif-windows-arm64@1.4.0:
+    resolution: {integrity: sha512-1oQ178TfmRYrhMOyRrQ3AOKwt7hmGXZJJwyJE4LV3c7PgKvOiWz3USBI1FapLbNBmslgsTnzJJVD7CFZNOqDZA==}
     cpu: [arm64]
     os: [win32]
 
-  sherif-windows-x64@1.3.0:
-    resolution: {integrity: sha512-bd0mS6GIs0Mwdx9nP7deFATzGM5AVw3wUv/fRoum3bRkJNKJrm5HTh9cKuXiz6gc3pHjUUZOnKL0i7fZGfu+ew==}
+  sherif-windows-x64@1.4.0:
+    resolution: {integrity: sha512-hTY6gYKRlOA0SqpK4yklAPzFZhn6NJGeM50ida67b2k7B6ApsStru9U3yt//b6cqy+6z3HxgxH9IpVVBiWJnVQ==}
     cpu: [x64]
     os: [win32]
 
-  sherif@1.3.0:
-    resolution: {integrity: sha512-UeCSc/Jx33ykalVx07Z/aHu0XKwg/UL5qprU+fYll97atJXLPZhy+FefPrDDEohzkQZ2jZbb6q4TX/crKuoJEA==}
+  sherif@1.4.0:
+    resolution: {integrity: sha512-mo7zKtRsDrRadbXa8tuoK5mtov5kV4qw2iuzD/ZyEVSeZfY0BpR1+KUhvJHCUJDHBv2nh0dJMwKkmlbbq/QKOg==}
     hasBin: true
 
   side-channel-list@1.0.0:
@@ -7552,8 +7549,8 @@ packages:
     peerDependencies:
       eslint: '>=6.0.0'
 
-  vue-tsc@2.2.4:
-    resolution: {integrity: sha512-3EVHlxtpMXcb5bCaK7QDFTbEkMusDfVk0HVRrkv5hEb+Clpu9a96lKUXJAeD/akRlkoA4H8MCHgBDN19S6FnzA==}
+  vue-tsc@2.2.8:
+    resolution: {integrity: sha512-jBYKBNFADTN+L+MdesNX/TB3XuDSyaWynKMDgR+yCSln0GQ9Tfb7JS2lr46s2LiFUT1WsmfWsSvIElyxzOPqcQ==}
     hasBin: true
     peerDependencies:
       typescript: '>=5.0.0'
@@ -9802,11 +9799,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@tanstack/angular-query-experimental@5.66.9(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))':
+  '@tanstack/angular-query-experimental@5.66.11(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))':
     dependencies:
       '@angular/common': 17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2)
       '@angular/core': 17.3.12(rxjs@7.8.2)(zone.js@0.15.0)
-      '@tanstack/query-core': 5.66.4
+      '@tanstack/query-core': 5.66.11
       '@tanstack/query-devtools': 5.65.0
 
   '@tanstack/angular-table@8.21.2(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))':
@@ -9855,8 +9852,6 @@ snapshots:
       remove-accents: 0.5.0
 
   '@tanstack/query-core@5.66.11': {}
-
-  '@tanstack/query-core@5.66.4': {}
 
   '@tanstack/query-devtools@5.65.0': {}
 
@@ -10096,7 +10091,7 @@ snapshots:
       '@types/koa-compose': 3.2.8
       '@types/node': 22.13.7
 
-  '@types/lodash@4.17.15': {}
+  '@types/lodash@4.17.16': {}
 
   '@types/mime@1.3.5': {}
 
@@ -10377,7 +10372,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.2.2
 
-  '@vue/language-core@2.2.4(typescript@5.2.2)':
+  '@vue/language-core@2.2.8(typescript@5.2.2)':
     dependencies:
       '@volar/language-core': 2.4.11
       '@vue/compiler-dom': 3.5.13
@@ -13411,12 +13406,12 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-svelte@3.3.3(prettier@3.5.2)(svelte@4.2.19):
+  prettier-plugin-svelte@3.3.3(prettier@3.5.3)(svelte@4.2.19):
     dependencies:
-      prettier: 3.5.2
+      prettier: 3.5.3
       svelte: 4.2.19
 
-  prettier@3.5.2: {}
+  prettier@3.5.3: {}
 
   pretty-format@27.5.1:
     dependencies:
@@ -13856,32 +13851,32 @@ snapshots:
 
   shell-quote@1.8.2: {}
 
-  sherif-darwin-arm64@1.3.0:
+  sherif-darwin-arm64@1.4.0:
     optional: true
 
-  sherif-darwin-x64@1.3.0:
+  sherif-darwin-x64@1.4.0:
     optional: true
 
-  sherif-linux-arm64@1.3.0:
+  sherif-linux-arm64@1.4.0:
     optional: true
 
-  sherif-linux-x64@1.3.0:
+  sherif-linux-x64@1.4.0:
     optional: true
 
-  sherif-windows-arm64@1.3.0:
+  sherif-windows-arm64@1.4.0:
     optional: true
 
-  sherif-windows-x64@1.3.0:
+  sherif-windows-x64@1.4.0:
     optional: true
 
-  sherif@1.3.0:
+  sherif@1.4.0:
     optionalDependencies:
-      sherif-darwin-arm64: 1.3.0
-      sherif-darwin-x64: 1.3.0
-      sherif-linux-arm64: 1.3.0
-      sherif-linux-x64: 1.3.0
-      sherif-windows-arm64: 1.3.0
-      sherif-windows-x64: 1.3.0
+      sherif-darwin-arm64: 1.4.0
+      sherif-darwin-x64: 1.4.0
+      sherif-linux-arm64: 1.4.0
+      sherif-linux-x64: 1.4.0
+      sherif-windows-arm64: 1.4.0
+      sherif-windows-x64: 1.4.0
 
   side-channel-list@1.0.0:
     dependencies:
@@ -14539,10 +14534,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vue-tsc@2.2.4(typescript@5.2.2):
+  vue-tsc@2.2.8(typescript@5.2.2):
     dependencies:
       '@volar/typescript': 2.4.11
-      '@vue/language-core': 2.2.4(typescript@5.2.2)
+      '@vue/language-core': 2.2.8(typescript@5.2.2)
       typescript: 5.2.2
 
   vue@3.5.13(typescript@5.2.2):
