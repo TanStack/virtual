@@ -67,7 +67,7 @@ The initial `Rect` of the scrollElement. This is mostly useful if you need to ru
 ### `onChange`
 
 ```tsx
-onChange?: (instance: Virtualizer<TScrollElement, TItemElement>) => void
+onChange?: (instance: Virtualizer<TScrollElement, TItemElement>, sync: boolean) => void
 ```
 
 A callback function that fires when the virtualizer's internal state changes. It's passed the virtualizer instance.
