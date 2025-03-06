@@ -708,8 +708,8 @@ importers:
   examples/react/scroll-padding:
     dependencies:
       '@react-hookz/web':
-        specifier: ^24.0.4
-        version: 24.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^25.0.1
+        version: 25.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/react-virtual
@@ -3118,11 +3118,12 @@ packages:
     resolution: {integrity: sha512-TvCl79Y8v18ZhFGd5mjO1kYPovSBq3+4LVCi5Nfl1JI8fS8i8kXbgQFGwBJRXczim8GlW8c2LMBKTtExYXOy/A==}
     engines: {node: '>=18'}
 
-  '@react-hookz/deep-equal@1.0.4':
-    resolution: {integrity: sha512-N56fTrAPUDz/R423pag+n6TXWbvlBZDtTehaGFjK0InmN+V2OFWLE/WmORhmn6Ce7dlwH5+tQN1LJFw3ngTJVg==}
+  '@react-hookz/deep-equal@3.0.3':
+    resolution: {integrity: sha512-SLy+NmiDpncqc2d9TR4Y4R7f8lUFOQK9WbnIq02A6wDxy+dTHfA2Np0dPvj0SFp6i1nqERLmEUe9MxPLuO/IqA==}
+    engines: {node: '>=18.0.0'}
 
-  '@react-hookz/web@24.0.4':
-    resolution: {integrity: sha512-DcIM6JiZklDyHF6CRD1FTXzuggAkQ+3Ncq2Wln7Kdih8GV6ZIeN9JfS6ZaQxpQUxan8/4n0J2V/R7nMeiSrb2Q==}
+  '@react-hookz/web@25.0.1':
+    resolution: {integrity: sha512-nUwtanhyrp2Sxg+4mNvsJPRvf92lcsEexMxBjMX4kGEFYtGWnXLnhn69W2xpeoVPvxEV3OAGsh5mBYl4hnPFBg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       js-cookie: ^3.0.5
@@ -9571,11 +9572,11 @@ snapshots:
 
   '@publint/pack@0.1.1': {}
 
-  '@react-hookz/deep-equal@1.0.4': {}
+  '@react-hookz/deep-equal@3.0.3': {}
 
-  '@react-hookz/web@24.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@react-hookz/web@25.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@react-hookz/deep-equal': 1.0.4
+      '@react-hookz/deep-equal': 3.0.3
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
