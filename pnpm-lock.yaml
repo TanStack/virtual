@@ -81,8 +81,8 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/angular-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/angular-virtual
@@ -347,8 +347,8 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/angular-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/angular-virtual
@@ -402,8 +402,8 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/angular-table':
         specifier: 8.21.2
         version: 8.21.2(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))
@@ -540,8 +540,8 @@ importers:
   examples/lit/dynamic:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/lit-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/lit-virtual
@@ -565,8 +565,8 @@ importers:
   examples/lit/fixed:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/lit-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/lit-virtual
@@ -590,8 +590,8 @@ importers:
   examples/react/dynamic:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/react-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/react-virtual
@@ -761,8 +761,8 @@ importers:
   examples/react/sticky:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/react-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/react-virtual
@@ -795,8 +795,8 @@ importers:
   examples/react/table:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/react-table':
         specifier: ^8.21.2
         version: 8.21.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -882,8 +882,8 @@ importers:
   examples/svelte/dynamic:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/svelte-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/svelte-virtual
@@ -972,8 +972,8 @@ importers:
   examples/svelte/smooth-scroll:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/svelte-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/svelte-virtual
@@ -1003,8 +1003,8 @@ importers:
   examples/svelte/sticky:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/svelte-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/svelte-virtual
@@ -1037,8 +1037,8 @@ importers:
   examples/svelte/table:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/svelte-table':
         specifier: ^8.21.2
         version: 8.21.2(svelte@4.2.19)
@@ -1071,8 +1071,8 @@ importers:
   examples/vue/dynamic:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/vue-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/vue-virtual
@@ -1230,8 +1230,8 @@ importers:
   examples/vue/sticky:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/vue-virtual':
         specifier: ^3.13.2
         version: link:../../../packages/vue-virtual
@@ -1264,8 +1264,8 @@ importers:
   examples/vue/table:
     dependencies:
       '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^9.5.1
+        version: 9.5.1
       '@tanstack/vue-table':
         specifier: ^8.21.2
         version: 8.21.2(vue@3.5.13(typescript@5.2.2))
@@ -2682,9 +2682,9 @@ packages:
   '@esm-bundle/chai@4.3.4-fix.0':
     resolution: {integrity: sha512-26SKdM4uvDWlY8/OOOxSB1AqQWeBosCX3wRYUZO7enTAj03CtVxIiCimYVG2WpULcyV51qapK4qTovwkUr5Mlw==}
 
-  '@faker-js/faker@8.4.1':
-    resolution: {integrity: sha512-XQ3cU+Q8Uqmrbf2e0cIC/QN43sTBSC8KF12u29Mb47tWrt2hAgBXSgpZMj4Ao8Uk0iJcU99QsOCaIL8934obCg==}
-    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0, npm: '>=6.14.13'}
+  '@faker-js/faker@9.5.1':
+    resolution: {integrity: sha512-0fzMEDxkExR2cn731kpDaCCnBGBUOIXEi2S1N5l8Hltp6aPf4soTMJ+g4k8r2sI5oB+rpwIW8Uy/6jkwGpnWPg==}
+    engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
   '@gerrit0/mini-shiki@1.27.2':
     resolution: {integrity: sha512-GeWyHz8ao2gBiUW4OJnQDxXQnFgZQwwQk05t/CVVgNBN7/rK8XZ7xY6YhLVv9tH3VppWWmr9DCl3MwemB/i+Og==}
@@ -9150,7 +9150,7 @@ snapshots:
     dependencies:
       '@types/chai': 4.3.20
 
-  '@faker-js/faker@8.4.1': {}
+  '@faker-js/faker@9.5.1': {}
 
   '@gerrit0/mini-shiki@1.27.2':
     dependencies:

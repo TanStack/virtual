@@ -8,7 +8,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@faker-js/faker": "^8.4.1",
+    "@faker-js/faker": "^9.5.1",
     "@tanstack/lit-virtual": "^3.13.2",
     "@tanstack/virtual-core": "^3.13.2",
     "lit": "^3.2.1"
