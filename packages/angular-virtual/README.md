@@ -112,7 +112,7 @@ Efficiently virtualize only the visible DOM nodes within massive scrollable elem
 
    ```ts
    import { Component, input } from '@angular/core'
-   import { injectWindowVirtualizer } from '@tanstack/angular-virtual'
+   import { injectVirtualizer } from '@tanstack/angular-virtual'
 
    @Component({...})
    export class MyVirtualizedList {
