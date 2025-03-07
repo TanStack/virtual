@@ -22,8 +22,8 @@ const range = (len: number) => {
 const newPerson = (index: number): Person => {
   return {
     id: index + 1,
-    firstName: faker.name.firstName(),
-    lastName: faker.name.lastName(),
+    firstName: faker.person.firstName(),
+    lastName: faker.person.lastName(),
     age: faker.number.int(40),
     visits: faker.number.int(1000),
     progress: faker.number.int(100),
