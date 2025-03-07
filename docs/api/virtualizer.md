@@ -154,7 +154,13 @@ scrollToFn?: (
 ) => void
 ```
 
-An optional function that if provided should implement the scrolling behavior for your scrollElement. It will be called with the offset to scroll to, a boolean indicating if the scrolling is allowed to be smoothed, and the virtualizer instance. Built-in scroll implementations are exported as `elementScroll` and `windowScroll` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `useWindowVirtualizer`.
+An optional function that (if provided) should implement the scrolling behavior for your scrollElement. It will be called with the following arguments: 
+
+- An `offset` (in pixels) to scroll towards.
+- An object indicating whether there was a difference between the estimated size and actual size (`adjustments`) and/or whether scrolling was called with a smooth animation (`behaviour`).
+- The virtualizer instance itself. 
+
+Note that built-in scroll implementations are exported as `elementScroll` and `windowScroll`, which are automatically configured by the framework adapter functions like `useVirtualizer` or `useWindowVirtualizer`.
 
 > ⚠️ Attempting to use smoothScroll with dynamically measured elements will not work.
 
@@ -184,12 +190,13 @@ An optional function that if provided is called when the scrollElement changes a
 
 ```tsx
 measureElement?: (
-  el: TItemElement,
-  instance: Virtualizer<TScrollElement, TItemElement>
+  element: TItemElement,
+  entry: ResizeObserverEntry | undefined,
+  instance: Virtualizer<TScrollElement, TItemElement>,
 ) => number
 ```
 
-This optional function is called when the virtualizer needs to dynamically measure the size (width or height) of an item when `virtualItem.measureElement` is called. It's passed the element given when you call `virtualItem.measureElement(TItemElement)` and the virtualizer instance. It should return the size of the element as a `number`.
+This optional function is called when the virtualizer needs to dynamically measure the size (width or height) of an item.
 
 > 🧠 You can use `instance.options.horizontal` to determine if the width or height of the item should be measured.
 
@@ -199,7 +206,13 @@ This optional function is called when the virtualizer needs to dynamically measu
 scrollMargin?: number
 ```
 
-With this option, you can specify where the scroll offset should originate. Typically, this value represents the space between the beginning of the scrolling element and the start of the list. This is especially useful in common scenarios such as when you have a header preceding a window virtualizer or when multiple virtualizers are utilized within a single scrolling element.
+With this option, you can specify where the scroll offset should originate. Typically, this value represents the space between the beginning of the scrolling element and the start of the list. This is especially useful in common scenarios such as when you have a header preceding a window virtualizer or when multiple virtualizers are utilized within a single scrolling element. If you are using absolute positioning of elements, you should take into account the `scrollMargin` in your CSS transform:
+```tsx
+transform: `translateY(${
+   virtualRow.start - rowVirtualizer.options.scrollMargin
+}px)` 
+``` 
+To dynamically measure value for `scrollMargin` you can use `getBoundingClientRect()` or ResizeObserver. This is helpful in scenarios when items above your virtual list might change their height.   
 
 ### `gap`
 
@@ -226,6 +239,34 @@ isScrollingResetDelay: number
 This option allows you to specify the duration to wait after the last scroll event before resetting the isScrolling instance property. The default value is 150 milliseconds. 
 
 The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
+
+### `useScrollendEvent`
+
+```tsx
+useScrollendEvent: boolean
+```
+
+This option allows you to switch to use debounced fallback to reset the isScrolling instance property after `isScrollingResetDelay` milliseconds. The default value is `true`. 
+
+The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
+
+### `isRtl`
+
+```tsx
+isRtl: boolean
+```
+
+Whether to invert horizontal scrolling to support right-to-left language locales.
+
+### `useAnimationFrameWithResizeObserver`
+
+```tsx
+useAnimationFrameWithResizeObserver: boolean
+```
+
+This option enables wrapping ResizeObserver measurements in requestAnimationFrame for smoother updates and reduced layout thrashing. The default value is `false`. 
+
+It helps prevent the "ResizeObserver loop completed with undelivered notifications" error by ensuring that measurements align with the rendering cycle. This can improve performance and reduce UI jitter, especially when resizing elements dynamically. However, since ResizeObserver already runs asynchronously, adding requestAnimationFrame may introduce a slight delay in measurements, which could be noticeable in some cases. If resizing operations are lightweight and do not cause reflows, enabling this option may not provide significant benefits.
 
 ## Virtualizer Instance
 
@@ -255,6 +296,14 @@ type getVirtualItems = () => VirtualItem[]
 
 Returns the virtual items for the current state of the virtualizer.
 
+### `getVirtualIndexes`
+
+```tsx
+type getVirtualIndexes = () => number[]
+```
+
+Returns the virtual row indexes for the current state of the virtualizer.
+
 ### `scrollToOffset`
 
 ```tsx
@@ -276,7 +325,7 @@ scrollToIndex: (
   index: number,
   options?: {
     align?: 'start' | 'center' | 'end' | 'auto',
-    behavior?: 'auto' | 'scroll'
+    behavior?: 'auto' | 'smooth'
   }
 ) => void
 ```

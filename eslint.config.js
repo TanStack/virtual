@@ -1,6 +1,5 @@
 // @ts-check
 
-// @ts-expect-error
 import { tanstackConfig } from '@tanstack/config/eslint'
 
 export default [
@@ -8,9 +7,9 @@ export default [
   {
     name: 'tanstack/temp',
     rules: {
-      'ts/ban-types': 'off',
-      'ts/naming-convention': 'off',
-      'ts/no-unnecessary-condition': 'off',
+      '@typescript-eslint/naming-convention': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
       'no-self-assign': 'off',
     },
   },

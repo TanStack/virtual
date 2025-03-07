@@ -2,7 +2,7 @@
 title: Introduction
 ---
 
-TanStack Virtual is a headless UI utility for virtualizing long lists of elements in JS/TS, React, Vue, Svelte, Solid and Lit. It is not a component therefore does not ship with or render any markup or styles for you. While this requires a bit of markup and styles from you, you will retain 100% control over your styles, design and implementation.
+TanStack Virtual is a headless UI utility for virtualizing long lists of elements in JS/TS, React, Vue, Svelte, Solid, Lit, and Angular. It is not a component therefore does not ship with or render any markup or styles for you. While this requires a bit of markup and styles from you, you will retain 100% control over your styles, design and implementation.
 
 ## The Virtualizer
 
@@ -15,7 +15,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 
 function App() {
   // The scrollable element for your list
-  const parentRef = React.useRef()
+  const parentRef = React.useRef(null)
 
   // The virtualizer
   const rowVirtualizer = useVirtualizer({

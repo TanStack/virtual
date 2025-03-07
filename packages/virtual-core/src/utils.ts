@@ -7,7 +7,7 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   fn: (...args: NoInfer<[...TDeps]>) => TResult,
   opts: {
     key: false | string
-    debug?: () => any
+    debug?: () => boolean
     onChange?: (result: TResult) => void
     initialDeps?: TDeps
   },

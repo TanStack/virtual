@@ -5,13 +5,12 @@ title: VirtualItem
 The `VirtualItem` object represents a single item returned by the virtualizer. It contains information you need to render the item in the coordinate space within your virtualizer's scrollElement and other helpful properties/functions.
 
 ```tsx
-export interface VirtualItem<TItemElement extends Element> {
-  key: string | number
+export interface VirtualItem {
+  key: string | number | bigint
   index: number
   start: number
   end: number
   size: number
-  measureElement: (node: TItemElement | null | undefined) => void
 }
 ```
 
@@ -20,7 +19,7 @@ The following properties and methods are available on each VirtualItem object:
 ### `key`
 
 ```tsx
-key: string | number
+key: string | number | bigint
 ```
 
 The unique key for the item. By default this is the item index, but should be configured via the `getItemKey` Virtualizer option.

@@ -7,7 +7,7 @@ interface Column {
 }
 
 export const generateRandomNumber = (min: number, max: number) =>
-  faker.datatype.number({ min, max })
+  faker.number.int({ min, max })
 
 export const generateSentences = () =>
   new Array(10000)

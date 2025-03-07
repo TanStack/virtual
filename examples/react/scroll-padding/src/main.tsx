@@ -7,7 +7,7 @@ import { useMeasure } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 function App() {
-  const parentRef = React.useRef<HTMLDivElement>()
+  const parentRef = React.useRef<HTMLDivElement>(null)
   const [theadSize, theadRef] = useMeasure<HTMLTableSectionElement>()
 
   const rowVirtualizer = useVirtualizer({

@@ -212,6 +212,7 @@ function GridVirtualizerFixed() {
   )
 }
 
+// eslint-disable-next-line
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

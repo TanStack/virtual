@@ -15,10 +15,10 @@ const queryClient = new QueryClient()
 async function fetchServerPage(
   limit: number,
   offset: number = 0,
-): Promise<{ rows: string[]; nextOffset: number }> {
+): Promise<{ rows: Array<string>; nextOffset: number }> {
   const rows = new Array(limit)
     .fill(0)
-    .map((e, i) => `Async loaded row #${i + offset * limit}`)
+    .map((_, i) => `Async loaded row #${i + offset * limit}`)
 
   await new Promise((r) => setTimeout(r, 500))
 
@@ -35,14 +35,15 @@ function App() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: 'projects',
+    queryKey: ['projects'],
     queryFn: (ctx) => fetchServerPage(10, ctx.pageParam),
-    getNextPageParam: (_lastGroup, groups) => groups.length,
+    getNextPageParam: (lastGroup) => lastGroup.nextOffset,
+    initialPageParam: 0,
   })
 
   const allRows = data ? data.pages.flatMap((d) => d.rows) : []
 
-  const parentRef = React.useRef()
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? allRows.length + 1 : allRows.length,
@@ -85,10 +86,10 @@ function App() {
       <br />
       <br />
 
-      {status === 'loading' ? (
+      {status === 'pending' ? (
         <p>Loading...</p>
       ) : status === 'error' ? (
-        <span>Error: {(error as Error).message}</span>
+        <span>Error: {error.message}</span>
       ) : (
         <div
           ref={parentRef}

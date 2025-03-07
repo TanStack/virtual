@@ -3,19 +3,23 @@ import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { faker } from '@faker-js/faker'
 import { findIndex, groupBy } from 'lodash'
-import { useVirtualizer, defaultRangeExtractor } from '@tanstack/react-virtual'
+import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
+import type { Range } from '@tanstack/react-virtual'
 
 const groupedNames = groupBy(
   Array.from({ length: 1000 })
-    .map(() => faker.name.firstName())
+    .map(() => faker.person.firstName())
     .sort(),
   (name) => name[0],
 )
 const groups = Object.keys(groupedNames)
-const rows = groups.reduce((acc, k) => [...acc, k, ...groupedNames[k]], [])
+const rows = groups.reduce<Array<string>>(
+  (acc, k) => [...acc, k, ...groupedNames[k]],
+  [],
+)
 
 const App = () => {
-  const parentRef = React.useRef()
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const activeStickyIndexRef = React.useRef(0)
 
@@ -24,19 +28,21 @@ const App = () => {
     [],
   )
 
-  const isSticky = (index) => stickyIndexes.includes(index)
+  const isSticky = (index: number) => stickyIndexes.includes(index)
 
-  const isActiveSticky = (index) => activeStickyIndexRef.current === index
+  const isActiveSticky = (index: number) =>
+    activeStickyIndexRef.current === index
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     estimateSize: () => 50,
     getScrollElement: () => parentRef.current,
     rangeExtractor: React.useCallback(
-      (range) => {
-        activeStickyIndexRef.current = [...stickyIndexes]
-          .reverse()
-          .find((index) => range.startIndex >= index)
+      (range: Range) => {
+        activeStickyIndexRef.current =
+          [...stickyIndexes]
+            .reverse()
+            .find((index) => range.startIndex >= index) ?? 0
 
         const next = new Set([
           activeStickyIndexRef.current,
