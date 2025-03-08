@@ -9,17 +9,15 @@
     "start": "vite"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.20.5",
-    "@tanstack/react-virtual": "^3.1.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@tanstack/react-query": "^5.66.1",
+    "@tanstack/react-virtual": "^3.13.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@rollup/plugin-replace": "^5.0.2",
-    "@types/react": "^18.2.56",
-    "@types/react-dom": "^18.2.19",
-    "@vitejs/plugin-react": "^4.2.1",
-    "typescript": "5.2.2",
-    "vite": "^5.1.3"
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.14"
   }
 }

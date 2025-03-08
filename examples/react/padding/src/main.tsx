@@ -19,7 +19,7 @@ function App() {
       <p>
         These components are using <strong>dynamic</strong> sizes. This means
         that each element's exact dimensions are unknown when rendered. An
-        estimated dimension is used to get an a initial measurement, then this
+        estimated dimension is used as the initial measurement, then this
         measurement is readjusted on the fly as each element is rendered.
       </p>
       <br />
@@ -39,8 +39,8 @@ function App() {
   )
 }
 
-function RowVirtualizerDynamic({ rows }) {
-  const parentRef = React.useRef()
+function RowVirtualizerDynamic({ rows }: { rows: Array<number> }) {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
@@ -70,8 +70,9 @@ function RowVirtualizerDynamic({ rows }) {
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => (
             <div
-              key={virtualRow.index}
-              ref={virtualRow.measureElement}
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
               className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
               style={{
                 position: 'absolute',
@@ -91,8 +92,8 @@ function RowVirtualizerDynamic({ rows }) {
   )
 }
 
-function ColumnVirtualizerDynamic({ columns }) {
-  const parentRef = React.useRef()
+function ColumnVirtualizerDynamic({ columns }: { columns: Array<number> }) {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
@@ -123,8 +124,9 @@ function ColumnVirtualizerDynamic({ columns }) {
         >
           {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
             <div
-              key={virtualColumn.index}
-              ref={virtualColumn.measureElement}
+              key={virtualColumn.key}
+              data-index={virtualColumn.index}
+              ref={columnVirtualizer.measureElement}
               className={
                 virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'
               }
@@ -146,8 +148,14 @@ function ColumnVirtualizerDynamic({ columns }) {
   )
 }
 
-function GridVirtualizerDynamic({ rows, columns }) {
-  const parentRef = React.useRef()
+function GridVirtualizerDynamic({
+  rows,
+  columns,
+}: {
+  rows: Array<number>
+  columns: Array<number>
+}) {
+  const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
@@ -155,6 +163,7 @@ function GridVirtualizerDynamic({ rows, columns }) {
     estimateSize: () => 50,
     paddingStart: 200,
     paddingEnd: 200,
+    indexAttribute: 'data-row-index',
   })
 
   const columnVirtualizer = useVirtualizer({
@@ -164,6 +173,7 @@ function GridVirtualizerDynamic({ rows, columns }) {
     estimateSize: () => 50,
     paddingStart: 200,
     paddingEnd: 200,
+    indexAttribute: 'data-column-index',
   })
 
   const [show, setShow] = React.useState(true)
@@ -197,13 +207,15 @@ function GridVirtualizerDynamic({ rows, columns }) {
             }}
           >
             {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-              <React.Fragment key={virtualRow.index}>
+              <React.Fragment key={virtualRow.key}>
                 {columnVirtualizer.getVirtualItems().map((virtualColumn) => (
                   <div
-                    key={virtualColumn.index}
+                    key={virtualColumn.key}
+                    data-row-index={virtualRow.index}
+                    data-column-index={virtualColumn.index}
                     ref={(el) => {
-                      virtualRow.measureElement(el)
-                      virtualColumn.measureElement(el)
+                      rowVirtualizer.measureElement(el)
+                      columnVirtualizer.measureElement(el)
                     }}
                     className={
                       virtualColumn.index % 2
@@ -237,7 +249,7 @@ function GridVirtualizerDynamic({ rows, columns }) {
         <p>
           <strong>Notice:</strong> You are currently running React in
           development mode. Rendering performance will be slightly degraded
-          until this application is build for production.
+          until this application is built for production.
         </p>
       ) : null}
     </>

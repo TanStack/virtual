@@ -1,0 +1,61 @@
+{
+  "name": "@tanstack/angular-virtual",
+  "version": "3.13.2",
+  "description": "Headless UI for virtualizing scrollable elements in Angular",
+  "author": "Garrett Darnell",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TanStack/virtual.git",
+    "directory": "packages/angular-virtual"
+  },
+  "homepage": "https://tanstack.com/virtual",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "keywords": [
+    "angular",
+    "virtual",
+    "virtual-core"
+  ],
+  "type": "module",
+  "module": "build/fesm2022/tanstack-angular-virtual.mjs",
+  "types": "build/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "esm2022": "./build/esm2022/tanstack-angular-virtual.mjs",
+      "esm": "./build/esm2022/tanstack-angular-virtual.mjs",
+      "default": "./build/fesm2022/tanstack-angular-virtual.mjs"
+    },
+    "./package.json": {
+      "default": "./package.json"
+    }
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "clean": "premove ./build",
+    "test:types": "tsc --noEmit",
+    "test:eslint": "eslint ./src",
+    "build": "ng-packagr -p ng-package.json -c tsconfig.build.json"
+  },
+  "dependencies": {
+    "@tanstack/virtual-core": "workspace:*",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@angular/core": "^17.3.12",
+    "ng-packagr": "^17.3.0",
+    "typescript": "5.2.2"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=17"
+  },
+  "sideEffects": false
+}

@@ -1,23 +1,23 @@
 import {
+  Virtualizer,
   elementScroll,
   observeElementOffset,
   observeElementRect,
   observeWindowOffset,
   observeWindowRect,
-  PartialKeys,
-  Virtualizer,
-  VirtualizerOptions,
   windowScroll,
 } from '@tanstack/virtual-core'
 import {
   computed,
   onScopeDispose,
-  Ref,
   shallowRef,
   triggerRef,
   unref,
   watch,
 } from 'vue'
+import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type { Ref } from 'vue'
+
 export * from '@tanstack/virtual-core'
 
 type MaybeRef<T> = T | Ref<T>
@@ -107,8 +107,8 @@ export function useWindowVirtualizer<TItemElement extends Element>(
       observeElementRect: observeWindowRect,
       observeElementOffset: observeWindowOffset,
       scrollToFn: windowScroll,
-      initialOffset:
-        typeof document !== 'undefined' ? window.scrollY : undefined,
+      initialOffset: () =>
+        typeof document !== 'undefined' ? window.scrollY : 0,
       ...unref(options),
     })),
   )

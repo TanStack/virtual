@@ -31,8 +31,8 @@
               ? 'list-item-odd'
               : 'list-item-even'
             : row.index % 2
-            ? 'list-item-odd'
-            : 'list-item-even'}
+              ? 'list-item-odd'
+              : 'list-item-even'}
           style="position: absolute; top: 0; left: 0; width: {col.size}px; height: {row.size}px; transform: translateX({col.start}px) translateY({row.start}px);"
         >
           Cell {row.index}, {col.index}

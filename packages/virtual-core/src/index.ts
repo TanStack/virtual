@@ -1,4 +1,4 @@
-import { approxEqual, memo, notUndefined } from './utils'
+import { approxEqual, debounce, memo, notUndefined } from './utils'
 
 export * from './utils'
 
@@ -26,7 +26,7 @@ export interface Range {
   count: number
 }
 
-type Key = number | string
+type Key = number | string | bigint
 
 export interface VirtualItem {
   key: Key
@@ -37,7 +37,7 @@ export interface VirtualItem {
   lane: number
 }
 
-interface Rect {
+export interface Rect {
   width: number
   height: number
 }
@@ -67,6 +67,10 @@ export const observeElementRect = <T extends Element>(
   if (!element) {
     return
   }
+  const targetWindow = instance.targetWindow
+  if (!targetWindow) {
+    return
+  }
 
   const handler = (rect: Rect) => {
     const { width, height } = rect
@@ -75,20 +79,26 @@ export const observeElementRect = <T extends Element>(
 
   handler(element.getBoundingClientRect())
 
-  if (typeof ResizeObserver === 'undefined') {
+  if (!targetWindow.ResizeObserver) {
     return () => {}
   }
 
-  const observer = new ResizeObserver((entries) => {
-    const entry = entries[0]
-    if (entry?.borderBoxSize) {
-      const box = entry.borderBoxSize[0]
-      if (box) {
-        handler({ width: box.inlineSize, height: box.blockSize })
-        return
+  const observer = new targetWindow.ResizeObserver((entries) => {
+    const run = () => {
+      const entry = entries[0]
+      if (entry?.borderBoxSize) {
+        const box = entry.borderBoxSize[0]
+        if (box) {
+          handler({ width: box.inlineSize, height: box.blockSize })
+          return
+        }
       }
+      handler(element.getBoundingClientRect())
     }
-    handler(element.getBoundingClientRect())
+
+    instance.options.useAnimationFrameWithResizeObserver
+      ? requestAnimationFrame(run)
+      : run()
   })
 
   observer.observe(element, { box: 'border-box' })
@@ -96,6 +106,10 @@ export const observeElementRect = <T extends Element>(
   return () => {
     observer.unobserve(element)
   }
+}
+
+const addEventListenerOptions = {
+  passive: true,
 }
 
 export const observeWindowRect = (
@@ -112,58 +126,114 @@ export const observeWindowRect = (
   }
   handler()
 
-  element.addEventListener('resize', handler, {
-    passive: true,
-  })
+  element.addEventListener('resize', handler, addEventListenerOptions)
 
   return () => {
     element.removeEventListener('resize', handler)
   }
 }
 
+const supportsScrollend =
+  typeof window == 'undefined' ? true : 'onscrollend' in window
+
+type ObserveOffsetCallBack = (offset: number, isScrolling: boolean) => void
+
 export const observeElementOffset = <T extends Element>(
   instance: Virtualizer<T, any>,
-  cb: (offset: number) => void,
+  cb: ObserveOffsetCallBack,
 ) => {
   const element = instance.scrollElement
   if (!element) {
     return
   }
-
-  const handler = () => {
-    cb(element[instance.options.horizontal ? 'scrollLeft' : 'scrollTop'])
+  const targetWindow = instance.targetWindow
+  if (!targetWindow) {
+    return
   }
-  handler()
 
-  element.addEventListener('scroll', handler, {
-    passive: true,
-  })
+  let offset = 0
+  const fallback =
+    instance.options.useScrollendEvent && supportsScrollend
+      ? () => undefined
+      : debounce(
+          targetWindow,
+          () => {
+            cb(offset, false)
+          },
+          instance.options.isScrollingResetDelay,
+        )
 
+  const createHandler = (isScrolling: boolean) => () => {
+    const { horizontal, isRtl } = instance.options
+    offset = horizontal
+      ? element['scrollLeft'] * ((isRtl && -1) || 1)
+      : element['scrollTop']
+    fallback()
+    cb(offset, isScrolling)
+  }
+  const handler = createHandler(true)
+  const endHandler = createHandler(false)
+  endHandler()
+
+  element.addEventListener('scroll', handler, addEventListenerOptions)
+  const registerScrollendEvent =
+    instance.options.useScrollendEvent && supportsScrollend
+  if (registerScrollendEvent) {
+    element.addEventListener('scrollend', endHandler, addEventListenerOptions)
+  }
   return () => {
     element.removeEventListener('scroll', handler)
+    if (registerScrollendEvent) {
+      element.removeEventListener('scrollend', endHandler)
+    }
   }
 }
 
 export const observeWindowOffset = (
   instance: Virtualizer<Window, any>,
-  cb: (offset: number) => void,
+  cb: ObserveOffsetCallBack,
 ) => {
   const element = instance.scrollElement
   if (!element) {
     return
   }
-
-  const handler = () => {
-    cb(element[instance.options.horizontal ? 'scrollX' : 'scrollY'])
+  const targetWindow = instance.targetWindow
+  if (!targetWindow) {
+    return
   }
-  handler()
 
-  element.addEventListener('scroll', handler, {
-    passive: true,
-  })
+  let offset = 0
+  const fallback =
+    instance.options.useScrollendEvent && supportsScrollend
+      ? () => undefined
+      : debounce(
+          targetWindow,
+          () => {
+            cb(offset, false)
+          },
+          instance.options.isScrollingResetDelay,
+        )
 
+  const createHandler = (isScrolling: boolean) => () => {
+    offset = element[instance.options.horizontal ? 'scrollX' : 'scrollY']
+    fallback()
+    cb(offset, isScrolling)
+  }
+  const handler = createHandler(true)
+  const endHandler = createHandler(false)
+  endHandler()
+
+  element.addEventListener('scroll', handler, addEventListenerOptions)
+  const registerScrollendEvent =
+    instance.options.useScrollendEvent && supportsScrollend
+  if (registerScrollendEvent) {
+    element.addEventListener('scrollend', endHandler, addEventListenerOptions)
+  }
   return () => {
     element.removeEventListener('scroll', handler)
+    if (registerScrollendEvent) {
+      element.removeEventListener('scrollend', endHandler)
+    }
   }
 }
 
@@ -241,11 +311,10 @@ export interface VirtualizerOptions<
   ) => void | (() => void)
   observeElementOffset: (
     instance: Virtualizer<TScrollElement, TItemElement>,
-    cb: (offset: number) => void,
+    cb: ObserveOffsetCallBack,
   ) => void | (() => void)
-
   // Optional
-  debug?: any
+  debug?: boolean
   initialRect?: Rect
   onChange?: (
     instance: Virtualizer<TScrollElement, TItemElement>,
@@ -262,53 +331,75 @@ export interface VirtualizerOptions<
   paddingEnd?: number
   scrollPaddingStart?: number
   scrollPaddingEnd?: number
-  initialOffset?: number
+  initialOffset?: number | (() => number)
   getItemKey?: (index: number) => Key
-  rangeExtractor?: (range: Range) => number[]
+  rangeExtractor?: (range: Range) => Array<number>
   scrollMargin?: number
-  scrollingDelay?: number
+  gap?: number
   indexAttribute?: string
-  initialMeasurementsCache?: VirtualItem[]
+  initialMeasurementsCache?: Array<VirtualItem>
   lanes?: number
+  isScrollingResetDelay?: number
+  useScrollendEvent?: boolean
+  enabled?: boolean
+  isRtl?: boolean
+  useAnimationFrameWithResizeObserver?: boolean
 }
 
 export class Virtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 > {
-  private unsubs: (void | (() => void))[] = []
+  private unsubs: Array<void | (() => void)> = []
   options!: Required<VirtualizerOptions<TScrollElement, TItemElement>>
   scrollElement: TScrollElement | null = null
-  isScrolling: boolean = false
-  private isScrollingTimeoutId: ReturnType<typeof setTimeout> | null = null
-  private scrollToIndexTimeoutId: ReturnType<typeof setTimeout> | null = null
-  measurementsCache: VirtualItem[] = []
+  targetWindow: (Window & typeof globalThis) | null = null
+  isScrolling = false
+  private scrollToIndexTimeoutId: number | null = null
+  measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
-  private pendingMeasuredCacheIndexes: number[] = []
-  scrollRect: Rect
-  scrollOffset: number
+  private pendingMeasuredCacheIndexes: Array<number> = []
+  scrollRect: Rect | null = null
+  scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
-  private scrollAdjustments: number = 0
-  measureElementCache = new Map<Key, TItemElement>()
+  private scrollAdjustments = 0
+  shouldAdjustScrollPositionOnItemSizeChange:
+    | undefined
+    | ((
+        item: VirtualItem,
+        delta: number,
+        instance: Virtualizer<TScrollElement, TItemElement>,
+      ) => boolean)
+  elementsCache = new Map<Key, TItemElement>()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
 
     const get = () => {
       if (_ro) {
         return _ro
-      } else if (typeof ResizeObserver !== 'undefined') {
-        return (_ro = new ResizeObserver((entries) => {
-          entries.forEach((entry) => {
-            this._measureElement(entry.target as TItemElement, entry)
-          })
-        }))
-      } else {
+      }
+
+      if (!this.targetWindow || !this.targetWindow.ResizeObserver) {
         return null
       }
+
+      return (_ro = new this.targetWindow.ResizeObserver((entries) => {
+        entries.forEach((entry) => {
+          const run = () => {
+            this._measureElement(entry.target as TItemElement, entry)
+          }
+          this.options.useAnimationFrameWithResizeObserver
+            ? requestAnimationFrame(run)
+            : run()
+        })
+      }))
     }
 
     return {
-      disconnect: () => get()?.disconnect(),
+      disconnect: () => {
+        get()?.disconnect()
+        _ro = null
+      },
       observe: (target: Element) =>
         get()?.observe(target, { box: 'border-box' }),
       unobserve: (target: Element) => get()?.unobserve(target),
@@ -318,14 +409,6 @@ export class Virtualizer<
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
-    this.scrollRect = this.options.initialRect
-    this.scrollOffset = this.options.initialOffset
-    this.measurementsCache = this.options.initialMeasurementsCache
-    this.measurementsCache.forEach((item) => {
-      this.itemSizeCache.set(item.key, item.size)
-    })
-
-    this.maybeNotify()
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement>) => {
@@ -348,10 +431,15 @@ export class Virtualizer<
       measureElement,
       initialRect: { width: 0, height: 0 },
       scrollMargin: 0,
-      scrollingDelay: 150,
+      gap: 0,
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
       lanes: 1,
+      isScrollingResetDelay: 150,
+      enabled: true,
+      isRtl: false,
+      useScrollendEvent: true,
+      useAnimationFrameWithResizeObserver: false,
       ...opts,
     }
   }
@@ -387,26 +475,43 @@ export class Virtualizer<
   private cleanup = () => {
     this.unsubs.filter(Boolean).forEach((d) => d!())
     this.unsubs = []
+    this.observer.disconnect()
     this.scrollElement = null
+    this.targetWindow = null
   }
 
   _didMount = () => {
-    this.measureElementCache.forEach(this.observer.observe)
     return () => {
-      this.observer.disconnect()
       this.cleanup()
     }
   }
 
   _willUpdate = () => {
-    const scrollElement = this.options.getScrollElement()
+    const scrollElement = this.options.enabled
+      ? this.options.getScrollElement()
+      : null
 
     if (this.scrollElement !== scrollElement) {
       this.cleanup()
 
+      if (!scrollElement) {
+        this.maybeNotify()
+        return
+      }
+
       this.scrollElement = scrollElement
 
-      this._scrollToOffset(this.scrollOffset, {
+      if (this.scrollElement && 'ownerDocument' in this.scrollElement) {
+        this.targetWindow = this.scrollElement.ownerDocument.defaultView
+      } else {
+        this.targetWindow = this.scrollElement?.window ?? null
+      }
+
+      this.elementsCache.forEach((cached) => {
+        this.observer.observe(cached)
+      })
+
+      this._scrollToOffset(this.getScrollOffset(), {
         adjustments: undefined,
         behavior: undefined,
       })
@@ -419,64 +524,50 @@ export class Virtualizer<
       )
 
       this.unsubs.push(
-        this.options.observeElementOffset(this, (offset) => {
+        this.options.observeElementOffset(this, (offset, isScrolling) => {
           this.scrollAdjustments = 0
-
-          if (this.scrollOffset === offset) {
-            return
-          }
-
-          if (this.isScrollingTimeoutId !== null) {
-            clearTimeout(this.isScrollingTimeoutId)
-            this.isScrollingTimeoutId = null
-          }
-
-          this.isScrolling = true
-          this.scrollDirection =
-            this.scrollOffset < offset ? 'forward' : 'backward'
+          this.scrollDirection = isScrolling
+            ? this.getScrollOffset() < offset
+              ? 'forward'
+              : 'backward'
+            : null
           this.scrollOffset = offset
+          this.isScrolling = isScrolling
 
           this.maybeNotify()
-
-          this.isScrollingTimeoutId = setTimeout(() => {
-            this.isScrollingTimeoutId = null
-            this.isScrolling = false
-            this.scrollDirection = null
-
-            this.maybeNotify()
-          }, this.options.scrollingDelay)
         }),
       )
     }
   }
 
   private getSize = () => {
+    if (!this.options.enabled) {
+      this.scrollRect = null
+      return 0
+    }
+
+    this.scrollRect = this.scrollRect ?? this.options.initialRect
+
     return this.scrollRect[this.options.horizontal ? 'width' : 'height']
   }
 
-  private memoOptions = memo(
-    () => [
-      this.options.count,
-      this.options.paddingStart,
-      this.options.scrollMargin,
-      this.options.getItemKey,
-    ],
-    (count, paddingStart, scrollMargin, getItemKey) => {
-      this.pendingMeasuredCacheIndexes = []
-      return {
-        count,
-        paddingStart,
-        scrollMargin,
-        getItemKey,
-      }
-    },
-    {
-      key: false,
-    },
-  )
+  private getScrollOffset = () => {
+    if (!this.options.enabled) {
+      this.scrollOffset = null
+      return 0
+    }
+
+    this.scrollOffset =
+      this.scrollOffset ??
+      (typeof this.options.initialOffset === 'function'
+        ? this.options.initialOffset()
+        : this.options.initialOffset)
+
+    return this.scrollOffset
+  }
 
   private getFurthestMeasurement = (
-    measurements: VirtualItem[],
+    measurements: Array<VirtualItem>,
     index: number,
   ) => {
     const furthestMeasurementsFound = new Map<number, true>()
@@ -516,9 +607,48 @@ export class Virtualizer<
       : undefined
   }
 
+  private getMeasurementOptions = memo(
+    () => [
+      this.options.count,
+      this.options.paddingStart,
+      this.options.scrollMargin,
+      this.options.getItemKey,
+      this.options.enabled,
+    ],
+    (count, paddingStart, scrollMargin, getItemKey, enabled) => {
+      this.pendingMeasuredCacheIndexes = []
+      return {
+        count,
+        paddingStart,
+        scrollMargin,
+        getItemKey,
+        enabled,
+      }
+    },
+    {
+      key: false,
+    },
+  )
+
   private getMeasurements = memo(
-    () => [this.memoOptions(), this.itemSizeCache],
-    ({ count, paddingStart, scrollMargin, getItemKey }, itemSizeCache) => {
+    () => [this.getMeasurementOptions(), this.itemSizeCache],
+    (
+      { count, paddingStart, scrollMargin, getItemKey, enabled },
+      itemSizeCache,
+    ) => {
+      if (!enabled) {
+        this.measurementsCache = []
+        this.itemSizeCache.clear()
+        return []
+      }
+
+      if (this.measurementsCache.length === 0) {
+        this.measurementsCache = this.options.initialMeasurementsCache
+        this.measurementsCache.forEach((item) => {
+          this.itemSizeCache.set(item.key, item.size)
+        })
+      }
+
       const min =
         this.pendingMeasuredCacheIndexes.length > 0
           ? Math.min(...this.pendingMeasuredCacheIndexes)
@@ -536,7 +666,7 @@ export class Virtualizer<
             : this.getFurthestMeasurement(measurements, i)
 
         const start = furthestMeasurement
-          ? furthestMeasurement.end
+          ? furthestMeasurement.end + this.options.gap
           : paddingStart + scrollMargin
 
         const measuredSize = itemSizeCache.get(key)
@@ -572,14 +702,20 @@ export class Virtualizer<
   )
 
   calculateRange = memo(
-    () => [this.getMeasurements(), this.getSize(), this.scrollOffset],
-    (measurements, outerSize, scrollOffset) => {
+    () => [
+      this.getMeasurements(),
+      this.getSize(),
+      this.getScrollOffset(),
+      this.options.lanes,
+    ],
+    (measurements, outerSize, scrollOffset, lanes) => {
       return (this.range =
         measurements.length > 0 && outerSize > 0
           ? calculateRange({
               measurements,
               outerSize,
               scrollOffset,
+              lanes,
             })
           : null)
     },
@@ -589,24 +725,35 @@ export class Virtualizer<
     },
   )
 
-  private getIndexes = memo(
-    () => [
-      this.options.rangeExtractor,
-      this.calculateRange(),
-      this.options.overscan,
-      this.options.count,
-    ],
-    (rangeExtractor, range, overscan, count) => {
-      return range === null
+  getVirtualIndexes = memo(
+    () => {
+      let startIndex: number | null = null
+      let endIndex: number | null = null
+      const range = this.calculateRange()
+      if (range) {
+        startIndex = range.startIndex
+        endIndex = range.endIndex
+      }
+      return [
+        this.options.rangeExtractor,
+        this.options.overscan,
+        this.options.count,
+        startIndex,
+        endIndex,
+      ]
+    },
+    (rangeExtractor, overscan, count, startIndex, endIndex) => {
+      return startIndex === null || endIndex === null
         ? []
         : rangeExtractor({
-            ...range,
+            startIndex,
+            endIndex,
             overscan,
             count,
           })
     },
     {
-      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getVirtualIndexes',
       debug: () => this.options.debug,
     },
   )
@@ -629,44 +776,46 @@ export class Virtualizer<
     node: TItemElement,
     entry: ResizeObserverEntry | undefined,
   ) => {
-    const item = this.measurementsCache[this.indexFromElement(node)]
-
-    if (!item || !node.isConnected) {
-      this.measureElementCache.forEach((cached, key) => {
-        if (cached === node) {
-          this.observer.unobserve(node)
-          this.measureElementCache.delete(key)
-        }
-      })
+    const index = this.indexFromElement(node)
+    const item = this.measurementsCache[index]
+    if (!item) {
       return
     }
-
-    const prevNode = this.measureElementCache.get(item.key)
+    const key = item.key
+    const prevNode = this.elementsCache.get(key)
 
     if (prevNode !== node) {
       if (prevNode) {
         this.observer.unobserve(prevNode)
       }
       this.observer.observe(node)
-      this.measureElementCache.set(item.key, node)
+      this.elementsCache.set(key, node)
     }
 
-    const measuredItemSize = this.options.measureElement(node, entry, this)
-
-    this.resizeItem(item, measuredItemSize)
+    if (node.isConnected) {
+      this.resizeItem(index, this.options.measureElement(node, entry, this))
+    }
   }
 
-  resizeItem = (item: VirtualItem, size: number) => {
+  resizeItem = (index: number, size: number) => {
+    const item = this.measurementsCache[index]
+    if (!item) {
+      return
+    }
     const itemSize = this.itemSizeCache.get(item.key) ?? item.size
     const delta = size - itemSize
 
     if (delta !== 0) {
-      if (item.start < this.scrollOffset + this.scrollAdjustments) {
+      if (
+        this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
+          ? this.shouldAdjustScrollPositionOnItemSizeChange(item, delta, this)
+          : item.start < this.getScrollOffset() + this.scrollAdjustments
+      ) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
         }
 
-        this._scrollToOffset(this.scrollOffset, {
+        this._scrollToOffset(this.getScrollOffset(), {
           adjustments: (this.scrollAdjustments += delta),
           behavior: undefined,
         })
@@ -679,8 +828,14 @@ export class Virtualizer<
     }
   }
 
-  measureElement = (node: TItemElement | null) => {
+  measureElement = (node: TItemElement | null | undefined) => {
     if (!node) {
+      this.elementsCache.forEach((cached, key) => {
+        if (!cached.isConnected) {
+          this.observer.unobserve(cached)
+          this.elementsCache.delete(key)
+        }
+      })
       return
     }
 
@@ -688,9 +843,9 @@ export class Virtualizer<
   }
 
   getVirtualItems = memo(
-    () => [this.getIndexes(), this.getMeasurements()],
+    () => [this.getVirtualIndexes(), this.getMeasurements()],
     (indexes, measurements) => {
-      const virtualItems: VirtualItem[] = []
+      const virtualItems: Array<VirtualItem> = []
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
@@ -702,14 +857,16 @@ export class Virtualizer<
       return virtualItems
     },
     {
-      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getVirtualItems',
       debug: () => this.options.debug,
     },
   )
 
   getVirtualItemForOffset = (offset: number) => {
     const measurements = this.getMeasurements()
-
+    if (measurements.length === 0) {
+      return undefined
+    }
     return notUndefined(
       measurements[
         findNearestBinarySearch(
@@ -722,25 +879,24 @@ export class Virtualizer<
     )
   }
 
-  getOffsetForAlignment = (toOffset: number, align: ScrollAlignment) => {
+  getOffsetForAlignment = (
+    toOffset: number,
+    align: ScrollAlignment,
+    itemSize = 0,
+  ) => {
     const size = this.getSize()
+    const scrollOffset = this.getScrollOffset()
 
     if (align === 'auto') {
-      if (toOffset <= this.scrollOffset) {
-        align = 'start'
-      } else if (toOffset >= this.scrollOffset + size) {
-        align = 'end'
-      } else {
-        align = 'start'
-      }
+      align = toOffset >= scrollOffset + size ? 'end' : 'start'
     }
 
-    if (align === 'start') {
-      toOffset = toOffset
+    if (align === 'center') {
+      // When aligning to a particular item (e.g. with scrollToIndex),
+      // adjust offset by the size of the item to center on the item
+      toOffset += (itemSize - size) / 2
     } else if (align === 'end') {
-      toOffset = toOffset - size
-    } else if (align === 'center') {
-      toOffset = toOffset - size / 2
+      toOffset -= size
     }
 
     const scrollSizeProp = this.options.horizontal
@@ -752,7 +908,7 @@ export class Virtualizer<
         : this.scrollElement[scrollSizeProp]
       : 0
 
-    const maxOffset = scrollSize - this.getSize()
+    const maxOffset = scrollSize - size
 
     return Math.max(Math.min(maxOffset, toOffset), 0)
   }
@@ -760,37 +916,40 @@ export class Virtualizer<
   getOffsetForIndex = (index: number, align: ScrollAlignment = 'auto') => {
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
-    const measurement = notUndefined(this.getMeasurements()[index])
+    const item = this.measurementsCache[index]
+    if (!item) {
+      return undefined
+    }
+
+    const size = this.getSize()
+    const scrollOffset = this.getScrollOffset()
 
     if (align === 'auto') {
-      if (
-        measurement.end >=
-        this.scrollOffset + this.getSize() - this.options.scrollPaddingEnd
-      ) {
+      if (item.end >= scrollOffset + size - this.options.scrollPaddingEnd) {
         align = 'end'
-      } else if (
-        measurement.start <=
-        this.scrollOffset + this.options.scrollPaddingStart
-      ) {
+      } else if (item.start <= scrollOffset + this.options.scrollPaddingStart) {
         align = 'start'
       } else {
-        return [this.scrollOffset, align] as const
+        return [scrollOffset, align] as const
       }
     }
 
     const toOffset =
       align === 'end'
-        ? measurement.end + this.options.scrollPaddingEnd
-        : measurement.start - this.options.scrollPaddingStart
+        ? item.end + this.options.scrollPaddingEnd
+        : item.start - this.options.scrollPaddingStart
 
-    return [this.getOffsetForAlignment(toOffset, align), align] as const
+    return [
+      this.getOffsetForAlignment(toOffset, align, item.size),
+      align,
+    ] as const
   }
 
-  private isDynamicMode = () => this.measureElementCache.size > 0
+  private isDynamicMode = () => this.elementsCache.size > 0
 
   private cancelScrollToIndex = () => {
-    if (this.scrollToIndexTimeoutId !== null) {
-      clearTimeout(this.scrollToIndexTimeoutId)
+    if (this.scrollToIndexTimeoutId !== null && this.targetWindow) {
+      this.targetWindow.clearTimeout(this.scrollToIndexTimeoutId)
       this.scrollToIndexTimeoutId = null
     }
   }
@@ -827,22 +986,27 @@ export class Virtualizer<
       )
     }
 
-    const [toOffset, align] = this.getOffsetForIndex(index, initialAlign)
+    const offsetAndAlign = this.getOffsetForIndex(index, initialAlign)
+    if (!offsetAndAlign) return
 
-    this._scrollToOffset(toOffset, { adjustments: undefined, behavior })
+    const [offset, align] = offsetAndAlign
 
-    if (behavior !== 'smooth' && this.isDynamicMode()) {
-      this.scrollToIndexTimeoutId = setTimeout(() => {
+    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+
+    if (behavior !== 'smooth' && this.isDynamicMode() && this.targetWindow) {
+      this.scrollToIndexTimeoutId = this.targetWindow.setTimeout(() => {
         this.scrollToIndexTimeoutId = null
 
-        const elementInDOM = this.measureElementCache.has(
+        const elementInDOM = this.elementsCache.has(
           this.options.getItemKey(index),
         )
 
         if (elementInDOM) {
-          const [toOffset] = this.getOffsetForIndex(index, align)
+          const [latestOffset] = notUndefined(
+            this.getOffsetForIndex(index, align),
+          )
 
-          if (!approxEqual(toOffset, this.scrollOffset)) {
+          if (!approxEqual(latestOffset, this.getScrollOffset())) {
             this.scrollToIndex(index, { align, behavior })
           }
         } else {
@@ -861,7 +1025,7 @@ export class Virtualizer<
       )
     }
 
-    this._scrollToOffset(this.scrollOffset + delta, {
+    this._scrollToOffset(this.getScrollOffset() + delta, {
       adjustments: undefined,
       behavior,
     })
@@ -878,13 +1042,16 @@ export class Virtualizer<
       // If lanes is 1, use the last measurement's end, otherwise find the maximum end value among all measurements
       end =
         this.options.lanes === 1
-          ? measurements[measurements.length - 1]?.end ?? 0
+          ? (measurements[measurements.length - 1]?.end ?? 0)
           : Math.max(
               ...measurements.slice(-this.options.lanes).map((m) => m.end),
             )
     }
 
-    return end - this.options.scrollMargin + this.options.paddingEnd
+    return Math.max(
+      end - this.options.scrollMargin + this.options.paddingEnd,
+      0,
+    )
   }
 
   private _scrollToOffset = (
@@ -936,22 +1103,36 @@ function calculateRange({
   measurements,
   outerSize,
   scrollOffset,
+  lanes,
 }: {
-  measurements: VirtualItem[]
+  measurements: Array<VirtualItem>
   outerSize: number
   scrollOffset: number
+  lanes: number
 }) {
-  const count = measurements.length - 1
+  const lastIndex = measurements.length - 1
   const getOffset = (index: number) => measurements[index]!.start
 
-  const startIndex = findNearestBinarySearch(0, count, getOffset, scrollOffset)
+  let startIndex = findNearestBinarySearch(
+    0,
+    lastIndex,
+    getOffset,
+    scrollOffset,
+  )
   let endIndex = startIndex
 
   while (
-    endIndex < count &&
+    endIndex < lastIndex &&
     measurements[endIndex]!.end < scrollOffset + outerSize
   ) {
     endIndex++
+  }
+
+  if (lanes > 1) {
+    // Align startIndex to the beginning of its lane
+    startIndex = Math.max(0, startIndex - (startIndex % lanes))
+    // Align endIndex to the end of its lane
+    endIndex = Math.min(lastIndex, endIndex + (lanes - 1 - (endIndex % lanes)))
   }
 
   return { startIndex, endIndex }

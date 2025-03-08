@@ -2,12 +2,12 @@ export type NoInfer<A extends any> = [A][A extends any ? 0 : never]
 
 export type PartialKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
-export function memo<TDeps extends readonly any[], TResult>(
+export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   getDeps: () => [...TDeps],
   fn: (...args: NoInfer<[...TDeps]>) => TResult,
   opts: {
     key: false | string
-    debug?: () => any
+    debug?: () => boolean
     onChange?: (result: TResult) => void
     initialDeps?: TDeps
   },
@@ -64,7 +64,7 @@ export function memo<TDeps extends readonly any[], TResult>(
 
     opts?.onChange?.(result)
 
-    return result!
+    return result
   }
 }
 
@@ -77,3 +77,15 @@ export function notUndefined<T>(value: T | undefined, msg?: string): T {
 }
 
 export const approxEqual = (a: number, b: number) => Math.abs(a - b) < 1
+
+export const debounce = (
+  targetWindow: Window & typeof globalThis,
+  fn: Function,
+  ms: number,
+) => {
+  let timeoutId: number
+  return function (this: any, ...args: Array<any>) {
+    targetWindow.clearTimeout(timeoutId)
+    timeoutId = targetWindow.setTimeout(() => fn.apply(this, args), ms)
+  }
+}
