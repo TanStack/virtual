@@ -8,7 +8,7 @@ import type { Range } from '@tanstack/react-virtual'
 
 const groupedNames = groupBy(
   Array.from({ length: 1000 })
-    .map(() => faker.name.firstName())
+    .map(() => faker.person.firstName())
     .sort(),
   (name) => name[0],
 )
@@ -108,7 +108,7 @@ const App = () => {
         <p>
           <strong>Notice:</strong> You are currently running React in
           development mode. Rendering performance will be slightly degraded
-          until this application is build for production.
+          until this application is built for production.
         </p>
       ) : null}
     </div>

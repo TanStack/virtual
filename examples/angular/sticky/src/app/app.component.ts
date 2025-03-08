@@ -14,7 +14,7 @@ import {
 const groupedNames: Record<string, string[]> = {}
 
 Array.from({ length: 1000 })
-  .map(() => faker.name.firstName())
+  .map(() => faker.person.firstName())
   .sort()
   .forEach((name) => {
     const char = name[0]

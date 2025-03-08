@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/svelte-virtual",
-  "version": "3.10.9",
+  "version": "3.13.2",
   "description": "Headless UI for virtualizing scrollable elements in Svelte",
   "author": "Tanner Linsley",
   "license": "MIT",
@@ -24,7 +24,7 @@
     "datagrid"
   ],
   "scripts": {
-    "clean": "rimraf ./dist && rimraf ./coverage",
+    "clean": "premove ./dist ./coverage",
     "test:eslint": "eslint ./src",
     "test:types": "tsc",
     "test:build": "publint --strict",
@@ -51,7 +51,7 @@
     "@tanstack/virtual-core": "workspace:*"
   },
   "devDependencies": {
-    "@sveltejs/package": "^2.3.7",
+    "@sveltejs/package": "^2.3.10",
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "svelte": "^4.2.19"
   },

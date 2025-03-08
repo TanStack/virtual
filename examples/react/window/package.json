@@ -8,16 +8,16 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.10.9",
+    "@tanstack/react-virtual": "^3.13.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^18.19.3",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
+    "@types/node": "^22.13.6",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
     "typescript": "5.2.2",
-    "vite": "^5.4.11"
+    "vite": "^5.4.14"
   }
 }
