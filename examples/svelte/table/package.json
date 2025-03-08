@@ -10,16 +10,16 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@tanstack/svelte-table": "^8.20.5",
-    "@tanstack/svelte-virtual": "^3.10.8"
+    "@tanstack/svelte-table": "^8.21.2",
+    "@tanstack/svelte-virtual": "^3.13.2"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "@tsconfig/svelte": "^5.0.4",
     "svelte": "^4.2.19",
-    "svelte-check": "^4.0.5",
-    "tslib": "^2.7.0",
+    "svelte-check": "^4.1.4",
+    "tslib": "^2.8.1",
     "typescript": "5.2.2",
-    "vite": "^5.4.8"
+    "vite": "^5.4.14"
   }
 }

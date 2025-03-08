@@ -84,15 +84,21 @@ export const observeElementRect = <T extends Element>(
   }
 
   const observer = new targetWindow.ResizeObserver((entries) => {
-    const entry = entries[0]
-    if (entry?.borderBoxSize) {
-      const box = entry.borderBoxSize[0]
-      if (box) {
-        handler({ width: box.inlineSize, height: box.blockSize })
-        return
+    const run = () => {
+      const entry = entries[0]
+      if (entry?.borderBoxSize) {
+        const box = entry.borderBoxSize[0]
+        if (box) {
+          handler({ width: box.inlineSize, height: box.blockSize })
+          return
+        }
       }
+      handler(element.getBoundingClientRect())
     }
-    handler(element.getBoundingClientRect())
+
+    instance.options.useAnimationFrameWithResizeObserver
+      ? requestAnimationFrame(run)
+      : run()
   })
 
   observer.observe(element, { box: 'border-box' })
@@ -130,9 +136,11 @@ export const observeWindowRect = (
 const supportsScrollend =
   typeof window == 'undefined' ? true : 'onscrollend' in window
 
+type ObserveOffsetCallBack = (offset: number, isScrolling: boolean) => void
+
 export const observeElementOffset = <T extends Element>(
   instance: Virtualizer<T, any>,
-  cb: (offset: number, isScrolling: boolean) => void,
+  cb: ObserveOffsetCallBack,
 ) => {
   const element = instance.scrollElement
   if (!element) {
@@ -144,15 +152,16 @@ export const observeElementOffset = <T extends Element>(
   }
 
   let offset = 0
-  const fallback = supportsScrollend
-    ? () => undefined
-    : debounce(
-        targetWindow,
-        () => {
-          cb(offset, false)
-        },
-        instance.options.isScrollingResetDelay,
-      )
+  const fallback =
+    instance.options.useScrollendEvent && supportsScrollend
+      ? () => undefined
+      : debounce(
+          targetWindow,
+          () => {
+            cb(offset, false)
+          },
+          instance.options.isScrollingResetDelay,
+        )
 
   const createHandler = (isScrolling: boolean) => () => {
     const { horizontal, isRtl } = instance.options
@@ -167,17 +176,22 @@ export const observeElementOffset = <T extends Element>(
   endHandler()
 
   element.addEventListener('scroll', handler, addEventListenerOptions)
-  element.addEventListener('scrollend', endHandler, addEventListenerOptions)
-
+  const registerScrollendEvent =
+    instance.options.useScrollendEvent && supportsScrollend
+  if (registerScrollendEvent) {
+    element.addEventListener('scrollend', endHandler, addEventListenerOptions)
+  }
   return () => {
     element.removeEventListener('scroll', handler)
-    element.removeEventListener('scrollend', endHandler)
+    if (registerScrollendEvent) {
+      element.removeEventListener('scrollend', endHandler)
+    }
   }
 }
 
 export const observeWindowOffset = (
   instance: Virtualizer<Window, any>,
-  cb: (offset: number, isScrolling: boolean) => void,
+  cb: ObserveOffsetCallBack,
 ) => {
   const element = instance.scrollElement
   if (!element) {
@@ -189,15 +203,16 @@ export const observeWindowOffset = (
   }
 
   let offset = 0
-  const fallback = supportsScrollend
-    ? () => undefined
-    : debounce(
-        targetWindow,
-        () => {
-          cb(offset, false)
-        },
-        instance.options.isScrollingResetDelay,
-      )
+  const fallback =
+    instance.options.useScrollendEvent && supportsScrollend
+      ? () => undefined
+      : debounce(
+          targetWindow,
+          () => {
+            cb(offset, false)
+          },
+          instance.options.isScrollingResetDelay,
+        )
 
   const createHandler = (isScrolling: boolean) => () => {
     offset = element[instance.options.horizontal ? 'scrollX' : 'scrollY']
@@ -209,11 +224,16 @@ export const observeWindowOffset = (
   endHandler()
 
   element.addEventListener('scroll', handler, addEventListenerOptions)
-  element.addEventListener('scrollend', endHandler, addEventListenerOptions)
-
+  const registerScrollendEvent =
+    instance.options.useScrollendEvent && supportsScrollend
+  if (registerScrollendEvent) {
+    element.addEventListener('scrollend', endHandler, addEventListenerOptions)
+  }
   return () => {
     element.removeEventListener('scroll', handler)
-    element.removeEventListener('scrollend', endHandler)
+    if (registerScrollendEvent) {
+      element.removeEventListener('scrollend', endHandler)
+    }
   }
 }
 
@@ -291,9 +311,8 @@ export interface VirtualizerOptions<
   ) => void | (() => void)
   observeElementOffset: (
     instance: Virtualizer<TScrollElement, TItemElement>,
-    cb: (offset: number, isScrolling: boolean) => void,
+    cb: ObserveOffsetCallBack,
   ) => void | (() => void)
-
   // Optional
   debug?: boolean
   initialRect?: Rect
@@ -321,8 +340,10 @@ export interface VirtualizerOptions<
   initialMeasurementsCache?: Array<VirtualItem>
   lanes?: number
   isScrollingResetDelay?: number
+  useScrollendEvent?: boolean
   enabled?: boolean
   isRtl?: boolean
+  useAnimationFrameWithResizeObserver?: boolean
 }
 
 export class Virtualizer<
@@ -364,7 +385,12 @@ export class Virtualizer<
 
       return (_ro = new this.targetWindow.ResizeObserver((entries) => {
         entries.forEach((entry) => {
-          this._measureElement(entry.target as TItemElement, entry)
+          const run = () => {
+            this._measureElement(entry.target as TItemElement, entry)
+          }
+          this.options.useAnimationFrameWithResizeObserver
+            ? requestAnimationFrame(run)
+            : run()
         })
       }))
     }
@@ -412,6 +438,8 @@ export class Virtualizer<
       isScrollingResetDelay: 150,
       enabled: true,
       isRtl: false,
+      useScrollendEvent: true,
+      useAnimationFrameWithResizeObserver: false,
       ...opts,
     }
   }
@@ -674,14 +702,20 @@ export class Virtualizer<
   )
 
   calculateRange = memo(
-    () => [this.getMeasurements(), this.getSize(), this.getScrollOffset()],
-    (measurements, outerSize, scrollOffset) => {
+    () => [
+      this.getMeasurements(),
+      this.getSize(),
+      this.getScrollOffset(),
+      this.options.lanes,
+    ],
+    (measurements, outerSize, scrollOffset, lanes) => {
       return (this.range =
         measurements.length > 0 && outerSize > 0
           ? calculateRange({
               measurements,
               outerSize,
               scrollOffset,
+              lanes,
             })
           : null)
     },
@@ -691,25 +725,35 @@ export class Virtualizer<
     },
   )
 
-  private getIndexes = memo(
-    () => [
-      this.options.rangeExtractor,
-      this.calculateRange(),
-      this.options.overscan,
-      this.options.count,
-    ],
-    (rangeExtractor, range, overscan, count) => {
-      return range === null
+  getVirtualIndexes = memo(
+    () => {
+      let startIndex: number | null = null
+      let endIndex: number | null = null
+      const range = this.calculateRange()
+      if (range) {
+        startIndex = range.startIndex
+        endIndex = range.endIndex
+      }
+      return [
+        this.options.rangeExtractor,
+        this.options.overscan,
+        this.options.count,
+        startIndex,
+        endIndex,
+      ]
+    },
+    (rangeExtractor, overscan, count, startIndex, endIndex) => {
+      return startIndex === null || endIndex === null
         ? []
         : rangeExtractor({
-            startIndex: range.startIndex,
-            endIndex: range.endIndex,
+            startIndex,
+            endIndex,
             overscan,
             count,
           })
     },
     {
-      key: process.env.NODE_ENV !== 'production' && 'getIndexes',
+      key: process.env.NODE_ENV !== 'production' && 'getVirtualIndexes',
       debug: () => this.options.debug,
     },
   )
@@ -799,7 +843,7 @@ export class Virtualizer<
   }
 
   getVirtualItems = memo(
-    () => [this.getIndexes(), this.getMeasurements()],
+    () => [this.getVirtualIndexes(), this.getMeasurements()],
     (indexes, measurements) => {
       const virtualItems: Array<VirtualItem> = []
 
@@ -835,26 +879,24 @@ export class Virtualizer<
     )
   }
 
-  getOffsetForAlignment = (toOffset: number, align: ScrollAlignment) => {
+  getOffsetForAlignment = (
+    toOffset: number,
+    align: ScrollAlignment,
+    itemSize = 0,
+  ) => {
     const size = this.getSize()
     const scrollOffset = this.getScrollOffset()
 
     if (align === 'auto') {
-      if (toOffset <= scrollOffset) {
-        align = 'start'
-      } else if (toOffset >= scrollOffset + size) {
-        align = 'end'
-      } else {
-        align = 'start'
-      }
+      align = toOffset >= scrollOffset + size ? 'end' : 'start'
     }
 
-    if (align === 'start') {
-      toOffset = toOffset
+    if (align === 'center') {
+      // When aligning to a particular item (e.g. with scrollToIndex),
+      // adjust offset by the size of the item to center on the item
+      toOffset += (itemSize - size) / 2
     } else if (align === 'end') {
-      toOffset = toOffset - size
-    } else if (align === 'center') {
-      toOffset = toOffset - size / 2
+      toOffset -= size
     }
 
     const scrollSizeProp = this.options.horizontal
@@ -897,7 +939,10 @@ export class Virtualizer<
         ? item.end + this.options.scrollPaddingEnd
         : item.start - this.options.scrollPaddingStart
 
-    return [this.getOffsetForAlignment(toOffset, align), align] as const
+    return [
+      this.getOffsetForAlignment(toOffset, align, item.size),
+      align,
+    ] as const
   }
 
   private isDynamicMode = () => this.elementsCache.size > 0
@@ -1058,22 +1103,36 @@ function calculateRange({
   measurements,
   outerSize,
   scrollOffset,
+  lanes,
 }: {
   measurements: Array<VirtualItem>
   outerSize: number
   scrollOffset: number
+  lanes: number
 }) {
-  const count = measurements.length - 1
+  const lastIndex = measurements.length - 1
   const getOffset = (index: number) => measurements[index]!.start
 
-  const startIndex = findNearestBinarySearch(0, count, getOffset, scrollOffset)
+  let startIndex = findNearestBinarySearch(
+    0,
+    lastIndex,
+    getOffset,
+    scrollOffset,
+  )
   let endIndex = startIndex
 
   while (
-    endIndex < count &&
+    endIndex < lastIndex &&
     measurements[endIndex]!.end < scrollOffset + outerSize
   ) {
     endIndex++
+  }
+
+  if (lanes > 1) {
+    // Align startIndex to the beginning of its lane
+    startIndex = Math.max(0, startIndex - (startIndex % lanes))
+    // Align endIndex to the end of its lane
+    endIndex = Math.min(lastIndex, endIndex + (lanes - 1 - (endIndex % lanes)))
   }
 
   return { startIndex, endIndex }

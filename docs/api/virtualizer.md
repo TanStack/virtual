@@ -67,7 +67,7 @@ The initial `Rect` of the scrollElement. This is mostly useful if you need to ru
 ### `onChange`
 
 ```tsx
-onChange?: (instance: Virtualizer<TScrollElement, TItemElement>) => void
+onChange?: (instance: Virtualizer<TScrollElement, TItemElement>, sync: boolean) => void
 ```
 
 A callback function that fires when the virtualizer's internal state changes. It's passed the virtualizer instance.
@@ -206,7 +206,13 @@ This optional function is called when the virtualizer needs to dynamically measu
 scrollMargin?: number
 ```
 
-With this option, you can specify where the scroll offset should originate. Typically, this value represents the space between the beginning of the scrolling element and the start of the list. This is especially useful in common scenarios such as when you have a header preceding a window virtualizer or when multiple virtualizers are utilized within a single scrolling element.
+With this option, you can specify where the scroll offset should originate. Typically, this value represents the space between the beginning of the scrolling element and the start of the list. This is especially useful in common scenarios such as when you have a header preceding a window virtualizer or when multiple virtualizers are utilized within a single scrolling element. If you are using absolute positioning of elements, you should take into account the `scrollMargin` in your CSS transform:
+```tsx
+transform: `translateY(${
+   virtualRow.start - rowVirtualizer.options.scrollMargin
+}px)` 
+``` 
+To dynamically measure value for `scrollMargin` you can use `getBoundingClientRect()` or ResizeObserver. This is helpful in scenarios when items above your virtual list might change their height.   
 
 ### `gap`
 
@@ -234,6 +240,16 @@ This option allows you to specify the duration to wait after the last scroll eve
 
 The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
 
+### `useScrollendEvent`
+
+```tsx
+useScrollendEvent: boolean
+```
+
+This option allows you to switch to use debounced fallback to reset the isScrolling instance property after `isScrollingResetDelay` milliseconds. The default value is `true`. 
+
+The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
+
 ### `isRtl`
 
 ```tsx
@@ -241,6 +257,16 @@ isRtl: boolean
 ```
 
 Whether to invert horizontal scrolling to support right-to-left language locales.
+
+### `useAnimationFrameWithResizeObserver`
+
+```tsx
+useAnimationFrameWithResizeObserver: boolean
+```
+
+This option enables wrapping ResizeObserver measurements in requestAnimationFrame for smoother updates and reduced layout thrashing. The default value is `false`. 
+
+It helps prevent the "ResizeObserver loop completed with undelivered notifications" error by ensuring that measurements align with the rendering cycle. This can improve performance and reduce UI jitter, especially when resizing elements dynamically. However, since ResizeObserver already runs asynchronously, adding requestAnimationFrame may introduce a slight delay in measurements, which could be noticeable in some cases. If resizing operations are lightweight and do not cause reflows, enabling this option may not provide significant benefits.
 
 ## Virtualizer Instance
 
@@ -269,6 +295,14 @@ type getVirtualItems = () => VirtualItem[]
 ```
 
 Returns the virtual items for the current state of the virtualizer.
+
+### `getVirtualIndexes`
+
+```tsx
+type getVirtualIndexes = () => number[]
+```
+
+Returns the virtual row indexes for the current state of the virtualizer.
 
 ### `scrollToOffset`
 

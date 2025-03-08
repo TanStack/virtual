@@ -42,7 +42,7 @@ function useVirtualizerBase<
 
   instance.setOptions(resolvedOptions)
 
-  React.useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     return instance._didMount()
   }, [])
 
