@@ -9,13 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@faker-js/faker": "^8.3.1",
-    "@tanstack/solid-virtual": "3.0.1",
+    "@faker-js/faker": "^8.4.1",
+    "@tanstack/solid-virtual": "^3.13.2",
     "lodash": "^4.17.21",
     "solid-js": "^1.9.5"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.202",
+    "@types/lodash": "^4.17.16",
     "typescript": "5.2.2",
     "vite": "^5.4.14",
     "vite-plugin-solid": "^2.11.6"
