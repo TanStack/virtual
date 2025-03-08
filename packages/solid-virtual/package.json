@@ -23,7 +23,7 @@
     "datagrid"
   ],
   "scripts": {
-    "clean": "rimraf ./dist && rimraf ./coverage",
+    "clean": "premove ./dist ./coverage",
     "test:eslint": "eslint ./src",
     "test:types": "tsc",
     "test:build": "publint --strict",
@@ -56,7 +56,7 @@
   },
   "devDependencies": {
     "solid-js": "^1.9.5",
-    "vite-plugin-solid": "^2.11.2"
+    "vite-plugin-solid": "^2.11.6"
   },
   "peerDependencies": {
     "solid-js": "^1.3.0"
