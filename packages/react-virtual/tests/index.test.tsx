@@ -209,9 +209,9 @@ test('should refresh the virtualizer instance when the items are changing (React
     },
   )
 
-  const initialVirtualizer = result.current;
+  const initialVirtualizer = result.current
 
-  rerender({ count: 10 });
+  rerender({ count: 10 })
 
   expect(result.current).not.toBe(initialVirtualizer)
 })
