@@ -885,6 +885,217 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
 
+  examples/solid/dynamic:
+    dependencies:
+      '@faker-js/faker':
+        specifier: ^8.4.1
+        version: 8.4.1
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/fixed:
+    dependencies:
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/infinite-scroll:
+    dependencies:
+      '@tanstack/solid-query':
+        specifier: ^5.17.19
+        version: 5.67.2(solid-js@1.9.5)
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/padding:
+    dependencies:
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/scroll-padding:
+    dependencies:
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/smooth-scroll:
+    dependencies:
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/sticky:
+    dependencies:
+      '@faker-js/faker':
+        specifier: ^8.4.1
+        version: 8.4.1
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      '@types/lodash':
+        specifier: ^4.17.16
+        version: 4.17.16
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/table:
+    dependencies:
+      '@faker-js/faker':
+        specifier: ^8.4.1
+        version: 8.4.1
+      '@tanstack/solid-table':
+        specifier: ^8.11.7
+        version: 8.21.2(solid-js@1.9.5)
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/variable:
+    dependencies:
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
+  examples/solid/window:
+    dependencies:
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/solid-virtual
+      solid-js:
+        specifier: ^1.9.5
+        version: 1.9.5
+    devDependencies:
+      typescript:
+        specifier: 5.2.2
+        version: 5.2.2
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+      vite-plugin-solid:
+        specifier: ^2.11.6
+        version: 2.11.6(@testing-library/jest-dom@6.6.3)(solid-js@1.9.5)(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+
   examples/svelte/dynamic:
     dependencies:
       '@faker-js/faker':
@@ -3460,6 +3671,9 @@ packages:
   '@tanstack/query-core@5.66.11':
     resolution: {integrity: sha512-ZEYxgHUcohj3sHkbRaw0gYwFxjY5O6M3IXOYXEun7E1rqNhsP8fOtqjJTKPZpVHcdIdrmX4lzZctT4+pts0OgA==}
 
+  '@tanstack/query-core@5.67.2':
+    resolution: {integrity: sha512-+iaFJ/pt8TaApCk6LuZ0WHS/ECVfTzrxDOEL9HH9Dayyb5OVuomLzDXeSaI2GlGT/8HN7bDGiRXDts3LV+u6ww==}
+
   '@tanstack/query-devtools@5.65.0':
     resolution: {integrity: sha512-g5y7zc07U9D3esMdqUfTEVu9kMHoIaVBsD0+M3LPdAdD710RpTcLiNvJY1JkYXqkq9+NV+CQoemVNpQPBXVsJg==}
 
@@ -3474,6 +3688,17 @@ packages:
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
+
+  '@tanstack/solid-query@5.67.2':
+    resolution: {integrity: sha512-oWUHFcarD7o2d6vYfyXP5k/9vND9tMDY4pqaZwIYNoh8ObWCIb2yt7ewV2agvFG3KIym6OU+JNYEcOCvT2rVQA==}
+    peerDependencies:
+      solid-js: ^1.6.0
+
+  '@tanstack/solid-table@8.21.2':
+    resolution: {integrity: sha512-5Rc68rM+TGbZDrm5Onmg4erHurwU4a0eYCQUpLgsXLk/L/gYJmhmY5FXiKUTJGjEIAqCqOYuMbmICY/P0l6uFA==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      solid-js: '>=1.3'
 
   '@tanstack/svelte-query@5.66.11':
     resolution: {integrity: sha512-5c4prt0uXnMKyzCs87Jwx6F54LaZn8k3BdksgTkPOXY5tjBUIWOg7Rjm8yDPkrsB1NZ0XixZDEoVdMWF0FANsA==}
@@ -7858,12 +8083,12 @@ snapshots:
       '@vitejs/plugin-basic-ssl': 1.1.0(vite@5.4.14(@types/node@22.13.7)(less@4.2.0)(sass@1.71.1)(terser@5.29.1))
       ansi-colors: 4.1.3
       autoprefixer: 10.4.18(postcss@8.4.35)
-      babel-loader: 9.1.3(@babel/core@7.24.0)(webpack@5.94.0(esbuild@0.20.1))
+      babel-loader: 9.1.3(@babel/core@7.24.0)(webpack@5.94.0)
       babel-plugin-istanbul: 6.1.1
       browserslist: 4.24.4
-      copy-webpack-plugin: 11.0.0(webpack@5.94.0(esbuild@0.20.1))
+      copy-webpack-plugin: 11.0.0(webpack@5.94.0)
       critters: 0.0.22
-      css-loader: 6.10.0(webpack@5.94.0(esbuild@0.20.1))
+      css-loader: 6.10.0(webpack@5.94.0)
       esbuild-wasm: 0.20.1
       fast-glob: 3.3.2
       http-proxy-middleware: 2.0.7(@types/express@4.17.21)
@@ -7872,11 +8097,11 @@ snapshots:
       jsonc-parser: 3.2.1
       karma-source-map-support: 1.4.0
       less: 4.2.0
-      less-loader: 11.1.0(less@4.2.0)(webpack@5.94.0(esbuild@0.20.1))
-      license-webpack-plugin: 4.0.2(webpack@5.94.0(esbuild@0.20.1))
+      less-loader: 11.1.0(less@4.2.0)(webpack@5.94.0)
+      license-webpack-plugin: 4.0.2(webpack@5.94.0)
       loader-utils: 3.2.1
       magic-string: 0.30.8
-      mini-css-extract-plugin: 2.8.1(webpack@5.94.0(esbuild@0.20.1))
+      mini-css-extract-plugin: 2.8.1(webpack@5.94.0)
       mrmime: 2.0.0
       open: 8.4.2
       ora: 5.4.1
@@ -7884,13 +8109,13 @@ snapshots:
       picomatch: 4.0.1
       piscina: 4.4.0
       postcss: 8.4.35
-      postcss-loader: 8.1.1(postcss@8.4.35)(typescript@5.2.2)(webpack@5.94.0(esbuild@0.20.1))
+      postcss-loader: 8.1.1(postcss@8.4.35)(typescript@5.2.2)(webpack@5.94.0)
       resolve-url-loader: 5.0.0
       rxjs: 7.8.1
       sass: 1.71.1
-      sass-loader: 14.1.1(sass@1.71.1)(webpack@5.94.0(esbuild@0.20.1))
+      sass-loader: 14.1.1(sass@1.71.1)(webpack@5.94.0)
       semver: 7.6.0
-      source-map-loader: 5.0.0(webpack@5.94.0(esbuild@0.20.1))
+      source-map-loader: 5.0.0(webpack@5.94.0)
       source-map-support: 0.5.21
       terser: 5.29.1
       tree-kill: 1.2.2
@@ -7900,10 +8125,10 @@ snapshots:
       vite: 5.4.14(@types/node@22.13.7)(less@4.2.0)(sass@1.71.1)(terser@5.29.1)
       watchpack: 2.4.0
       webpack: 5.94.0(esbuild@0.20.1)
-      webpack-dev-middleware: 6.1.2(webpack@5.94.0(esbuild@0.20.1))
+      webpack-dev-middleware: 6.1.2(webpack@5.94.0)
       webpack-dev-server: 4.15.1(webpack@5.94.0(esbuild@0.20.1))
       webpack-merge: 5.10.0
-      webpack-subresource-integrity: 5.1.0(webpack@5.94.0(esbuild@0.20.1))
+      webpack-subresource-integrity: 5.1.0(webpack@5.94.0)
     optionalDependencies:
       esbuild: 0.20.1
       ng-packagr: 17.3.0(@angular/compiler-cli@17.3.12(@angular/compiler@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(typescript@5.2.2))(tslib@2.8.1)(typescript@5.2.2)
@@ -10068,6 +10293,8 @@ snapshots:
 
   '@tanstack/query-core@5.66.11': {}
 
+  '@tanstack/query-core@5.67.2': {}
+
   '@tanstack/query-devtools@5.65.0': {}
 
   '@tanstack/react-query@5.66.11(react@18.3.1)':
@@ -10080,6 +10307,16 @@ snapshots:
       '@tanstack/table-core': 8.21.2
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@tanstack/solid-query@5.67.2(solid-js@1.9.5)':
+    dependencies:
+      '@tanstack/query-core': 5.67.2
+      solid-js: 1.9.5
+
+  '@tanstack/solid-table@8.21.2(solid-js@1.9.5)':
+    dependencies:
+      '@tanstack/table-core': 8.21.2
+      solid-js: 1.9.5
 
   '@tanstack/svelte-query@5.66.11(svelte@4.2.19)':
     dependencies:
@@ -10997,7 +11234,7 @@ snapshots:
 
   axobject-query@4.1.0: {}
 
-  babel-loader@9.1.3(@babel/core@7.24.0)(webpack@5.94.0(esbuild@0.20.1)):
+  babel-loader@9.1.3(@babel/core@7.24.0)(webpack@5.94.0):
     dependencies:
       '@babel/core': 7.24.0
       find-cache-dir: 4.0.0
@@ -11354,7 +11591,7 @@ snapshots:
     dependencies:
       is-what: 3.14.1
 
-  copy-webpack-plugin@11.0.0(webpack@5.94.0(esbuild@0.20.1)):
+  copy-webpack-plugin@11.0.0(webpack@5.94.0):
     dependencies:
       fast-glob: 3.3.3
       glob-parent: 6.0.2
@@ -11395,7 +11632,7 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  css-loader@6.10.0(webpack@5.94.0(esbuild@0.20.1)):
+  css-loader@6.10.0(webpack@5.94.0):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.3)
       postcss: 8.5.3
@@ -12725,7 +12962,7 @@ snapshots:
       picocolors: 1.1.1
       shell-quote: 1.8.2
 
-  less-loader@11.1.0(less@4.2.0)(webpack@5.94.0(esbuild@0.20.1)):
+  less-loader@11.1.0(less@4.2.0)(webpack@5.94.0):
     dependencies:
       klona: 2.0.6
       less: 4.2.0
@@ -12764,7 +13001,7 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  license-webpack-plugin@4.0.2(webpack@5.94.0(esbuild@0.20.1)):
+  license-webpack-plugin@4.0.2(webpack@5.94.0):
     dependencies:
       webpack-sources: 3.2.3
     optionalDependencies:
@@ -12962,7 +13199,7 @@ snapshots:
 
   min-indent@1.0.1: {}
 
-  mini-css-extract-plugin@2.8.1(webpack@5.94.0(esbuild@0.20.1)):
+  mini-css-extract-plugin@2.8.1(webpack@5.94.0):
     dependencies:
       schema-utils: 4.3.0
       tapable: 2.2.1
@@ -13513,7 +13750,7 @@ snapshots:
       mlly: 1.7.4
       pathe: 2.0.3
 
-  postcss-loader@8.1.1(postcss@8.4.35)(typescript@5.2.2)(webpack@5.94.0(esbuild@0.20.1)):
+  postcss-loader@8.1.1(postcss@8.4.35)(typescript@5.2.2)(webpack@5.94.0):
     dependencies:
       cosmiconfig: 9.0.0(typescript@5.2.2)
       jiti: 1.21.7
@@ -13870,7 +14107,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  sass-loader@14.1.1(sass@1.71.1)(webpack@5.94.0(esbuild@0.20.1)):
+  sass-loader@14.1.1(sass@1.71.1)(webpack@5.94.0):
     dependencies:
       neo-async: 2.6.2
     optionalDependencies:
@@ -14141,7 +14378,7 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  source-map-loader@5.0.0(webpack@5.94.0(esbuild@0.20.1)):
+  source-map-loader@5.0.0(webpack@5.94.0):
     dependencies:
       iconv-lite: 0.6.3
       source-map-js: 1.2.1
@@ -14760,7 +14997,7 @@ snapshots:
       schema-utils: 4.3.0
       webpack: 5.94.0(esbuild@0.20.1)
 
-  webpack-dev-middleware@6.1.2(webpack@5.94.0(esbuild@0.20.1)):
+  webpack-dev-middleware@6.1.2(webpack@5.94.0):
     dependencies:
       colorette: 2.0.20
       memfs: 3.5.3
@@ -14818,7 +15055,7 @@ snapshots:
 
   webpack-sources@3.2.3: {}
 
-  webpack-subresource-integrity@5.1.0(webpack@5.94.0(esbuild@0.20.1)):
+  webpack-subresource-integrity@5.1.0(webpack@5.94.0):
     dependencies:
       typed-assert: 1.0.9
       webpack: 5.94.0(esbuild@0.20.1)

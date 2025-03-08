@@ -1,0 +1,22 @@
+{
+  "name": "tanstack-solid-virtual-example-table",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "@tanstack/solid-table": "^8.11.7",
+    "@tanstack/solid-virtual": "^3.13.2",
+    "solid-js": "^1.9.5"
+  },
+  "devDependencies": {
+    "typescript": "5.2.2",
+    "vite": "^5.4.14",
+    "vite-plugin-solid": "^2.11.6"
+  }
+}
