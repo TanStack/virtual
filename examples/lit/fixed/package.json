@@ -1,0 +1,21 @@
+{
+  "name": "tanstack-lit-virtual-example-fixed",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "@tanstack/lit-virtual": "^3.13.2",
+    "@tanstack/virtual-core": "^3.13.2",
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.6",
+    "typescript": "5.2.2",
+    "vite": "^5.4.14"
+  }
+}

@@ -3,7 +3,7 @@
     <p>
       For tables, the basis for the offset of the translate css function is from
       the row's initial position itself. Because of this, we need to calculate
-      the translateY pixel count different and base it off the the index.
+      the translateY pixel count differently and base it off the index.
     </p>
 
     <div ref="parentRef" class="container">
@@ -47,9 +47,11 @@
           </thead>
           <tbody>
             <tr
-              v-for="virtualRow in virtualRows"
+              v-for="(virtualRow, index) in virtualRows"
               :key="virtualRow.key"
-              :style="{ transform: `translateY(${virtualRow.start}px)` }"
+              :style="{
+                transform: `translateY(${virtualRow.start - index * virtualRow.size}px)`,
+              }"
             >
               <td
                 v-for="cell in rows[virtualRow.index].getVisibleCells()"

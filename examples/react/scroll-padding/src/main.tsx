@@ -3,11 +3,11 @@ import ReactDOM from 'react-dom'
 
 import './index.css'
 
-import { useMeasure } from '@react-hookz/web/esm'
+import { useMeasure } from '@react-hookz/web'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 function App() {
-  const parentRef = React.useRef<HTMLDivElement>()
+  const parentRef = React.useRef<HTMLDivElement>(null)
   const [theadSize, theadRef] = useMeasure<HTMLTableSectionElement>()
 
   const rowVirtualizer = useVirtualizer({
@@ -91,7 +91,7 @@ function App() {
         <p>
           <strong>Notice:</strong> You are currently running React in
           development mode. Rendering performance will be slightly degraded
-          until this application is build for production.
+          until this application is built for production.
         </p>
       ) : null}
     </>

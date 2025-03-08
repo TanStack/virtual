@@ -1,24 +1,24 @@
 import {
+  Virtualizer,
   elementScroll,
   observeElementOffset,
   observeElementRect,
   observeWindowOffset,
   observeWindowRect,
-  PartialKeys,
-  Virtualizer,
-  VirtualizerOptions,
   windowScroll,
 } from '@tanstack/virtual-core'
-export * from '@tanstack/virtual-core'
 
 import {
-  createSignal,
-  onMount,
-  onCleanup,
   createComputed,
+  createSignal,
   mergeProps,
+  onCleanup,
+  onMount,
 } from 'solid-js'
 import { createStore, reconcile } from 'solid-js/store'
+import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+
+export * from '@tanstack/virtual-core'
 
 function createVirtualizerBase<
   TScrollElement extends Element | Window,
@@ -125,8 +125,8 @@ export function createWindowVirtualizer<TItemElement extends Element>(
         observeElementRect: observeWindowRect,
         observeElementOffset: observeWindowOffset,
         scrollToFn: windowScroll,
-        initialOffset:
-          typeof document !== 'undefined' ? window.scrollY : undefined,
+        initialOffset: () =>
+          typeof document !== 'undefined' ? window.scrollY : 0,
       },
       options,
     ),

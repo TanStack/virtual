@@ -51,7 +51,7 @@ import { useVirtualizer, defaultRangeExtractor } from '@tanstack/vue-virtual'
 
 const groupedNames = groupBy(
   Array.from({ length: 1000 })
-    .map(() => faker.name.firstName())
+    .map(() => faker.person.firstName())
     .sort(),
   (name: string[]) => name[0],
 )
