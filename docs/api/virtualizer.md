@@ -70,7 +70,9 @@ The initial `Rect` of the scrollElement. This is mostly useful if you need to ru
 onChange?: (instance: Virtualizer<TScrollElement, TItemElement>, sync: boolean) => void
 ```
 
-A callback function that fires when the virtualizer's internal state changes. It's passed the virtualizer instance.
+A callback function that fires when the virtualizer's internal state changes. It's passed the virtualizer instance and the sync parameter.
+
+The sync parameter indicates whether scrolling is currently in progress. It is `true` when scrolling is ongoing, and `false` when scrolling has stopped or other actions (such as resizing) are being performed.
 
 ### `overscan`
 
