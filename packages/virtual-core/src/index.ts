@@ -438,7 +438,7 @@ export class Virtualizer<
       isScrollingResetDelay: 150,
       enabled: true,
       isRtl: false,
-      useScrollendEvent: true,
+      useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
       ...opts,
     }
