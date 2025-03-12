@@ -5,7 +5,7 @@
     "type": "git",
     "url": "https://github.com/TanStack/virtual.git"
   },
-  "packageManager": "pnpm@10.6.2",
+  "packageManager": "pnpm@10.2.1",
   "type": "module",
   "scripts": {
     "clean": "pnpm --filter \"./packages/**\" run clean",
@@ -28,7 +28,7 @@
     "prettier": "prettier --ignore-unknown '**/*'",
     "prettier:write": "pnpm run prettier --write",
     "changeset": "changeset",
-    "changeset:version": "changeset version && pnpm install && pnpm prettier:write",
+    "changeset:version": "changeset version && pnpm install --no-frozen-lockfile && pnpm prettier:write",
     "changeset:publish": "changeset publish"
   },
   "nx": {
