@@ -28,7 +28,7 @@
     "prettier": "prettier --ignore-unknown '**/*'",
     "prettier:write": "pnpm run prettier --write",
     "changeset": "changeset",
-    "changeset:version": "changeset version && pnpm install && pnpm prettier:write",
+    "changeset:version": "changeset version && pnpm install --no-frozen-lockfile && pnpm prettier:write",
     "changeset:publish": "changeset publish"
   },
   "nx": {
