@@ -15,7 +15,7 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   let deps = opts.initialDeps ?? []
   let result: TResult | undefined
 
-  return (): TResult => {
+  function memoizedFunction(): TResult {
     let depTime: number
     if (opts.key && opts.debug?.()) depTime = Date.now()
 
@@ -66,6 +66,13 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
 
     return result
   }
+
+  // Attach updateDeps to the function itself
+  memoizedFunction.updateDeps = (newDeps: [...TDeps]) => {
+    deps = newDeps
+  }
+
+  return memoizedFunction
 }
 
 export function notUndefined<T>(value: T | undefined, msg?: string): T {

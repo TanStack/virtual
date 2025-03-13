@@ -734,6 +734,7 @@ export class Virtualizer<
         startIndex = range.startIndex
         endIndex = range.endIndex
       }
+      this.maybeNotify.updateDeps([this.isScrolling, startIndex, endIndex])
       return [
         this.options.rangeExtractor,
         this.options.overscan,
