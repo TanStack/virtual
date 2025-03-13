@@ -456,7 +456,7 @@ export class Virtualizer<
         this.isScrolling,
         this.range ? this.range.startIndex : null,
         this.range ? this.range.endIndex : null,
-        this.scrollRect 
+        this.scrollRect,
       ]
     },
     (isScrolling) => {
@@ -469,7 +469,7 @@ export class Virtualizer<
         this.isScrolling,
         this.range ? this.range.startIndex : null,
         this.range ? this.range.endIndex : null,
-        this.scrollRect 
+        this.scrollRect,
       ] as [boolean, number | null, number | null, Rect],
     },
   )
