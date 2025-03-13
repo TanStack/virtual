@@ -90,7 +90,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -142,7 +142,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -197,7 +197,7 @@ importers:
         specifier: 5.67.2
         version: 5.67.2(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -249,7 +249,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -301,7 +301,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -356,7 +356,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -414,7 +414,7 @@ importers:
         specifier: 8.21.2
         version: 8.21.2(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -466,7 +466,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -518,7 +518,7 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -549,10 +549,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.2.1
@@ -574,10 +574,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.2.1
@@ -599,7 +599,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -630,7 +630,7 @@ importers:
   examples/react/fixed:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -664,7 +664,7 @@ importers:
         specifier: ^5.67.2
         version: 5.67.2(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -689,7 +689,7 @@ importers:
   examples/react/padding:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -717,7 +717,7 @@ importers:
         specifier: ^25.1.0
         version: 25.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -742,7 +742,7 @@ importers:
   examples/react/smooth-scroll:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -770,7 +770,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       lodash:
         specifier: ^4.17.21
@@ -807,7 +807,7 @@ importers:
         specifier: ^8.21.2
         version: 8.21.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -832,7 +832,7 @@ importers:
   examples/react/variable:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -857,7 +857,7 @@ importers:
   examples/react/window:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -891,7 +891,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -919,7 +919,7 @@ importers:
   examples/svelte/fixed:
     dependencies:
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -950,7 +950,7 @@ importers:
         specifier: ^5.67.2
         version: 5.67.2(svelte@4.2.19)
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -981,7 +981,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1012,7 +1012,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/svelte-virtual
       lodash:
         specifier: ^4.17.21
@@ -1049,7 +1049,7 @@ importers:
         specifier: ^8.21.2
         version: 8.21.2(svelte@4.2.19)
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1080,7 +1080,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1105,7 +1105,7 @@ importers:
   examples/vue/fixed:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1133,7 +1133,7 @@ importers:
         specifier: ^5.67.2
         version: 5.67.2(vue@3.5.13(typescript@5.2.2))
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1158,7 +1158,7 @@ importers:
   examples/vue/padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1183,7 +1183,7 @@ importers:
   examples/vue/scroll-padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       '@vueuse/core':
         specifier: ^12.8.2
@@ -1211,7 +1211,7 @@ importers:
   examples/vue/smooth-scroll:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1239,7 +1239,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       lodash:
         specifier: ^4.17.21
@@ -1276,7 +1276,7 @@ importers:
         specifier: ^8.21.2
         version: 8.21.2(vue@3.5.13(typescript@5.2.2))
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
@@ -1301,7 +1301,7 @@ importers:
   examples/vue/variable:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.3
+        specifier: ^3.13.4
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.13
