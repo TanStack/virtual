@@ -1,5 +1,5 @@
 ---
-"@tanstack/virtual-core": patch
+'@tanstack/virtual-core': patch
 ---
 
 fix(virtual-core): set `useScrollendEvent` default to false for bette…
