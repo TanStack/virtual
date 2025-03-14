@@ -829,6 +829,34 @@ importers:
         specifier: ^5.4.14
         version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
 
+  examples/react/two-way-infinite-scroll:
+    dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.66.11
+        version: 5.66.11(react@18.3.1)
+      '@tanstack/react-virtual':
+        specifier: ^3.13.2
+        version: link:../../../packages/react-virtual
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.18
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18.3.5
+        version: 18.3.5(@types/react@18.3.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.3.4(vite@5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0))
+      vite:
+        specifier: ^5.4.14
+        version: 5.4.14(@types/node@22.13.7)(less@4.2.2)(sass@1.85.1)(terser@5.39.0)
+
   examples/react/variable:
     dependencies:
       '@tanstack/react-virtual':
