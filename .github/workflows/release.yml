@@ -31,7 +31,7 @@ jobs:
       - name: Run Tests
         run: pnpm run test:ci
       - name: Run Changesets (version or publish)
-        uses: changesets/action@v1.4.9
+        uses: changesets/action@v1.4.10
         with:
           version: pnpm run changeset:version
           publish: pnpm run changeset:publish
