@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.5
+
+### Patch Changes
+
+- fix(core): handle case when item count is less than or equal to lanes ([#964](https://github.com/TanStack/virtual/pull/964))
+
 ## 3.13.4
 
 ### Patch Changes
