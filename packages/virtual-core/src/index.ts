@@ -1123,6 +1123,14 @@ function calculateRange({
   const lastIndex = measurements.length - 1
   const getOffset = (index: number) => measurements[index]!.start
 
+  // handle case when item count is less than or equal to lanes
+  if (measurements.length <= lanes) {
+    return {
+      startIndex: 0,
+      endIndex: lastIndex,
+    }
+  }
+
   let startIndex = findNearestBinarySearch(
     0,
     lastIndex,
