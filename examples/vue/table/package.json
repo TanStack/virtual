@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@codesandbox/vue-preview": "^0.1.1-alpha.16",
-    "@vitejs/plugin-vue": "^5.2.2",
+    "@vitejs/plugin-vue": "^5.2.3",
     "typescript": "5.2.2",
     "vite": "^5.4.14",
     "vue-tsc": "^2.2.8"
