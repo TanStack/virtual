@@ -1162,7 +1162,7 @@ function calculateRange({
     // Expand backward until we include all lanes' visible items
     // closer to the top
     const startPerLane = Array(lanes).fill(scrollOffset + outerSize)
-    while (startIndex > 0 && startPerLane.some((pos) => pos >= scrollOffset)) {
+    while (startIndex >= 0 && startPerLane.some((pos) => pos >= scrollOffset)) {
       const item = measurements[startIndex]!
       startPerLane[item.lane] = item.start
       startIndex--
