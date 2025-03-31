@@ -14,10 +14,10 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.6",
-    "@types/react": "^18.3.19",
+    "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "5.2.2",
-    "vite": "^5.4.14"
+    "vite": "^5.4.15"
   }
 }
