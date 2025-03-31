@@ -1046,7 +1046,7 @@ export class Virtualizer<
     } else {
       const endByLane = Array<number | null>(this.options.lanes).fill(null)
       let endIndex = measurements.length - 1
-      while (endIndex > 0 && endByLane.some((val) => val === null)) {
+      while (endIndex >= 0 && endByLane.some((val) => val === null)) {
         const item = measurements[endIndex]!
         if (endByLane[item.lane] === null) {
           endByLane[item.lane] = item.end
@@ -1162,7 +1162,7 @@ function calculateRange({
     // Expand backward until we include all lanes' visible items
     // closer to the top
     const startPerLane = Array(lanes).fill(scrollOffset + outerSize)
-    while (startIndex > 0 && startPerLane.some((pos) => pos >= scrollOffset)) {
+    while (startIndex >= 0 && startPerLane.some((pos) => pos >= scrollOffset)) {
       const item = measurements[startIndex]!
       startPerLane[item.lane] = item.start
       startIndex--
