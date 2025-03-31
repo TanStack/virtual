@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.6
+
+### Patch Changes
+
+- fix(virtual-core): fix total size calculation for single item in multi-lane ([`042616f`](https://github.com/TanStack/virtual/commit/042616f39ced842470db0b4b40fca77f22454b7f))
+
 ## 3.13.5
 
 ### Patch Changes
