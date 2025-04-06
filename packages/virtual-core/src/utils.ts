@@ -28,24 +28,28 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   let deps = opts.initialDeps ?? []
   let result: TResult | undefined
 
+  const enabledDebug = Boolean(opts.key && opts.debug?.())
+
   return (): TResult => {
     let depTime: number
-    if (opts.key && opts.debug?.()) depTime = Date.now()
+
+    if (enabledDebug) {
+      depTime = Date.now()
+    }
 
     const newDeps = getDeps()
 
-    const depsChanged =
-      newDeps.length !== deps.length ||
-      newDeps.some((dep: any, index: number) => deps[index] !== dep)
-
-    if (!depsChanged) {
+    if (!isDepsChanged(newDeps, deps)) {
       return result!
     }
 
     deps = newDeps
 
     let resultTime: number
-    if (opts.key && opts.debug?.()) resultTime = Date.now()
+
+    if (enabledDebug) {
+      resultTime = Date.now()
+    }
 
     result = fn(...newDeps)
 
