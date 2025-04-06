@@ -58,16 +58,8 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
       const resultEndTime = Math.round((Date.now() - resultTime!) * 100) / 100
       const resultFpsPercentage = resultEndTime / 16
 
-      const pad = (str: number | string, num: number) => {
-        str = String(str)
-        while (str.length < num) {
-          str = ' ' + str
-        }
-        return str
-      }
-
       console.info(
-        `%c⏱ ${pad(resultEndTime, 5)} /${pad(depEndTime, 5)} ms`,
+        `%c⏱ ${String(resultEndTime).padStart(5, ' ')}/${String(depEndTime).padStart(5, ' ')} ms`,
         `
             font-size: .6rem;
             font-weight: bold;
