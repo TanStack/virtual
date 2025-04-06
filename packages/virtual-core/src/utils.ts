@@ -1,6 +1,19 @@
 export type NoInfer<A extends any> = [A][A extends any ? 0 : never]
 
 export type PartialKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+/**
+ * checks whether the dependencies array has changed by comparing it with the previous one.
+ *
+ * @param newDeps new array of dependencies
+ * @param deps previous array of dependencies
+ * @returns  `true` if the length of the arrays differ or if at least one dependency has changed; otherwise, `false`
+ */
+const isDepsChanged = <TDeps extends ReadonlyArray<any>>(
+  newDeps: Array<TDeps>,
+  deps: TDeps,
+): boolean =>
+  newDeps.length !== deps.length ||
+  newDeps.some((dep, index: number) => deps[index] !== dep)
 
 export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   getDeps: () => [...TDeps],
