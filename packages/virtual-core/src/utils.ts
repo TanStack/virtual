@@ -30,6 +30,7 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
 
   function memoizedFunction(): TResult {
     const enabledDebug = Boolean(opts.key && opts.debug?.())
+    let resultTime: number
     let depTime: number
 
     if (enabledDebug) {
@@ -43,8 +44,6 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
     }
 
     deps = newDeps
-
-    let resultTime: number
 
     if (enabledDebug) {
       resultTime = Date.now()
