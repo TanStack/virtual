@@ -28,9 +28,8 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   let deps = opts.initialDeps ?? []
   let result: TResult | undefined
 
-  const enabledDebug = Boolean(opts.key && opts.debug?.())
-
   function memoizedFunction(): TResult {
+    const enabledDebug = Boolean(opts.key && opts.debug?.())
     let depTime: number
 
     if (enabledDebug) {
