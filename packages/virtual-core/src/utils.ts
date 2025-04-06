@@ -52,7 +52,7 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
 
     result = fn(...newDeps)
 
-    if (opts.key && opts.debug?.()) {
+    if (enabledDebug) {
       const depEndTime = Math.round((Date.now() - depTime!) * 100) / 100
       const resultEndTime = Math.round((Date.now() - resultTime!) * 100) / 100
       const resultFpsPercentage = resultEndTime / 16
