@@ -10,14 +10,14 @@
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
     "@tanstack/vue-table": "^8.21.2",
-    "@tanstack/vue-virtual": "^3.13.2",
+    "@tanstack/vue-virtual": "^3.13.6",
     "vue": "^3.5.13"
   },
   "devDependencies": {
     "@codesandbox/vue-preview": "^0.1.1-alpha.16",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^5.2.3",
     "typescript": "5.2.2",
-    "vite": "^5.4.14",
+    "vite": "^5.4.15",
     "vue-tsc": "^2.2.8"
   }
 }

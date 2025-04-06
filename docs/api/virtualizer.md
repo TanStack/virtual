@@ -248,7 +248,7 @@ The implementation of this option is driven by the need for a reliable mechanism
 useScrollendEvent: boolean
 ```
 
-This option allows you to switch to use debounced fallback to reset the isScrolling instance property after `isScrollingResetDelay` milliseconds. The default value is `true`. 
+Determines whether to use the native scrollend event to detect when scrolling has stopped. If set to false, a debounced fallback is used to reset the isScrolling instance property after isScrollingResetDelay milliseconds. The default value is `false`. 
 
 The implementation of this option is driven by the need for a reliable mechanism to handle scrolling behavior across different browsers. Until all browsers uniformly support the scrollEnd event.
 

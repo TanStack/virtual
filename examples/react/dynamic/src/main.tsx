@@ -401,16 +401,13 @@ function App() {
       <p>
         These components are using <strong>dynamic</strong> sizes. This means
         that each element's exact dimensions are unknown when rendered. An
-        estimated dimension is used to get an a initial measurement, then this
+        estimated dimension is used as the initial measurement, then this
         measurement is readjusted on the fly as each element is rendered.
       </p>
       <nav>
         <ul>
           <li>
             <a href="/">List</a>
-          </li>
-          <li>
-            <a href="/window-list">List - window as scroller</a>
           </li>
           <li>
             <a href="/columns">Column</a>
@@ -446,7 +443,7 @@ function App() {
         <p>
           <strong>Notice:</strong> You are currently running React in
           development mode. Rendering performance will be slightly degraded
-          until this application is build for production.
+          until this application is built for production.
         </p>
       ) : null}
     </div>

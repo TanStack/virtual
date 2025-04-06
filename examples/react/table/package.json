@@ -11,14 +11,14 @@
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
     "@tanstack/react-table": "^8.21.2",
-    "@tanstack/react-virtual": "^3.13.2",
+    "@tanstack/react-virtual": "^3.13.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/react": "^18.3.18",
+    "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.4.14"
+    "vite": "^5.4.15"
   }
 }

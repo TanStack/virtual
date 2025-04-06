@@ -5,7 +5,7 @@
     "type": "git",
     "url": "https://github.com/TanStack/virtual.git"
   },
-  "packageManager": "pnpm@9.15.6",
+  "packageManager": "pnpm@10.7.0",
   "type": "module",
   "scripts": {
     "clean": "pnpm --filter \"./packages/**\" run clean",
@@ -27,8 +27,9 @@
     "dev": "pnpm run watch",
     "prettier": "prettier --ignore-unknown '**/*'",
     "prettier:write": "pnpm run prettier --write",
-    "cipublish": "node scripts/publish.js",
-    "cipublishforce": "CI=true pnpm cipublish"
+    "changeset": "changeset",
+    "changeset:version": "changeset version && pnpm install --no-frozen-lockfile && pnpm prettier:write",
+    "changeset:publish": "changeset publish"
   },
   "nx": {
     "includedScripts": [
@@ -37,20 +38,22 @@
     ]
   },
   "devDependencies": {
-    "@tanstack/config": "^0.16.3",
+    "@changesets/cli": "^2.28.1",
+    "@svitejs/changesets-changelog-github-compact": "^1.2.0",
+    "@tanstack/config": "^0.18.0",
     "@testing-library/jest-dom": "^6.6.3",
-    "@types/node": "^22.10.1",
-    "eslint": "^9.21.0",
+    "@types/node": "^22.13.6",
+    "eslint": "^9.23.0",
     "jsdom": "^25.0.1",
-    "knip": "^5.45.0",
-    "nx": "^20.4.6",
+    "knip": "^5.46.3",
+    "nx": "^20.6.4",
+    "premove": "^4.0.0",
     "prettier": "^3.5.3",
     "prettier-plugin-svelte": "^3.3.3",
-    "publint": "^0.3.7",
-    "rimraf": "^5.0.10",
+    "publint": "^0.3.9",
     "sherif": "^1.4.0",
     "typescript": "5.2.2",
-    "vite": "^5.4.14",
+    "vite": "^5.4.15",
     "vitest": "^2.1.9"
   }
 }

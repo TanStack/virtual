@@ -1,13 +1,13 @@
 {
   "name": "@tanstack/virtual-example-angular-table",
-  "version": "0.0.0",
+  "private": true,
+  "type": "module",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development"
   },
-  "private": true,
   "dependencies": {
     "@angular/animations": "^17.3.12",
     "@angular/common": "^17.3.12",
@@ -19,14 +19,14 @@
     "@angular/router": "^17.3.12",
     "@faker-js/faker": "^8.4.1",
     "@tanstack/angular-table": "8.21.2",
-    "@tanstack/angular-virtual": "^3.13.2",
+    "@tanstack/angular-virtual": "^3.13.6",
     "rxjs": "^7.8.2",
     "tslib": "^2.8.1",
     "zone.js": "0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^17.3.12",
-    "@angular/cli": "^17.3.12",
+    "@angular-devkit/build-angular": "^17.3.14",
+    "@angular/cli": "^17.3.14",
     "@angular/compiler-cli": "^17.3.12",
     "typescript": "5.2.2"
   }

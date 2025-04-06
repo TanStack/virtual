@@ -438,7 +438,7 @@ export class Virtualizer<
       isScrollingResetDelay: 150,
       enabled: true,
       isRtl: false,
-      useScrollendEvent: true,
+      useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
       ...opts,
     }
@@ -734,6 +734,7 @@ export class Virtualizer<
         startIndex = range.startIndex
         endIndex = range.endIndex
       }
+      this.maybeNotify.updateDeps([this.isScrolling, startIndex, endIndex])
       return [
         this.options.rangeExtractor,
         this.options.overscan,
@@ -1036,16 +1037,25 @@ export class Virtualizer<
 
     let end: number
     // If there are no measurements, set the end to paddingStart
+    // If there is only one lane, use the last measurement's end
+    // Otherwise find the maximum end value among all measurements
     if (measurements.length === 0) {
       end = this.options.paddingStart
+    } else if (this.options.lanes === 1) {
+      end = measurements[measurements.length - 1]?.end ?? 0
     } else {
-      // If lanes is 1, use the last measurement's end, otherwise find the maximum end value among all measurements
-      end =
-        this.options.lanes === 1
-          ? (measurements[measurements.length - 1]?.end ?? 0)
-          : Math.max(
-              ...measurements.slice(-this.options.lanes).map((m) => m.end),
-            )
+      const endByLane = Array<number | null>(this.options.lanes).fill(null)
+      let endIndex = measurements.length - 1
+      while (endIndex >= 0 && endByLane.some((val) => val === null)) {
+        const item = measurements[endIndex]!
+        if (endByLane[item.lane] === null) {
+          endByLane[item.lane] = item.end
+        }
+
+        endIndex--
+      }
+
+      end = Math.max(...endByLane.filter((val): val is number => val !== null))
     }
 
     return Math.max(
@@ -1113,6 +1123,14 @@ function calculateRange({
   const lastIndex = measurements.length - 1
   const getOffset = (index: number) => measurements[index]!.start
 
+  // handle case when item count is less than or equal to lanes
+  if (measurements.length <= lanes) {
+    return {
+      startIndex: 0,
+      endIndex: lastIndex,
+    }
+  }
+
   let startIndex = findNearestBinarySearch(
     0,
     lastIndex,
@@ -1121,14 +1139,35 @@ function calculateRange({
   )
   let endIndex = startIndex
 
-  while (
-    endIndex < lastIndex &&
-    measurements[endIndex]!.end < scrollOffset + outerSize
-  ) {
-    endIndex++
-  }
+  if (lanes === 1) {
+    while (
+      endIndex < lastIndex &&
+      measurements[endIndex]!.end < scrollOffset + outerSize
+    ) {
+      endIndex++
+    }
+  } else if (lanes > 1) {
+    // Expand forward until we include the visible items from all lanes
+    // which are closer to the end of the virtualizer window
+    const endPerLane = Array(lanes).fill(0)
+    while (
+      endIndex < lastIndex &&
+      endPerLane.some((pos) => pos < scrollOffset + outerSize)
+    ) {
+      const item = measurements[endIndex]!
+      endPerLane[item.lane] = item.end
+      endIndex++
+    }
 
-  if (lanes > 1) {
+    // Expand backward until we include all lanes' visible items
+    // closer to the top
+    const startPerLane = Array(lanes).fill(scrollOffset + outerSize)
+    while (startIndex >= 0 && startPerLane.some((pos) => pos >= scrollOffset)) {
+      const item = measurements[startIndex]!
+      startPerLane[item.lane] = item.start
+      startIndex--
+    }
+
     // Align startIndex to the beginning of its lane
     startIndex = Math.max(0, startIndex - (startIndex % lanes))
     // Align endIndex to the end of its lane

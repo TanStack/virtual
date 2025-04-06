@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/angular-virtual",
-  "version": "3.13.2",
+  "version": "3.13.6",
   "description": "Headless UI for virtualizing scrollable elements in Angular",
   "author": "Garrett Darnell",
   "license": "MIT",
@@ -40,7 +40,7 @@
     "build"
   ],
   "scripts": {
-    "clean": "rimraf ./build",
+    "clean": "premove ./build",
     "test:types": "tsc --noEmit",
     "test:eslint": "eslint ./src",
     "build": "ng-packagr -p ng-package.json -c tsconfig.build.json"
