@@ -5,7 +5,7 @@
     "type": "git",
     "url": "https://github.com/TanStack/virtual.git"
   },
-  "packageManager": "pnpm@10.7.1",
+  "packageManager": "pnpm@10.8.0",
   "type": "module",
   "scripts": {
     "clean": "pnpm --filter \"./packages/**\" run clean",
@@ -45,15 +45,15 @@
     "@types/node": "^22.13.6",
     "eslint": "^9.24.0",
     "jsdom": "^25.0.1",
-    "knip": "^5.47.0",
-    "nx": "^20.7.1",
+    "knip": "^5.50.2",
+    "nx": "^20.7.2",
     "premove": "^4.0.0",
     "prettier": "^3.5.3",
     "prettier-plugin-svelte": "^3.3.3",
-    "publint": "^0.3.10",
+    "publint": "^0.3.11",
     "sherif": "^1.5.0",
     "typescript": "5.2.2",
-    "vite": "^5.4.17",
+    "vite": "^5.4.18",
     "vitest": "^2.1.9"
   }
 }
