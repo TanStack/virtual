@@ -11,11 +11,11 @@
     "@faker-js/faker": "^8.4.1",
     "@tanstack/lit-virtual": "^3.13.6",
     "@tanstack/virtual-core": "^3.13.6",
-    "lit": "^3.2.1"
+    "lit": "^3.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.6",
     "typescript": "5.2.2",
-    "vite": "^5.4.17"
+    "vite": "^5.4.18"
   }
 }
