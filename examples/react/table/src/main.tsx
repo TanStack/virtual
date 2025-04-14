@@ -126,7 +126,7 @@ function ReactTableVirtualized() {
             ))}
           </thead>
           <tbody>
-            {virtualizer.getVirtualItems().map((virtualRow, index) => {
+            {virtualizer.getVirtualItems().map((virtualRow, index, virtualRows) => {
               const row = rows[virtualRow.index]
               return (
                 <tr
@@ -134,7 +134,7 @@ function ReactTableVirtualized() {
                   style={{
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${
-                      virtualRow.start - index * virtualRow.size
+                      virtualRows[0].start
                     }px)`,
                   }}
                 >
