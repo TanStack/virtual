@@ -51,7 +51,7 @@
     "@tanstack/virtual-core": "workspace:*"
   },
   "devDependencies": {
-    "@sveltejs/package": "^2.3.10",
+    "@sveltejs/package": "^2.3.11",
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "svelte": "^4.2.19"
   },

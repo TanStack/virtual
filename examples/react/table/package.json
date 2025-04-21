@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@tanstack/react-table": "^8.21.2",
+    "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -18,7 +18,7 @@
   "devDependencies": {
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^4.4.1",
     "vite": "^5.4.18"
   }
 }
