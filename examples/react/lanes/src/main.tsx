@@ -17,14 +17,14 @@ function App() {
       <br />
 
       <h3>Lanes</h3>
-      <LanesVirtualizer  />
+      <LanesGapVirtualizer  />
       <br />
       <br />
-      <h3>Padding Lanes</h3>
-      <PaddingVirtualizer />
+      <h3>Lanes Gaps</h3>
+      <GapVirtualizer />
       <br />
       <br />
-      <h3>Resizable Lanes</h3>
+      <h3>Resizable Container Lanes</h3>
       <ResizeVirtualizer />
       <br />
       <br />
@@ -41,7 +41,7 @@ function App() {
   )
 }
 
-function LanesVirtualizer() {
+function LanesGapVirtualizer() {
   const [numLanes, setNumLanes] = React.useState(4)
   const parentRef = React.useRef(null)
 
@@ -98,7 +98,7 @@ function LanesVirtualizer() {
   )
 }
 
-function PaddingVirtualizer() {
+function GapVirtualizer() {
   const parentRef = React.useRef<HTMLDivElement>(null)
   const [numLanes, setNumLanes] = React.useState(4)
   const [rowGap, setRowGap] = React.useState(10)
@@ -184,14 +184,15 @@ function ResizeVirtualizer() {
 
   React.useEffect(() => {
      if (!parentRef.current) return
-    const debouncedOnResize = debounce((entries:  Array<ResizeObserverEntry>) => {
+     // debounce not necessary
+     const debouncedOnResize = debounce((entries:  Array<ResizeObserverEntry>) => {
       const rect = entries.at(0)?.contentRect
       if (!rect) return
       const { width } = rect
       setNumLanes(Math.floor(width / CELL_WIDTH))
       rowVirtualizer.measure()
      }, {
-      wait: 100,
+      wait: 50,
       
      })
      const resizeObserver = new ResizeObserver((entries) => {
