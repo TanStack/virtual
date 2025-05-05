@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.8
+
+### Patch Changes
+
+- fix(virtual-core): loosen approxEqual to allow 1px difference ([#995](https://github.com/TanStack/virtual/pull/995))
+
 ## 3.13.7
 
 ### Patch Changes
