@@ -43,9 +43,9 @@
     "@tanstack/config": "^0.18.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/node": "^22.13.6",
-    "eslint": "^9.25.1",
+    "eslint": "^9.26.0",
     "jsdom": "^25.0.1",
-    "knip": "^5.50.5",
+    "knip": "^5.53.0",
     "nx": "^20.8.1",
     "premove": "^4.0.0",
     "prettier": "^3.5.3",
@@ -53,7 +53,7 @@
     "publint": "^0.3.12",
     "sherif": "^1.5.0",
     "typescript": "5.2.2",
-    "vite": "^5.4.18",
+    "vite": "^5.4.19",
     "vitest": "^2.1.9"
   }
 }
