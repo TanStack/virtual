@@ -149,12 +149,12 @@ function GapVirtualizer() {
               style={{
                 position: 'absolute',
                 top: 0,
-                left: `calc((${virtualRow.index % numLanes} * 100% / ${numLanes}) + (${columnGap}px * (${virtualRow.index % numLanes}) / ${numLanes}))`,
-                width: `calc((100% / ${numLanes}) - (${columnGap}px * (${numLanes} - 1) / ${numLanes}))`,
+                "--start-ratio": `calc(mod(${virtualRow.index}, ${numLanes}) / ${numLanes})`,
+                left: `calc((var(--start-ratio) * 100%) + (${columnGap}px * var(--start-ratio)))`,
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
                 outline: '1px solid red',
-              }}
+              } as React.CSSProperties}
             >
               Cell {virtualRow.index}
             </div>
@@ -245,12 +245,13 @@ function ResizeVirtualizer() {
             style={{
               position: 'absolute',
               top: 0,
-              left: `calc((${virtualRow.index % numLanes} * 100% / ${numLanes}) + (${columnGap}px * (${virtualRow.index % numLanes}) / ${numLanes}))`,
+              "--start-ratio": `calc(mod(${virtualRow.index}, ${numLanes}) / ${numLanes})`,
+              left: `calc((var(--start-ratio) * 100%) + (${columnGap}px * var(--start-ratio)))`,
               width: `calc((100% / ${numLanes}) - (${columnGap}px * (${numLanes} - 1) / ${numLanes}))`,
               height: `${virtualRow.size}px`,
               transform: `translateY(${virtualRow.start}px)`,
               outline: '1px solid red',
-            }}
+            } as React.CSSProperties}
           >
             Cell {virtualRow.index}
           </div>
