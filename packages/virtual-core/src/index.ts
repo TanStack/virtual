@@ -44,6 +44,11 @@ export interface Rect {
 
 //
 
+const getRect = (element: HTMLElement): Rect => {
+  const { offsetWidth, offsetHeight } = element
+  return { width: offsetWidth, height: offsetHeight }
+}
+
 export const defaultKeyExtractor = (index: number) => index
 
 export const defaultRangeExtractor = (range: Range) => {
@@ -77,7 +82,7 @@ export const observeElementRect = <T extends Element>(
     cb({ width: Math.round(width), height: Math.round(height) })
   }
 
-  handler(element.getBoundingClientRect())
+  handler(getRect(element as unknown as HTMLElement))
 
   if (!targetWindow.ResizeObserver) {
     return () => {}
@@ -93,7 +98,7 @@ export const observeElementRect = <T extends Element>(
           return
         }
       }
-      handler(element.getBoundingClientRect())
+      handler(getRect(element as unknown as HTMLElement))
     }
 
     instance.options.useAnimationFrameWithResizeObserver
@@ -251,11 +256,10 @@ export const measureElement = <TItemElement extends Element>(
       return size
     }
   }
-  return Math.round(
-    element.getBoundingClientRect()[
-      instance.options.horizontal ? 'width' : 'height'
-    ],
-  )
+
+  return (element as unknown as HTMLElement)[
+    instance.options.horizontal ? 'offsetWidth' : 'offsetHeight'
+  ]
 }
 
 export const windowScroll = <T extends Window>(
