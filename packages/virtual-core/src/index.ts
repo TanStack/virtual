@@ -904,16 +904,7 @@ export class Virtualizer<
       toOffset -= size
     }
 
-    const scrollSizeProp = this.options.horizontal
-      ? 'scrollWidth'
-      : 'scrollHeight'
-    const scrollSize = this.scrollElement
-      ? 'document' in this.scrollElement
-        ? this.scrollElement.document.documentElement[scrollSizeProp]
-        : this.scrollElement[scrollSizeProp]
-      : 0
-
-    const maxOffset = scrollSize - size
+    const maxOffset = this.getTotalSize() - size
 
     return Math.max(Math.min(maxOffset, toOffset), 0)
   }
@@ -1010,8 +1001,8 @@ export class Virtualizer<
           const [latestOffset] = notUndefined(
             this.getOffsetForIndex(index, align),
           )
-
-          if (!approxEqual(latestOffset, this.getScrollOffset())) {
+          const currentScrollOffset = this.getScrollOffset()
+          if (!approxEqual(latestOffset, currentScrollOffset)) {
             this.scrollToIndex(index, { align, behavior })
           }
         } else {
