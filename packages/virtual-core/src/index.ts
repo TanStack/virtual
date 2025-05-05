@@ -252,7 +252,9 @@ export const measureElement = <TItemElement extends Element>(
     }
   }
 
-  return (element as unknown as HTMLElement)[instance.options.horizontal ? 'offsetWidth' : 'offsetHeight']
+  return (element as unknown as HTMLElement)[
+    instance.options.horizontal ? 'offsetWidth' : 'offsetHeight'
+  ]
 }
 
 export const windowScroll = <T extends Window>(
