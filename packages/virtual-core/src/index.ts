@@ -42,12 +42,12 @@ export interface Rect {
   height: number
 }
 
+//
+
 const getRect = (element: HTMLElement): Rect => {
   const { offsetWidth, offsetHeight } = element
   return { width: offsetWidth, height: offsetHeight }
 }
-
-//
 
 export const defaultKeyExtractor = (index: number) => index
 
@@ -79,7 +79,7 @@ export const observeElementRect = <T extends Element>(
 
   const handler = (rect: Rect) => {
     const { width, height } = rect
-    cb({ width, height })
+    cb({ width: Math.round(width), height: Math.round(height) })
   }
 
   handler(getRect(element as unknown as HTMLElement))
