@@ -83,7 +83,7 @@ export function notUndefined<T>(value: T | undefined, msg?: string): T {
   }
 }
 
-export const approxEqual = (a: number, b: number) => Math.abs(a - b) < 1
+export const approxEqual = (a: number, b: number) => Math.abs(a - b) <= 1
 
 export const debounce = (
   targetWindow: Window & typeof globalThis,
