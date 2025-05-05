@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.7
+
+### Patch Changes
+
+- fix(virtual-core): prevent measurement jitter when scale is applied ([#986](https://github.com/TanStack/virtual/pull/986))
+
 ## 3.13.6
 
 ### Patch Changes
