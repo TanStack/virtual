@@ -1,5 +1,12 @@
 # @tanstack/lit-virtual
 
+## 3.13.7
+
+### Patch Changes
+
+- Updated dependencies [[`e2d93c2`](https://github.com/TanStack/virtual/commit/e2d93c2dcde9ccf60f658e56edccd8d05aefeee6)]:
+  - @tanstack/virtual-core@3.13.7
+
 ## 3.13.6
 
 ### Patch Changes
