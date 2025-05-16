@@ -814,7 +814,8 @@ export class Virtualizer<
       if (
         this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
           ? this.shouldAdjustScrollPositionOnItemSizeChange(item, delta, this)
-          : item.start < this.getScrollOffset() + this.scrollAdjustments
+          : this.scrollDirection === 'backward' &&
+            item.start < this.getScrollOffset() + this.scrollAdjustments
       ) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
