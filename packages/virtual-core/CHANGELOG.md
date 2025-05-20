@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.9
+
+### Patch Changes
+
+- fix(virtual-core): fix `Error: Unexpected undefined` ([#1004](https://github.com/TanStack/virtual/pull/1004))
+
 ## 3.13.8
 
 ### Patch Changes
