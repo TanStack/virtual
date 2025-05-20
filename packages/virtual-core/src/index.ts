@@ -998,9 +998,10 @@ export class Virtualizer<
         )
 
         if (elementInDOM) {
-          const [latestOffset] = notUndefined(
-            this.getOffsetForIndex(index, align),
-          )
+          const result = this.getOffsetForIndex(index, align)
+          if (!result) return
+          const [latestOffset] = result
+
           const currentScrollOffset = this.getScrollOffset()
           if (!approxEqual(latestOffset, currentScrollOffset)) {
             this.scrollToIndex(index, { align, behavior })
