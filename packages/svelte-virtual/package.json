@@ -53,7 +53,7 @@
   "devDependencies": {
     "@sveltejs/package": "^2.3.11",
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
-    "svelte": "^4.2.19"
+    "svelte": "^4.2.20"
   },
   "peerDependencies": {
     "svelte": "^3.48.0 || ^4.0.0 || ^5.0.0"
