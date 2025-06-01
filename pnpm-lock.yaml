@@ -7926,8 +7926,8 @@ packages:
     peerDependencies:
       zod: ^3.24.4
 
-  zod@3.25.44:
-    resolution: {integrity: sha512-BVwH2PnqCwxUN+SNjzRL6kcGvvz1JuojtB+uZB1Hg8DA56Zqn0pjpIwMrb1IhUsF75DjpEe4fhxPKO6+AErqzw==}
+  zod@3.25.45:
+    resolution: {integrity: sha512-kv1swJBZqv98NQibL0oVvkQE8rXT+6qGNM1FpZkFcJG2jnz4vbtu48bgaitp85CaBPLSKXibrEsU7MzJoVoZAA==}
 
   zone.js@0.15.1:
     resolution: {integrity: sha512-XE96n56IQpJM7NAoXswY3XRLcWFW83xe0BiAOeMD7K5k5xecOeul3Qcpx6GqEeeHNkW5DWL5zOyTbEfB4eti8w==}
@@ -12793,8 +12793,8 @@ snapshots:
       smol-toml: 1.3.4
       strip-json-comments: 5.0.1
       typescript: 5.2.2
-      zod: 3.25.44
-      zod-validation-error: 3.4.1(zod@3.25.44)
+      zod: 3.25.45
+      zod-validation-error: 3.4.1(zod@3.25.45)
 
   koa-compose@4.1.0: {}
 
@@ -15115,10 +15115,10 @@ snapshots:
 
   yocto-queue@1.2.1: {}
 
-  zod-validation-error@3.4.1(zod@3.25.44):
+  zod-validation-error@3.4.1(zod@3.25.45):
     dependencies:
-      zod: 3.25.44
+      zod: 3.25.45
 
-  zod@3.25.44: {}
+  zod@3.25.45: {}
 
   zone.js@0.15.1: {}
