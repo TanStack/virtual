@@ -15,7 +15,7 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0(encoding@0.1.13)
       '@tanstack/config':
-        specifier: ^0.18.0
+        specifier: ^0.18.2
         version: 0.18.2(@types/node@22.15.29)(@typescript-eslint/utils@8.33.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.2.2))(eslint@9.28.0(jiti@2.4.2))(rollup@4.41.1)(typescript@5.2.2)(vite@5.4.19(@types/node@22.15.29)(less@4.3.0)(sass@1.89.1)(terser@5.40.0))
       '@testing-library/jest-dom':
         specifier: ^6.6.3
@@ -24,13 +24,13 @@ importers:
         specifier: ^22.13.6
         version: 22.15.29
       eslint:
-        specifier: ^9.27.0
+        specifier: ^9.28.0
         version: 9.28.0(jiti@2.4.2)
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
       knip:
-        specifier: ^5.58.0
+        specifier: ^5.59.1
         version: 5.59.1(@types/node@22.15.29)(typescript@5.2.2)
       nx:
         specifier: ^20.8.2
@@ -194,8 +194,8 @@ importers:
         specifier: ^17.3.12
         version: 17.3.12(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@17.3.12(@angular/animations@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-query-experimental':
-        specifier: 5.77.1
-        version: 5.77.1(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))
+        specifier: 5.79.0
+        version: 5.79.0(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))
       '@tanstack/angular-virtual':
         specifier: ^3.13.9
         version: link:../../../packages/angular-virtual
@@ -612,7 +612,7 @@ importers:
         specifier: ^22.13.6
         version: 22.15.29
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -643,7 +643,7 @@ importers:
         specifier: ^22.13.6
         version: 22.15.29
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -661,7 +661,7 @@ importers:
   examples/react/infinite-scroll:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.77.1
+        specifier: ^5.79.0
         version: 5.79.0(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: ^3.13.9
@@ -674,7 +674,7 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -699,7 +699,7 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -727,7 +727,7 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -752,7 +752,7 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -786,7 +786,7 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -817,7 +817,7 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -842,7 +842,7 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -870,7 +870,7 @@ importers:
         specifier: ^22.13.6
         version: 22.15.29
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -947,7 +947,7 @@ importers:
   examples/svelte/infinite-scroll:
     dependencies:
       '@tanstack/svelte-query':
-        specifier: ^5.77.1
+        specifier: ^5.79.0
         version: 5.79.0(svelte@4.2.20)
       '@tanstack/svelte-virtual':
         specifier: ^3.13.9
@@ -1083,7 +1083,7 @@ importers:
         specifier: ^3.13.9
         version: link:../../../packages/vue-virtual
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1108,7 +1108,7 @@ importers:
         specifier: ^3.13.9
         version: link:../../../packages/vue-virtual
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1130,13 +1130,13 @@ importers:
   examples/vue/infinite-scroll:
     dependencies:
       '@tanstack/vue-query':
-        specifier: ^5.77.1
+        specifier: ^5.79.0
         version: 5.79.0(vue@3.5.16(typescript@5.2.2))
       '@tanstack/vue-virtual':
         specifier: ^3.13.9
         version: link:../../../packages/vue-virtual
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1161,7 +1161,7 @@ importers:
         specifier: ^3.13.9
         version: link:../../../packages/vue-virtual
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1189,7 +1189,7 @@ importers:
         specifier: ^12.8.2
         version: 12.8.2(typescript@5.2.2)
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1214,7 +1214,7 @@ importers:
         specifier: ^3.13.9
         version: link:../../../packages/vue-virtual
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1245,7 +1245,7 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1279,7 +1279,7 @@ importers:
         specifier: ^3.13.9
         version: link:../../../packages/vue-virtual
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1304,7 +1304,7 @@ importers:
         specifier: ^3.13.9
         version: link:../../../packages/vue-virtual
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.2.2)
     devDependencies:
       '@codesandbox/vue-preview':
@@ -1365,7 +1365,7 @@ importers:
         specifier: ^16.3.0
         version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
-        specifier: ^18.3.22
+        specifier: ^18.3.23
         version: 18.3.23
       '@types/react-dom':
         specifier: ^18.3.7
@@ -1424,7 +1424,7 @@ importers:
         specifier: ^5.2.4
         version: 5.2.4(vite@5.4.19(@types/node@22.15.29)(less@4.3.0)(sass@1.89.1)(terser@5.40.0))(vue@3.5.16(typescript@5.4.2))
       vue:
-        specifier: ^3.5.14
+        specifier: ^3.5.16
         version: 3.5.16(typescript@5.4.2)
 
 packages:
@@ -3425,8 +3425,8 @@ packages:
     resolution: {integrity: sha512-08eKiDAjj4zLug1taXSIJ0kGL5cawjVCyJkBb6EWSg5fEPX6L+Wtr0CH2If4j5KYylz85iaZiFlUItvgJvll5g==}
     engines: {node: ^14.13.1 || ^16.0.0 || >=18}
 
-  '@tanstack/angular-query-experimental@5.77.1':
-    resolution: {integrity: sha512-FdqwyqAVdkgs8uu20EHDx0mxk8sj/chFpIqBILqmGy7PpGUYpTBzES+7Va/BuxQDifk3SphXE1hHMVmaqXtZmQ==}
+  '@tanstack/angular-query-experimental@5.79.0':
+    resolution: {integrity: sha512-0rqfu5pyxGTsp1rw2nRjuEhp8qj7kY10SQqY2iwKKad21CVSn1UsKdskylB2c8c0iPJFRbSoY5BylDL7mnKbBw==}
     peerDependencies:
       '@angular/common': '>=16.0.0'
       '@angular/core': '>=16.0.0'
@@ -3452,9 +3452,6 @@ packages:
   '@tanstack/publish-config@0.1.1':
     resolution: {integrity: sha512-gw46t9d8fkf4ICU+EVcQdVWWRRux3K3+DM/vO3xp3KrU4/BlQOZgP9BFEWY7znU5pqD5rJ3ozrTbv9ezw78Qyw==}
     engines: {node: '>=18'}
-
-  '@tanstack/query-core@5.77.1':
-    resolution: {integrity: sha512-nfxVhy4UynChMFfN4NxwI8pktV9R3Zt/ROxOAe6pdOf8CigDLn26p+ex1YW5uien26BBICLmN0dTvIELHCs5vw==}
 
   '@tanstack/query-core@5.79.0':
     resolution: {integrity: sha512-s+epTqqLM0/TbJzMAK7OEhZIzh63P9sWz5HEFc5XHL4FvKQXQkcjI8F3nee+H/xVVn7mrP610nVXwOytTSYd0w==}
@@ -10085,11 +10082,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@tanstack/angular-query-experimental@5.77.1(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))':
+  '@tanstack/angular-query-experimental@5.79.0(@angular/common@17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))':
     dependencies:
       '@angular/common': 17.3.12(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
       '@angular/core': 17.3.12(rxjs@7.8.2)(zone.js@0.15.1)
-      '@tanstack/query-core': 5.77.1
+      '@tanstack/query-core': 5.79.0
       '@tanstack/query-devtools': 5.76.0
 
   '@tanstack/angular-table@8.21.3(@angular/core@17.3.12(rxjs@7.8.2)(zone.js@0.15.1))':
@@ -10142,8 +10139,6 @@ snapshots:
       simple-git: 3.27.0
     transitivePeerDependencies:
       - supports-color
-
-  '@tanstack/query-core@5.77.1': {}
 
   '@tanstack/query-core@5.79.0': {}
 
