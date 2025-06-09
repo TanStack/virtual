@@ -18,7 +18,7 @@
     "@angular/platform-browser-dynamic": "^17.3.12",
     "@angular/router": "^17.3.12",
     "@faker-js/faker": "^8.4.1",
-    "@tanstack/angular-virtual": "^3.13.9",
+    "@tanstack/angular-virtual": "^3.13.10",
     "rxjs": "^7.8.2",
     "tslib": "^2.8.1",
     "zone.js": "0.15.1"
