@@ -9,7 +9,7 @@
     "start": "vite"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.80.6",
+    "@tanstack/react-query": "^5.80.7",
     "@tanstack/react-virtual": "^3.13.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -17,7 +17,7 @@
   "devDependencies": {
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
-    "@vitejs/plugin-react": "^4.5.1",
+    "@vitejs/plugin-react": "^4.5.2",
     "vite": "^5.4.19"
   }
 }
