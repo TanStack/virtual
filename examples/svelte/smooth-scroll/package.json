@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@tanstack/svelte-virtual": "^3.13.10"
+    "@tanstack/svelte-virtual": "^3.13.11"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.2",

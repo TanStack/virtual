@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@react-hookz/web": "^25.1.1",
-    "@tanstack/react-virtual": "^3.13.10",
+    "@tanstack/react-virtual": "^3.13.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

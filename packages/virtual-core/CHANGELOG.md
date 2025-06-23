@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.11
+
+### Patch Changes
+
+- Revert "Adapt default logic to adjust scroll position only on backward scrolling (#1002)" ([#1026](https://github.com/TanStack/virtual/pull/1026))
+
 ## 3.13.10
 
 ### Patch Changes
