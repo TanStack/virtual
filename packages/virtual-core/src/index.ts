@@ -974,6 +974,8 @@ export class Virtualizer<
     const maxAttempts = 10
 
     const tryScroll = (currentAlign: ScrollAlignment) => {
+      if (!this.targetWindow) return
+
       const offsetInfo = this.getOffsetForIndex(index, currentAlign)
       if (!offsetInfo) {
         scheduleRetry(currentAlign)
@@ -982,7 +984,7 @@ export class Virtualizer<
       const [offset, align] = offsetInfo
       this._scrollToOffset(offset, { adjustments: undefined, behavior })
 
-      requestAnimationFrame(() => {
+      this.targetWindow.requestAnimationFrame(() => {
         const currentOffset = this.getScrollOffset()
         const afterInfo = this.getOffsetForIndex(index, align)
         if (!afterInfo) {
@@ -996,10 +998,12 @@ export class Virtualizer<
       })
     }
 
-    function scheduleRetry(align: ScrollAlignment) {
+    const scheduleRetry = (align: ScrollAlignment) => {
+      if (!this.targetWindow) return
+
       attempts++
       if (attempts < maxAttempts) {
-        requestAnimationFrame(() => tryScroll(align))
+        this.targetWindow.requestAnimationFrame(() => tryScroll(align))
       } else {
         console.warn(
           `Failed to scroll to index ${index} after ${maxAttempts} attempts.`,
