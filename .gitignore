@@ -41,3 +41,8 @@ stats.html
 
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+*.log

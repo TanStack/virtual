@@ -359,7 +359,6 @@ export class Virtualizer<
   scrollElement: TScrollElement | null = null
   targetWindow: (Window & typeof globalThis) | null = null
   isScrolling = false
-  private scrollToIndexTimeoutId: number | null = null
   measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
   private pendingMeasuredCacheIndexes: Array<number> = []
@@ -904,7 +903,7 @@ export class Virtualizer<
       toOffset -= size
     }
 
-    const maxOffset = this.getTotalSize() - size
+    const maxOffset = this.getTotalSize() + this.options.scrollMargin - size
 
     return Math.max(Math.min(maxOffset, toOffset), 0)
   }
@@ -943,19 +942,10 @@ export class Virtualizer<
 
   private isDynamicMode = () => this.elementsCache.size > 0
 
-  private cancelScrollToIndex = () => {
-    if (this.scrollToIndexTimeoutId !== null && this.targetWindow) {
-      this.targetWindow.clearTimeout(this.scrollToIndexTimeoutId)
-      this.scrollToIndexTimeoutId = null
-    }
-  }
-
   scrollToOffset = (
     toOffset: number,
     { align = 'start', behavior }: ScrollToOffsetOptions = {},
   ) => {
-    this.cancelScrollToIndex()
-
     if (behavior === 'smooth' && this.isDynamicMode()) {
       console.warn(
         'The `smooth` scroll behavior is not fully supported with dynamic size.',
@@ -972,50 +962,62 @@ export class Virtualizer<
     index: number,
     { align: initialAlign = 'auto', behavior }: ScrollToIndexOptions = {},
   ) => {
-    index = Math.max(0, Math.min(index, this.options.count - 1))
-
-    this.cancelScrollToIndex()
-
     if (behavior === 'smooth' && this.isDynamicMode()) {
       console.warn(
         'The `smooth` scroll behavior is not fully supported with dynamic size.',
       )
     }
 
-    const offsetAndAlign = this.getOffsetForIndex(index, initialAlign)
-    if (!offsetAndAlign) return
+    index = Math.max(0, Math.min(index, this.options.count - 1))
 
-    const [offset, align] = offsetAndAlign
+    let attempts = 0
+    const maxAttempts = 10
 
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+    const tryScroll = (currentAlign: ScrollAlignment) => {
+      if (!this.targetWindow) return
 
-    if (behavior !== 'smooth' && this.isDynamicMode() && this.targetWindow) {
-      this.scrollToIndexTimeoutId = this.targetWindow.setTimeout(() => {
-        this.scrollToIndexTimeoutId = null
+      const offsetInfo = this.getOffsetForIndex(index, currentAlign)
+      if (!offsetInfo) {
+        console.warn('Failed to get offset for index:', index)
+        return
+      }
+      const [offset, align] = offsetInfo
+      this._scrollToOffset(offset, { adjustments: undefined, behavior })
 
-        const elementInDOM = this.elementsCache.has(
-          this.options.getItemKey(index),
-        )
+      this.targetWindow.requestAnimationFrame(() => {
+        const currentOffset = this.getScrollOffset()
+        const afterInfo = this.getOffsetForIndex(index, align)
+        if (!afterInfo) {
+          console.warn('Failed to get offset for index:', index)
+          return
+        }
 
-        if (elementInDOM) {
-          const result = this.getOffsetForIndex(index, align)
-          if (!result) return
-          const [latestOffset] = result
-
-          const currentScrollOffset = this.getScrollOffset()
-          if (!approxEqual(latestOffset, currentScrollOffset)) {
-            this.scrollToIndex(index, { align, behavior })
-          }
-        } else {
-          this.scrollToIndex(index, { align, behavior })
+        if (!approxEqual(afterInfo[0], currentOffset)) {
+          scheduleRetry(align)
         }
       })
     }
+
+    const scheduleRetry = (align: ScrollAlignment) => {
+      if (!this.targetWindow) return
+
+      attempts++
+      if (attempts < maxAttempts) {
+        if (process.env.NODE_ENV !== 'production' && this.options.debug) {
+          console.info('Schedule retry', attempts, maxAttempts)
+        }
+        this.targetWindow.requestAnimationFrame(() => tryScroll(align))
+      } else {
+        console.warn(
+          `Failed to scroll to index ${index} after ${maxAttempts} attempts.`,
+        )
+      }
+    }
+
+    tryScroll(initialAlign)
   }
 
   scrollBy = (delta: number, { behavior }: ScrollToOffsetOptions = {}) => {
-    this.cancelScrollToIndex()
-
     if (behavior === 'smooth' && this.isDynamicMode()) {
       console.warn(
         'The `smooth` scroll behavior is not fully supported with dynamic size.',
