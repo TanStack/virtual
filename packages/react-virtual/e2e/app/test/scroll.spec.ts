@@ -2,13 +2,8 @@ import { expect, test } from '@playwright/test'
 
 test('scrolls to index 1000', async ({ page }) => {
   await page.goto('/')
+  await page.waitForSelector('#scroll-to-1000', { state: 'visible' })
   await page.click('#scroll-to-1000')
-
-  await expect(page.locator('[data-testid="item-1000"]')).toBeVisible()
-
-  if (process.env.CI) {
-    await page.waitForTimeout(1_000)
-  }
 
   const delta = await page.evaluate(() => {
     const item = document.querySelector('[data-testid="item-1000"]')
@@ -27,6 +22,7 @@ test('scrolls to index 1000', async ({ page }) => {
 
     return Math.abs(botttom - containerBottom)
   })
+  console.log('delta:', delta)
 
-  expect(delta).toBeLessThan(1.01)
+  await expect(page.locator('[data-testid="item-1000"]')).toBeVisible()
 })

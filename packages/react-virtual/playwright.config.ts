@@ -1,10 +1,9 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig } from '@playwright/test'
 
 const PORT = 5173
 
 export default defineConfig({
   testDir: './e2e/app/test',
-  workers: 1,
   use: {
     baseURL: `http://localhost:${PORT}`,
   },
@@ -14,10 +13,4 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
   },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
 })
