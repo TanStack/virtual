@@ -7,6 +7,8 @@ test('scrolls to index 1000', async ({ page }) => {
   const item = page.locator('[data-testid="item-1000"]')
   await expect(item).toBeVisible()
 
+  await page.waitForTimeout(5_000)
+
   const container = page.locator('#scroll-container')
   const [itemBox, scrollTop, containerBox] = await Promise.all([
     item.boundingBox(),
