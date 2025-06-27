@@ -28,6 +28,8 @@ jobs:
         uses: nrwl/nx-set-shas@v4.3.0
         with:
           main-branch-name: main
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
       - name: Run Checks
         run: pnpm run test:pr
   preview:
