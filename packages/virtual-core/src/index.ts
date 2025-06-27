@@ -1003,6 +1003,9 @@ export class Virtualizer<
 
       attempts++
       if (attempts < maxAttempts) {
+        if (process.env.NODE_ENV !== 'production' && this.options.debug) {
+          console.info('Schedule retry', attempts, maxAttempts)
+        }
         this.targetWindow.requestAnimationFrame(() => tryScroll(align))
       } else {
         console.warn(

@@ -6,6 +6,10 @@ test('scrolls to index 1000', async ({ page }) => {
 
   await expect(page.locator('[data-testid="item-1000"]')).toBeVisible()
 
+  if (process.env.CI) {
+    await page.waitForTimeout(1_000)
+  }
+
   const delta = await page.evaluate(() => {
     const item = document.querySelector('[data-testid="item-1000"]')
     const container = document.querySelector('#scroll-container')

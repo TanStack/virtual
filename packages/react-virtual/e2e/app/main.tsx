@@ -25,6 +25,7 @@ const App = () => {
     count: 1002,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
+    debug: true,
   })
 
   return (
