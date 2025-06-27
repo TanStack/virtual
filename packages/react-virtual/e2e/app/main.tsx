@@ -29,40 +29,46 @@ const App = () => {
   })
 
   return (
-    <div
-      ref={parentRef}
-      id="scroll-container"
-      style={{ height: 400, overflow: 'auto' }}
-    >
-      <div
-        style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}
-      >
-        {rowVirtualizer.getVirtualItems().map((v) => (
-          <div
-            key={v.key}
-            data-testid={`item-${v.index}`}
-            ref={rowVirtualizer.measureElement}
-            data-index={v.index}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              transform: `translateY(${v.start}px)`,
-              width: '100%',
-            }}
-          >
-            <div style={{ height: randomHeight(String(v.key)) }}>
-              Row {v.index}
-            </div>
-          </div>
-        ))}
-      </div>
+    <div>
       <button
         id="scroll-to-1000"
         onClick={() => rowVirtualizer.scrollToIndex(1000)}
       >
         Scroll to 1000
       </button>
+
+      <div
+        ref={parentRef}
+        id="scroll-container"
+        style={{ height: 400, overflow: 'auto' }}
+      >
+        <div
+          style={{
+            height: rowVirtualizer.getTotalSize(),
+            position: 'relative',
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((v) => (
+            <div
+              key={v.key}
+              data-testid={`item-${v.index}`}
+              ref={rowVirtualizer.measureElement}
+              data-index={v.index}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                transform: `translateY(${v.start}px)`,
+                width: '100%',
+              }}
+            >
+              <div style={{ height: randomHeight(String(v.key)) }}>
+                Row {v.index}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
