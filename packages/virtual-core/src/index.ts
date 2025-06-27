@@ -978,7 +978,7 @@ export class Virtualizer<
 
       const offsetInfo = this.getOffsetForIndex(index, currentAlign)
       if (!offsetInfo) {
-        scheduleRetry(currentAlign)
+        console.warn('Failed to get offset for index:', index)
         return
       }
       const [offset, align] = offsetInfo
@@ -988,7 +988,7 @@ export class Virtualizer<
         const currentOffset = this.getScrollOffset()
         const afterInfo = this.getOffsetForIndex(index, align)
         if (!afterInfo) {
-          scheduleRetry(align)
+          console.warn('Failed to get offset for index:', index)
           return
         }
 
