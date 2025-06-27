@@ -4,24 +4,25 @@ test('scrolls to index 1000', async ({ page }) => {
   await page.goto('/')
   await page.click('#scroll-to-1000')
 
-  const item = page.locator('[data-testid="item-1000"]')
-  await expect(item).toBeVisible()
+  await expect(page.locator('[data-testid="item-1000"]')).toBeVisible()
 
-  await page.waitForTimeout(5_000)
+  const delta = await page.evaluate(() => {
+    const item = document.querySelector('[data-testid="item-1000"]')
+    const container = document.querySelector('#scroll-container')
 
-  const container = page.locator('#scroll-container')
-  const [itemBox, scrollTop, containerBox] = await Promise.all([
-    item.boundingBox(),
-    container.evaluate((el) => el.scrollTop),
-    container.boundingBox(),
-  ])
+    if (!item || !container) throw new Error('Elements not found')
 
-  if (!itemBox || !containerBox) throw new Error('Missing bounding boxes')
+    const itemRect = item.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect()
+    const scrollTop = container.scrollTop
 
-  const itemTopRelativeToScroll = itemBox.y + scrollTop - containerBox.y
-  const itemBottomRelativeToScroll = itemTopRelativeToScroll + itemBox.height
-  const containerVisibleBottom = scrollTop + containerBox.height
+    const top = itemRect.top + scrollTop - containerRect.top
+    const botttom = top + itemRect.height
 
-  const delta = Math.abs(itemBottomRelativeToScroll - containerVisibleBottom)
+    const containerBottom = scrollTop + container.clientHeight
+
+    return Math.abs(botttom - containerBottom)
+  })
+
   expect(delta).toBeLessThan(1.01)
 })
