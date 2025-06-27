@@ -28,6 +28,8 @@ jobs:
           fetch-depth: 0
       - name: Setup Tools
         uses: tanstack/config/.github/setup@main
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
       - name: Run Tests
         run: pnpm run test:ci
       - name: Run Changesets (version or publish)
