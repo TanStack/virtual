@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.12
+
+### Patch Changes
+
+- fix(virtual-core): scroll to index doesn't scroll to bottom correctly ([#1029](https://github.com/TanStack/virtual/pull/1029))
+
 ## 3.13.11
 
 ### Patch Changes
