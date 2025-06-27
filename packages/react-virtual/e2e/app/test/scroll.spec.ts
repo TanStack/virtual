@@ -29,4 +29,5 @@ test('scrolls to index 1000', async ({ page }) => {
 
   const delta = await page.evaluate(check)
   console.log('bootom element detla', delta)
+  expect(delta).toBeLessThan(1.01)
 })
