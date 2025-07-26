@@ -1,4 +1,4 @@
-name: '🐛 Bug report'
+name: 🐛 Bug Report
 description: Report a reproducible bug or regression
 body:
   - type: markdown
@@ -108,7 +108,7 @@ body:
       description: |
         If you are using TypeScript, please let us know the exact version of TypeScript you were using when the issue occurred.
       placeholder: |
-        e.g. v4.5.4
+        e.g. v5.2.2
   - type: textarea
     id: additional
     attributes:

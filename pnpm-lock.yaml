@@ -35,6 +35,9 @@ importers:
       knip:
         specifier: ^5.61.0
         version: 5.61.3(@types/node@22.15.34)(typescript@5.2.2)
+      markdown-link-extractor:
+        specifier: ^4.0.2
+        version: 4.0.2
       nx:
         specifier: ^20.8.2
         version: 20.8.2
@@ -53,6 +56,9 @@ importers:
       sherif:
         specifier: ^1.5.0
         version: 1.6.1
+      tinyglobby:
+        specifier: ^0.2.14
+        version: 0.2.14
       typescript:
         specifier: 5.2.2
         version: 5.2.2
@@ -4444,6 +4450,13 @@ packages:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
 
+  cheerio-select@2.1.0:
+    resolution: {integrity: sha512-9v9kG0LvzrlcungtnJtpGNxY+fzECQKhK4EGJX2vByejiMX84MFNQw4UxPJl3bFbTMw+Dfs37XaIkCwTZfLh4g==}
+
+  cheerio@1.1.2:
+    resolution: {integrity: sha512-IkxPpb5rS/d1IiLbHMgfPuS0FgiWTtFIm/Nj+2woXDLTZ7fOT2eqzgYbdMlLweqlHbsZjxEChoVK+7iph7jyQg==}
+    engines: {node: '>=20.18.1'}
+
   chokidar@3.6.0:
     resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
     engines: {node: '>= 8.10.0'}
@@ -4865,6 +4878,9 @@ packages:
   encodeurl@2.0.0:
     resolution: {integrity: sha512-Q0n9HRi4m6JuGIV1eFlmvJB7ZEVxu93IrMyiMsGC0lrMJMWzRgx6WGquyfQgZVb31vhGgXnfmPNNXmxnOkRBrg==}
     engines: {node: '>= 0.8'}
+
+  encoding-sniffer@0.2.1:
+    resolution: {integrity: sha512-5gvq20T6vfpekVtqrYQsSCFZ1wEg5+wW0/QaZMWkFr6BqD3NfKs0rLCx4rrVlSWJeZb5NBJgVLswK/w2MWU+Gw==}
 
   encoding@0.1.13:
     resolution: {integrity: sha512-ETBauow1T35Y/WZMkio9jiM0Z5xjHHmJ4XmjZOq1l/dXz3lr2sRn87nJy20RupqSh1F2m3HHPSp8ShIPQJrJ3A==}
@@ -5389,6 +5405,12 @@ packages:
 
   html-escaper@2.0.2:
     resolution: {integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==}
+
+  html-link-extractor@1.0.5:
+    resolution: {integrity: sha512-ADd49pudM157uWHwHQPUSX4ssMsvR/yHIswOR5CUfBdK9g9ZYGMhVSE6KZVHJ6kCkR0gH4htsfzU6zECDNVwyw==}
+
+  htmlparser2@10.0.0:
+    resolution: {integrity: sha512-TwAZM+zE5Tq3lrEHvOlvwgj1XLWQCtaaibSN11Q+gGBAS7Y1uZSWwXXRe4iF6OXnaq1riyQAPFOBtYc77Mxq0g==}
 
   htmlparser2@8.0.2:
     resolution: {integrity: sha512-GYdjWKDkbRLkZ5geuHs5NY1puJ+PXwP7+fHPRz06Eirsb9ugf6d8kkXav6ADhcODhFFPMIXyxkxSuMf3D6NCFA==}
@@ -6010,6 +6032,14 @@ packages:
     resolution: {integrity: sha512-a54IwgWPaeBCAAsv13YgmALOF1elABB08FxO9i+r4VFk5Vl4pKokRPeX8u5TCgSsPi6ec1otfLjdOpVcgbpshg==}
     hasBin: true
 
+  markdown-link-extractor@4.0.2:
+    resolution: {integrity: sha512-5cUOu4Vwx1wenJgxaudsJ8xwLUMN7747yDJX3V/L7+gi3e4MsCm7w5nbrDQQy8nEfnl4r5NV3pDXMAjhGXYXAw==}
+
+  marked@12.0.2:
+    resolution: {integrity: sha512-qXUm7e/YKFoqFPYPa3Ukg9xlI5cyAtGmyEIzMfW//m6kXwCy2Ps9DYf5ioijFKQ8qyuscrHoY04iJGctu2Kg0Q==}
+    engines: {node: '>= 18'}
+    hasBin: true
+
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
@@ -6469,6 +6499,12 @@ packages:
 
   parse5-html-rewriting-stream@7.0.0:
     resolution: {integrity: sha512-mazCyGWkmCRWDI15Zp+UiCqMp/0dgEmkZRvhlsqqKYr4SsVm/TvnSpD9fCvqCA2zoWJcfRym846ejWBBHRiYEg==}
+
+  parse5-htmlparser2-tree-adapter@7.1.0:
+    resolution: {integrity: sha512-ruw5xyKs6lrpo9x9rCZqZZnIUntICjQAd0Wsmp396Ul9lN/h+ifgVV1x1gZHi8euej6wTfpqX8j+BFQxF0NS/g==}
+
+  parse5-parser-stream@7.1.2:
+    resolution: {integrity: sha512-JyeQc9iwFLn5TbvvqACIF/VXG6abODeB3Fwmv/TGdLk2LfbWkaySGY72at4+Ty7EkPZj854u4CrICqNk2qIbow==}
 
   parse5-sax-parser@7.0.0:
     resolution: {integrity: sha512-5A+v2SNsq8T6/mG3ahcz8ZtQ0OUFTatxPbeidoMB7tkJSGDY3tdfl4MHovtLQHkEn5CGxijNWRQHhRQ6IRpXKg==}
@@ -7393,6 +7429,10 @@ packages:
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
 
+  tinyglobby@0.2.14:
+    resolution: {integrity: sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==}
+    engines: {node: '>=12.0.0'}
+
   tinypool@1.1.1:
     resolution: {integrity: sha512-Zba82s87IFq9A9XmjiX5uZA/ARWDrB03OHlq+Vw1fSdt0I+4/Kutwy8BP4Y/y/aORMo61FQ0vIb5j44vSo5Pkg==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -7540,6 +7580,10 @@ packages:
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+  undici@7.12.0:
+    resolution: {integrity: sha512-GrKEsc3ughskmGA9jevVlIOPMiiAHJ4OFUtaAH+NhfTUSiZ1wMPIQqQvAJUrJspFXJt3EBWgpAeoHEDVT1IBug==}
+    engines: {node: '>=20.18.1'}
 
   unicode-canonical-property-names-ecmascript@2.0.1:
     resolution: {integrity: sha512-dA8WbNeb2a6oQzAQ55YlT5vQAWGV9WXOsi3SskE3bcCdM0P4SDd+24zS/OCacdRq5BkdsRj9q3Pg6YyQoxIGqg==}
@@ -11418,6 +11462,29 @@ snapshots:
 
   check-error@2.1.1: {}
 
+  cheerio-select@2.1.0:
+    dependencies:
+      boolbase: 1.0.0
+      css-select: 5.2.2
+      css-what: 6.2.2
+      domelementtype: 2.3.0
+      domhandler: 5.0.3
+      domutils: 3.2.2
+
+  cheerio@1.1.2:
+    dependencies:
+      cheerio-select: 2.1.0
+      dom-serializer: 2.0.0
+      domhandler: 5.0.3
+      domutils: 3.2.2
+      encoding-sniffer: 0.2.1
+      htmlparser2: 10.0.0
+      parse5: 7.3.0
+      parse5-htmlparser2-tree-adapter: 7.1.0
+      parse5-parser-stream: 7.1.2
+      undici: 7.12.0
+      whatwg-mimetype: 4.0.0
+
   chokidar@3.6.0:
     dependencies:
       anymatch: 3.1.3
@@ -11792,6 +11859,11 @@ snapshots:
   encodeurl@1.0.2: {}
 
   encodeurl@2.0.0: {}
+
+  encoding-sniffer@0.2.1:
+    dependencies:
+      iconv-lite: 0.6.3
+      whatwg-encoding: 3.1.1
 
   encoding@0.1.13:
     dependencies:
@@ -12440,6 +12512,17 @@ snapshots:
   html-entities@2.6.0: {}
 
   html-escaper@2.0.2: {}
+
+  html-link-extractor@1.0.5:
+    dependencies:
+      cheerio: 1.1.2
+
+  htmlparser2@10.0.0:
+    dependencies:
+      domelementtype: 2.3.0
+      domhandler: 5.0.3
+      domutils: 3.2.2
+      entities: 6.0.1
 
   htmlparser2@8.0.2:
     dependencies:
@@ -13130,6 +13213,13 @@ snapshots:
       punycode.js: 2.3.1
       uc.micro: 2.1.0
 
+  markdown-link-extractor@4.0.2:
+    dependencies:
+      html-link-extractor: 1.0.5
+      marked: 12.0.2
+
+  marked@12.0.2: {}
+
   math-intrinsics@1.1.0: {}
 
   mdn-data@2.0.30: {}
@@ -13665,6 +13755,15 @@ snapshots:
       entities: 4.5.0
       parse5: 7.3.0
       parse5-sax-parser: 7.0.0
+
+  parse5-htmlparser2-tree-adapter@7.1.0:
+    dependencies:
+      domhandler: 5.0.3
+      parse5: 7.3.0
+
+  parse5-parser-stream@7.1.2:
+    dependencies:
+      parse5: 7.3.0
 
   parse5-sax-parser@7.0.0:
     dependencies:
@@ -14610,6 +14709,11 @@ snapshots:
 
   tinyexec@0.3.2: {}
 
+  tinyglobby@0.2.14:
+    dependencies:
+      fdir: 6.4.6(picomatch@4.0.2)
+      picomatch: 4.0.2
+
   tinypool@1.1.1: {}
 
   tinyrainbow@1.2.0: {}
@@ -14729,6 +14833,8 @@ snapshots:
   ufo@1.6.1: {}
 
   undici-types@6.21.0: {}
+
+  undici@7.12.0: {}
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
 
