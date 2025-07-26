@@ -19,17 +19,21 @@
     findIndex(rows, (n: any) => n === gn),
   )
 
-  let virtualListEl: HTMLDivElement
-  let activeStickyIndex: number = 0
+  let virtualListEl = $state<HTMLDivElement | null>(null)
+  let makeGetScrollElement = (scrollElement: HTMLDivElement | null) => () =>
+    scrollElement
+  let activeStickyIndex: number = $state(0)
 
-  $: virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
-    count: rows.length,
-    getScrollElement: () => virtualListEl,
-    estimateSize: () => 50,
-    overscan: 5,
-  })
+  let virtualizer = $derived(
+    createVirtualizer<HTMLDivElement, HTMLDivElement>({
+      count: rows.length,
+      getScrollElement: makeGetScrollElement(virtualListEl),
+      estimateSize: () => 50,
+      overscan: 5,
+    }),
+  )
 
-  $: {
+  $effect(() => {
     function rangeExtractor(range: Range): number[] {
       activeStickyIndex = [...stickyIndexes]
         .reverse()
@@ -40,12 +44,12 @@
       return [...next].sort((a, b) => a - b)
     }
     $virtualizer.setOptions({ rangeExtractor })
-  }
+  })
 
   function isSticky(index: number) {
     return stickyIndexes.includes(index)
   }
-  $: isActiveSticky = (index: number) => activeStickyIndex === index
+  let isActiveSticky = $derived((index: number) => activeStickyIndex === index)
 </script>
 
 <main>
