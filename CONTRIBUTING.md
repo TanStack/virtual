@@ -57,7 +57,7 @@ If you have been assigned to fix an issue or develop a new feature, please follo
 The documentations for all the TanStack projects are hosted on [tanstack.com](https://tanstack.com), which is a TanStack Start application (https://github.com/TanStack/tanstack.com). You need to run this app locally to preview your changes in the `TanStack/virtual` docs.
 
 > [!NOTE]
-> The website fetches the doc pages from GitHub in production, and searches for them at `../config/docs` in development. Your local clone of `TanStack/virtual` needs to be in the same directory as the local clone of `TansStack/tanstack.com`.
+> The website fetches the doc pages from GitHub in production, and searches for them at `../virtual/docs` in development. Your local clone of `TanStack/virtual` needs to be in the same directory as the local clone of `TanStack/tanstack.com`.
 
 You can follow these steps to set up the docs for local development:
 
@@ -103,7 +103,7 @@ pnpm dev
 4. Now you can visit http://localhost:3000/virtual/latest/docs/overview in the browser and see the changes you make in `TanStack/virtual/docs` there.
 
 > [!WARNING]
-> You will need to update the `docs/config.json` file (in `TanStack/config`) if you add a new documentation page!
+> You will need to update the `docs/config.json` file (in `TanStack/virtual`) if you add a new documentation page!
 
 You can see the whole process in the screen capture below:
 
