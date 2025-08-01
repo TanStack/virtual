@@ -6,27 +6,31 @@
   } from '@tanstack/svelte-virtual'
   import { onMount } from 'svelte'
 
-  let virtualListEl: HTMLDivElement
+  let virtualListEl = $state<HTMLDivElement | null>(null)
+  let makeGetScrollElement = (scrollElement: HTMLDivElement | null) => () =>
+    scrollElement
   let time = Date.now()
-  let randomIndex = Math.floor(Math.random() * 10000)
-  let scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] = () => {}
+  let randomIndex = $state(Math.floor(Math.random() * 10000))
+  let scrollToFn: VirtualizerOptions<any, any>['scrollToFn'] = $state(() => {})
 
   function easeInOutQuint(t: number) {
     return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
   }
 
-  $: virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
-    count: 10000,
-    getScrollElement: () => virtualListEl,
-    estimateSize: () => 35,
-    overscan: 5,
-    scrollToFn,
-  })
+  let virtualizer = $derived(
+    createVirtualizer<HTMLDivElement, HTMLDivElement>({
+      count: 10000,
+      getScrollElement: makeGetScrollElement(virtualListEl),
+      estimateSize: () => 35,
+      overscan: 5,
+      scrollToFn,
+    }),
+  )
 
   onMount(() => {
     scrollToFn = (offset, canSmooth, instance) => {
       const duration = 1000
-      const start = virtualListEl.scrollTop
+      const start = virtualListEl?.scrollTop ?? 0
       const startTime = (time = Date.now())
 
       function run() {
@@ -60,7 +64,7 @@
 
   <div>
     <button
-      on:click={() => {
+      onclick={() => {
         $virtualizer.scrollToIndex(randomIndex)
         randomIndex = Math.floor(Math.random() * 10000)
       }}
