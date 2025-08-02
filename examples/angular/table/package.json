@@ -9,14 +9,14 @@
     "watch": "ng build --watch --configuration development"
   },
   "dependencies": {
-    "@angular/animations": "^17.3.12",
-    "@angular/common": "^17.3.12",
-    "@angular/compiler": "^17.3.12",
-    "@angular/core": "^17.3.12",
-    "@angular/forms": "^17.3.12",
-    "@angular/platform-browser": "^17.3.12",
-    "@angular/platform-browser-dynamic": "^17.3.12",
-    "@angular/router": "^17.3.12",
+    "@angular/animations": "^18.1.0",
+    "@angular/common": "^18.1.0",
+    "@angular/compiler": "^18.1.0",
+    "@angular/core": "^18.1.0",
+    "@angular/forms": "^18.1.0",
+    "@angular/platform-browser": "^18.1.0",
+    "@angular/platform-browser-dynamic": "^18.1.0",
+    "@angular/router": "^18.1.0",
     "@faker-js/faker": "^8.4.1",
     "@tanstack/angular-table": "8.21.3",
     "@tanstack/angular-virtual": "^3.13.12",
@@ -25,9 +25,9 @@
     "zone.js": "0.15.1"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^17.3.17",
-    "@angular/cli": "^17.3.17",
-    "@angular/compiler-cli": "^17.3.12",
-    "typescript": "5.2.2"
+    "@angular-devkit/build-angular": "^18.1.0",
+    "@angular/cli": "^18.1.0",
+    "@angular/compiler-cli": "^18.1.0",
+    "typescript": "5.4.5"
   }
 }
