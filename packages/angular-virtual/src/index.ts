@@ -1,5 +1,4 @@
 import {
-  AfterRenderPhase,
   DestroyRef,
   afterNextRender,
   computed,
@@ -72,9 +71,7 @@ function createVirtualizerBase<
   )
 
   let cleanup: () => void | undefined
-  afterNextRender(() => (virtualizer ?? lazyInit())._didMount(), {
-    phase: AfterRenderPhase.Read,
-  })
+  afterNextRender({ read: () => (virtualizer ?? lazyInit())._didMount() })
 
   inject(DestroyRef).onDestroy(() => cleanup?.())
 

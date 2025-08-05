@@ -50,12 +50,12 @@
     "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@angular/core": "^17.3.12",
-    "ng-packagr": "^17.3.0",
-    "typescript": "5.2.2"
+    "@angular/core": "^18.1.0",
+    "ng-packagr": "^18.1.0",
+    "typescript": "5.4.5"
   },
   "peerDependencies": {
-    "@angular/core": ">=17"
+    "@angular/core": ">=18.1.0"
   },
   "sideEffects": false
 }
