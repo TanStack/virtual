@@ -1,5 +1,13 @@
 # @tanstack/angular-virtual
 
+## 4.0.0
+
+### Major Changes
+
+- feat(angular-virtual): add support for angular 20 ([#1040](https://github.com/TanStack/virtual/pull/1040))
+
+  BREAKING CHANGE: minimum Angular version is now 18.1.0
+
 ## 3.13.12
 
 ### Patch Changes
