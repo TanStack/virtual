@@ -23,7 +23,7 @@ The total number of items to virtualize.
 ### `getScrollElement`
 
 ```tsx
-getScrollElement: () => TScrollElement
+getScrollElement: () => TScrollElement | null
 ```
 
 A function that returns the scrollable element for the virtualizer. It may return null if the element is not available yet.
@@ -36,7 +36,7 @@ estimateSize: (index: number) => number
 
 > 🧠 If you are dynamically measuring your elements, it's recommended to estimate the largest possible size (width/height, within comfort) of your items. This will ensure features like smooth-scrolling will have a better chance at working correctly.
 
-This function is passed the index of each item and should return the actual size (or estimated size if you will be dynamically measuring items with `virtualItem.measureElement`) for each item. This measurement should return either the width or height depending on the orientation of your virtualizer.
+This function is passed the index of each item and should return the actual size (or estimated size if you will be dynamically measuring items with `Virtualizer.measureElement`) for each item. This measurement should return either the width or height depending on the orientation of your virtualizer.
 
 ## Optional Options
 
@@ -149,7 +149,7 @@ This function receives visible range indexes and should return array of indexes 
 ### `scrollToFn`
 
 ```tsx
-scrollToFn?: (
+scrollToFn: (
   offset: number,
   options: { adjustments?: number; behavior?: 'auto' | 'smooth' },
   instance: Virtualizer<TScrollElement, TItemElement>,
@@ -182,7 +182,7 @@ An optional function that if provided is called when the scrollElement changes a
 ```tsx
 observeElementOffset: (
     instance: Virtualizer<TScrollElement, TItemElement>,
-    cb: (offset: number) => void,
+    cb: (offset: number, isScrolling: boolean) => void,
   ) => void | (() => void)
 ```
 
@@ -227,7 +227,7 @@ This option allows you to set the spacing between items in the virtualized list.
 ### `lanes`
 
 ```tsx
-lanes: number
+lanes?: number
 ```
 
 The number of lanes the list is divided into (aka columns for vertical lists and rows for horizontal lists).
@@ -235,7 +235,7 @@ The number of lanes the list is divided into (aka columns for vertical lists and
 ### `isScrollingResetDelay`
 
 ```tsx
-isScrollingResetDelay: number
+isScrollingResetDelay?: number
 ```
 
 This option allows you to specify the duration to wait after the last scroll event before resetting the isScrolling instance property. The default value is 150 milliseconds. 
@@ -245,7 +245,7 @@ The implementation of this option is driven by the need for a reliable mechanism
 ### `useScrollendEvent`
 
 ```tsx
-useScrollendEvent: boolean
+useScrollendEvent?: boolean
 ```
 
 Determines whether to use the native scrollend event to detect when scrolling has stopped. If set to false, a debounced fallback is used to reset the isScrolling instance property after isScrollingResetDelay milliseconds. The default value is `false`. 
@@ -255,7 +255,7 @@ The implementation of this option is driven by the need for a reliable mechanism
 ### `isRtl`
 
 ```tsx
-isRtl: boolean
+isRtl?: boolean
 ```
 
 Whether to invert horizontal scrolling to support right-to-left language locales.
@@ -263,7 +263,7 @@ Whether to invert horizontal scrolling to support right-to-left language locales
 ### `useAnimationFrameWithResizeObserver`
 
 ```tsx
-useAnimationFrameWithResizeObserver: boolean
+useAnimationFrameWithResizeObserver?: boolean
 ```
 
 This option enables wrapping ResizeObserver measurements in requestAnimationFrame for smoother updates and reduced layout thrashing. The default value is `false`. 
@@ -353,7 +353,7 @@ Resets any prev item measurements.
 ### `measureElement`
 
 ```tsx
-measureElement: (el: TItemElement | null) => void
+measureElement: (el: TItemElement | null | undefined) => void
 ```
 
 Measures the element using your configured `measureElement` virtualizer option. You are responsible for calling this in your virtualizer markup when the component is rendered (eg. using something like React's ref callback prop) also adding `data-index`
@@ -384,7 +384,7 @@ You can also use this method with a throttled ResizeObserver instead of `Virtual
 ### `scrollRect`
 
 ```tsx
-scrollRect: Rect
+scrollRect: Rect | null
 ```
 
 Current `Rect` of the scroll element.
@@ -416,7 +416,7 @@ This option indicates the direction of scrolling, with possible values being 'fo
 ### `scrollOffset`
 
 ```tsx
-scrollOffset: number
+scrollOffset: number | null
 ```
 
 This option represents the current scroll position along the scrolling axis. It is measured in pixels from the starting point of the scrollable area.
