@@ -128,7 +128,7 @@ The padding to apply to the end of the virtualizer in pixels when scrolling to a
 initialOffset?: number | (() => number)
 ```
 
-The initial offset to apply to the virtualizer. This is usually only useful if you are rendering the virtualizer in a SSR environment.
+The position where the list is scrolled to on render. This is useful if you are rendering the virtualizer in a SSR environment or are conditionally rendering the virtualizer.
 
 ### `getItemKey`
 
