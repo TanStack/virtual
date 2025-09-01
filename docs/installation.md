@@ -33,13 +33,13 @@ npm install @tanstack/vue-virtual
 ## Lit Virtual
 
 ```bash
-$ npm install @tanstack/lit-virtual
+npm install @tanstack/lit-virtual
 ```
 
 ## Angular Virtual
 
 ```bash
-$ npm install @tanstack/angular-virtual
+npm install @tanstack/angular-virtual
 ```
 
 ## Virtual Core (no framework)
