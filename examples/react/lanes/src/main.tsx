@@ -10,14 +10,14 @@ function App() {
   return (
     <div>
       <p>
-        <strong>Lanes</strong> are useful when you are trying to draw a grid of items, where
-        each row is split into multiple columns.
+        <strong>Lanes</strong> are useful when you are trying to draw a grid of
+        items, where each row is split into multiple columns.
       </p>
       <br />
       <br />
 
       <h3>Lanes</h3>
-      <LanesGapVirtualizer  />
+      <LanesVirtualizer />
       <br />
       <br />
       <h3>Lanes Gaps</h3>
@@ -41,7 +41,7 @@ function App() {
   )
 }
 
-function LanesGapVirtualizer() {
+function LanesVirtualizer() {
   const [numLanes, setNumLanes] = React.useState(4)
   const parentRef = React.useRef(null)
 
@@ -55,18 +55,32 @@ function LanesGapVirtualizer() {
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '80px 200px', gap: '10px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '80px 200px',
+          gap: '10px',
+        }}
+      >
         <label htmlFor="numLanes1">Num Lanes</label>
-        <input type="number" id="numLanes1" value={numLanes} onChange={(e) => {setNumLanes(Number(e.target.value)); rowVirtualizer.measure()}} />
+        <input
+          type="number"
+          id="numLanes1"
+          value={numLanes}
+          onChange={(e) => {
+            setNumLanes(Number(e.target.value))
+            rowVirtualizer.measure()
+          }}
+        />
       </div>
       <br />
       <div
         ref={parentRef}
         className="List"
         style={{
-          height: "200px",
-          width: "400px",
-          overflow: "auto",
+          height: '200px',
+          width: '400px',
+          overflow: 'auto',
         }}
       >
         <div
@@ -115,23 +129,56 @@ function GapVirtualizer() {
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '80px 200px', gap: '10px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '80px 200px',
+          gap: '10px',
+        }}
+      >
         <label htmlFor="numLanes2">Num Lanes</label>
-        <input type="number" id="numLanes2" value={numLanes} onChange={(e) => {setNumLanes(Number(e.target.value)); rowVirtualizer.measure()}} />
-        <label htmlFor="rowGap" >Row Gap</label>
-        <input type="number" id="rowGap" value={rowGap} onChange={(e) => {setRowGap(Number(e.target.value)); rowVirtualizer.measure()}} />
+        <input
+          type="number"
+          id="numLanes2"
+          value={numLanes}
+          readOnly
+          onChange={(e) => {
+            setNumLanes(Number(e.target.value))
+            rowVirtualizer.measure()
+          }}
+        />
+        <label htmlFor="rowGap">Row Gap</label>
+        <input
+          type="number"
+          id="rowGap"
+          value={rowGap}
+          onChange={(e) => {
+            setRowGap(Number(e.target.value))
+            rowVirtualizer.measure()
+          }}
+        />
         <label htmlFor="columnGap">Column Gap</label>
-        <input type="number" id="columnGap" value={columnGap} onChange={(e) => {setColumnGap(Number(e.target.value)); rowVirtualizer.measure()}} />
+        <input
+          type="number"
+          id="columnGap"
+          value={columnGap}
+          onChange={(e) => {
+            setColumnGap(Number(e.target.value))
+            rowVirtualizer.measure()
+          }}
+        />
       </div>
       <br />
-      
+
       <div
         ref={parentRef}
         className="List"
         style={{
-          height: "200px",
-          width: "400px",
-          overflow: "auto",
+          height: '200px',
+          width: '400px',
+          overflow: 'auto',
+          minWidth: CELL_WIDTH,
+          minHeight: '35px',
         }}
       >
         <div
@@ -143,21 +190,26 @@ function GapVirtualizer() {
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             return (
-            <div
-              key={virtualRow.index}
-              className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
-              style={{
-                position: 'absolute',
-                top: 0,
-                "--start-ratio": `calc(mod(${virtualRow.index}, ${numLanes}) / ${numLanes})`,
-                left: `calc((var(--start-ratio) * 100%) + (${columnGap}px * var(--start-ratio)))`,
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-                outline: '1px solid red',
-              } as React.CSSProperties}
-            >
-              Cell {virtualRow.index}
-            </div>
+              <div
+                key={virtualRow.index}
+                className={
+                  virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'
+                }
+                style={
+                  {
+                    position: 'absolute',
+                    top: 0,
+                    '--start-ratio': `calc(mod(${virtualRow.index}, ${numLanes}) / ${numLanes})`,
+                    left: `calc((var(--start-ratio) * 100%) + (${columnGap}px * var(--start-ratio)))`,
+                    width: `calc((100% / ${numLanes}) - (${columnGap}px * (${numLanes} - 1) / ${numLanes}))`,
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                    outline: '1px solid red',
+                  } as React.CSSProperties
+                }
+              >
+                Cell {virtualRow.index}
+              </div>
             )
           })}
         </div>
@@ -183,82 +235,114 @@ function ResizeVirtualizer() {
   })
 
   React.useEffect(() => {
-     if (!parentRef.current) return
-     // debounce not necessary
-     const debouncedOnResize = debounce((entries:  Array<ResizeObserverEntry>) => {
-      const rect = entries.at(0)?.contentRect
-      if (!rect) return
-      const { width } = rect
-      setNumLanes(Math.floor(width / CELL_WIDTH))
-      rowVirtualizer.measure()
-     }, {
-      wait: 50,
-      
-     })
-     const resizeObserver = new ResizeObserver((entries) => {
-       debouncedOnResize(entries)
-     })
-     resizeObserver.observe(parentRef.current)
-     return () => {
-       resizeObserver.disconnect()
-     }
+    if (!parentRef.current) return
+    // debounce not necessary
+    const debouncedOnResize = debounce(
+      (entries: Array<ResizeObserverEntry>) => {
+        const rect = entries.at(0)?.contentRect
+        if (!rect) return
+        const { width } = rect
+        setNumLanes(Math.floor(width / CELL_WIDTH))
+        rowVirtualizer.measure()
+      },
+      {
+        wait: 50,
+      },
+    )
+    const resizeObserver = new ResizeObserver((entries) => {
+      debouncedOnResize(entries)
+    })
+    resizeObserver.observe(parentRef.current)
+    return () => {
+      resizeObserver.disconnect()
+    }
   }, [rowVirtualizer])
-
-
 
   return (
     <>
-    <div style={{ display: 'grid', gridTemplateColumns: '80px 200px', gap: '10px' }}>
-      <label htmlFor="numLanes2">Num Lanes</label>
-      <input type="number" id="numLanes2" value={numLanes}  readOnly disabled/>
-      <label htmlFor="rowGap" >Row Gap</label>
-      <input type="number" id="rowGap" value={rowGap} onChange={(e) => {setRowGap(Number(e.target.value)); rowVirtualizer.measure()}} />
-      <label htmlFor="columnGap">Column Gap</label>
-      <input type="number" id="columnGap" value={columnGap} onChange={(e) => {setColumnGap(Number(e.target.value)); rowVirtualizer.measure()}} />
-    </div>
-    <br />
-    
-    <div
-      ref={parentRef}
-      className="List"
-      style={{
-        height: "200px",
-        width: "400px",
-        overflow: "auto",
-        minWidth: CELL_WIDTH,
-        minHeight: "35px",
-        resize: 'horizontal',
-      }}
-    >
       <div
         style={{
-          height: `${rowVirtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
+          display: 'grid',
+          gridTemplateColumns: '80px 200px',
+          gap: '10px',
         }}
       >
-        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-          return (
-          <div
-            key={virtualRow.index}
-            className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
-            style={{
-              position: 'absolute',
-              top: 0,
-              "--start-ratio": `calc(mod(${virtualRow.index}, ${numLanes}) / ${numLanes})`,
-              left: `calc((var(--start-ratio) * 100%) + (${columnGap}px * var(--start-ratio)))`,
-              width: `calc((100% / ${numLanes}) - (${columnGap}px * (${numLanes} - 1) / ${numLanes}))`,
-              height: `${virtualRow.size}px`,
-              transform: `translateY(${virtualRow.start}px)`,
-              outline: '1px solid red',
-            } as React.CSSProperties}
-          >
-            Cell {virtualRow.index}
-          </div>
-          )
-        })}
+        <label htmlFor="numLanes2">Num Lanes</label>
+        <input
+          type="number"
+          id="numLanes2"
+          value={numLanes}
+          readOnly
+          disabled
+        />
+        <label htmlFor="rowGap">Row Gap</label>
+        <input
+          type="number"
+          id="rowGap"
+          value={rowGap}
+          onChange={(e) => {
+            setRowGap(Number(e.target.value))
+            rowVirtualizer.measure()
+          }}
+        />
+        <label htmlFor="columnGap">Column Gap</label>
+        <input
+          type="number"
+          id="columnGap"
+          value={columnGap}
+          onChange={(e) => {
+            setColumnGap(Number(e.target.value))
+            rowVirtualizer.measure()
+          }}
+        />
       </div>
-    </div>
+      <br />
+
+      <div
+        ref={parentRef}
+        className="List"
+        style={{
+          height: '200px',
+          width: '400px',
+          overflow: 'auto',
+          minWidth: CELL_WIDTH,
+          minHeight: '35px',
+          resize: 'horizontal',
+        }}
+      >
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            return (
+              <div
+                key={virtualRow.index}
+                className={
+                  virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'
+                }
+                style={
+                  {
+                    position: 'absolute',
+                    top: 0,
+                    '--start-ratio': `calc(mod(${virtualRow.index}, ${numLanes}) / ${numLanes})`,
+                    left: `calc((var(--start-ratio) * 100%) + (${columnGap}px * var(--start-ratio)))`,
+                    width: `calc((100% / ${numLanes}) - (${columnGap}px * (${numLanes} - 1) / ${numLanes}))`,
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                    outline: '1px solid red',
+                  } as React.CSSProperties
+                }
+              >
+                Cell {virtualRow.index}
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </>
   )
 }
