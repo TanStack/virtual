@@ -1,0 +1,23 @@
+{
+  "name": "tanstack-react-virtual-example-lanes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview --port 3001",
+    "start": "vite"
+  },
+  "dependencies": {
+    "@tanstack/react-pacer": "^0.2.0",
+    "@tanstack/react-virtual": "^3.13.12",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.5.2",
+    "vite": "^5.4.19"
+  }
+}
