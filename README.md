@@ -31,6 +31,7 @@
 <div align="center">
 
 ### [Become a Sponsor!](https://github.com/sponsors/tannerlinsley/)
+
 </div>
 
 # TanStack Virtual
@@ -38,8 +39,8 @@
 A headless, framework‑agnostic virtualization library for rendering massive lists, grids, and tables at 60FPS while giving you full control over markup and styles.
 
 - Framework‑agnostic & headless
-- Virtualizes vertical, horizontal & grid layouts with a single hook/function  
-- Lightweight (10–15kb) yet powerful, with dynamic & measured sizing support  
+- Virtualizes vertical, horizontal & grid layouts with a single hook/function
+- Lightweight (10–15kb) yet powerful, with dynamic & measured sizing support
 - Smooth 60FPS scrolling with sticky items and window‑scrolling utilities
 
 ### <a href="https://tanstack.com/virtual" >Read the docs →</a>
