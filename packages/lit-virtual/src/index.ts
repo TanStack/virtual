@@ -41,7 +41,7 @@ class VirtualizerControllerBase<
     return this.virtualizer
   }
 
-  async hostConnected() {
+  hostConnected() {
     this.cleanup = this.virtualizer._didMount()
   }
 
