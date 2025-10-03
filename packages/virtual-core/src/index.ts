@@ -337,6 +337,7 @@ export interface VirtualizerOptions<
   scrollPaddingEnd?: number
   initialOffset?: number | (() => number)
   getItemKey?: (index: number) => Key
+  startItem?: ((index: number) => number) | null
   rangeExtractor?: (range: Range) => Array<number>
   scrollMargin?: number
   gap?: number
@@ -431,6 +432,7 @@ export class Virtualizer<
       getItemKey: defaultKeyExtractor,
       rangeExtractor: defaultRangeExtractor,
       onChange: () => {},
+      startItem: null,
       measureElement,
       initialRect: { width: 0, height: 0 },
       scrollMargin: 0,
@@ -668,9 +670,11 @@ export class Virtualizer<
             ? measurements[i - 1]
             : this.getFurthestMeasurement(measurements, i)
 
-        const start = furthestMeasurement
-          ? furthestMeasurement.end + this.options.gap
-          : paddingStart + scrollMargin
+        const start =
+          this.options.startItem?.(i) ??
+          (furthestMeasurement
+            ? furthestMeasurement.end + this.options.gap
+            : paddingStart + scrollMargin)
 
         const measuredSize = itemSizeCache.get(key)
         const size =
