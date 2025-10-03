@@ -2,7 +2,9 @@
   import { createInfiniteQuery } from '@tanstack/svelte-query'
   import { createVirtualizer } from '@tanstack/svelte-virtual'
 
-  let virtualListEl: HTMLDivElement
+  let virtualListEl = $state<HTMLDivElement | null>(null)
+  let makeGetScrollElement = (scrollElement: HTMLDivElement | null) => () =>
+    scrollElement
 
   const query = createInfiniteQuery({
     queryKey: ['projects'],
@@ -11,17 +13,20 @@
     getNextPageParam: (_lastGroup, groups) => groups.length,
   })
 
-  $: allRows =
-    ($query.data && $query.data.pages.flatMap((page) => page.rows)) || []
+  let allRows = $derived(
+    ($query.data && $query.data.pages.flatMap((page) => page.rows)) || [],
+  )
 
-  $: virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
-    count: 0,
-    getScrollElement: () => virtualListEl,
-    estimateSize: () => 100,
-    overscan: 5,
-  })
+  let virtualizer = $derived(
+    createVirtualizer<HTMLDivElement, HTMLDivElement>({
+      count: 0,
+      getScrollElement: makeGetScrollElement(virtualListEl),
+      estimateSize: () => 100,
+      overscan: 5,
+    }),
+  )
 
-  $: {
+  $effect(() => {
     $virtualizer.setOptions({
       count: $query.hasNextPage ? allRows.length + 1 : allRows.length,
     })
@@ -36,7 +41,7 @@
     ) {
       $query.fetchNextPage()
     }
-  }
+  })
 
   async function fetchServerPage(
     limit: number,
