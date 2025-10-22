@@ -6,66 +6,61 @@
       the translateY pixel count differently and base it off the index.
     </p>
 
-    <div ref="parentRef" class="container">
-      <div :style="{ height: `${totalSize}px` }">
-        <table>
-          <thead>
-            <tr
-              v-for="headerGroup in table.getHeaderGroups()"
-              :key="headerGroup.id"
+    <div class="container">
+      <table ref="parentRef" :style="{ height: `${totalSize}px` }">
+        <thead>
+        <tr
+          v-for="headerGroup in table.getHeaderGroups()"
+          :key="headerGroup.id"
+        >
+          <th
+            v-for="header in headerGroup.headers"
+            :key="header.id"
+            :colspan="header.colSpan"
+            :style="{ width: `${header.getSize()}px` }"
+          >
+            <div
+              v-if="!header.isPlaceholder"
+              :class="[
+                  'text-left',
+                  header.column.getCanSort()
+                    ? 'cursor-pointer select-none'
+                    : '',
+                ]"
+              @click="
+                  getSortingHandler(
+                    $event,
+                    header.column.getToggleSortingHandler(),
+                  )
+                "
             >
-              <th
-                v-for="header in headerGroup.headers"
-                :key="header.id"
-                :colspan="header.colSpan"
-                :style="{ width: `${header.getSize()}px` }"
-              >
-                <div
-                  v-if="!header.isPlaceholder"
-                  :class="[
-                    'text-left',
-                    header.column.getCanSort()
-                      ? 'cursor-pointer select-none'
-                      : '',
-                  ]"
-                  @click="
-                    getSortingHandler(
-                      $event,
-                      header.column.getToggleSortingHandler(),
-                    )
-                  "
-                >
-                  <FlexRender
-                    :render="header.column.columnDef.header"
-                    :props="header.getContext()"
-                  />
-                  <span v-if="header.column.getIsSorted() === 'asc'"> 🔼</span>
-                  <span v-if="header.column.getIsSorted() === 'desc'"> 🔽</span>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(virtualRow, index) in virtualRows"
-              :key="virtualRow.key"
-              :style="{
-                transform: `translateY(${virtualRow.start - index * virtualRow.size}px)`,
-              }"
-            >
-              <td
-                v-for="cell in rows[virtualRow.index].getVisibleCells()"
-                :key="cell.id"
-              >
-                <FlexRender
-                  :render="cell.column.columnDef.cell"
-                  :props="cell.getContext()"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              <FlexRender
+                :render="header.column.columnDef.header"
+                :props="header.getContext()"
+              />
+              <span v-if="header.column.getIsSorted() === 'asc'"> 🔼</span>
+              <span v-if="header.column.getIsSorted() === 'desc'"> 🔽</span>
+            </div>
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr
+          v-for="(virtualRow, index) in virtualRows"
+          :key="index"
+        >
+          <td
+            v-for="cell in rows[virtualRow.index].getVisibleCells()"
+            :key="cell.id"
+          >
+            <FlexRender
+              :render="cell.column.columnDef.cell"
+              :props="cell.getContext()"
+            />
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
@@ -75,15 +70,15 @@ import { ref, computed } from 'vue'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import {
   FlexRender,
-  ColumnDef,
-  SortingState,
+  type ColumnDef,
+  type SortingState,
   useVueTable,
   getCoreRowModel,
   getSortedRowModel,
 } from '@tanstack/vue-table'
-import { makeData, Person } from './makeData'
+import { makeData, type Person } from './makeData'
 
-const data = ref(makeData(50_000))
+const data = ref(makeData(1000))
 
 const sorting = ref<SortingState>([])
 
@@ -92,9 +87,7 @@ const getSortingHandler = (e: Event, fn: any) => {
 }
 
 const setSorting = (sortingUpdater: any) => {
-  const newSortVal = sortingUpdater(sorting.value)
-
-  sorting.value = newSortVal
+  sorting.value = sortingUpdater(sorting.value)
 }
 
 const columns = computed<ColumnDef<Person>[]>(() => {
