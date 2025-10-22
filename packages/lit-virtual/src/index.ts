@@ -33,7 +33,6 @@ class VirtualizerControllerBase<
       },
     }
     this.virtualizer = new Virtualizer(resolvedOptions)
-
     ;(this.host = host).addController(this)
   }
 
