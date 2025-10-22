@@ -25,8 +25,6 @@ class VirtualizerControllerBase<
     host: ReactiveControllerHost,
     options: VirtualizerOptions<TScrollElement, TItemElement>,
   ) {
-    ;(this.host = host).addController(this)
-
     const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
       ...options,
       onChange: (instance, sync) => {
@@ -35,13 +33,14 @@ class VirtualizerControllerBase<
       },
     }
     this.virtualizer = new Virtualizer(resolvedOptions)
+    ;(this.host = host).addController(this)
   }
 
   public getVirtualizer() {
     return this.virtualizer
   }
 
-  async hostConnected() {
+  hostConnected() {
     this.cleanup = this.virtualizer._didMount()
   }
 
