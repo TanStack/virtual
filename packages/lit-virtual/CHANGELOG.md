@@ -1,5 +1,13 @@
 # @tanstack/lit-virtual
 
+## 3.13.13
+
+### Patch Changes
+
+- fix(lit-virtual): create Virtualizer instance before hostConnected ([#1061](https://github.com/TanStack/virtual/pull/1061))
+
+  When creating an instance of the reactive controller in `connectedCallback`, calling `addController` will synchronously call `hostConnected` on the controller. This means that `this.virtualizer` will still be `undefined`.
+
 ## 3.13.12
 
 ### Patch Changes
