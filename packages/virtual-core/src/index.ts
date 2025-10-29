@@ -366,6 +366,7 @@ export class Virtualizer<
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments = 0
+  private scrollToIndexTargetIndex: number | null = null
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -970,11 +971,17 @@ export class Virtualizer<
 
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
+    // If this is called in a tight loop, we don't want our retry logic to trigger for outdated indexes.
+    // After each async gap, we should check if we're still targeting the same index before trying to scroll.
+    this.scrollToIndexTargetIndex = index
+
     let attempts = 0
     const maxAttempts = 10
 
     const tryScroll = (currentAlign: ScrollAlignment) => {
       if (!this.targetWindow) return
+      
+      if (this.scrollToIndexTargetIndex !== index) return
 
       const offsetInfo = this.getOffsetForIndex(index, currentAlign)
       if (!offsetInfo) {
@@ -985,6 +992,8 @@ export class Virtualizer<
       this._scrollToOffset(offset, { adjustments: undefined, behavior })
 
       this.targetWindow.requestAnimationFrame(() => {
+        if (this.scrollToIndexTargetIndex !== index) return
+
         const currentOffset = this.getScrollOffset()
         const afterInfo = this.getOffsetForIndex(index, align)
         if (!afterInfo) {
@@ -1000,6 +1009,8 @@ export class Virtualizer<
 
     const scheduleRetry = (align: ScrollAlignment) => {
       if (!this.targetWindow) return
+      
+      if (this.scrollToIndexTargetIndex !== index)
 
       attempts++
       if (attempts < maxAttempts) {
