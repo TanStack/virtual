@@ -2,8 +2,8 @@
   import { faker } from '@faker-js/faker'
   import { createVirtualizer } from '@tanstack/svelte-virtual'
 
-  let virtualListEl: HTMLDivElement
-  let virtualItemEls: HTMLDivElement[] = []
+  let virtualListEl = $state<HTMLDivElement | null>(null)
+  let virtualItemEls = $state<HTMLDivElement[]>([])
 
   function randomNumber(min: number, max: number) {
     return faker.number.int({ min, max })
@@ -15,39 +15,43 @@
 
   const count = sentences.length
 
-  $: virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
-    count,
-    getScrollElement: () => virtualListEl,
-    estimateSize: () => 45,
-  })
+  let makeGetScrollElement = (scrollElement: HTMLDivElement | null) => () =>
+    scrollElement
+  let virtualizer = $derived(
+    createVirtualizer<HTMLDivElement, HTMLDivElement>({
+      count,
+      getScrollElement: makeGetScrollElement(virtualListEl),
+      estimateSize: () => 45,
+    }),
+  )
 
-  $: items = $virtualizer.getVirtualItems()
+  let items = $derived($virtualizer.getVirtualItems())
 
-  $: {
+  $effect(() => {
     if (virtualItemEls.length)
       virtualItemEls.forEach((el) => $virtualizer.measureElement(el))
-  }
+  })
 </script>
 
 <div>
   <button
-    on:click={() => {
+    onclick={() => {
       $virtualizer.scrollToIndex(0)
     }}
   >
     scroll to the top
   </button>
-  <span style="padding: 0 4px;" />
+  <span style="padding: 0 4px;"></span>
   <button
-    on:click={() => {
+    onclick={() => {
       $virtualizer.scrollToIndex(count / 2)
     }}
   >
     scroll to the middle
   </button>
-  <span style="padding: 0 4px;" />
+  <span style="padding: 0 4px;"></span>
   <button
-    on:click={() => {
+    onclick={() => {
       $virtualizer.scrollToIndex(count - 1)
     }}
   >
