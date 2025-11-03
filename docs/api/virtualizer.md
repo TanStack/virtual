@@ -138,6 +138,14 @@ getItemKey?: (index: number) => Key
 
 This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set. This function should be memoized to prevent unnecessary re-renders.
 
+### `startItem`
+
+```ts
+startItem?: (index: number) => number
+```
+
+This optional function is called when you need specials gaps between your items. This measurement should return the left or top of the item depending on `horizontal`. Useful when you know your layouts in advance.
+
 ### `rangeExtractor`
 
 ```tsx
