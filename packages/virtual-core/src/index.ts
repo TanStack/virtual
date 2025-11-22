@@ -614,20 +614,6 @@ export class Virtualizer<
       : undefined
   }
 
-  // Helper to find the last item in a specific lane before currentIndex
-  private findLastItemInLane = (
-    measurements: Array<VirtualItem>,
-    currentIndex: number,
-    lane: number,
-  ): VirtualItem | undefined => {
-    for (let m = currentIndex - 1; m >= 0; m--) {
-      if (measurements[m]?.lane === lane) {
-        return measurements[m]
-      }
-    }
-    return undefined
-  }
-
   private getMeasurementOptions = memo(
     () => [
       this.options.count,
@@ -717,6 +703,17 @@ export class Virtualizer<
 
       const measurements = this.measurementsCache.slice(0, min)
 
+      // ✅ Performance: Track last item index per lane for O(1) lookup
+      const laneLastIndex: Array<number | undefined> = new Array(lanes).fill(undefined)
+
+      // Initialize from existing measurements (before min)
+      for (let m = 0; m < min; m++) {
+        const item = measurements[m]
+        if (item) {
+          laneLastIndex[item.lane] = m
+        }
+      }
+
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
 
@@ -726,9 +723,10 @@ export class Virtualizer<
         let start: number
 
         if (cachedLane !== undefined && this.options.lanes > 1) {
-          // Use cached lane - find previous item in same lane for start position
+          // Use cached lane - O(1) lookup for previous item in same lane
           lane = cachedLane
-          const prevInLane = this.findLastItemInLane(measurements, i, lane)
+          const prevIndex = laneLastIndex[lane]
+          const prevInLane = prevIndex !== undefined ? measurements[prevIndex] : undefined
           start = prevInLane
             ? prevInLane.end + this.options.gap
             : paddingStart + scrollMargin
@@ -769,6 +767,9 @@ export class Virtualizer<
           key,
           lane,
         }
+
+        // ✅ Performance: Update lane's last item index
+        laneLastIndex[lane] = i
       }
 
       this.measurementsCache = measurements
