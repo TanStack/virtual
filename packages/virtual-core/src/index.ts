@@ -361,7 +361,11 @@ export class Virtualizer<
   isScrolling = false
   measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
+  private laneAssignments = new Map<number, number>() // index → lane cache
   private pendingMeasuredCacheIndexes: Array<number> = []
+  private prevLanes: number | undefined = undefined
+  private lanesChangedFlag = false
+  private lanesSettling = false
   scrollRect: Rect | null = null
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
@@ -610,6 +614,20 @@ export class Virtualizer<
       : undefined
   }
 
+  // Helper to find the last item in a specific lane before currentIndex
+  private findLastItemInLane = (
+    measurements: Array<VirtualItem>,
+    currentIndex: number,
+    lane: number,
+  ): VirtualItem | undefined => {
+    for (let m = currentIndex - 1; m >= 0; m--) {
+      if (measurements[m]?.lane === lane) {
+        return measurements[m]
+      }
+    }
+    return undefined
+  }
+
   private getMeasurementOptions = memo(
     () => [
       this.options.count,
@@ -617,15 +635,26 @@ export class Virtualizer<
       this.options.scrollMargin,
       this.options.getItemKey,
       this.options.enabled,
+      this.options.lanes,
     ],
-    (count, paddingStart, scrollMargin, getItemKey, enabled) => {
+    (count, paddingStart, scrollMargin, getItemKey, enabled, lanes) => {
+      const lanesChanged = this.prevLanes !== undefined && this.prevLanes !== lanes
+
+      if (lanesChanged) {
+        // Set flag for getMeasurements to handle
+        this.lanesChangedFlag = true
+      }
+
+      this.prevLanes = lanes
       this.pendingMeasuredCacheIndexes = []
+
       return {
         count,
         paddingStart,
         scrollMargin,
         getItemKey,
         enabled,
+        lanes,
       }
     },
     {
@@ -636,13 +665,34 @@ export class Virtualizer<
   private getMeasurements = memo(
     () => [this.getMeasurementOptions(), this.itemSizeCache],
     (
-      { count, paddingStart, scrollMargin, getItemKey, enabled },
+      { count, paddingStart, scrollMargin, getItemKey, enabled, lanes },
       itemSizeCache,
     ) => {
       if (!enabled) {
         this.measurementsCache = []
         this.itemSizeCache.clear()
+        this.laneAssignments.clear()
         return []
+      }
+
+      // Clean up stale lane cache entries when count decreases
+      if (this.laneAssignments.size > count) {
+        for (const index of this.laneAssignments.keys()) {
+          if (index >= count) {
+            this.laneAssignments.delete(index)
+          }
+        }
+      }
+
+      // ✅ Force complete recalculation when lanes change
+      if (this.lanesChangedFlag) {
+        this.lanesChangedFlag = false // Reset immediately
+        this.lanesSettling = true // Start settling period
+        this.measurementsCache = []
+        this.itemSizeCache.clear()
+        this.laneAssignments.clear() // Clear lane cache for new lane count
+        // Clear pending indexes to force min = 0
+        this.pendingMeasuredCacheIndexes = []
       }
 
       if (this.measurementsCache.length === 0) {
@@ -652,25 +702,56 @@ export class Virtualizer<
         })
       }
 
-      const min =
+      // ✅ During lanes settling, ignore pendingMeasuredCacheIndexes to prevent repositioning
+      const min = this.lanesSettling ? 0 : (
         this.pendingMeasuredCacheIndexes.length > 0
           ? Math.min(...this.pendingMeasuredCacheIndexes)
           : 0
+      )
       this.pendingMeasuredCacheIndexes = []
+
+      // ✅ End settling period when cache is fully built
+      if (this.lanesSettling && this.measurementsCache.length === count) {
+        this.lanesSettling = false
+      }
 
       const measurements = this.measurementsCache.slice(0, min)
 
       for (let i = min; i < count; i++) {
         const key = getItemKey(i)
 
-        const furthestMeasurement =
-          this.options.lanes === 1
-            ? measurements[i - 1]
-            : this.getFurthestMeasurement(measurements, i)
+        // Check for cached lane assignment
+        const cachedLane = this.laneAssignments.get(i)
+        let lane: number
+        let start: number
 
-        const start = furthestMeasurement
-          ? furthestMeasurement.end + this.options.gap
-          : paddingStart + scrollMargin
+        if (cachedLane !== undefined && this.options.lanes > 1) {
+          // Use cached lane - find previous item in same lane for start position
+          lane = cachedLane
+          const prevInLane = this.findLastItemInLane(measurements, i, lane)
+          start = prevInLane
+            ? prevInLane.end + this.options.gap
+            : paddingStart + scrollMargin
+        } else {
+          // No cache - use original logic (find shortest lane)
+          const furthestMeasurement =
+            this.options.lanes === 1
+              ? measurements[i - 1]
+              : this.getFurthestMeasurement(measurements, i)
+
+          start = furthestMeasurement
+            ? furthestMeasurement.end + this.options.gap
+            : paddingStart + scrollMargin
+
+          lane = furthestMeasurement
+            ? furthestMeasurement.lane
+            : i % this.options.lanes
+
+          // Cache the lane assignment
+          if (this.options.lanes > 1) {
+            this.laneAssignments.set(i, lane)
+          }
+        }
 
         const measuredSize = itemSizeCache.get(key)
         const size =
@@ -679,10 +760,6 @@ export class Virtualizer<
             : this.options.estimateSize(i)
 
         const end = start + size
-
-        const lane = furthestMeasurement
-          ? furthestMeasurement.lane
-          : i % this.options.lanes
 
         measurements[i] = {
           index: i,
@@ -1077,6 +1154,7 @@ export class Virtualizer<
 
   measure = () => {
     this.itemSizeCache = new Map()
+    this.laneAssignments = new Map() // Clear lane cache for full re-layout
     this.notify(false)
   }
 }
