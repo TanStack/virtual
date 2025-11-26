@@ -624,7 +624,8 @@ export class Virtualizer<
       this.options.lanes,
     ],
     (count, paddingStart, scrollMargin, getItemKey, enabled, lanes) => {
-      const lanesChanged = this.prevLanes !== undefined && this.prevLanes !== lanes
+      const lanesChanged =
+        this.prevLanes !== undefined && this.prevLanes !== lanes
 
       if (lanesChanged) {
         // Set flag for getMeasurements to handle
@@ -689,11 +690,11 @@ export class Virtualizer<
       }
 
       // ✅ During lanes settling, ignore pendingMeasuredCacheIndexes to prevent repositioning
-      const min = this.lanesSettling ? 0 : (
-        this.pendingMeasuredCacheIndexes.length > 0
+      const min = this.lanesSettling
+        ? 0
+        : this.pendingMeasuredCacheIndexes.length > 0
           ? Math.min(...this.pendingMeasuredCacheIndexes)
           : 0
-      )
       this.pendingMeasuredCacheIndexes = []
 
       // ✅ End settling period when cache is fully built
@@ -704,7 +705,9 @@ export class Virtualizer<
       const measurements = this.measurementsCache.slice(0, min)
 
       // ✅ Performance: Track last item index per lane for O(1) lookup
-      const laneLastIndex: Array<number | undefined> = new Array(lanes).fill(undefined)
+      const laneLastIndex: Array<number | undefined> = new Array(lanes).fill(
+        undefined,
+      )
 
       // Initialize from existing measurements (before min)
       for (let m = 0; m < min; m++) {
@@ -726,7 +729,8 @@ export class Virtualizer<
           // Use cached lane - O(1) lookup for previous item in same lane
           lane = cachedLane
           const prevIndex = laneLastIndex[lane]
-          const prevInLane = prevIndex !== undefined ? measurements[prevIndex] : undefined
+          const prevInLane =
+            prevIndex !== undefined ? measurements[prevIndex] : undefined
           start = prevInLane
             ? prevInLane.end + this.options.gap
             : paddingStart + scrollMargin
