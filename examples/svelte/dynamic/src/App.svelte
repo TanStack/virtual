@@ -10,9 +10,9 @@
 <main>
   <p>
     These components are using <strong>dynamic</strong> sizes. This means that each
-    element's exact dimensions are unknown when rendered. An estimated dimension
-    is used as the initial measurement, then this measurement is readjusted on the
-    fly as each element is rendered.
+    element's exact dimensions are unknown when rendered. An estimated dimension is
+    used as the initial measurement, then this measurement is readjusted on the fly
+    as each element is rendered.
   </p>
   <nav>
     <ul>
