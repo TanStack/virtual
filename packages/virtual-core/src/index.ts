@@ -646,6 +646,10 @@ export class Virtualizer<
     },
     {
       key: false,
+      onChange: () => {
+        // Notify when measurement options change as they affect total size
+        this.notify(false)
+      },
     },
   )
 
