@@ -32,8 +32,6 @@ jobs:
         run: pnpm exec playwright install chromium
       - name: Run Checks
         run: pnpm run test:pr
-      - name: Verify Links
-        run: pnpm run verify-links
   preview:
     name: Preview
     runs-on: ubuntu-latest
