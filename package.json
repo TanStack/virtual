@@ -41,7 +41,7 @@
     "@changesets/cli": "^2.29.8",
     "@playwright/test": "^1.53.1",
     "@svitejs/changesets-changelog-github-compact": "^1.2.0",
-    "@tanstack/eslint-config": "0.3.2",
+    "@tanstack/eslint-config": "0.3.4",
     "@tanstack/vite-config": "0.3.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/node": "^24.5.2",
