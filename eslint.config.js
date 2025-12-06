@@ -1,6 +1,6 @@
 // @ts-check
 
-import { tanstackConfig } from '@tanstack/config/eslint'
+import { tanstackConfig } from '@tanstack/eslint-config'
 
 export default [
   ...tanstackConfig,
