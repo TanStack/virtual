@@ -1,5 +1,22 @@
 # @tanstack/react-virtual
 
+## 3.13.13
+
+### Patch Changes
+
+- Fix: Notify framework when count changes to update getTotalSize() ([#1085](https://github.com/TanStack/virtual/pull/1085))
+
+  Fixed an issue where `getTotalSize()` would return stale values when the `count` option changed (e.g., during filtering or search operations). The virtualizer now automatically notifies the framework when measurement-affecting options change, ensuring the UI updates correctly without requiring manual `useMemo` workarounds.
+
+  **Before**: When filtering items, the list container would maintain its previous height, causing excessive blank space (when count decreased) or inaccessible items (when count increased).
+
+  **After**: Height updates automatically when count changes, providing the correct user experience.
+
+  This fix applies to all framework adapters and has minimal performance impact (< 0.1ms per change).
+
+- Updated dependencies [[`2542c5a`](https://github.com/TanStack/virtual/commit/2542c5a3d6820cea956fa3b4f94c42e3526a8d68), [`96e32a6`](https://github.com/TanStack/virtual/commit/96e32a6ffc125743a0172ea4e0fe37ac29c4187b)]:
+  - @tanstack/virtual-core@3.13.13
+
 ## 3.13.12
 
 ### Patch Changes
