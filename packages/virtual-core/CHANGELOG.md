@@ -1,5 +1,29 @@
 # @tanstack/virtual-core
 
+## 3.13.13
+
+### Patch Changes
+
+- Fix: Notify framework when count changes to update getTotalSize() ([#1085](https://github.com/TanStack/virtual/pull/1085))
+
+  Fixed an issue where `getTotalSize()` would return stale values when the `count` option changed (e.g., during filtering or search operations). The virtualizer now automatically notifies the framework when measurement-affecting options change, ensuring the UI updates correctly without requiring manual `useMemo` workarounds.
+
+  **Before**: When filtering items, the list container would maintain its previous height, causing excessive blank space (when count decreased) or inaccessible items (when count increased).
+
+  **After**: Height updates automatically when count changes, providing the correct user experience.
+
+  This fix applies to all framework adapters and has minimal performance impact (< 0.1ms per change).
+
+- fix: stabilize lane assignments in masonry layout ([#1080](https://github.com/TanStack/virtual/pull/1080))
+
+  Added lane assignment caching to prevent items from jumping between lanes when viewport is resized. Previously, items could shift to different lanes during resize due to recalculating "shortest lane" with slightly different heights.
+
+  Changes:
+  - Added `laneAssignments` cache (Map<index, lane>) to persist lane assignments
+  - Lane cache is cleared when `lanes` option changes or `measure()` is called
+  - Lane cache is cleaned up when `count` decreases (removes stale entries)
+  - Lane cache is cleared when virtualizer is disabled
+
 ## 3.13.12
 
 ### Patch Changes
