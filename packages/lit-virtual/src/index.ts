@@ -13,8 +13,7 @@ import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 class VirtualizerControllerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
-> implements ReactiveController
-{
+> implements ReactiveController {
   host: ReactiveControllerHost
 
   private readonly virtualizer: Virtualizer<TScrollElement, TItemElement>

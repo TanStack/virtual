@@ -10,10 +10,12 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
     debug?: () => boolean
     onChange?: (result: TResult) => void
     initialDeps?: TDeps
+    skipInitialOnChange?: boolean
   },
 ) {
   let deps = opts.initialDeps ?? []
   let result: TResult | undefined
+  let isInitial = true
 
   function memoizedFunction(): TResult {
     let depTime: number
@@ -62,7 +64,11 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
       )
     }
 
-    opts?.onChange?.(result)
+    if (opts?.onChange && !(isInitial && opts.skipInitialOnChange)) {
+      opts.onChange(result)
+    }
+
+    isInitial = false
 
     return result
   }

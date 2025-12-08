@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0
       - name: Setup Tools
         uses: tanstack/config/.github/setup@main
       - name: Fix formatting
-        run: pnpm prettier:write
+        run: pnpm format
       - name: Apply fixes
         uses: autofix-ci/action@551dded8c6cc8a1054039c8bc0b8b48c51dfc6ef
         with:

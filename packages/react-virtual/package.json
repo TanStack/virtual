@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TanStack/virtual.git",
+    "url": "git+https://github.com/TanStack/virtual.git",
     "directory": "packages/react-virtual"
   },
   "homepage": "https://tanstack.com/virtual",
