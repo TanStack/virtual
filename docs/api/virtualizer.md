@@ -270,6 +270,15 @@ This option enables wrapping ResizeObserver measurements in requestAnimationFram
 
 It helps prevent the "ResizeObserver loop completed with undelivered notifications" error by ensuring that measurements align with the rendering cycle. This can improve performance and reduce UI jitter, especially when resizing elements dynamically. However, since ResizeObserver already runs asynchronously, adding requestAnimationFrame may introduce a slight delay in measurements, which could be noticeable in some cases. If resizing operations are lightweight and do not cause reflows, enabling this option may not provide significant benefits.
 
+### `skipRemeasurementOnBackwardScroll`
+
+```tsx
+skipRemeasurementOnBackwardScroll: boolean
+```
+When enabled, prevents re-measuring items that have already been measured during backward scrolling.
+This reduces stuttering caused by scroll position adjustments that conflict with the user's scroll direction.
+It is recommended to use this property when scrolling in situations where item heights change dynamically.
+
 ## Virtualizer Instance
 
 The following properties and methods are available on the virtualizer instance:
