@@ -10,21 +10,22 @@ Fixed a critical bug where changing the number of lanes dynamically would cause 
 
 **Fix**: Skip `initialMeasurementsCache` restoration during lane transitions by checking the `lanesSettling` flag. This ensures all measurements are recalculated with correct lane assignments for the new lane count.
 
-**Before**: 
+**Before**:
+
 ```typescript
 // With lanes = 2
-virtualItems.forEach(item => {
+virtualItems.forEach((item) => {
   columns[item.lane].push(item) // ❌ Error: item.lane could be 3
 })
 ```
 
 **After**:
+
 ```typescript
 // With lanes = 2
-virtualItems.forEach(item => {
+virtualItems.forEach((item) => {
   columns[item.lane].push(item) // ✅ item.lane is always 0 or 1
 })
 ```
 
 This fix is essential for responsive masonry layouts where column count changes based on viewport width. No performance impact as it only affects the lane change transition path.
-
