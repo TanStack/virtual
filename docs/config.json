@@ -113,6 +113,18 @@
           "label": "react",
           "children": [
             {
+              "to": "framework/react/examples/list",
+              "label": "List"
+            },
+            {
+              "to": "framework/react/examples/horizontal-list",
+              "label": "Horizontal List"
+            },
+            {
+              "to": "framework/react/examples/grid",
+              "label": "Grid"
+            },
+            {
               "to": "framework/react/examples/fixed",
               "label": "Fixed"
             },
