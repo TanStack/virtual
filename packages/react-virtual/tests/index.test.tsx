@@ -154,7 +154,7 @@ test('should render given dynamic size after scroll', async () => {
   })
 
   // Wait for microtask to complete (flushSync is deferred via queueMicrotask)
-  await new Promise((resolve) => queueMicrotask(resolve))
+  await new Promise<void>((resolve) => queueMicrotask(() => resolve()))
 
   expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
   expect(screen.queryByText('Row 3')).toBeInTheDocument()
