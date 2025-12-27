@@ -138,7 +138,7 @@ test('should render given dynamic size', async () => {
   expect(renderer).toHaveBeenCalledTimes(3)
 })
 
-test('should render given dynamic size after scroll', () => {
+test('should render given dynamic size after scroll', async () => {
   render(<List itemSize={100} dynamic />)
 
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
@@ -152,6 +152,9 @@ test('should render given dynamic size after scroll', () => {
   fireEvent.scroll(screen.getByTestId('scroller'), {
     target: { scrollTop: 400 },
   })
+
+  // Wait for microtask to complete (flushSync is deferred via queueMicrotask)
+  await new Promise((resolve) => queueMicrotask(resolve))
 
   expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
   expect(screen.queryByText('Row 3')).toBeInTheDocument()
