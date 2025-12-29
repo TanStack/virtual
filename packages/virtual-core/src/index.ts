@@ -85,7 +85,7 @@ export const observeElementRect = <T extends Element>(
   handler(getRect(element as unknown as HTMLElement))
 
   if (!targetWindow.ResizeObserver) {
-    return () => {}
+    return () => { }
   }
 
   const observer = new targetWindow.ResizeObserver((entries) => {
@@ -161,12 +161,12 @@ export const observeElementOffset = <T extends Element>(
     instance.options.useScrollendEvent && supportsScrollend
       ? () => undefined
       : debounce(
-          targetWindow,
-          () => {
-            cb(offset, false)
-          },
-          instance.options.isScrollingResetDelay,
-        )
+        targetWindow,
+        () => {
+          cb(offset, false)
+        },
+        instance.options.isScrollingResetDelay,
+      )
 
   const createHandler = (isScrolling: boolean) => () => {
     const { horizontal, isRtl } = instance.options
@@ -212,12 +212,12 @@ export const observeWindowOffset = (
     instance.options.useScrollendEvent && supportsScrollend
       ? () => undefined
       : debounce(
-          targetWindow,
-          () => {
-            cb(offset, false)
-          },
-          instance.options.isScrollingResetDelay,
-        )
+        targetWindow,
+        () => {
+          cb(offset, false)
+        },
+        instance.options.isScrollingResetDelay,
+      )
 
   const createHandler = (isScrolling: boolean) => () => {
     offset = element[instance.options.horizontal ? 'scrollX' : 'scrollY']
@@ -348,6 +348,16 @@ export interface VirtualizerOptions<
   enabled?: boolean
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
+  /**
+   * If true, defers the flushSync call during synchronous updates to a microtask.
+   * This suppresses the React 19 warning: "flushSync was called from inside a lifecycle method."
+   *
+   * @warning Enabling this may cause visible white space gaps during fast scrolling
+   * with dynamic measurements, as the scroll correction won't be applied synchronously.
+   *
+   * @default false
+   */
+  deferFlushSync?: boolean
 }
 
 export class Virtualizer<
@@ -373,10 +383,10 @@ export class Virtualizer<
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
-        item: VirtualItem,
-        delta: number,
-        instance: Virtualizer<TScrollElement, TItemElement>,
-      ) => boolean)
+      item: VirtualItem,
+      delta: number,
+      instance: Virtualizer<TScrollElement, TItemElement>,
+    ) => boolean)
   elementsCache = new Map<Key, TItemElement>()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
@@ -434,7 +444,7 @@ export class Virtualizer<
       horizontal: false,
       getItemKey: defaultKeyExtractor,
       rangeExtractor: defaultRangeExtractor,
-      onChange: () => {},
+      onChange: () => { },
       measureElement,
       initialRect: { width: 0, height: 0 },
       scrollMargin: 0,
@@ -447,6 +457,7 @@ export class Virtualizer<
       isRtl: false,
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
+      deferFlushSync: false,
       ...opts,
     }
   }
@@ -605,12 +616,12 @@ export class Virtualizer<
 
     return furthestMeasurements.size === this.options.lanes
       ? Array.from(furthestMeasurements.values()).sort((a, b) => {
-          if (a.end === b.end) {
-            return a.index - b.index
-          }
+        if (a.end === b.end) {
+          return a.index - b.index
+        }
 
-          return a.end - b.end
-        })[0]
+        return a.end - b.end
+      })[0]
       : undefined
   }
 
@@ -802,11 +813,11 @@ export class Virtualizer<
       return (this.range =
         measurements.length > 0 && outerSize > 0
           ? calculateRange({
-              measurements,
-              outerSize,
-              scrollOffset,
-              lanes,
-            })
+            measurements,
+            outerSize,
+            scrollOffset,
+            lanes,
+          })
           : null)
     },
     {
@@ -837,11 +848,11 @@ export class Virtualizer<
       return startIndex === null || endIndex === null
         ? []
         : rangeExtractor({
-            startIndex,
-            endIndex,
-            overscan,
-            count,
-          })
+          startIndex,
+          endIndex,
+          overscan,
+          count,
+        })
     },
     {
       key: process.env.NODE_ENV !== 'production' && 'getVirtualIndexes',
@@ -960,12 +971,12 @@ export class Virtualizer<
     }
     return notUndefined(
       measurements[
-        findNearestBinarySearch(
-          0,
-          measurements.length - 1,
-          (index: number) => notUndefined(measurements[index]).start,
-          offset,
-        )
+      findNearestBinarySearch(
+        0,
+        measurements.length - 1,
+        (index: number) => notUndefined(measurements[index]).start,
+        offset,
+      )
       ],
     )
   }

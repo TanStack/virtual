@@ -28,7 +28,11 @@ function useVirtualizerBase<
     ...options,
     onChange: (instance, sync) => {
       if (sync) {
-        queueMicrotask(() => flushSync(rerender))
+        if (options.deferFlushSync) {
+          queueMicrotask(() => flushSync(rerender))
+        } else {
+          flushSync(rerender)
+        }
       } else {
         rerender()
       }

@@ -27,6 +27,7 @@ interface ListProps {
   itemSize?: number
   rangeExtractor?: (range: Range) => number[]
   dynamic?: boolean
+  deferFlushSync?: boolean
 }
 
 function List({
@@ -37,6 +38,7 @@ function List({
   itemSize,
   rangeExtractor,
   dynamic,
+  deferFlushSync,
 }: ListProps) {
   renderer()
 
@@ -57,6 +59,7 @@ function List({
     },
     measureElement: () => itemSize ?? 0,
     rangeExtractor,
+    deferFlushSync,
   })
 
   React.useEffect(() => {
@@ -138,8 +141,31 @@ test('should render given dynamic size', async () => {
   expect(renderer).toHaveBeenCalledTimes(3)
 })
 
-test('should render given dynamic size after scroll', async () => {
+test('should render given dynamic size after scroll', () => {
   render(<List itemSize={100} dynamic />)
+
+  expect(screen.queryByText('Row 0')).toBeInTheDocument()
+  expect(screen.queryByText('Row 1')).toBeInTheDocument()
+  expect(screen.queryByText('Row 2')).toBeInTheDocument()
+  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
+
+  expect(renderer).toHaveBeenCalledTimes(3)
+  renderer.mockReset()
+
+  fireEvent.scroll(screen.getByTestId('scroller'), {
+    target: { scrollTop: 400 },
+  })
+
+  expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 3')).toBeInTheDocument()
+  expect(screen.queryByText('Row 6')).toBeInTheDocument()
+  expect(screen.queryByText('Row 7')).not.toBeInTheDocument()
+
+  expect(renderer).toHaveBeenCalledTimes(2)
+})
+
+test('should render given dynamic size after scroll with deferFlushSync', async () => {
+  render(<List itemSize={100} dynamic deferFlushSync />)
 
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
   expect(screen.queryByText('Row 1')).toBeInTheDocument()
