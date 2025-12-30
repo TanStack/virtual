@@ -687,7 +687,9 @@ export class Virtualizer<
         this.pendingMeasuredCacheIndexes = []
       }
 
-      if (this.measurementsCache.length === 0) {
+      // Don't restore from initialMeasurementsCache during lane changes
+      // as it contains stale lane assignments from the previous lane count
+      if (this.measurementsCache.length === 0 && !this.lanesSettling) {
         this.measurementsCache = this.options.initialMeasurementsCache
         this.measurementsCache.forEach((item) => {
           this.itemSizeCache.set(item.key, item.size)
