@@ -136,7 +136,9 @@ The position where the list is scrolled to on render. This is useful if you are 
 getItemKey?: (index: number) => Key
 ```
 
-This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set. This function should be memoized to prevent unnecessary re-renders.
+This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set. 
+
+**Important:** In React (and similar reactive frameworks), this function **must be memoized** (e.g., using `useCallback`) to prevent infinite re-render loops that will crash your application. Without memoization, the virtualizer will detect the function reference change on every render and trigger measurement recalculation, which causes another render, creating an infinite loop.
 
 ### `rangeExtractor`
 
@@ -266,9 +268,22 @@ Whether to invert horizontal scrolling to support right-to-left language locales
 useAnimationFrameWithResizeObserver: boolean
 ```
 
-This option enables wrapping ResizeObserver measurements in requestAnimationFrame for smoother updates and reduced layout thrashing. The default value is `false`. 
+**Default:** `false`
 
-It helps prevent the "ResizeObserver loop completed with undelivered notifications" error by ensuring that measurements align with the rendering cycle. This can improve performance and reduce UI jitter, especially when resizing elements dynamically. However, since ResizeObserver already runs asynchronously, adding requestAnimationFrame may introduce a slight delay in measurements, which could be noticeable in some cases. If resizing operations are lightweight and do not cause reflows, enabling this option may not provide significant benefits.
+When enabled, defers ResizeObserver measurement processing to the next animation frame using `requestAnimationFrame`.
+
+**Important:** This option typically **should not be enabled** in most cases. ResizeObserver callbacks already execute at an optimal time in the browser's rendering pipeline (after layout, before paint), and the measurements provided in the callback are pre-computed by the browser without causing additional reflows.
+
+**Potential use cases:**
+- If you're performing heavy DOM mutations in response to size changes and want to batch them with the next render cycle
+- As a workaround for the "ResizeObserver loop completed with undelivered notifications" error (though this usually indicates a deeper issue that should be fixed)
+
+**Tradeoffs:**
+- **Adds ~16ms delay:** Measurements are deferred to the next frame, which can cause visual artifacts, stale measurements, or slower time-to-interactive
+- **No batching benefit:** ResizeObserver already batches multiple element resizes into a single callback
+- **Defeats optimization:** The browser has already computed the measurements synchronously; deferring them provides no performance benefit for reading values
+
+Only enable this option if you have a specific reason and have measured that it improves your use case.
 
 ## Virtualizer Instance
 
