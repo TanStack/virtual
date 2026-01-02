@@ -501,13 +501,6 @@ export class Virtualizer<
       : null
 
     if (this.scrollElement !== scrollElement) {
-      if (!scrollElement && this.options.keepAliveOnHidden && this.scrollElement?.isConnected) {
-        // We won't call cleanup() here. Keep everything in memory.
-        // Ensure any external subscribers are notified that the state changed.
-        this.maybeNotify()
-        return
-      }
-
       this.cleanup()
 
       if (!scrollElement) {
