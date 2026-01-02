@@ -16,18 +16,29 @@ export * from '@tanstack/virtual-core'
 const useIsomorphicLayoutEffect =
   typeof document !== 'undefined' ? React.useLayoutEffect : React.useEffect
 
+export type ReactVirtualizerOptions<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+> = VirtualizerOptions<TScrollElement, TItemElement> & {
+  useFlushSync?: boolean
+}
+
 function useVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
->(
-  options: VirtualizerOptions<TScrollElement, TItemElement>,
-): Virtualizer<TScrollElement, TItemElement> {
+>({
+  useFlushSync = true,
+  ...options
+}: ReactVirtualizerOptions<TScrollElement, TItemElement>): Virtualizer<
+  TScrollElement,
+  TItemElement
+> {
   const rerender = React.useReducer(() => ({}), {})[1]
 
   const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
     ...options,
     onChange: (instance, sync) => {
-      if (sync) {
+      if (useFlushSync && sync) {
         flushSync(rerender)
       } else {
         rerender()
@@ -58,7 +69,7 @@ export function useVirtualizer<
   TItemElement extends Element,
 >(
   options: PartialKeys<
-    VirtualizerOptions<TScrollElement, TItemElement>,
+    ReactVirtualizerOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
   >,
 ): Virtualizer<TScrollElement, TItemElement> {
@@ -72,7 +83,7 @@ export function useVirtualizer<
 
 export function useWindowVirtualizer<TItemElement extends Element>(
   options: PartialKeys<
-    VirtualizerOptions<Window, TItemElement>,
+    ReactVirtualizerOptions<Window, TItemElement>,
     | 'getScrollElement'
     | 'observeElementRect'
     | 'observeElementOffset'
