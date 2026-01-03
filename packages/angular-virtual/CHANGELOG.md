@@ -1,5 +1,12 @@
 # @tanstack/angular-virtual
 
+## 4.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`5a273bf`](https://github.com/TanStack/virtual/commit/5a273bf0c0bc0255ca172929f021c3b6e50cb69d)]:
+  - @tanstack/virtual-core@3.13.15
+
 ## 4.0.2
 
 ### Patch Changes

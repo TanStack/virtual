@@ -1,5 +1,19 @@
 # @tanstack/react-virtual
 
+## 3.13.15
+
+### Patch Changes
+
+- feat(react-virtual): add `useFlushSync` option ([#1100](https://github.com/TanStack/virtual/pull/1100))
+
+  Adds a React-specific `useFlushSync` option to control whether `flushSync` is used for synchronous scroll correction during measurement.
+
+  The default behavior remains unchanged (`useFlushSync: true`) to preserve the best scrolling experience.
+  Disabling it avoids the React 19 warning about calling `flushSync` during render, at the cost of potentially increased visible whitespace during fast scrolling with dynamically sized items.
+
+- Updated dependencies [[`5a273bf`](https://github.com/TanStack/virtual/commit/5a273bf0c0bc0255ca172929f021c3b6e50cb69d)]:
+  - @tanstack/virtual-core@3.13.15
+
 ## 3.13.14
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.15
+
+### Patch Changes
+
+- fix(virtual-core): scroll to last index properly ([#1105](https://github.com/TanStack/virtual/pull/1105))
+
 ## 3.13.14
 
 ### Patch Changes
