@@ -359,6 +359,7 @@ export class Virtualizer<
   scrollElement: TScrollElement | null = null
   targetWindow: (Window & typeof globalThis) | null = null
   isScrolling = false
+  private currentScrollToIndex: number | null = null
   measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
   private laneAssignments = new Map<number, number>() // index → lane cache
@@ -1085,6 +1086,7 @@ export class Virtualizer<
     }
 
     index = Math.max(0, Math.min(index, this.options.count - 1))
+    this.currentScrollToIndex = index
 
     let attempts = 0
     const maxAttempts = 10
@@ -1101,21 +1103,36 @@ export class Virtualizer<
       this._scrollToOffset(offset, { adjustments: undefined, behavior })
 
       this.targetWindow.requestAnimationFrame(() => {
-        const currentOffset = this.getScrollOffset()
-        const afterInfo = this.getOffsetForIndex(index, align)
-        if (!afterInfo) {
-          console.warn('Failed to get offset for index:', index)
-          return
+        const verify = () => {
+          // Abort if a new scrollToIndex was called with a different index
+          if (this.currentScrollToIndex !== index) return
+
+          const currentOffset = this.getScrollOffset()
+          const afterInfo = this.getOffsetForIndex(index, align)
+          if (!afterInfo) {
+            console.warn('Failed to get offset for index:', index)
+            return
+          }
+
+          if (!approxEqual(afterInfo[0], currentOffset)) {
+            scheduleRetry(align)
+          }
         }
 
-        if (!approxEqual(afterInfo[0], currentOffset)) {
-          scheduleRetry(align)
+        // In dynamic mode, wait an extra frame for ResizeObserver to measure newly visible elements
+        if (this.isDynamicMode()) {
+          this.targetWindow!.requestAnimationFrame(verify)
+        } else {
+          verify()
         }
       })
     }
 
     const scheduleRetry = (align: ScrollAlignment) => {
       if (!this.targetWindow) return
+
+      // Abort if a new scrollToIndex was called with a different index
+      if (this.currentScrollToIndex !== index) return
 
       attempts++
       if (attempts < maxAttempts) {
