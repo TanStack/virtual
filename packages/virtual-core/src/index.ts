@@ -882,6 +882,9 @@ export class Virtualizer<
     node: TItemElement,
     entry: ResizeObserverEntry | undefined,
   ) => {
+    if (this.options.keepAliveOnHidden && !this.isVisible()) {
+      return
+    }
     const index = this.indexFromElement(node)
     const item = this.measurementsCache[index]
     if (!item) {
