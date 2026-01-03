@@ -972,11 +972,30 @@ export class Virtualizer<
     )
   }
 
+  private getMaxScrollOffset = () => {
+    if (!this.scrollElement) return 0
+
+    if ('scrollHeight' in this.scrollElement) {
+      // Element
+      return this.options.horizontal
+        ? this.scrollElement.scrollWidth - this.scrollElement.clientWidth
+        : this.scrollElement.scrollHeight - this.scrollElement.clientHeight
+    } else {
+      // Window
+      const doc = this.scrollElement.document.documentElement
+      return this.options.horizontal
+        ? doc.scrollWidth - this.scrollElement.innerWidth
+        : doc.scrollHeight - this.scrollElement.innerHeight
+    }
+  }
+
   getOffsetForAlignment = (
     toOffset: number,
     align: ScrollAlignment,
     itemSize = 0,
   ) => {
+    if (!this.scrollElement) return 0
+
     const size = this.getSize()
     const scrollOffset = this.getScrollOffset()
 
@@ -992,7 +1011,7 @@ export class Virtualizer<
       toOffset -= size
     }
 
-    const maxOffset = this.getTotalSize() + this.options.scrollMargin - size
+    const maxOffset = this.getMaxScrollOffset()
 
     return Math.max(Math.min(maxOffset, toOffset), 0)
   }
@@ -1014,8 +1033,16 @@ export class Virtualizer<
       } else if (item.start <= scrollOffset + this.options.scrollPaddingStart) {
         align = 'start'
       } else {
-        return [scrollOffset, align] as const
+        // Item is already visible, return current position with concrete alignment
+        // to avoid infinite retry loop if measurements change
+        return [scrollOffset, 'start'] as const
       }
+    }
+
+    // For the last item with 'end' alignment, use browser's actual max scroll
+    // to account for borders/padding that aren't in our measurements
+    if (align === 'end' && index === this.options.count - 1) {
+      return [this.getMaxScrollOffset(), align] as const
     }
 
     const toOffset =

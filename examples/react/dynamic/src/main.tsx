@@ -70,6 +70,7 @@ function RowVirtualizerDynamic() {
           width: 400,
           overflowY: 'auto',
           contain: 'strict',
+          overflowAnchor: 'none',
         }}
       >
         <div
