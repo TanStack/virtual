@@ -178,7 +178,6 @@ export const observeElementOffset = <T extends Element>(
   }
   const handler = createHandler(true)
   const endHandler = createHandler(false)
-  endHandler()
 
   element.addEventListener('scroll', handler, addEventListenerOptions)
   const registerScrollendEvent =
@@ -226,7 +225,6 @@ export const observeWindowOffset = (
   }
   const handler = createHandler(true)
   const endHandler = createHandler(false)
-  endHandler()
 
   element.addEventListener('scroll', handler, addEventListenerOptions)
   const registerScrollendEvent =
@@ -519,11 +517,6 @@ export class Virtualizer<
         this.observer.observe(cached)
       })
 
-      this._scrollToOffset(this.getScrollOffset(), {
-        adjustments: undefined,
-        behavior: undefined,
-      })
-
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
           this.scrollRect = rect
@@ -545,6 +538,11 @@ export class Virtualizer<
           this.maybeNotify()
         }),
       )
+
+      this._scrollToOffset(this.getScrollOffset(), {
+        adjustments: undefined,
+        behavior: undefined,
+      })
     }
   }
 
