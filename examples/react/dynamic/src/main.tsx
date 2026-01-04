@@ -26,6 +26,10 @@ function RowVirtualizerDynamic() {
     enabled,
   })
 
+  React.useEffect(() => {
+    virtualizer.scrollToIndex(count - 1, { align: 'end' })
+  }, [])
+
   const items = virtualizer.getVirtualItems()
 
   return (
@@ -40,7 +44,7 @@ function RowVirtualizerDynamic() {
       <span style={{ padding: '0 4px' }} />
       <button
         onClick={() => {
-          virtualizer.scrollToIndex(count / 2)
+          virtualizer.scrollToIndex(count / 2, { behavior: 'smooth' })
         }}
       >
         scroll to the middle
