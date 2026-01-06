@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.17
+
+### Patch Changes
+
+- fix(virtual-core): preserve auto alignment for visible items when scrolling ([#1110](https://github.com/TanStack/virtual/pull/1110))
+
 ## 3.13.16
 
 ### Patch Changes

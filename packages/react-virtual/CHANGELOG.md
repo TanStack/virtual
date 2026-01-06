@@ -1,5 +1,12 @@
 # @tanstack/react-virtual
 
+## 3.13.17
+
+### Patch Changes
+
+- Updated dependencies [[`21d9a46`](https://github.com/TanStack/virtual/commit/21d9a46eac034cb4299872891694965bceed526d)]:
+  - @tanstack/virtual-core@3.13.17
+
 ## 3.13.16
 
 ### Patch Changes
