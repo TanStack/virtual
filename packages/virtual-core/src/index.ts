@@ -1032,9 +1032,7 @@ export class Virtualizer<
       } else if (item.start <= scrollOffset + this.options.scrollPaddingStart) {
         align = 'start'
       } else {
-        // Item is already visible, return current position with concrete alignment
-        // to avoid infinite retry loop if measurements change
-        return [scrollOffset, 'start'] as const
+        return [scrollOffset, align] as const
       }
     }
 
