@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.18
+
+### Patch Changes
+
+- revert(virtual-core): "notify framework when count changes" 2542c5a ([#1112](https://github.com/TanStack/virtual/pull/1112))
+
 ## 3.13.17
 
 ### Patch Changes

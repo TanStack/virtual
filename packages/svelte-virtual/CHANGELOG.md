@@ -1,5 +1,12 @@
 # @tanstack/svelte-virtual
 
+## 3.13.18
+
+### Patch Changes
+
+- Updated dependencies [[`9067574`](https://github.com/TanStack/virtual/commit/9067574f1a0178d30e27bcac70853bdcbf437fec)]:
+  - @tanstack/virtual-core@3.13.18
+
 ## 3.13.17
 
 ### Patch Changes
