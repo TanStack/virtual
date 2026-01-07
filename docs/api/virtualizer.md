@@ -136,9 +136,9 @@ The position where the list is scrolled to on render. This is useful if you are 
 getItemKey?: (index: number) => Key
 ```
 
-This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set. 
+This function is passed the index of each item and should return a unique key for that item. The default functionality of this function is to return the index of the item, but you should override this when possible to return a unique identifier for each item across the entire set.
 
-**Important:** In React (and similar reactive frameworks), this function **must be memoized** (e.g., using `useCallback`) to prevent infinite re-render loops that will crash your application. Without memoization, the virtualizer will detect the function reference change on every render and trigger measurement recalculation, which causes another render, creating an infinite loop.
+**Note:** The virtualizer automatically invalidates its measurement cache when measurement-affecting options change, ensuring `getTotalSize()` and other measurements return fresh values. While the virtualizer intelligently tracks which options actually affect measurements, it's still better to memoize `getItemKey` (e.g., using `useCallback` in React) to avoid unnecessary recalculations.
 
 ### `rangeExtractor`
 
