@@ -158,3 +158,56 @@ test('should update getTotalSize() when count option changes (filtering/search)'
 
   expect(virtualizer.getTotalSize()).toBe(5000) // 100 × 50
 })
+
+test('should defer lane caching until measurement when deferLaneAssignment is true', () => {
+  const virtualizer = new Virtualizer({
+    count: 4,
+    lanes: 2,
+    estimateSize: () => 100,
+    deferLaneAssignment: true,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  // No laneAssignments cached yet
+  expect(virtualizer['laneAssignments'].size).toBe(0)
+
+  // Simulate measurements
+  virtualizer.resizeItem(0, 200)
+  virtualizer.resizeItem(1, 50)
+  virtualizer.resizeItem(2, 80)
+  virtualizer.resizeItem(3, 120)
+
+  const measurements = virtualizer['getMeasurements']()
+
+  // After measurement: lane assignments based on actual sizes + cached
+  expect(virtualizer['laneAssignments'].size).toBe(4)
+  expect(measurements[2].lane).toBe(1) // lane 1 is shorter, so assigned there
+
+  // Lane assignments remain stable after size changes
+  const lanesBeforeResize = measurements.map((m) => m.lane)
+  virtualizer.resizeItem(0, 50)
+  virtualizer.resizeItem(1, 200)
+  const lanesAfterResize = virtualizer['getMeasurements']().map((m) => m.lane)
+  expect(lanesBeforeResize).toEqual(lanesAfterResize)
+})
+
+test('should cache lanes immediately when deferLaneAssignment is false (default)', () => {
+  const virtualizer = new Virtualizer({
+    count: 4,
+    lanes: 2,
+    estimateSize: () => 100,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  expect(virtualizer['laneAssignments'].size).toBe(4)
+})

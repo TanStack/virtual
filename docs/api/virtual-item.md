@@ -62,4 +62,5 @@ The size of the item. This is usually mapped to a css property like `width/heigh
 lane: number
 ```
 
-The lane index of the item. In regular lists it will always be set to `0` but becomes useful for masonry layouts (see variable examples for more details).
+The lane index of the item. Items are assigned to the shortest lane. Lane assignments are cached immediately based on the size measured by `estimateSize` by default; use `deferLaneAssignment: true` to base assignments on measured sizes instead.
+In regular lists it will always be set to `0` but becomes useful for masonry layouts (see variable examples for more details).

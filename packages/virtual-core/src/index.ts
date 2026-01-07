@@ -346,6 +346,7 @@ export interface VirtualizerOptions<
   enabled?: boolean
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
+  deferLaneAssignment?: boolean
 }
 
 export class Virtualizer<
@@ -446,6 +447,7 @@ export class Virtualizer<
       isRtl: false,
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
+      deferLaneAssignment: false,
       ...opts,
     }
   }
@@ -726,6 +728,10 @@ export class Virtualizer<
         let lane: number
         let start: number
 
+        // Check if this item has been measured (for deferLaneAssignment mode)
+        const isMeasured = itemSizeCache.has(key)
+        const shouldDeferLane = this.options.deferLaneAssignment && !isMeasured
+
         if (cachedLane !== undefined && this.options.lanes > 1) {
           // Use cached lane - O(1) lookup for previous item in same lane
           lane = cachedLane
@@ -750,8 +756,8 @@ export class Virtualizer<
             ? furthestMeasurement.lane
             : i % this.options.lanes
 
-          // Cache the lane assignment
-          if (this.options.lanes > 1) {
+          // Cache the lane assignment (skip if deferring and not yet measured)
+          if (this.options.lanes > 1 && !shouldDeferLane) {
             this.laneAssignments.set(i, lane)
           }
         }
