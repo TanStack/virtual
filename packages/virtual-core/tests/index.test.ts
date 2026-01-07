@@ -120,3 +120,41 @@ test('should correctly recalculate lane assignments when lane count changes', ()
     }).not.toThrow()
   })
 })
+
+test('should update getTotalSize() when count option changes (filtering/search)', () => {
+  const virtualizer = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  expect(virtualizer.getTotalSize()).toBe(5000) // 100 × 50
+
+  // Simulate filtering - reduce count to 20
+  virtualizer.setOptions({
+    count: 20,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  // getTotalSize() should immediately return updated value (not stale)
+  expect(virtualizer.getTotalSize()).toBe(1000) // 20 × 50
+
+  // Restore full count
+  virtualizer.setOptions({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  expect(virtualizer.getTotalSize()).toBe(5000) // 100 × 50
+})
