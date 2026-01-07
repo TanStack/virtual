@@ -9,7 +9,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
-    "@tanstack/svelte-virtual": "^3.13.17"
+    "@tanstack/svelte-virtual": "^3.13.18"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
