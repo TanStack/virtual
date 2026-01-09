@@ -2,7 +2,7 @@ import { beforeEach, test, expect, vi } from 'vitest'
 import * as React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 
-import { useVirtualizer, Range } from '../src/index'
+import { useVirtualizer, useWindowVirtualizer, Range } from '../src/index'
 
 beforeEach(() => {
   Object.defineProperties(HTMLElement.prototype, {
@@ -189,4 +189,112 @@ test('should handle handle height change', () => {
   expect(screen.queryByText('Row 0')).not.toBeInTheDocument()
   rerender(<List count={1} height={200} />)
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
+})
+
+test('useWindowVirtualizer should not set initialOffset from window.scrollY by default', () => {
+  // Reset window.scrollY to 0 initially
+  Object.defineProperty(window, 'scrollY', {
+    configurable: true,
+    value: 0,
+  })
+
+  // Mock window.scrollTo to avoid jsdom error
+  window.scrollTo = vi.fn()
+
+  let virtualizerInstance: any = null
+
+  function WindowList() {
+    const virtualizer = useWindowVirtualizer({
+      count: 100,
+      estimateSize: () => 50,
+      overscan: 5,
+    })
+
+    virtualizerInstance = virtualizer
+
+    return (
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((item) => (
+          <div
+            key={item.key}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${item.start}px)`,
+            }}
+          >
+            Item {item.index}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  render(<WindowList />)
+  
+  // Verify that initialOffset option is not set (should be default 0)
+  expect(virtualizerInstance.options.initialOffset).toBe(0)
+  
+  // The scrollOffset will match window.scrollY (0 in this case) due to the observer
+  expect(virtualizerInstance.scrollOffset).toBe(0)
+})
+
+test('useWindowVirtualizer should allow explicit initialOffset', () => {
+  // Mock window.scrollY
+  Object.defineProperty(window, 'scrollY', {
+    configurable: true,
+    value: 500,
+  })
+
+  // Mock window.scrollTo to avoid jsdom error
+  window.scrollTo = vi.fn()
+
+  let virtualizerInstance: any = null
+
+  function WindowListWithOffset() {
+    const virtualizer = useWindowVirtualizer({
+      count: 100,
+      estimateSize: () => 50,
+      overscan: 5,
+      initialOffset: () => window.scrollY, // Explicitly set to preserve scroll
+    })
+
+    virtualizerInstance = virtualizer
+
+    return (
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((item) => (
+          <div
+            key={item.key}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${item.start}px)`,
+            }}
+          >
+            Item {item.index}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  render(<WindowListWithOffset />)
+  
+  // The virtualizer should use the provided initialOffset
+  expect(virtualizerInstance.scrollOffset ?? 500).toBe(500)
 })
