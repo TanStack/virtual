@@ -285,6 +285,15 @@ When enabled, defers ResizeObserver measurement processing to the next animation
 
 Only enable this option if you have a specific reason and have measured that it improves your use case.
 
+### `skipRemeasurementOnBackwardScroll`
+
+```tsx
+skipRemeasurementOnBackwardScroll: boolean
+```
+When enabled, prevents re-measuring items that have already been measured during backward scrolling.
+This reduces stuttering caused by scroll position adjustments that conflict with the user's scroll direction.
+It is recommended to use this property when scrolling in situations where item heights change dynamically.
+
 ## Virtualizer Instance
 
 The following properties and methods are available on the virtualizer instance:
