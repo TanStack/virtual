@@ -2,8 +2,8 @@
   import { faker } from '@faker-js/faker'
   import { createWindowVirtualizer } from '@tanstack/svelte-virtual'
 
-  let virtualListEl: HTMLDivElement
-  let virtualItemEls: HTMLDivElement[] = []
+  let virtualListEl = $state<HTMLDivElement | null>(null)
+  let virtualItemEls = $state<HTMLDivElement[]>([])
 
   function randomNumber(min: number, max: number) {
     return faker.number.int({ min, max })
@@ -15,18 +15,20 @@
 
   const count = sentences.length
 
-  $: virtualizer = createWindowVirtualizer<HTMLDivElement>({
-    count,
-    scrollMargin: virtualListEl?.offsetTop ?? 0,
-    estimateSize: () => 45,
-  })
+  let virtualizer = $derived(
+    createWindowVirtualizer<HTMLDivElement>({
+      count,
+      scrollMargin: virtualListEl?.offsetTop ?? 0,
+      estimateSize: () => 45,
+    }),
+  )
 
-  $: items = $virtualizer.getVirtualItems()
+  let items = $derived($virtualizer.getVirtualItems())
 
-  $: {
+  $effect(() => {
     if (virtualItemEls.length)
       virtualItemEls.forEach((el) => $virtualizer.measureElement(el))
-  }
+  })
 </script>
 
 <div>

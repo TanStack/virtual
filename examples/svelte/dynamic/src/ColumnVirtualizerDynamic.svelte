@@ -2,8 +2,8 @@
   import { faker } from '@faker-js/faker'
   import { createVirtualizer } from '@tanstack/svelte-virtual'
 
-  let virtualListEl: HTMLDivElement
-  let virtualItemEls: HTMLDivElement[] = []
+  let virtualListEl = $state<HTMLDivElement | null>(null)
+  let virtualItemEls = $state<HTMLDivElement[]>([])
 
   function randomNumber(min: number, max: number) {
     return faker.number.int({ min, max })
@@ -13,17 +13,21 @@
     .fill(true)
     .map(() => faker.lorem.sentence(randomNumber(20, 70)))
 
-  $: virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
-    horizontal: true,
-    count: sentences.length,
-    getScrollElement: () => virtualListEl,
-    estimateSize: () => 45,
-  })
+  let makeGetScrollElement = (scrollElement: HTMLDivElement | null) => () =>
+    scrollElement
+  let virtualizer = $derived(
+    createVirtualizer<HTMLDivElement, HTMLDivElement>({
+      horizontal: true,
+      count: sentences.length,
+      getScrollElement: makeGetScrollElement(virtualListEl),
+      estimateSize: () => 45,
+    }),
+  )
 
-  $: {
+  $effect(() => {
     if (virtualItemEls.length)
       virtualItemEls.forEach((el) => $virtualizer.measureElement(el))
-  }
+  })
 </script>
 
 <div class="list scroll-container" bind:this={virtualListEl}>

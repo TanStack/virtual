@@ -1,22 +1,28 @@
 <script lang="ts">
   import { createVirtualizer } from '@tanstack/svelte-virtual'
 
-  let virtualListEl: HTMLDivElement
+  let virtualListEl = $state<HTMLDivElement | null>(null)
+  let makeGetScrollElement = (scrollElement: HTMLDivElement | null) => () =>
+    scrollElement
 
-  $: rowVirtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
-    count: 10000,
-    getScrollElement: () => virtualListEl,
-    estimateSize: () => 35,
-    overscan: 5,
-  })
+  let rowVirtualizer = $derived(
+    createVirtualizer<HTMLDivElement, HTMLDivElement>({
+      count: 10000,
+      getScrollElement: makeGetScrollElement(virtualListEl),
+      estimateSize: () => 35,
+      overscan: 5,
+    }),
+  )
 
-  $: columnVirtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
-    horizontal: true,
-    count: 10000,
-    getScrollElement: () => virtualListEl,
-    estimateSize: () => 100,
-    overscan: 5,
-  })
+  let columnVirtualizer = $derived(
+    createVirtualizer<HTMLDivElement, HTMLDivElement>({
+      horizontal: true,
+      count: 10000,
+      getScrollElement: makeGetScrollElement(virtualListEl),
+      estimateSize: () => 100,
+      overscan: 5,
+    }),
+  )
 </script>
 
 <div class="list scroll-container" bind:this={virtualListEl}>
