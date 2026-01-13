@@ -9,12 +9,13 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { makeData } from './makeData'
-import type { ColumnDef, Row, SortingState } from '@tanstack/react-table'
+import type { ColumnDef, SortingState } from '@tanstack/react-table'
 import type { Person } from './makeData'
 import './index.css'
 
 function ReactTableVirtualized() {
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [_sorting, setSorting] = React.useState<SortingState>([])
+  const sorting = React.useDeferredValue(_sorting);
 
   const columns = React.useMemo<Array<ColumnDef<Person>>>(
     () => [
@@ -61,7 +62,7 @@ function ReactTableVirtualized() {
     [],
   )
 
-  const [data, setData] = React.useState(() => makeData(50_000))
+  const [data] = React.useState(() => makeData(50_000))
 
   const table = useReactTable({
     data,
