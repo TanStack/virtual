@@ -12,6 +12,12 @@ Install your TanStack Virtual adapter as a dependency using your favorite npm pa
 npm install @tanstack/react-virtual
 ```
 
+## Preact Virtual
+
+```bash
+npm install @tanstack/preact-virtual
+```
+
 ## Solid Virtual
 
 ```bash

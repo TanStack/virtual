@@ -23,6 +23,15 @@
           ]
         },
         {
+          "label": "preact",
+          "children": [
+            {
+              "label": "Preact Virtual",
+              "to": "framework/preact/preact-virtual"
+            }
+          ]
+        },
+        {
           "label": "angular",
           "children": [
             {
