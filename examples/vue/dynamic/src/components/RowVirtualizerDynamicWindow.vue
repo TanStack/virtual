@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUpdated, shallowRef } from 'vue'
+import { computed, onMounted, onUpdated, ref, shallowRef } from 'vue'
 import { useWindowVirtualizer } from '@tanstack/vue-virtual'
 import { generateSentences } from './utils'
 

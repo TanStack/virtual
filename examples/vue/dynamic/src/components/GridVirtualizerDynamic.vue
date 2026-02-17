@@ -47,9 +47,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUpdated, shallowRef } from 'vue'
-import { useWindowVirtualizer, useVirtualizer } from '@tanstack/vue-virtual'
-import { generateData, generateColumns } from './utils'
+import { computed, onMounted, onUpdated, ref, shallowRef } from 'vue'
+import { useVirtualizer, useWindowVirtualizer } from '@tanstack/vue-virtual'
+import { generateColumns, generateData } from './utils'
 
 const columns = generateColumns(30)
 const data = generateData(columns)
