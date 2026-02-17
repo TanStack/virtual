@@ -9,7 +9,7 @@
       <template v-for="virtualRow in virtualRows" :key="virtualRow.key">
         <div
           :data-index="virtualRow.index"
-          :ref="measureElement"
+          ref="virtualItemEls"
           :style="{
             position: 'absolute',
             top: 0,
@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, type VNodeRef } from 'vue'
+import { ref, computed, onMounted, onUpdated, shallowRef } from 'vue'
 import { useWindowVirtualizer, useVirtualizer } from '@tanstack/vue-virtual'
 import { generateData, generateColumns } from './utils'
 
@@ -103,13 +103,14 @@ const width = computed(() => {
     : [0, 0]
 })
 
-const measureElement = (el) => {
-  if (!el) {
-    return
-  }
+const virtualItemEls = shallowRef([])
 
-  rowVirtualizer.value.measureElement(el)
-
-  return undefined
+function measureAll() {
+  virtualItemEls.value.forEach((el) => {
+    if (el) rowVirtualizer.value.measureElement(el)
+  })
 }
+
+onMounted(measureAll)
+onUpdated(measureAll)
 </script>

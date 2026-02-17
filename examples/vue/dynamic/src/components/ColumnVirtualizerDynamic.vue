@@ -15,7 +15,7 @@
         v-for="virtualColumn in virtualColumns"
         :key="virtualColumn.key"
         :data-index="virtualColumn.index"
-        :ref="measureElement"
+        ref="virtualItemEls"
         :class="virtualColumn.index % 2 ? 'ListItemOdd' : 'ListItemEven'"
         :style="{
           position: 'absolute',
@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type VNodeRef } from 'vue'
+import { ref, computed, onMounted, onUpdated, shallowRef } from 'vue'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import { generateSentences } from './utils'
 
@@ -54,13 +54,14 @@ const virtualColumns = computed(() => columnVirtualizer.value.getVirtualItems())
 
 const totalSize = computed(() => columnVirtualizer.value.getTotalSize())
 
-const measureElement = (el) => {
-  if (!el) {
-    return
-  }
+const virtualItemEls = shallowRef([])
 
-  columnVirtualizer.value.measureElement(el)
-
-  return undefined
+function measureAll() {
+  virtualItemEls.value.forEach((el) => {
+    if (el) columnVirtualizer.value.measureElement(el)
+  })
 }
+
+onMounted(measureAll)
+onUpdated(measureAll)
 </script>
