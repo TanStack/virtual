@@ -158,3 +158,76 @@ test('should update getTotalSize() when count option changes (filtering/search)'
 
   expect(virtualizer.getTotalSize()).toBe(5000) // 100 × 50
 })
+
+test('should not throw when component unmounts during scrollToIndex rAF loop', () => {
+  // Collect rAF callbacks so we can flush them manually
+  const rafCallbacks: Array<FrameRequestCallback> = []
+  const mockRaf = vi.fn((cb: FrameRequestCallback) => {
+    rafCallbacks.push(cb)
+    return rafCallbacks.length
+  })
+
+  const mockWindow = {
+    requestAnimationFrame: mockRaf,
+    ResizeObserver: vi.fn(() => ({
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    })),
+  }
+
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 1000,
+    scrollHeight: 5000,
+    offsetWidth: 400,
+    offsetHeight: 600,
+    ownerDocument: {
+      defaultView: mockWindow,
+    },
+  } as unknown as HTMLDivElement
+
+  const virtualizer = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    measureElement: (el) => el.getBoundingClientRect().height,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn: vi.fn(),
+    observeElementRect: (instance, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  // Initialize the virtualizer so targetWindow is set
+  virtualizer._willUpdate()
+
+  // Populate elementsCache so isDynamicMode() returns true.
+  // This triggers the code path where the rAF callback calls
+  // this.targetWindow!.requestAnimationFrame(verify)
+  const mockElement = {
+    getBoundingClientRect: () => ({ height: 50 }),
+    isConnected: true,
+    setAttribute: vi.fn(),
+  } as unknown as HTMLElement
+  virtualizer.elementsCache.set(0, mockElement)
+
+  // Trigger scrollToIndex which schedules a rAF callback
+  virtualizer.scrollToIndex(50)
+
+  // Simulate component unmount — cleanup sets targetWindow to null
+  const unmount = virtualizer._didMount()
+  unmount()
+
+  // Flush all pending rAF callbacks — this should not throw
+  // Without the fix, this crashes with:
+  // "Cannot read properties of null (reading 'requestAnimationFrame')"
+  expect(() => {
+    rafCallbacks.forEach((cb) => cb(0))
+  }).not.toThrow()
+})
