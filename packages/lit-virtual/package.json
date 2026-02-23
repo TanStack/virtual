@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/lit-virtual",
-  "version": "3.13.19",
+  "version": "3.13.20",
   "description": "Headless UI for virtualizing scrollable elements in Lit",
   "author": "Tanner Linsley",
   "license": "MIT",
