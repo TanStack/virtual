@@ -1114,7 +1114,7 @@ export class Virtualizer<
 
         // In dynamic mode, wait an extra frame for ResizeObserver to measure newly visible elements
         if (this.isDynamicMode()) {
-          this.targetWindow!.requestAnimationFrame(verify)
+          this.targetWindow.requestAnimationFrame(verify)
         } else {
           verify()
         }
