@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.19
+
+### Patch Changes
+
+- Fix crash when component unmounts during `scrollToIndex` by adding a null guard for `targetWindow` inside the `requestAnimationFrame` callback ([#1129](https://github.com/TanStack/virtual/pull/1129))
+
 ## 3.13.18
 
 ### Patch Changes
