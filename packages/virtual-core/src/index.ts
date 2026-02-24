@@ -346,6 +346,7 @@ export interface VirtualizerOptions<
   enabled?: boolean
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
+  keepAliveOnHidden?: boolean
 }
 
 export class Virtualizer<
@@ -446,6 +447,7 @@ export class Virtualizer<
       isRtl: false,
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
+      keepAliveOnHidden: false,
       ...opts,
     }
   }
@@ -787,6 +789,14 @@ export class Virtualizer<
     },
   )
 
+  private isVisible = () => {
+    if (!this.scrollElement) return false
+    return (
+      this.scrollElement instanceof Window ||
+      (this.scrollElement as HTMLElement).offsetWidth > 0
+    )
+  }
+
   calculateRange = memo(
     () => [
       this.getMeasurements(),
@@ -795,6 +805,9 @@ export class Virtualizer<
       this.options.lanes,
     ],
     (measurements, outerSize, scrollOffset, lanes) => {
+      if (this.options.keepAliveOnHidden && !this.isVisible()) {
+        return this.range
+      }
       return (this.range =
         measurements.length > 0 && outerSize > 0
           ? calculateRange({
@@ -863,6 +876,9 @@ export class Virtualizer<
     node: TItemElement,
     entry: ResizeObserverEntry | undefined,
   ) => {
+    if (this.options.keepAliveOnHidden && !this.isVisible()) {
+      return
+    }
     const index = this.indexFromElement(node)
     const item = this.measurementsCache[index]
     if (!item) {
