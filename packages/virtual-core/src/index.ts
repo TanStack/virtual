@@ -346,6 +346,7 @@ export interface VirtualizerOptions<
   enabled?: boolean
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
+  skipRemeasurementOnBackwardScroll?: boolean
 }
 
 export class Virtualizer<
@@ -446,6 +447,7 @@ export class Virtualizer<
       isRtl: false,
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
+      skipRemeasurementOnBackwardScroll: false,
       ...opts,
     }
   }
@@ -880,6 +882,21 @@ export class Virtualizer<
     }
 
     if (node.isConnected) {
+      // Check if we should skip remeasuring during backward scroll
+      if (
+        this.options.skipRemeasurementOnBackwardScroll &&
+        this.scrollDirection === 'backward' &&
+        this.isScrolling
+       ) {
+        const isAlreadyMeasured = this.itemSizeCache.has(key)
+        if (isAlreadyMeasured) {
+          // Skip remeasuring to prevent stuttering during backward scroll
+          // Use cached measurement instead
+          return
+        }
+      }
+
+      // Measure and update size
       this.resizeItem(index, this.options.measureElement(node, entry, this))
     }
   }
