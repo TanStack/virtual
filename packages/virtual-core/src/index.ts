@@ -1094,6 +1094,8 @@ export class Virtualizer<
       this._scrollToOffset(offset, { adjustments: undefined, behavior })
 
       this.targetWindow.requestAnimationFrame(() => {
+        if (!this.targetWindow) return
+
         const verify = () => {
           // Abort if a new scrollToIndex was called with a different index
           if (this.currentScrollToIndex !== index) return
@@ -1112,7 +1114,7 @@ export class Virtualizer<
 
         // In dynamic mode, wait an extra frame for ResizeObserver to measure newly visible elements
         if (this.isDynamicMode()) {
-          this.targetWindow!.requestAnimationFrame(verify)
+          this.targetWindow.requestAnimationFrame(verify)
         } else {
           verify()
         }
