@@ -13,10 +13,7 @@ export default defineConfig({
           __dirname,
           'measure-element/index.html',
         ),
-        'smooth-scroll': path.resolve(
-          __dirname,
-          'smooth-scroll/index.html',
-        ),
+        'smooth-scroll': path.resolve(__dirname, 'smooth-scroll/index.html'),
       },
     },
   },

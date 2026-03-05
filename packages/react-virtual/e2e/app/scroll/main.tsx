@@ -42,10 +42,7 @@ const App = () => {
       >
         Scroll to last
       </button>
-      <button
-        id="scroll-to-0"
-        onClick={() => rowVirtualizer.scrollToIndex(0)}
-      >
+      <button id="scroll-to-0" onClick={() => rowVirtualizer.scrollToIndex(0)}>
         Scroll to 0
       </button>
 
