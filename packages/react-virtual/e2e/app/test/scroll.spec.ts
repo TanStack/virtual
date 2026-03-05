@@ -19,7 +19,7 @@ const check = () => {
 }
 
 test('scrolls to index 1000', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/scroll/')
   await page.click('#scroll-to-1000')
 
   // Wait for scroll effect (including retries)
