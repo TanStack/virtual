@@ -863,6 +863,11 @@ export class Virtualizer<
     node: TItemElement,
     entry: ResizeObserverEntry | undefined,
   ) => {
+    if (!node.isConnected) {
+      this.observer.unobserve(node)
+      return
+    }
+
     const index = this.indexFromElement(node)
     const item = this.measurementsCache[index]
     if (!item) {
@@ -879,9 +884,7 @@ export class Virtualizer<
       this.elementsCache.set(key, node)
     }
 
-    if (node.isConnected) {
-      this.resizeItem(index, this.options.measureElement(node, entry, this))
-    }
+    this.resizeItem(index, this.options.measureElement(node, entry, this))
   }
 
   resizeItem = (index: number, size: number) => {
