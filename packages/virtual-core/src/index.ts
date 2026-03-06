@@ -8,7 +8,7 @@ type ScrollDirection = 'forward' | 'backward'
 
 type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
-type ScrollBehavior = 'auto' | 'smooth'
+type ScrollBehavior = 'auto' | 'smooth' | 'instant'
 
 export interface ScrollToOptions {
   align?: ScrollAlignment
