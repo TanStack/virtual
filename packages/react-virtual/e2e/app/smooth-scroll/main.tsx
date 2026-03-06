@@ -7,7 +7,7 @@ function getRandomInt(min: number, max: number) {
 }
 
 const randomHeight = (() => {
-  const cache = new Map()
+  const cache = new Map<string, number>()
   return (id: string) => {
     const value = cache.get(id)
     if (value !== undefined) {
@@ -21,30 +21,71 @@ const randomHeight = (() => {
 
 const App = () => {
   const parentRef = React.useRef<HTMLDivElement>(null)
+
   const rowVirtualizer = useVirtualizer({
     count: 1002,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
-    debug: true,
   })
 
   return (
     <div>
-      <button
-        id="scroll-to-1000"
-        onClick={() => rowVirtualizer.scrollToIndex(1000)}
-      >
-        Scroll to 1000
-      </button>
-      <button
-        id="scroll-to-last"
-        onClick={() => rowVirtualizer.scrollToIndex(1001)}
-      >
-        Scroll to last
-      </button>
-      <button id="scroll-to-0" onClick={() => rowVirtualizer.scrollToIndex(0)}>
-        Scroll to 0
-      </button>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <button
+          id="scroll-to-100"
+          onClick={() =>
+            rowVirtualizer.scrollToIndex(100, { behavior: 'smooth' })
+          }
+        >
+          Smooth scroll to 100
+        </button>
+        <button
+          id="scroll-to-500"
+          onClick={() =>
+            rowVirtualizer.scrollToIndex(500, { behavior: 'smooth' })
+          }
+        >
+          Smooth scroll to 500
+        </button>
+        <button
+          id="scroll-to-1000"
+          onClick={() =>
+            rowVirtualizer.scrollToIndex(1000, { behavior: 'smooth' })
+          }
+        >
+          Smooth scroll to 1000
+        </button>
+        <button
+          id="scroll-to-0"
+          onClick={() =>
+            rowVirtualizer.scrollToIndex(0, { behavior: 'smooth' })
+          }
+        >
+          Smooth scroll to 0
+        </button>
+        <button
+          id="scroll-to-500-start"
+          onClick={() =>
+            rowVirtualizer.scrollToIndex(500, {
+              behavior: 'smooth',
+              align: 'start',
+            })
+          }
+        >
+          Smooth scroll to 500 (start)
+        </button>
+        <button
+          id="scroll-to-500-center"
+          onClick={() =>
+            rowVirtualizer.scrollToIndex(500, {
+              behavior: 'smooth',
+              align: 'center',
+            })
+          }
+        >
+          Smooth scroll to 500 (center)
+        </button>
+      </div>
 
       <div
         ref={parentRef}

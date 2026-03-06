@@ -34,7 +34,7 @@ A function that returns the scrollable element for the virtualizer. It may retur
 estimateSize: (index: number) => number
 ```
 
-> 🧠 If you are dynamically measuring your elements, it's recommended to estimate the largest possible size (width/height, within comfort) of your items. This will ensure features like smooth-scrolling will have a better chance at working correctly.
+> 🧠 If you are dynamically measuring your elements, it's recommended to estimate the largest possible size (width/height, within comfort) of your items. This will help the virtualizer calculate more accurate initial positions.
 
 This function is passed the index of each item and should return the actual size (or estimated size if you will be dynamically measuring items with `virtualItem.measureElement`) for each item. This measurement should return either the width or height depending on the orientation of your virtualizer.
 
@@ -165,8 +165,6 @@ An optional function that (if provided) should implement the scrolling behavior 
 - The virtualizer instance itself. 
 
 Note that built-in scroll implementations are exported as `elementScroll` and `windowScroll`, which are automatically configured by the framework adapter functions like `useVirtualizer` or `useWindowVirtualizer`.
-
-> ⚠️ Attempting to use smoothScroll with dynamically measured elements will not work.
 
 ### `observeElementRect`
 
@@ -348,6 +346,23 @@ scrollToIndex: (
 ```
 
 Scrolls the virtualizer to the items of the index provided. You can optionally pass an alignment mode to anchor the scroll to a specific part of the scrollElement.
+
+> 🧠 During smooth scrolling, the virtualizer only measures items within a buffer range around the scroll target. Items far from the target are skipped to prevent their size changes from shifting the target position and breaking the smooth animation.
+>
+> Because of this, the preferred layout strategy for smooth scrolling is **block translation** — translate the entire rendered block using the first item's `start` offset, rather than positioning each item independently with absolute positioning. This ensures items stay correctly positioned relative to each other even when some measurements are skipped.
+
+### `scrollBy`
+
+```tsx
+scrollBy: (
+  delta: number,
+  options?: {
+    behavior?: 'auto' | 'smooth'
+  }
+) => void
+```
+
+Scrolls the virtualizer by the specified number of pixels relative to the current scroll position.
 
 ### `getTotalSize`
 
