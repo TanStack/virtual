@@ -573,7 +573,10 @@ export class Virtualizer<
 
   private rafId: number | null = null
   private scheduleScrollReconcile() {
-    if (!this.targetWindow) return
+    if (!this.targetWindow) {
+      this.scrollState = null
+      return
+    }
     if (this.rafId != null) return
     this.rafId = this.targetWindow.requestAnimationFrame(() => {
       this.rafId = null
