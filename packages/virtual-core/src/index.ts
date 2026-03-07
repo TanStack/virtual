@@ -623,8 +623,9 @@ export class Virtualizer<
       this.options.getItemKey,
       this.options.enabled,
       this.options.lanes,
+      this.options.deferLaneAssignment,
     ],
-    (count, paddingStart, scrollMargin, getItemKey, enabled, lanes) => {
+    (count, paddingStart, scrollMargin, getItemKey, enabled, lanes, deferLaneAssignment) => {
       const lanesChanged =
         this.prevLanes !== undefined && this.prevLanes !== lanes
 
@@ -643,6 +644,7 @@ export class Virtualizer<
         getItemKey,
         enabled,
         lanes,
+        deferLaneAssignment,
       }
     },
     {
@@ -653,7 +655,7 @@ export class Virtualizer<
   private getMeasurements = memo(
     () => [this.getMeasurementOptions(), this.itemSizeCache],
     (
-      { count, paddingStart, scrollMargin, getItemKey, enabled, lanes },
+      { count, paddingStart, scrollMargin, getItemKey, enabled, lanes, deferLaneAssignment },
       itemSizeCache,
     ) => {
       if (!enabled) {
@@ -730,7 +732,7 @@ export class Virtualizer<
 
         // Check if this item has been measured (for deferLaneAssignment mode)
         const isMeasured = itemSizeCache.has(key)
-        const shouldDeferLane = this.options.deferLaneAssignment && !isMeasured
+        const shouldDeferLane = deferLaneAssignment && !isMeasured
 
         if (cachedLane !== undefined && this.options.lanes > 1) {
           // Use cached lane - O(1) lookup for previous item in same lane
