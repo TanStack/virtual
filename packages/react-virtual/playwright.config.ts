@@ -10,7 +10,7 @@ export default defineConfig({
   },
   webServer: {
     command: `VITE_SERVER_PORT=${PORT} vite build --config e2e/app/vite.config.ts && VITE_SERVER_PORT=${PORT} vite preview --config e2e/app/vite.config.ts --port ${PORT}`,
-    url: baseURL,
+    url: `${baseURL}/scroll/`,
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
   },

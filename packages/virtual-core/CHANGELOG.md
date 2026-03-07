@@ -1,5 +1,17 @@
 # @tanstack/virtual-core
 
+## 3.13.21
+
+### Patch Changes
+
+- fix(virtual-core): smooth scrolling for dynamic item sizes ([#1108](https://github.com/TanStack/virtual/pull/1108))
+
+## 3.13.20
+
+### Patch Changes
+
+- fix(virtual-core): early return in \_measureElement for disconnected nodes ([#1135](https://github.com/TanStack/virtual/pull/1135))
+
 ## 3.13.19
 
 ### Patch Changes

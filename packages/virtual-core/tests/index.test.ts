@@ -169,6 +169,7 @@ test('should not throw when component unmounts during scrollToIndex rAF loop', (
 
   const mockWindow = {
     requestAnimationFrame: mockRaf,
+    cancelAnimationFrame: vi.fn(),
     ResizeObserver: vi.fn(() => ({
       observe: vi.fn(),
       unobserve: vi.fn(),
@@ -283,4 +284,175 @@ test('should cache lanes immediately when deferLaneAssignment is false (default)
   virtualizer['getMeasurements']()
 
   expect(virtualizer['laneAssignments'].size).toBe(4)
+})
+
+function createMockEnvironment() {
+  const rafCallbacks: Array<FrameRequestCallback> = []
+  let rafIdCounter = 0
+  const mockRaf = vi.fn((cb: FrameRequestCallback) => {
+    rafCallbacks.push(cb)
+    return ++rafIdCounter
+  })
+  const mockCancelRaf = vi.fn()
+
+  const mockWindow = {
+    requestAnimationFrame: mockRaf,
+    cancelAnimationFrame: mockCancelRaf,
+    performance: { now: () => Date.now() },
+    ResizeObserver: vi.fn(() => ({
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    })),
+  }
+
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 1000,
+    scrollHeight: 5000,
+    clientWidth: 400,
+    clientHeight: 600,
+    offsetWidth: 400,
+    offsetHeight: 600,
+    ownerDocument: {
+      defaultView: mockWindow,
+    },
+    scrollTo: vi.fn(),
+  } as unknown as HTMLDivElement
+
+  const scrollToFn = vi.fn()
+
+  return { rafCallbacks, mockWindow, mockScrollElement, scrollToFn }
+}
+
+function createVirtualizer(
+  mockScrollElement: HTMLDivElement,
+  scrollToFn: ReturnType<typeof vi.fn>,
+) {
+  return new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+}
+
+test('scrollToIndex(0) should reconcile correctly', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  virtualizer.scrollToIndex(0)
+
+  // scrollToFn should have been called with offset for index 0
+  expect(scrollToFn).toHaveBeenCalled()
+  const calledOffset = scrollToFn.mock.calls[0]![0]
+  expect(calledOffset).toBe(0)
+
+  // Flush rAF — reconcileScroll should run and not bail
+  // It should eventually clear scrollState (settle)
+  rafCallbacks.forEach((cb) => cb(0))
+
+  // scrollState should be cleared after settling
+  expect(virtualizer['scrollState']).toBeNull()
+})
+
+test('scrollToOffset should reconcile and clear scrollState', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  virtualizer.scrollToOffset(200)
+
+  expect(scrollToFn).toHaveBeenCalled()
+
+  // scrollState should be set with index: null
+  expect(virtualizer['scrollState']).not.toBeNull()
+  expect(virtualizer['scrollState']!.index).toBeNull()
+
+  // Simulate the scroll offset reaching the target
+  virtualizer.scrollOffset = 200
+
+  // Flush rAF — reconciliation should settle and clear scrollState
+  rafCallbacks.forEach((cb) => cb(0))
+
+  expect(virtualizer['scrollState']).toBeNull()
+})
+
+test('scrollBy should reconcile and clear scrollState', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  virtualizer.scrollBy(100)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  expect(virtualizer['scrollState']!.index).toBeNull()
+
+  // Simulate scroll offset reaching the target
+  virtualizer.scrollOffset = 100
+
+  rafCallbacks.forEach((cb) => cb(0))
+
+  expect(virtualizer['scrollState']).toBeNull()
+})
+
+test('reconcileScroll should bail out after timeout', () => {
+  const { rafCallbacks, mockWindow, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+
+  // Make performance.now() return a controllable value
+  let fakeTime = 1000
+  mockWindow.performance.now = () => fakeTime
+
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+  virtualizer._willUpdate()
+
+  virtualizer.scrollToIndex(50)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+
+  // Advance time past the 5s safety valve
+  fakeTime = 7000
+
+  // Flush rAF — should trigger timeout bailout
+  rafCallbacks.forEach((cb) => cb(0))
+
+  expect(virtualizer['scrollState']).toBeNull()
+})
+
+test('cleanup should cancel pending RAF and clear scrollState', () => {
+  const { mockWindow, mockScrollElement, scrollToFn } = createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+
+  virtualizer._willUpdate()
+  virtualizer.scrollToIndex(50)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  expect(virtualizer['rafId']).not.toBeNull()
+
+  const unmount = virtualizer._didMount()
+  unmount()
+
+  expect(virtualizer['scrollState']).toBeNull()
+  expect(virtualizer['rafId']).toBeNull()
+  expect(mockWindow.cancelAnimationFrame).toHaveBeenCalled()
 })

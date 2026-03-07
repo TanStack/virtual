@@ -8,7 +8,7 @@ type ScrollDirection = 'forward' | 'backward'
 
 type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
-type ScrollBehavior = 'auto' | 'smooth'
+type ScrollBehavior = 'auto' | 'smooth' | 'instant'
 
 export interface ScrollToOptions {
   align?: ScrollAlignment
@@ -349,6 +349,22 @@ export interface VirtualizerOptions<
   deferLaneAssignment?: boolean
 }
 
+type ScrollState = {
+  // what we want
+  index: number | null
+  align: ScrollAlignment
+  behavior: ScrollBehavior
+
+  // lifecycle
+  startedAt: number
+
+  // target tracking
+  lastTargetOffset: number
+
+  // settling
+  stableFrames: number
+}
+
 export class Virtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
@@ -358,7 +374,7 @@ export class Virtualizer<
   scrollElement: TScrollElement | null = null
   targetWindow: (Window & typeof globalThis) | null = null
   isScrolling = false
-  private currentScrollToIndex: number | null = null
+  private scrollState: ScrollState | null = null
   measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
   private laneAssignments = new Map<number, number>() // index → lane cache
@@ -378,6 +394,7 @@ export class Virtualizer<
         instance: Virtualizer<TScrollElement, TItemElement>,
       ) => boolean)
   elementsCache = new Map<Key, TItemElement>()
+  private now = () => this.targetWindow?.performance?.now?.() ?? Date.now()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
 
@@ -484,6 +501,11 @@ export class Virtualizer<
     this.unsubs.filter(Boolean).forEach((d) => d!())
     this.unsubs = []
     this.observer.disconnect()
+    if (this.rafId != null && this.targetWindow) {
+      this.targetWindow.cancelAnimationFrame(this.rafId)
+      this.rafId = null
+    }
+    this.scrollState = null
     this.scrollElement = null
     this.targetWindow = null
   }
@@ -537,6 +559,9 @@ export class Virtualizer<
           this.scrollOffset = offset
           this.isScrolling = isScrolling
 
+          if (this.scrollState) {
+            this.scheduleScrollReconcile()
+          }
           this.maybeNotify()
         }),
       )
@@ -546,6 +571,74 @@ export class Virtualizer<
         behavior: undefined,
       })
     }
+  }
+
+  private rafId: number | null = null
+  private scheduleScrollReconcile() {
+    if (!this.targetWindow) {
+      this.scrollState = null
+      return
+    }
+    if (this.rafId != null) return
+    this.rafId = this.targetWindow.requestAnimationFrame(() => {
+      this.rafId = null
+      this.reconcileScroll()
+    })
+  }
+  private reconcileScroll() {
+    if (!this.scrollState) return
+
+    const el = this.scrollElement
+    if (!el) return
+
+    // Safety valve: bail out if reconciliation has been running too long
+    const MAX_RECONCILE_MS = 5000
+    if (this.now() - this.scrollState.startedAt > MAX_RECONCILE_MS) {
+      this.scrollState = null
+      return
+    }
+
+    const offsetInfo =
+      this.scrollState.index != null
+        ? this.getOffsetForIndex(this.scrollState.index, this.scrollState.align)
+        : undefined
+    const targetOffset = offsetInfo
+      ? offsetInfo[0]
+      : this.scrollState.lastTargetOffset
+
+    // Require one stable frame where target matches scroll offset.
+    // approxEqual() already tolerates minor fluctuations, so one frame is sufficient
+    // to confirm scroll has reached its target without premature cleanup.
+    const STABLE_FRAMES = 1
+
+    const targetChanged = targetOffset !== this.scrollState.lastTargetOffset
+
+    if (!targetChanged && approxEqual(targetOffset, this.getScrollOffset())) {
+      this.scrollState.stableFrames++
+      if (this.scrollState.stableFrames >= STABLE_FRAMES) {
+        this.scrollState = null
+        return
+      }
+    } else {
+      this.scrollState.stableFrames = 0
+
+      if (targetChanged) {
+        this.scrollState.lastTargetOffset = targetOffset
+        // Switch to 'auto' behavior once measurements cause target to change
+        // We want to jump directly to the correct position, not smoothly animate to it
+        this.scrollState.behavior = 'auto'
+
+        this._scrollToOffset(targetOffset, {
+          adjustments: undefined,
+          behavior: 'auto',
+        })
+      }
+    }
+
+    // Always reschedule while scrollState is active to guarantee
+    // the safety valve timeout runs even if no scroll events fire
+    // (e.g. no-op scrollToFn, detached element)
+    this.scheduleScrollReconcile()
   }
 
   private getSize = () => {
@@ -867,10 +960,47 @@ export class Virtualizer<
     return parseInt(indexStr, 10)
   }
 
+  /**
+   * Determines if an item at the given index should be measured during smooth scroll.
+   * During smooth scroll, only items within a buffer range around the target are measured
+   * to prevent items far from the target from pushing it away.
+   */
+  private shouldMeasureDuringScroll = (index: number): boolean => {
+    // No scroll state or not smooth scroll - always allow measurements
+    if (!this.scrollState || this.scrollState.behavior !== 'smooth') {
+      return true
+    }
+
+    const scrollIndex =
+      this.scrollState.index ??
+      this.getVirtualItemForOffset(this.scrollState.lastTargetOffset)?.index
+
+    if (scrollIndex !== undefined && this.range) {
+      // Allow measurements within a buffer range around the scroll target
+      const bufferSize = Math.max(
+        this.options.overscan,
+        Math.ceil((this.range.endIndex - this.range.startIndex) / 2),
+      )
+      const minIndex = Math.max(0, scrollIndex - bufferSize)
+      const maxIndex = Math.min(
+        this.options.count - 1,
+        scrollIndex + bufferSize,
+      )
+      return index >= minIndex && index <= maxIndex
+    }
+
+    return true
+  }
+
   private _measureElement = (
     node: TItemElement,
     entry: ResizeObserverEntry | undefined,
   ) => {
+    if (!node.isConnected) {
+      this.observer.unobserve(node)
+      return
+    }
+
     const index = this.indexFromElement(node)
     const item = this.measurementsCache[index]
     if (!item) {
@@ -887,7 +1017,7 @@ export class Virtualizer<
       this.elementsCache.set(key, node)
     }
 
-    if (node.isConnected) {
+    if (this.shouldMeasureDuringScroll(index)) {
       this.resizeItem(index, this.options.measureElement(node, entry, this))
     }
   }
@@ -902,14 +1032,14 @@ export class Virtualizer<
 
     if (delta !== 0) {
       if (
-        this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
+        this.scrollState?.behavior !== 'smooth' &&
+        (this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
           ? this.shouldAdjustScrollPositionOnItemSizeChange(item, delta, this)
-          : item.start < this.getScrollOffset() + this.scrollAdjustments
+          : item.start < this.getScrollOffset() + this.scrollAdjustments)
       ) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
         }
-
         this._scrollToOffset(this.getScrollOffset(), {
           adjustments: (this.scrollAdjustments += delta),
           behavior: undefined,
@@ -1021,13 +1151,11 @@ export class Virtualizer<
   getOffsetForIndex = (index: number, align: ScrollAlignment = 'auto') => {
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
-    const item = this.measurementsCache[index]
-    if (!item) {
-      return undefined
-    }
-
     const size = this.getSize()
     const scrollOffset = this.getScrollOffset()
+
+    const item = this.measurementsCache[index]
+    if (!item) return
 
     if (align === 'auto') {
       if (item.end >= scrollOffset + size - this.options.scrollPaddingEnd) {
@@ -1056,112 +1184,76 @@ export class Virtualizer<
     ] as const
   }
 
-  private isDynamicMode = () => this.elementsCache.size > 0
-
   scrollToOffset = (
     toOffset: number,
-    { align = 'start', behavior }: ScrollToOffsetOptions = {},
+    { align = 'start', behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
-    if (behavior === 'smooth' && this.isDynamicMode()) {
-      console.warn(
-        'The `smooth` scroll behavior is not fully supported with dynamic size.',
-      )
+    const offset = this.getOffsetForAlignment(toOffset, align)
+
+    const now = this.now()
+    this.scrollState = {
+      index: null,
+      align,
+      behavior,
+      startedAt: now,
+      lastTargetOffset: offset,
+      stableFrames: 0,
     }
 
-    this._scrollToOffset(this.getOffsetForAlignment(toOffset, align), {
-      adjustments: undefined,
-      behavior,
-    })
+    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+
+    this.scheduleScrollReconcile()
   }
 
   scrollToIndex = (
     index: number,
-    { align: initialAlign = 'auto', behavior }: ScrollToIndexOptions = {},
+    {
+      align: initialAlign = 'auto',
+      behavior = 'auto',
+    }: ScrollToIndexOptions = {},
   ) => {
-    if (behavior === 'smooth' && this.isDynamicMode()) {
-      console.warn(
-        'The `smooth` scroll behavior is not fully supported with dynamic size.',
-      )
-    }
-
     index = Math.max(0, Math.min(index, this.options.count - 1))
-    this.currentScrollToIndex = index
 
-    let attempts = 0
-    const maxAttempts = 10
+    const offsetInfo = this.getOffsetForIndex(index, initialAlign)
+    if (!offsetInfo) {
+      return
+    }
+    const [offset, align] = offsetInfo
 
-    const tryScroll = (currentAlign: ScrollAlignment) => {
-      if (!this.targetWindow) return
-
-      const offsetInfo = this.getOffsetForIndex(index, currentAlign)
-      if (!offsetInfo) {
-        console.warn('Failed to get offset for index:', index)
-        return
-      }
-      const [offset, align] = offsetInfo
-      this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-      this.targetWindow.requestAnimationFrame(() => {
-        if (!this.targetWindow) return
-
-        const verify = () => {
-          // Abort if a new scrollToIndex was called with a different index
-          if (this.currentScrollToIndex !== index) return
-
-          const currentOffset = this.getScrollOffset()
-          const afterInfo = this.getOffsetForIndex(index, align)
-          if (!afterInfo) {
-            console.warn('Failed to get offset for index:', index)
-            return
-          }
-
-          if (!approxEqual(afterInfo[0], currentOffset)) {
-            scheduleRetry(align)
-          }
-        }
-
-        // In dynamic mode, wait an extra frame for ResizeObserver to measure newly visible elements
-        if (this.isDynamicMode()) {
-          this.targetWindow.requestAnimationFrame(verify)
-        } else {
-          verify()
-        }
-      })
+    const now = this.now()
+    this.scrollState = {
+      index,
+      align,
+      behavior,
+      startedAt: now,
+      lastTargetOffset: offset,
+      stableFrames: 0,
     }
 
-    const scheduleRetry = (align: ScrollAlignment) => {
-      if (!this.targetWindow) return
+    this._scrollToOffset(offset, { adjustments: undefined, behavior })
 
-      // Abort if a new scrollToIndex was called with a different index
-      if (this.currentScrollToIndex !== index) return
-
-      attempts++
-      if (attempts < maxAttempts) {
-        if (process.env.NODE_ENV !== 'production' && this.options.debug) {
-          console.info('Schedule retry', attempts, maxAttempts)
-        }
-        this.targetWindow.requestAnimationFrame(() => tryScroll(align))
-      } else {
-        console.warn(
-          `Failed to scroll to index ${index} after ${maxAttempts} attempts.`,
-        )
-      }
-    }
-
-    tryScroll(initialAlign)
+    this.scheduleScrollReconcile()
   }
 
-  scrollBy = (delta: number, { behavior }: ScrollToOffsetOptions = {}) => {
-    if (behavior === 'smooth' && this.isDynamicMode()) {
-      console.warn(
-        'The `smooth` scroll behavior is not fully supported with dynamic size.',
-      )
+  scrollBy = (
+    delta: number,
+    { behavior = 'auto' }: ScrollToOffsetOptions = {},
+  ) => {
+    const offset = this.getScrollOffset() + delta
+    const now = this.now()
+
+    this.scrollState = {
+      index: null,
+      align: 'start',
+      behavior,
+      startedAt: now,
+      lastTargetOffset: offset,
+      stableFrames: 0,
     }
 
-    this._scrollToOffset(this.getScrollOffset() + delta, {
-      adjustments: undefined,
-      behavior,
-    })
+    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+
+    this.scheduleScrollReconcile()
   }
 
   getTotalSize = () => {
