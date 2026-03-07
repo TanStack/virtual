@@ -230,7 +230,7 @@ This option allows you to set the spacing between items in the virtualized list.
 lanes: number
 ```
 
-The number of lanes the list is divided into (aka columns for vertical lists and rows for horizontal lists). Items are assigned to the lane with the shortest total size. Lane assignments are cached immediately based on `estimateSize` to prevent items from jumping between lanes.
+The number of lanes the list is divided into (aka columns for vertical lists and rows for horizontal lists). Items are assigned to the lane with the shortest total size. By default, when `deferLaneAssignment` is `false`, lane assignments are cached immediately based on `estimateSize` to prevent items from jumping between lanes (see `deferLaneAssignment` below to defer this behavior).
 
 ### `deferLaneAssignment`
 
