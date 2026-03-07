@@ -16,20 +16,21 @@ import {
   onMount,
 } from 'solid-js'
 import { createStore, reconcile } from 'solid-js/store'
-import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type { Key, PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
 
 function createVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
+  TKey extends Key = Key,
 >(
-  options: VirtualizerOptions<TScrollElement, TItemElement>,
-): Virtualizer<TScrollElement, TItemElement> {
-  const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> =
+  options: VirtualizerOptions<TScrollElement, TItemElement, TKey>,
+): Virtualizer<TScrollElement, TItemElement, TKey> {
+  const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement, TKey> =
     mergeProps(options)
 
-  const instance = new Virtualizer<TScrollElement, TItemElement>(
+  const instance = new Virtualizer<TScrollElement, TItemElement, TKey>(
     resolvedOptions,
   )
 
@@ -40,8 +41,8 @@ function createVirtualizerBase<
 
   const handler = {
     get(
-      target: Virtualizer<TScrollElement, TItemElement>,
-      prop: keyof Virtualizer<TScrollElement, TItemElement>,
+      target: Virtualizer<TScrollElement, TItemElement, TKey>,
+      prop: keyof Virtualizer<TScrollElement, TItemElement, TKey>,
     ) {
       switch (prop) {
         case 'getVirtualItems':
@@ -67,7 +68,7 @@ function createVirtualizerBase<
     virtualizer.setOptions(
       mergeProps(resolvedOptions, options, {
         onChange: (
-          instance: Virtualizer<TScrollElement, TItemElement>,
+          instance: Virtualizer<TScrollElement, TItemElement, TKey>,
           sync: boolean,
         ) => {
           instance._willUpdate()
@@ -90,13 +91,14 @@ function createVirtualizerBase<
 export function createVirtualizer<
   TScrollElement extends Element,
   TItemElement extends Element,
+  TKey extends Key = Key,
 >(
   options: PartialKeys<
-    VirtualizerOptions<TScrollElement, TItemElement>,
+    VirtualizerOptions<TScrollElement, TItemElement, TKey>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
   >,
-): Virtualizer<TScrollElement, TItemElement> {
-  return createVirtualizerBase<TScrollElement, TItemElement>(
+): Virtualizer<TScrollElement, TItemElement, TKey> {
+  return createVirtualizerBase<TScrollElement, TItemElement, TKey>(
     mergeProps(
       {
         observeElementRect: observeElementRect,
@@ -108,16 +110,19 @@ export function createVirtualizer<
   )
 }
 
-export function createWindowVirtualizer<TItemElement extends Element>(
+export function createWindowVirtualizer<
+  TItemElement extends Element,
+  TKey extends Key = Key,
+>(
   options: PartialKeys<
-    VirtualizerOptions<Window, TItemElement>,
+    VirtualizerOptions<Window, TItemElement, TKey>,
     | 'getScrollElement'
     | 'observeElementRect'
     | 'observeElementOffset'
     | 'scrollToFn'
   >,
-): Virtualizer<Window, TItemElement> {
-  return createVirtualizerBase<Window, TItemElement>(
+): Virtualizer<Window, TItemElement, TKey> {
+  return createVirtualizerBase<Window, TItemElement, TKey>(
     mergeProps(
       {
         getScrollElement: () =>

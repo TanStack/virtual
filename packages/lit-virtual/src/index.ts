@@ -8,23 +8,24 @@ import {
   windowScroll,
 } from '@tanstack/virtual-core'
 import type { ReactiveController, ReactiveControllerHost } from 'lit'
-import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type { Key, PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
 class VirtualizerControllerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
+  TKey extends Key = Key,
 > implements ReactiveController {
   host: ReactiveControllerHost
 
-  private readonly virtualizer: Virtualizer<TScrollElement, TItemElement>
+  private readonly virtualizer: Virtualizer<TScrollElement, TItemElement, TKey>
 
   private cleanup: () => void = () => {}
 
   constructor(
     host: ReactiveControllerHost,
-    options: VirtualizerOptions<TScrollElement, TItemElement>,
+    options: VirtualizerOptions<TScrollElement, TItemElement, TKey>,
   ) {
-    const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
+    const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement, TKey> = {
       ...options,
       onChange: (instance, sync) => {
         this.host.updateComplete.then(() => this.host.requestUpdate())
@@ -55,11 +56,12 @@ class VirtualizerControllerBase<
 export class VirtualizerController<
   TScrollElement extends Element,
   TItemElement extends Element,
-> extends VirtualizerControllerBase<TScrollElement, TItemElement> {
+  TKey extends Key = Key,
+> extends VirtualizerControllerBase<TScrollElement, TItemElement, TKey> {
   constructor(
     host: ReactiveControllerHost,
     options: PartialKeys<
-      VirtualizerOptions<TScrollElement, TItemElement>,
+      VirtualizerOptions<TScrollElement, TItemElement, TKey>,
       'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
     >,
   ) {
@@ -74,11 +76,12 @@ export class VirtualizerController<
 
 export class WindowVirtualizerController<
   TItemElement extends Element,
-> extends VirtualizerControllerBase<Window, TItemElement> {
+  TKey extends Key = Key,
+> extends VirtualizerControllerBase<Window, TItemElement, TKey> {
   constructor(
     host: ReactiveControllerHost,
     options: PartialKeys<
-      VirtualizerOptions<Window, TItemElement>,
+      VirtualizerOptions<Window, TItemElement, TKey>,
       | 'getScrollElement'
       | 'observeElementRect'
       | 'observeElementOffset'

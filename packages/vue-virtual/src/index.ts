@@ -15,7 +15,7 @@ import {
   unref,
   watch,
 } from 'vue'
-import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type { Key, PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 import type { Ref } from 'vue'
 
 export * from '@tanstack/virtual-core'
@@ -25,9 +25,10 @@ type MaybeRef<T> = T | Ref<T>
 function useVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
+  TKey extends Key = Key,
 >(
-  options: MaybeRef<VirtualizerOptions<TScrollElement, TItemElement>>,
-): Ref<Virtualizer<TScrollElement, TItemElement>> {
+  options: MaybeRef<VirtualizerOptions<TScrollElement, TItemElement, TKey>>,
+): Ref<Virtualizer<TScrollElement, TItemElement, TKey>> {
   const virtualizer = new Virtualizer(unref(options))
   const state = shallowRef(virtualizer)
 
@@ -72,15 +73,16 @@ function useVirtualizerBase<
 export function useVirtualizer<
   TScrollElement extends Element,
   TItemElement extends Element,
+  TKey extends Key = Key,
 >(
   options: MaybeRef<
     PartialKeys<
-      VirtualizerOptions<TScrollElement, TItemElement>,
+      VirtualizerOptions<TScrollElement, TItemElement, TKey>,
       'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
     >
   >,
-): Ref<Virtualizer<TScrollElement, TItemElement>> {
-  return useVirtualizerBase<TScrollElement, TItemElement>(
+): Ref<Virtualizer<TScrollElement, TItemElement, TKey>> {
+  return useVirtualizerBase<TScrollElement, TItemElement, TKey>(
     computed(() => ({
       observeElementRect: observeElementRect,
       observeElementOffset: observeElementOffset,
@@ -90,18 +92,21 @@ export function useVirtualizer<
   )
 }
 
-export function useWindowVirtualizer<TItemElement extends Element>(
+export function useWindowVirtualizer<
+  TItemElement extends Element,
+  TKey extends Key = Key,
+>(
   options: MaybeRef<
     PartialKeys<
-      VirtualizerOptions<Window, TItemElement>,
+      VirtualizerOptions<Window, TItemElement, TKey>,
       | 'observeElementRect'
       | 'observeElementOffset'
       | 'scrollToFn'
       | 'getScrollElement'
     >
   >,
-): Ref<Virtualizer<Window, TItemElement>> {
-  return useVirtualizerBase<Window, TItemElement>(
+): Ref<Virtualizer<Window, TItemElement, TKey>> {
+  return useVirtualizerBase<Window, TItemElement, TKey>(
     computed(() => ({
       getScrollElement: () => (typeof document !== 'undefined' ? window : null),
       observeElementRect: observeWindowRect,
