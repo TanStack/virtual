@@ -12,7 +12,6 @@ import {
 import type {
   Key,
   PartialKeys,
-  VirtualizerInputOptions,
   VirtualizerOptions,
 } from '@tanstack/virtual-core'
 
@@ -57,9 +56,7 @@ function useVirtualizerBase<
 
   const [instance] = React.useState(
     () =>
-      new Virtualizer<TScrollElement, TItemElement, TKey>(
-        resolvedOptions as VirtualizerInputOptions<TScrollElement, TItemElement, TKey>,
-      ),
+      new Virtualizer<TScrollElement, TItemElement, TKey>(resolvedOptions),
   )
 
   instance.setOptions(resolvedOptions)

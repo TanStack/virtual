@@ -349,16 +349,6 @@ export interface VirtualizerOptions<
   useAnimationFrameWithResizeObserver?: boolean
 }
 
-export type VirtualizerInputOptions<
-  TScrollElement extends Element | Window,
-  TItemElement extends Element,
-  TKey extends Key = Key,
-> = number extends TKey
-  ? VirtualizerOptions<TScrollElement, TItemElement, TKey>
-  : Omit<VirtualizerOptions<TScrollElement, TItemElement, TKey>, 'getItemKey'> & {
-      getItemKey: (index: number) => TKey
-    }
-
 type ScrollState = {
   // what we want
   index: number | null
@@ -442,8 +432,8 @@ export class Virtualizer<
   })()
   range: { startIndex: number; endIndex: number } | null = null
 
-  constructor(opts: VirtualizerInputOptions<TScrollElement, TItemElement, TKey>) {
-    this.setOptions(opts as VirtualizerOptions<TScrollElement, TItemElement, TKey>)
+  constructor(opts: VirtualizerOptions<TScrollElement, TItemElement, TKey>) {
+    this.setOptions(opts)
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement, TKey>) => {

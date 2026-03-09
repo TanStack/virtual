@@ -11,7 +11,6 @@ import type { ReactiveController, ReactiveControllerHost } from 'lit'
 import type {
   Key,
   PartialKeys,
-  VirtualizerInputOptions,
   VirtualizerOptions,
 } from '@tanstack/virtual-core'
 
@@ -37,9 +36,7 @@ class VirtualizerControllerBase<
         options.onChange?.(instance, sync)
       },
     }
-    this.virtualizer = new Virtualizer(
-      resolvedOptions as VirtualizerInputOptions<TScrollElement, TItemElement, TKey>,
-    )
+    this.virtualizer = new Virtualizer(resolvedOptions)
     ;(this.host = host).addController(this)
   }
 

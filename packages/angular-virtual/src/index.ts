@@ -21,7 +21,6 @@ import type { ElementRef, Signal } from '@angular/core'
 import type {
   Key,
   PartialKeys,
-  VirtualizerInputOptions,
   VirtualizerOptions,
 } from '@tanstack/virtual-core'
 import type { AngularVirtualizer } from './types'
@@ -38,9 +37,7 @@ function createVirtualizerBase<
 ): AngularVirtualizer<TScrollElement, TItemElement, TKey> {
   let virtualizer: Virtualizer<TScrollElement, TItemElement, TKey>
   function lazyInit() {
-    virtualizer ??= new Virtualizer(
-      options() as VirtualizerInputOptions<TScrollElement, TItemElement, TKey>,
-    )
+    virtualizer ??= new Virtualizer(options())
     return virtualizer
   }
 
