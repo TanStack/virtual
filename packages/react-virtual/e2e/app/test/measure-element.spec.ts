@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 test('positions items correctly after expand → collapse → delete → expand', async ({
   page,

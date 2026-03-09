@@ -8,6 +8,16 @@ export default defineConfig({
   use: {
     baseURL,
   },
+  projects: [
+    {
+      name: 'useVirtualizer',
+      use: { hookVariant: 'standard' } as any,
+    },
+    {
+      name: 'useExperimentalDOMVirtualizer',
+      use: { hookVariant: 'experimental' } as any,
+    },
+  ],
   webServer: {
     command: `VITE_SERVER_PORT=${PORT} vite build --config e2e/app/vite.config.ts && VITE_SERVER_PORT=${PORT} vite preview --config e2e/app/vite.config.ts --port ${PORT}`,
     url: `${baseURL}/scroll/`,

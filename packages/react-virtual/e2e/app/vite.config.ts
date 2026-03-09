@@ -14,6 +14,7 @@ export default defineConfig({
           'measure-element/index.html',
         ),
         'smooth-scroll': path.resolve(__dirname, 'smooth-scroll/index.html'),
+        perf: path.resolve(__dirname, 'perf/index.html'),
       },
     },
   },

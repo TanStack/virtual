@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import { useHook as useVirtualizer } from '../useHook'
 
 interface Item {
   id: string
@@ -41,7 +41,7 @@ const App = () => {
       <div
         ref={parentRef}
         id="scroll-container"
-        style={{ height: 400, overflow: 'auto' }}
+        style={{ height: 400, overflow: 'auto', contain: 'strict', overflowAnchor: 'none' }}
       >
         <div
           style={{
