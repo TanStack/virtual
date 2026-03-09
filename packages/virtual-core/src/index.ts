@@ -243,7 +243,7 @@ export const observeWindowOffset = (
 export const measureElement = <TItemElement extends Element>(
   element: TItemElement,
   entry: ResizeObserverEntry | undefined,
-  instance: Virtualizer<any, TItemElement>,
+  instance: Virtualizer<any, TItemElement, any>,
 ) => {
   if (entry?.borderBoxSize) {
     const box = entry.borderBoxSize[0]
@@ -320,13 +320,13 @@ export interface VirtualizerOptions<
   debug?: boolean
   initialRect?: Rect
   onChange?: (
-    instance: Virtualizer<TScrollElement, TItemElement, any>,
+    instance: Virtualizer<TScrollElement, TItemElement, TKey>,
     sync: boolean,
   ) => void
   measureElement?: (
     element: TItemElement,
     entry: ResizeObserverEntry | undefined,
-    instance: Virtualizer<TScrollElement, TItemElement, any>,
+    instance: Virtualizer<TScrollElement, TItemElement, TKey>,
   ) => number
   overscan?: number
   horizontal?: boolean
@@ -348,6 +348,16 @@ export interface VirtualizerOptions<
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
 }
+
+export type VirtualizerInputOptions<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+  TKey extends Key = Key,
+> = number extends TKey
+  ? VirtualizerOptions<TScrollElement, TItemElement, TKey>
+  : Omit<VirtualizerOptions<TScrollElement, TItemElement, TKey>, 'getItemKey'> & {
+      getItemKey: (index: number) => TKey
+    }
 
 type ScrollState = {
   // what we want
@@ -432,8 +442,8 @@ export class Virtualizer<
   })()
   range: { startIndex: number; endIndex: number } | null = null
 
-  constructor(opts: VirtualizerOptions<TScrollElement, TItemElement, TKey>) {
-    this.setOptions(opts)
+  constructor(opts: VirtualizerInputOptions<TScrollElement, TItemElement, TKey>) {
+    this.setOptions(opts as VirtualizerOptions<TScrollElement, TItemElement, TKey>)
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement, TKey>) => {

@@ -15,7 +15,12 @@ import {
   unref,
   watch,
 } from 'vue'
-import type { Key, PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  Key,
+  PartialKeys,
+  VirtualizerInputOptions,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 import type { Ref } from 'vue'
 
 export * from '@tanstack/virtual-core'
@@ -29,7 +34,9 @@ function useVirtualizerBase<
 >(
   options: MaybeRef<VirtualizerOptions<TScrollElement, TItemElement, TKey>>,
 ): Ref<Virtualizer<TScrollElement, TItemElement, TKey>> {
-  const virtualizer = new Virtualizer(unref(options))
+  const virtualizer = new Virtualizer(
+    unref(options) as VirtualizerInputOptions<TScrollElement, TItemElement, TKey>,
+  )
   const state = shallowRef(virtualizer)
 
   const cleanup = virtualizer._didMount()

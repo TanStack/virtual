@@ -18,7 +18,12 @@ import {
 } from '@tanstack/virtual-core'
 import { proxyVirtualizer } from './proxy'
 import type { ElementRef, Signal } from '@angular/core'
-import type { Key, PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  Key,
+  PartialKeys,
+  VirtualizerInputOptions,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 import type { AngularVirtualizer } from './types'
 
 export * from '@tanstack/virtual-core'
@@ -33,7 +38,9 @@ function createVirtualizerBase<
 ): AngularVirtualizer<TScrollElement, TItemElement, TKey> {
   let virtualizer: Virtualizer<TScrollElement, TItemElement, TKey>
   function lazyInit() {
-    virtualizer ??= new Virtualizer(options())
+    virtualizer ??= new Virtualizer(
+      options() as VirtualizerInputOptions<TScrollElement, TItemElement, TKey>,
+    )
     return virtualizer
   }
 

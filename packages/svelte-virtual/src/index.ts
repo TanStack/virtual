@@ -8,7 +8,12 @@ import {
   windowScroll,
 } from '@tanstack/virtual-core'
 import { derived, writable } from 'svelte/store'
-import type { Key, PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  Key,
+  PartialKeys,
+  VirtualizerInputOptions,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 import type { Readable, Writable } from 'svelte/store'
 
 export * from '@tanstack/virtual-core'
@@ -30,7 +35,9 @@ function createVirtualizerBase<
 >(
   initialOptions: VirtualizerOptions<TScrollElement, TItemElement, TKey>,
 ): Readable<SvelteVirtualizer<TScrollElement, TItemElement, TKey>> {
-  const virtualizer = new Virtualizer(initialOptions)
+  const virtualizer = new Virtualizer(
+    initialOptions as VirtualizerInputOptions<TScrollElement, TItemElement, TKey>,
+  )
   const originalSetOptions = virtualizer.setOptions
 
   // eslint-disable-next-line prefer-const

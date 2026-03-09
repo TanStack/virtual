@@ -16,7 +16,12 @@ import {
   onMount,
 } from 'solid-js'
 import { createStore, reconcile } from 'solid-js/store'
-import type { Key, PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  Key,
+  PartialKeys,
+  VirtualizerInputOptions,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
 
@@ -31,7 +36,7 @@ function createVirtualizerBase<
     mergeProps(options)
 
   const instance = new Virtualizer<TScrollElement, TItemElement, TKey>(
-    resolvedOptions,
+    resolvedOptions as VirtualizerInputOptions<TScrollElement, TItemElement, TKey>,
   )
 
   const [virtualItems, setVirtualItems] = createStore(

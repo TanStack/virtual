@@ -8,7 +8,12 @@ import {
   windowScroll,
 } from '@tanstack/virtual-core'
 import type { ReactiveController, ReactiveControllerHost } from 'lit'
-import type { Key, PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  Key,
+  PartialKeys,
+  VirtualizerInputOptions,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 
 class VirtualizerControllerBase<
   TScrollElement extends Element | Window,
@@ -32,7 +37,9 @@ class VirtualizerControllerBase<
         options.onChange?.(instance, sync)
       },
     }
-    this.virtualizer = new Virtualizer(resolvedOptions)
+    this.virtualizer = new Virtualizer(
+      resolvedOptions as VirtualizerInputOptions<TScrollElement, TItemElement, TKey>,
+    )
     ;(this.host = host).addController(this)
   }
 
