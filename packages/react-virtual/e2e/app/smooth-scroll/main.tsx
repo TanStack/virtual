@@ -90,7 +90,12 @@ const App = () => {
       <div
         ref={parentRef}
         id="scroll-container"
-        style={{ height: 400, overflow: 'auto', contain: 'strict', overflowAnchor: 'none' }}
+        style={{
+          height: 400,
+          overflow: 'auto',
+          contain: 'strict',
+          overflowAnchor: 'none',
+        }}
       >
         <div
           style={{
