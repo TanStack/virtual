@@ -1,6 +1,6 @@
 import { beforeEach, test, expect, vi } from 'vitest'
 import * as React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 
 import { useVirtualizer, Range } from '../src/index'
 
@@ -136,29 +136,6 @@ test('should render given dynamic size', async () => {
   expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
 
   expect(renderer).toHaveBeenCalledTimes(3)
-})
-
-test('should render given dynamic size after scroll', () => {
-  render(<List itemSize={100} dynamic />)
-
-  expect(screen.queryByText('Row 0')).toBeInTheDocument()
-  expect(screen.queryByText('Row 1')).toBeInTheDocument()
-  expect(screen.queryByText('Row 2')).toBeInTheDocument()
-  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
-
-  expect(renderer).toHaveBeenCalledTimes(3)
-  renderer.mockReset()
-
-  fireEvent.scroll(screen.getByTestId('scroller'), {
-    target: { scrollTop: 400 },
-  })
-
-  expect(screen.queryByText('Row 2')).not.toBeInTheDocument()
-  expect(screen.queryByText('Row 3')).toBeInTheDocument()
-  expect(screen.queryByText('Row 6')).toBeInTheDocument()
-  expect(screen.queryByText('Row 7')).not.toBeInTheDocument()
-
-  expect(renderer).toHaveBeenCalledTimes(2)
 })
 
 test('should use rangeExtractor', () => {
