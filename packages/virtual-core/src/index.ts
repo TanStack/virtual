@@ -409,7 +409,21 @@ export class Virtualizer<
       return (_ro = new this.targetWindow.ResizeObserver((entries) => {
         entries.forEach((entry) => {
           const run = () => {
-            this._measureElement(entry.target as TItemElement, entry)
+            const node = entry.target as TItemElement
+            const index = this.indexFromElement(node)
+
+            if (!node.isConnected) {
+              this.observer.unobserve(node)
+              this.elementsCache.delete(this.options.getItemKey(index))
+              return
+            }
+
+            if (this.shouldMeasureDuringScroll(index)) {
+              this.resizeItem(
+                index,
+                this.options.measureElement(node, entry, this),
+              )
+            }
           }
           this.options.useAnimationFrameWithResizeObserver
             ? requestAnimationFrame(run)
@@ -984,21 +998,19 @@ export class Virtualizer<
     return true
   }
 
-  private _measureElement = (
-    node: TItemElement,
-    entry: ResizeObserverEntry | undefined,
-  ) => {
-    if (!node.isConnected) {
-      this.observer.unobserve(node)
+  measureElement = (node: TItemElement | null) => {
+    if (!node) {
+      this.elementsCache.forEach((cached, key) => {
+        if (!cached.isConnected) {
+          this.observer.unobserve(cached)
+          this.elementsCache.delete(key)
+        }
+      })
       return
     }
 
     const index = this.indexFromElement(node)
-    const item = this.measurementsCache[index]
-    if (!item) {
-      return
-    }
-    const key = item.key
+    const key = this.options.getItemKey(index)
     const prevNode = this.elementsCache.get(key)
 
     if (prevNode !== node) {
@@ -1009,16 +1021,21 @@ export class Virtualizer<
       this.elementsCache.set(key, node)
     }
 
-    if (this.shouldMeasureDuringScroll(index)) {
-      this.resizeItem(index, this.options.measureElement(node, entry, this))
+    // Sync-measure when idle (initial render) or during programmatic scrolling
+    // (scrollToIndex/scrollToOffset) where reconcileScroll needs sizes in the same frame.
+    // During normal user scrolling, skip sync measurement — the RO callback handles it async.
+    if (
+      (!this.isScrolling || this.scrollState) &&
+      this.shouldMeasureDuringScroll(index)
+    ) {
+      this.resizeItem(index, this.options.measureElement(node, undefined, this))
     }
   }
 
   resizeItem = (index: number, size: number) => {
     const item = this.measurementsCache[index]
-    if (!item) {
-      return
-    }
+    if (!item) return
+
     const itemSize = this.itemSizeCache.get(item.key) ?? item.size
     const delta = size - itemSize
 
@@ -1043,20 +1060,6 @@ export class Virtualizer<
 
       this.notify(false)
     }
-  }
-
-  measureElement = (node: TItemElement | null | undefined) => {
-    if (!node) {
-      this.elementsCache.forEach((cached, key) => {
-        if (!cached.isConnected) {
-          this.observer.unobserve(cached)
-          this.elementsCache.delete(key)
-        }
-      })
-      return
-    }
-
-    this._measureElement(node, undefined)
   }
 
   getVirtualItems = memo(
