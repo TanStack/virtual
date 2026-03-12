@@ -5,7 +5,6 @@ import {
   effect,
   inject,
   signal,
-  untracked,
 } from '@angular/core'
 import {
   Virtualizer,
@@ -16,7 +15,6 @@ import {
   observeWindowRect,
   windowScroll,
 } from '@tanstack/virtual-core'
-import { proxyVirtualizer } from './proxy'
 import type { ElementRef, Signal } from '@angular/core'
 import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 import type { AngularVirtualizer } from './types'
@@ -30,52 +28,86 @@ function createVirtualizerBase<
 >(
   options: Signal<VirtualizerOptions<TScrollElement, TItemElement>>,
 ): AngularVirtualizer<TScrollElement, TItemElement> {
-  let virtualizer: Virtualizer<TScrollElement, TItemElement>
-  function lazyInit() {
-    virtualizer ??= new Virtualizer(options())
-    return virtualizer
+  const instance = new Virtualizer<TScrollElement, TItemElement>(options())
+
+  const virtualItems = signal(instance.getVirtualItems(), {
+    equal: () => false,
+  })
+  const totalSize = signal(instance.getTotalSize())
+  const isScrolling = signal(instance.isScrolling)
+  const range = signal(instance.range, { equal: () => false })
+  const scrollDirection = signal(instance.scrollDirection)
+  const scrollElement = signal(instance.scrollElement)
+  const scrollOffset = signal(instance.scrollOffset)
+  const scrollRect = signal(instance.scrollRect)
+
+  const handler = {
+    get(
+      target: Virtualizer<TScrollElement, TItemElement>,
+      prop: keyof Virtualizer<TScrollElement, TItemElement>,
+    ) {
+      switch (prop) {
+        case 'getVirtualItems':
+          return virtualItems
+        case 'getTotalSize':
+          return totalSize
+        case 'isScrolling':
+          return isScrolling
+        case 'options':
+          return options
+        case 'range':
+          return range
+        case 'scrollDirection':
+          return scrollDirection
+        case 'scrollElement':
+          return scrollElement
+        case 'scrollOffset':
+          return scrollOffset
+        case 'scrollRect':
+          return scrollRect
+        default:
+          return Reflect.get(target, prop)
+      }
+    },
   }
 
-  const virtualizerSignal = signal(virtualizer!, { equal: () => false })
+  const virtualizer = new Proxy(
+    instance,
+    handler,
+  ) as unknown as AngularVirtualizer<TScrollElement, TItemElement>
 
-  // two-way sync options
   effect(
     () => {
       const _options = options()
-      lazyInit()
-      virtualizerSignal.set(virtualizer)
-      virtualizer.setOptions({
+      instance.setOptions({
         ..._options,
         onChange: (instance, sync) => {
-          // update virtualizerSignal so that dependent computeds recompute.
-          virtualizerSignal.set(instance)
+          virtualItems.set(instance.getVirtualItems())
+          totalSize.set(instance.getTotalSize())
+          isScrolling.set(instance.isScrolling)
+          range.set(instance.range)
+          scrollDirection.set(instance.scrollDirection)
+          scrollElement.set(instance.scrollElement)
+          scrollOffset.set(instance.scrollOffset)
+          scrollRect.set(instance.scrollRect)
           _options.onChange?.(instance, sync)
         },
       })
-      // update virtualizerSignal so that dependent computeds recompute.
-      virtualizerSignal.set(virtualizer)
+      instance._willUpdate()
     },
     { allowSignalWrites: true },
   )
 
-  const scrollElement = computed(() => options().getScrollElement())
-  // let the virtualizer know when the scroll element is changed
-  effect(
-    () => {
-      const el = scrollElement()
-      if (el) {
-        untracked(virtualizerSignal)._willUpdate()
-      }
+  let cleanup: (() => void) | undefined
+  afterNextRender({
+    read: () => {
+      cleanup = instance._didMount()
     },
-    { allowSignalWrites: true },
-  )
-
-  let cleanup: () => void | undefined
-  afterNextRender({ read: () => (virtualizer ?? lazyInit())._didMount() })
+  })
 
   inject(DestroyRef).onDestroy(() => cleanup?.())
 
-  return proxyVirtualizer(virtualizerSignal, lazyInit)
+  return virtualizer
 }
 
 export function injectVirtualizer<
