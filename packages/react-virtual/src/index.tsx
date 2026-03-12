@@ -99,3 +99,83 @@ export function useWindowVirtualizer<TItemElement extends Element>(
     ...options,
   })
 }
+
+export function useExperimentalDOMVirtualizer<
+  TScrollElement extends HTMLElement,
+  TItemElement extends HTMLElement,
+>({
+  useFlushSync: shouldFlushSync = true,
+  ...options
+}: PartialKeys<
+  ReactVirtualizerOptions<TScrollElement, TItemElement>,
+  'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
+>): Virtualizer<TScrollElement, TItemElement> {
+  const rerender = React.useReducer(() => ({}), {})[1]
+
+  const prev = React.useRef<{
+    range: { startIndex: number; endIndex: number } | null
+    totalSize: number
+    positions: Map<any, number>
+    isScrolling: boolean
+  }>({ range: null, totalSize: 0, positions: new Map(), isScrolling: false })
+
+  const onChange = (
+    instance: Virtualizer<TScrollElement, TItemElement>,
+    sync: boolean,
+  ) => {
+    const items = instance.getVirtualItems()
+    const totalSize = instance.getTotalSize()
+
+    if (prev.current.totalSize !== totalSize) {
+      const firstItem = items[0]
+      const el = instance.elementsCache.get(firstItem?.key ?? '')?.parentElement
+      if (el) {
+        prev.current.totalSize = totalSize
+        el.style.height = `${totalSize}px`
+      }
+    }
+
+    const positions = new Map<any, number>()
+    items.forEach((item) => {
+      positions.set(item.key, item.start)
+    })
+
+    for (const [key, nextValue] of positions) {
+      const prevValue = prev.current.positions.get(key)
+      if (prevValue !== nextValue) {
+        const el = instance.elementsCache.get(key)
+        if (el) {
+          prev.current.positions.set(key, nextValue)
+          el.style.transform = `translateY(${
+            nextValue - instance.options.scrollMargin
+          }px)`
+        }
+      }
+    }
+
+    if (
+      prev.current.isScrolling !== instance.isScrolling ||
+      prev.current.range?.startIndex !== instance.range?.startIndex ||
+      prev.current.range?.endIndex !== instance.range?.endIndex
+    ) {
+      prev.current.isScrolling = instance.isScrolling
+      prev.current.range = instance.range
+
+      if (shouldFlushSync && sync) {
+        flushSync(rerender)
+      } else {
+        rerender()
+      }
+    }
+  }
+
+  const instance = useVirtualizerBase<TScrollElement, TItemElement>({
+    observeElementRect: observeElementRect,
+    observeElementOffset: observeElementOffset,
+    scrollToFn: elementScroll,
+    ...options,
+  })
+  instance.options.onChange = onChange
+
+  return instance
+}

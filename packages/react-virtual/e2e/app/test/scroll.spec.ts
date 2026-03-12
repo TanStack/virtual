@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 const check = () => {
   const item = document.querySelector('[data-testid="item-1000"]')
