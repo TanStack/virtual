@@ -1,5 +1,14 @@
 # @tanstack/svelte-virtual
 
+## 3.13.22
+
+### Patch Changes
+
+- fix(svelte-virtual): force store update when setOptions is called ([#1143](https://github.com/TanStack/virtual/pull/1143))
+
+- Updated dependencies [[`54d771a`](https://github.com/TanStack/virtual/commit/54d771a7d4c74f6968e8132b5a85f3e04682376a), [`d3416c3`](https://github.com/TanStack/virtual/commit/d3416c386c6446957f413db2eef3211f5fdf3b5f)]:
+  - @tanstack/virtual-core@3.13.22
+
 ## 3.13.21
 
 ### Patch Changes

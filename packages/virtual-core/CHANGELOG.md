@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.13.22
+
+### Patch Changes
+
+- Add 'instant' to ScrollBehavior type to match the W3C spec ([#1122](https://github.com/TanStack/virtual/pull/1122))
+
+- perf(virtual-core): skip sync DOM reads during normal scrolling ([#1146](https://github.com/TanStack/virtual/pull/1146))
+
 ## 3.13.21
 
 ### Patch Changes
