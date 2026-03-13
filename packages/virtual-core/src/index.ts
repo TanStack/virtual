@@ -346,6 +346,7 @@ export interface VirtualizerOptions<
   enabled?: boolean
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
+  deferLaneAssignment?: boolean
 }
 
 type ScrollState = {
@@ -477,6 +478,7 @@ export class Virtualizer<
       isRtl: false,
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
+      deferLaneAssignment: false,
       ...opts,
     }
   }
@@ -728,8 +730,9 @@ export class Virtualizer<
       this.options.getItemKey,
       this.options.enabled,
       this.options.lanes,
+      this.options.deferLaneAssignment,
     ],
-    (count, paddingStart, scrollMargin, getItemKey, enabled, lanes) => {
+    (count, paddingStart, scrollMargin, getItemKey, enabled, lanes, deferLaneAssignment) => {
       const lanesChanged =
         this.prevLanes !== undefined && this.prevLanes !== lanes
 
@@ -748,6 +751,7 @@ export class Virtualizer<
         getItemKey,
         enabled,
         lanes,
+        deferLaneAssignment,
       }
     },
     {
@@ -758,7 +762,7 @@ export class Virtualizer<
   private getMeasurements = memo(
     () => [this.getMeasurementOptions(), this.itemSizeCache],
     (
-      { count, paddingStart, scrollMargin, getItemKey, enabled, lanes },
+      { count, paddingStart, scrollMargin, getItemKey, enabled, lanes, deferLaneAssignment },
       itemSizeCache,
     ) => {
       if (!enabled) {
@@ -833,6 +837,10 @@ export class Virtualizer<
         let lane: number
         let start: number
 
+        // Check if this item has been measured (for deferLaneAssignment mode)
+        const isMeasured = itemSizeCache.has(key)
+        const shouldDeferLane = deferLaneAssignment && !isMeasured
+
         if (cachedLane !== undefined && this.options.lanes > 1) {
           // Use cached lane - O(1) lookup for previous item in same lane
           lane = cachedLane
@@ -857,8 +865,8 @@ export class Virtualizer<
             ? furthestMeasurement.lane
             : i % this.options.lanes
 
-          // Cache the lane assignment
-          if (this.options.lanes > 1) {
+          // Cache the lane assignment (skip if deferring and not yet measured)
+          if (this.options.lanes > 1 && !shouldDeferLane) {
             this.laneAssignments.set(i, lane)
           }
         }
