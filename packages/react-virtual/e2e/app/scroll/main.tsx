@@ -21,10 +21,14 @@ const randomHeight = (() => {
 
 const App = () => {
   const parentRef = React.useRef<HTMLDivElement>(null)
+  const initialOffset = Number(
+    new URLSearchParams(window.location.search).get('initialOffset') ?? 0,
+  )
   const rowVirtualizer = useVirtualizer({
     count: 1002,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
+    initialOffset,
     debug: true,
   })
 
@@ -35,6 +39,15 @@ const App = () => {
         onClick={() => rowVirtualizer.scrollToIndex(1000)}
       >
         Scroll to 1000
+      </button>
+      <button
+        id="scroll-to-last"
+        onClick={() => rowVirtualizer.scrollToIndex(1001)}
+      >
+        Scroll to last
+      </button>
+      <button id="scroll-to-0" onClick={() => rowVirtualizer.scrollToIndex(0)}>
+        Scroll to 0
       </button>
 
       <div

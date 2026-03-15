@@ -1,5 +1,33 @@
 # @tanstack/lit-virtual
 
+## 3.13.23
+
+### Patch Changes
+
+- Updated dependencies [[`54d771a`](https://github.com/TanStack/virtual/commit/54d771a7d4c74f6968e8132b5a85f3e04682376a), [`d3416c3`](https://github.com/TanStack/virtual/commit/d3416c386c6446957f413db2eef3211f5fdf3b5f)]:
+  - @tanstack/virtual-core@3.13.22
+
+## 3.13.22
+
+### Patch Changes
+
+- Updated dependencies [[`be89e29`](https://github.com/TanStack/virtual/commit/be89e293ea01654df6334dc6473b65eebed13e51)]:
+  - @tanstack/virtual-core@3.13.21
+
+## 3.13.21
+
+### Patch Changes
+
+- Updated dependencies [[`ff83e94`](https://github.com/TanStack/virtual/commit/ff83e949408ba8a714436fa10cafc3725a56274b)]:
+  - @tanstack/virtual-core@3.13.20
+
+## 3.13.20
+
+### Patch Changes
+
+- Updated dependencies [[`843109c`](https://github.com/TanStack/virtual/commit/843109c5bf780591a762f9767f3808fd15e3f94e)]:
+  - @tanstack/virtual-core@3.13.19
+
 ## 3.13.19
 
 ### Patch Changes

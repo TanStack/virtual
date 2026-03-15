@@ -53,6 +53,11 @@ function createVirtualizerBase<
       },
     })
     virtualizer._willUpdate()
+    // Force store update in case the range didn't change (e.g. count increased
+    // but scroll position stayed the same). Without this, the store only
+    // updates when onChange fires (on range change), so changes like a new
+    // count that don't shift the visible range would not trigger a re-render.
+    virtualizerWritable.set(virtualizer)
   }
 
   virtualizerWritable = writable(virtualizer, () => {

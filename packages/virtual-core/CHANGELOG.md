@@ -1,5 +1,31 @@
 # @tanstack/virtual-core
 
+## 3.13.22
+
+### Patch Changes
+
+- Add 'instant' to ScrollBehavior type to match the W3C spec ([#1122](https://github.com/TanStack/virtual/pull/1122))
+
+- perf(virtual-core): skip sync DOM reads during normal scrolling ([#1146](https://github.com/TanStack/virtual/pull/1146))
+
+## 3.13.21
+
+### Patch Changes
+
+- fix(virtual-core): smooth scrolling for dynamic item sizes ([#1108](https://github.com/TanStack/virtual/pull/1108))
+
+## 3.13.20
+
+### Patch Changes
+
+- fix(virtual-core): early return in \_measureElement for disconnected nodes ([#1135](https://github.com/TanStack/virtual/pull/1135))
+
+## 3.13.19
+
+### Patch Changes
+
+- Fix crash when component unmounts during `scrollToIndex` by adding a null guard for `targetWindow` inside the `requestAnimationFrame` callback ([#1129](https://github.com/TanStack/virtual/pull/1129))
+
 ## 3.13.18
 
 ### Patch Changes
