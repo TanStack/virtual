@@ -106,6 +106,7 @@ const width = computed(() => {
 const virtualItemEls = shallowRef([])
 
 function measureAll() {
+  rowVirtualizer.value.measureElement(null)
   virtualItemEls.value.forEach((el) => {
     if (el) rowVirtualizer.value.measureElement(el)
   })

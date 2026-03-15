@@ -71,6 +71,7 @@ const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 const virtualItemEls = shallowRef([])
 
 function measureAll() {
+  rowVirtualizer.value.measureElement(null)
   virtualItemEls.value.forEach((el) => {
     if (el) rowVirtualizer.value.measureElement(el)
   })

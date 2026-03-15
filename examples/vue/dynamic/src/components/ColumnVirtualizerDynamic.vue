@@ -57,6 +57,7 @@ const totalSize = computed(() => columnVirtualizer.value.getTotalSize())
 const virtualItemEls = shallowRef([])
 
 function measureAll() {
+  columnVirtualizer.value.measureElement(null)
   virtualItemEls.value.forEach((el) => {
     if (el) columnVirtualizer.value.measureElement(el)
   })
