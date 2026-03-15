@@ -35,7 +35,7 @@
             v-for="virtualRow in virtualRows"
             :key="virtualRow.key"
             :data-index="virtualRow.index"
-            :ref="measureElement"
+            ref="virtualItemEls"
             :class="virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'"
           >
             <div style="padding: 10px 0">
@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, onMounted, onUpdated, ref, shallowRef } from 'vue'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import { generateSentences } from './utils'
 
@@ -68,13 +68,15 @@ const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems())
 
 const totalSize = computed(() => rowVirtualizer.value.getTotalSize())
 
-const measureElement = (el) => {
-  if (!el) {
-    return
-  }
+const virtualItemEls = shallowRef([])
 
-  rowVirtualizer.value.measureElement(el)
-
-  return undefined
+function measureAll() {
+  rowVirtualizer.value.measureElement(null)
+  virtualItemEls.value.forEach((el) => {
+    if (el) rowVirtualizer.value.measureElement(el)
+  })
 }
+
+onMounted(measureAll)
+onUpdated(measureAll)
 </script>
