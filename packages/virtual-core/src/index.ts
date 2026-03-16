@@ -414,7 +414,6 @@ export class Virtualizer<
 
             if (!node.isConnected) {
               this.observer.unobserve(node)
-              this.elementsCache.delete(this.options.getItemKey(index))
               return
             }
 
