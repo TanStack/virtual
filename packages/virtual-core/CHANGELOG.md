@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.13.23
+
+### Patch Changes
+
+- fix(virtual-core): remove incorrect elementsCache cleanup using getItemKey ([#1148](https://github.com/TanStack/virtual/pull/1148))
+
 ## 3.13.22
 
 ### Patch Changes
