@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
       - name: Setup Tools
@@ -33,11 +33,15 @@ jobs:
       - name: Run Tests
         run: pnpm run test:ci
       - name: Run Changesets (version or publish)
-        uses: changesets/action@v1.5.3
+        id: changesets
+        uses: changesets/action@v1.7.0
         with:
           version: pnpm run changeset:version
           publish: pnpm run changeset:publish
           commit: 'ci: Version Packages'
           title: 'ci: Version Packages'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Comment on PRs about release
+        if: steps.changesets.outputs.published == 'true'
+        uses: TanStack/config/.github/comment-on-release@main
+        with:
+          published-packages: ${{ steps.changesets.outputs.publishedPackages }}
