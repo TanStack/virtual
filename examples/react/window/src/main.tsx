@@ -7,12 +7,17 @@ import { useWindowVirtualizer } from '@tanstack/react-virtual'
 
 function Example() {
   const listRef = React.useRef<HTMLDivElement | null>(null)
+  const listOffsetRef = React.useRef(0)
+
+  React.useLayoutEffect(() => {
+    listOffsetRef.current = listRef.current?.offsetTop ?? 0
+  }, [])
 
   const virtualizer = useWindowVirtualizer({
     count: 10000,
     estimateSize: () => 35,
     overscan: 5,
-    scrollMargin: listRef.current?.offsetTop ?? 0,
+    scrollMargin: listOffsetRef.current,
   })
 
   return (

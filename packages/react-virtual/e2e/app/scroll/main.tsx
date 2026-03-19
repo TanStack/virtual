@@ -21,10 +21,14 @@ const randomHeight = (() => {
 
 const App = () => {
   const parentRef = React.useRef<HTMLDivElement>(null)
+  const initialOffset = Number(
+    new URLSearchParams(window.location.search).get('initialOffset') ?? 0,
+  )
   const rowVirtualizer = useVirtualizer({
     count: 1002,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
+    initialOffset,
     debug: true,
   })
 

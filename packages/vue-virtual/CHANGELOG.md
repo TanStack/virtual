@@ -1,5 +1,19 @@
 # @tanstack/vue-virtual
 
+## 3.13.23
+
+### Patch Changes
+
+- Updated dependencies [[`7ece2d5`](https://github.com/TanStack/virtual/commit/7ece2d5d4249b7e703c68ac497ae5545c54e7c67)]:
+  - @tanstack/virtual-core@3.13.23
+
+## 3.13.22
+
+### Patch Changes
+
+- Updated dependencies [[`54d771a`](https://github.com/TanStack/virtual/commit/54d771a7d4c74f6968e8132b5a85f3e04682376a), [`d3416c3`](https://github.com/TanStack/virtual/commit/d3416c386c6446957f413db2eef3211f5fdf3b5f)]:
+  - @tanstack/virtual-core@3.13.22
+
 ## 3.13.21
 
 ### Patch Changes
