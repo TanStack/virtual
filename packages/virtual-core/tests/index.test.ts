@@ -270,6 +270,43 @@ test('should defer lane caching until measurement when deferLaneAssignment is tr
   expect(lanesBeforeResize).toEqual(lanesAfterResize)
 })
 
+test('should cache lanes incrementally as items are measured with deferLaneAssignment', () => {
+  const virtualizer = new Virtualizer({
+    count: 4,
+    lanes: 2,
+    estimateSize: () => 100,
+    deferLaneAssignment: true,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+  expect(virtualizer['laneAssignments'].size).toBe(0)
+
+  // Measure only the first 2 items (simulating viewport-visible items)
+  virtualizer.resizeItem(0, 200)
+  virtualizer.resizeItem(1, 50)
+
+  const m1 = virtualizer['getMeasurements']()
+  expect(virtualizer['laneAssignments'].size).toBe(2)
+
+  const lane0 = m1[0].lane
+  const lane1 = m1[1].lane
+
+  // Measure the remaining items
+  virtualizer.resizeItem(2, 80)
+  virtualizer.resizeItem(3, 120)
+
+  const m2 = virtualizer['getMeasurements']()
+  expect(virtualizer['laneAssignments'].size).toBe(4)
+
+  // Previously cached lanes must remain stable
+  expect(m2[0].lane).toBe(lane0)
+  expect(m2[1].lane).toBe(lane1)
+})
+
 test('should cache lanes immediately when deferLaneAssignment is false (default)', () => {
   const virtualizer = new Virtualizer({
     count: 4,
