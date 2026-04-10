@@ -1,0 +1,160 @@
+import {
+  Virtualizer,
+  observeElementRect,
+  observeElementOffset,
+  elementScroll,
+} from "@tanstack/virtual-core"
+import type {
+  VirtualItem,
+  ScrollToIndexOptions,
+  ScrollToOffsetOptions,
+} from "@tanstack/virtual-core"
+
+/**
+ * Input for the `<virtualizer>` tag.
+ *
+ * Covers row virtualisation (default), column virtualisation (`horizontal=true`),
+ * and is composed twice for grid virtualisation.
+ *
+ * The `observeElementRect`, `observeElementOffset`, and `scrollToFn` options
+ * are pre-wired to the element-based scroll observers — you do not need to
+ * provide them.
+ */
+export interface Input {
+  /** Number of items to virtualise. */
+  count: number
+  /** Returns the estimated size (height for rows, width for columns) in pixels. Defaults to `() => 50`. */
+  estimateSize?: (index: number) => number
+  /** Returns the scroll container element. Usually a DOM ref getter: `getScrollElement=myEl`. */
+  getScrollElement: () => Element | null
+  /** Number of items to render outside the visible area on each side. Defaults to `5`. */
+  overscan?: number
+  /** When `true`, virtualises horizontally (columns). Defaults to `false` (rows). */
+  horizontal?: boolean
+  /** Padding in pixels before the first item. */
+  paddingStart?: number
+  /** Padding in pixels after the last item. */
+  paddingEnd?: number
+  /** Scroll padding before the first item (for `scrollToIndex`). */
+  scrollPaddingStart?: number
+  /** Scroll padding after the last item (for `scrollToIndex`). */
+  scrollPaddingEnd?: number
+  /** Gap between items in pixels. */
+  gap?: number
+  /** Number of lanes for masonry layouts. Defaults to `1`. */
+  lanes?: number
+  /** Initial scroll offset in pixels, or a function returning it. */
+  initialOffset?: number | (() => number)
+}
+
+// ---------------------------------------------------------------------------
+// Reactive state — plain serializable data, updated by the virtualizer's
+// onChange callback. Safe in Marko's resumability model.
+// ---------------------------------------------------------------------------
+
+<let/state = ({
+  items: [] as VirtualItem[],
+  totalSize: 0,
+})/>
+
+// ---------------------------------------------------------------------------
+// Virtualizer instance — null on the server (lifecycle never runs during SSR),
+// set to the real Virtualizer on client mount. Class instances are not
+// serializable, but this is always null during SSR serialization, so it is safe.
+//
+// Consumers should wrap <virtualizer> in <if=mounted> or similar to avoid
+// any SSR concerns with the tag variable containing functions.
+// ---------------------------------------------------------------------------
+
+<let/v = (null as Virtualizer<Element, Element> | null)/>
+
+<lifecycle<{ cleanup: (() => void) | null }>
+  onMount() {
+    const notifyChange = () => {
+      if (!v) return
+      state = {
+        items: v.getVirtualItems(),
+        totalSize: v.getTotalSize(),
+      }
+    }
+
+    v = new Virtualizer<Element, Element>({
+      count: input.count,
+      estimateSize: input.estimateSize ?? (() => 50),
+      getScrollElement: input.getScrollElement,
+      overscan: input.overscan ?? 5,
+      horizontal: input.horizontal ?? false,
+      paddingStart: input.paddingStart,
+      paddingEnd: input.paddingEnd,
+      scrollPaddingStart: input.scrollPaddingStart,
+      scrollPaddingEnd: input.scrollPaddingEnd,
+      gap: input.gap,
+      lanes: input.lanes,
+      initialOffset: input.initialOffset,
+      observeElementRect,
+      observeElementOffset,
+      scrollToFn: elementScroll,
+      onChange: notifyChange,
+    })
+
+    this.cleanup = v._didMount()
+    // Trigger initial measurement after mount
+    v._willUpdate()
+  }
+
+  onUpdate() {
+    if (!v) return
+
+    const notifyChange = () => {
+      if (!v) return
+      state = {
+        items: v.getVirtualItems(),
+        totalSize: v.getTotalSize(),
+      }
+    }
+
+    v.setOptions({
+      ...v.options,
+      count: input.count,
+      estimateSize: input.estimateSize ?? (() => 50),
+      getScrollElement: input.getScrollElement,
+      overscan: input.overscan ?? 5,
+      horizontal: input.horizontal ?? false,
+      paddingStart: input.paddingStart,
+      paddingEnd: input.paddingEnd,
+      scrollPaddingStart: input.scrollPaddingStart,
+      scrollPaddingEnd: input.scrollPaddingEnd,
+      gap: input.gap,
+      lanes: input.lanes,
+      initialOffset: input.initialOffset,
+      onChange: notifyChange,
+    })
+
+    v._willUpdate()
+  }
+
+  onDestroy() {
+    this.cleanup?.()
+    v = null
+  }
+/>
+
+// ---------------------------------------------------------------------------
+// Tag variable — exposed to the consumer via <virtualizer|{ ... }|>
+//
+// virtualItems  — the subset of items currently in the DOM window
+// totalSize     — total scrollable size in px (use as height or width of inner div)
+// measureElement — ref callback for dynamic/variable item sizing
+// scrollToIndex  — imperatively scroll to a given index
+// scrollToOffset — imperatively scroll to a pixel offset
+// ---------------------------------------------------------------------------
+
+<return={
+  virtualItems: state.items,
+  totalSize: state.totalSize,
+  measureElement: v?.measureElement,
+  scrollToIndex: (index: number, options?: ScrollToIndexOptions) =>
+    v?.scrollToIndex(index, options),
+  scrollToOffset: (offset: number, options?: ScrollToOffsetOptions) =>
+    v?.scrollToOffset(offset, options),
+}/>

@@ -1,0 +1,153 @@
+/**
+ * Infinite scroll virtualisation example
+ *
+ * Fetches more rows as the user scrolls toward the end of the list.
+ * Uses an intersection observer on a sentinel element at the bottom,
+ * or detects when the last virtual item is near the end of loaded data.
+ *
+ * No external query library needed — pure Marko signals.
+ */
+
+static async function fetchPage(
+  offset: number,
+  limit: number
+): Promise<{ rows: string[]; nextOffset: number; hasMore: boolean }> {
+  await new Promise(r => setTimeout(r, 600))
+  const total = 500
+  const rows = Array.from({ length: Math.min(limit, total - offset) }, (_, i) =>
+    `Row #${offset + i + 1} — loaded at offset ${offset}`
+  )
+  return { rows, nextOffset: offset + rows.length, hasMore: offset + rows.length < total }
+}
+
+<let/rows = ([] as string[])/>
+<let/hasMore = true/>
+<let/loading = false/>
+<let/offset = 0/>
+<let/mounted = false/>
+
+<script() {
+  mounted = true
+  // Load first page
+  loading = true
+  fetchPage(0, 20).then(result => {
+    rows = result.rows
+    offset = result.nextOffset
+    hasMore = result.hasMore
+    loading = false
+  })
+}/>
+
+<const/loadMore = async () => {
+  if (loading || !hasMore) return
+  loading = true
+  const result = await fetchPage(offset, 20)
+  rows = [...rows, ...result.rows]
+  offset = result.nextOffset
+  hasMore = result.hasMore
+  loading = false
+}/>
+
+<!-- Count includes a sentinel row if more data is available -->
+<const/count = hasMore ? rows.length + 1 : rows.length/>
+
+<div class="page">
+  <h1>Infinite Scroll Virtualisation</h1>
+  <p>
+    Rows are fetched in pages as you scroll. The virtualizer renders only
+    the visible subset of all loaded rows.
+  </p>
+
+  <if=mounted>
+    <div/$scrollEl class="scroll-container" style="height: 400px; overflow-y: auto">
+      <virtualizer|{ virtualItems, totalSize }|
+        count=count
+        estimateSize=() => 52
+        getScrollElement=scrollEl
+        overscan=5
+      >
+        <script() {
+          // Trigger load when the last visible item is the sentinel
+          const lastItem = virtualItems[virtualItems.length - 1]
+          if (lastItem && lastItem.index >= rows.length - 1) {
+            loadMore()
+          }
+        }/>
+
+        <div style=`height: ${totalSize}px; width: 100%; position: relative`>
+          <for|item| of=virtualItems>
+            <div
+              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+              style=`
+                position: absolute;
+                top: 0; left: 0; width: 100%;
+                height: ${item.size}px;
+                transform: translateY(${item.start}px);
+              `
+            >
+              <if=item.index < rows.length>
+                ${rows[item.index]}
+              </if>
+              <else>
+                <if=loading>
+                  <span class="loading">Loading more…</span>
+                </if>
+                <else>
+                  <if=hasMore>
+                    <span class="loading">Scroll to load more</span>
+                  </if>
+                  <else>
+                    <span class="end">All ${rows.length} rows loaded</span>
+                  </else>
+                </else>
+              </else>
+            </div>
+          </for>
+        </div>
+      </virtualizer>
+    </div>
+
+    <p class="status">
+      ${rows.length} rows loaded${hasMore ? ` · more available` : ` · end of list`}
+    </p>
+  </if>
+</div>
+
+<style>
+  .page {
+    font-family: system-ui, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  p { color: #555; margin-bottom: 16px; }
+
+  .scroll-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+  }
+
+  .item {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-size: 14px;
+    border-bottom: 1px solid #f3f4f6;
+    box-sizing: border-box;
+  }
+
+  .item-even { background: #f9fafb; }
+  .item-odd  { background: #ffffff; }
+
+  .loading { color: #9ca3af; font-style: italic; font-size: 13px; }
+  .end     { color: #6b7280; font-size: 13px; }
+
+  .status {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 8px;
+    text-align: right;
+  }
+</style>

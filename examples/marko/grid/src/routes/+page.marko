@@ -1,0 +1,107 @@
+/**
+ * Grid virtualisation example
+ *
+ * A 2D grid virtualised in both axes simultaneously.
+ * Achieved by composing two <virtualizer> tags sharing the same scroll element:
+ *   - outer: vertical (rows)
+ *   - inner: horizontal (columns, horizontal=true)
+ *
+ * Only the cells visible in the current viewport are in the DOM.
+ */
+
+static const ROW_COUNT = 1000
+static const COL_COUNT = 1000
+
+static const rowSizes = Array.from({ length: ROW_COUNT }, () =>
+  30 + Math.round(Math.random() * 20)
+)
+static const colSizes = Array.from({ length: COL_COUNT }, () =>
+  80 + Math.round(Math.random() * 80)
+)
+
+<let/mounted = false/>
+<script() { mounted = true }/>
+
+<div class="page">
+  <h1>Grid Virtualisation</h1>
+  <p>
+    A ${ROW_COUNT} × ${COL_COUNT} grid — ${(ROW_COUNT * COL_COUNT).toLocaleString()} cells total.
+    Only those in the current viewport are rendered.
+  </p>
+  <p class="note">
+    Pattern: compose two <code>&lt;virtualizer&gt;</code> tags sharing
+    the same scroll element — one vertical, one horizontal.
+  </p>
+
+  <if=mounted>
+    <div/$gridScroll class="scroll-container" style="height: 500px; width: 100%; overflow: auto">
+      <virtualizer|{ virtualItems: rowItems, totalSize: rowTotal }|
+        count=ROW_COUNT
+        estimateSize=(i) => rowSizes[i]!
+        getScrollElement=gridScroll
+      >
+        <virtualizer|{ virtualItems: colItems, totalSize: colTotal }|
+          count=COL_COUNT
+          estimateSize=(i) => colSizes[i]!
+          horizontal=true
+          getScrollElement=gridScroll
+        >
+          <div style=`height: ${rowTotal}px; width: ${colTotal}px; position: relative`>
+            <for|row| of=rowItems>
+              <for|col| of=colItems>
+                <div
+                  class=(col.index + row.index) % 2 === 0 ? "cell cell-even" : "cell cell-odd"
+                  style=`
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: ${col.size}px;
+                    height: ${row.size}px;
+                    transform: translateX(${col.start}px) translateY(${row.start}px);
+                    font-size: 11px;
+                    box-sizing: border-box;
+                    border-right: 1px solid #e5e7eb;
+                    border-bottom: 1px solid #e5e7eb;
+                  `
+                >
+                  ${row.index},${col.index}
+                </div>
+              </for>
+            </for>
+          </div>
+        </virtualizer>
+      </virtualizer>
+    </div>
+  </if>
+</div>
+
+<style>
+  .page {
+    font-family: system-ui, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  p { color: #555; margin-bottom: 12px; }
+  .note { font-size: 13px; color: #888; font-style: italic; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
+
+  .scroll-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    overflow: auto;
+  }
+
+  .cell {
+    font-family: monospace;
+    color: #374151;
+  }
+
+  .cell-even { background: #f9fafb; }
+  .cell-odd  { background: #ffffff; }
+</style>

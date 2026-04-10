@@ -1,0 +1,131 @@
+import {
+  Virtualizer,
+  observeWindowRect,
+  observeWindowOffset,
+  windowScroll,
+} from "@tanstack/virtual-core"
+import type {
+  VirtualItem,
+  ScrollToIndexOptions,
+  ScrollToOffsetOptions,
+} from "@tanstack/virtual-core"
+
+/**
+ * Input for the `<window-virtualizer>` tag.
+ *
+ * Like `<virtualizer>` but virtualises against the full page/window scroll
+ * rather than a container element. No `getScrollElement` is needed.
+ */
+export interface Input {
+  /** Number of items to virtualise. */
+  count: number
+  /** Returns the estimated item height in pixels. Defaults to `() => 50`. */
+  estimateSize?: (index: number) => number
+  /** Number of items to render outside the visible viewport on each side. Defaults to `5`. */
+  overscan?: number
+  /** Padding in pixels before the first item. */
+  paddingStart?: number
+  /** Padding in pixels after the last item. */
+  paddingEnd?: number
+  /** Scroll padding before the first item (for `scrollToIndex`). */
+  scrollPaddingStart?: number
+  /** Scroll padding after the last item (for `scrollToIndex`). */
+  scrollPaddingEnd?: number
+  /** Gap between items in pixels. */
+  gap?: number
+  /** Number of lanes for masonry layouts. Defaults to `1`. */
+  lanes?: number
+}
+
+// ---------------------------------------------------------------------------
+// Reactive state — plain serializable data, updated by onChange.
+// ---------------------------------------------------------------------------
+
+<let/state = ({
+  items: [] as VirtualItem[],
+  totalSize: 0,
+})/>
+
+// ---------------------------------------------------------------------------
+// Virtualizer instance — null on server, set on client mount.
+// ---------------------------------------------------------------------------
+
+<let/v = (null as Virtualizer<Window, Element> | null)/>
+
+<lifecycle<{ cleanup: (() => void) | null }>
+  onMount() {
+    const notifyChange = () => {
+      if (!v) return
+      state = {
+        items: v.getVirtualItems(),
+        totalSize: v.getTotalSize(),
+      }
+    }
+
+    v = new Virtualizer<Window, Element>({
+      count: input.count,
+      estimateSize: input.estimateSize ?? (() => 50),
+      getScrollElement: () =>
+        typeof document !== "undefined" ? window : null,
+      overscan: input.overscan ?? 5,
+      paddingStart: input.paddingStart,
+      paddingEnd: input.paddingEnd,
+      scrollPaddingStart: input.scrollPaddingStart,
+      scrollPaddingEnd: input.scrollPaddingEnd,
+      gap: input.gap,
+      lanes: input.lanes,
+      initialOffset: () =>
+        typeof document !== "undefined" ? window.scrollY : 0,
+      observeElementRect: observeWindowRect,
+      observeElementOffset: observeWindowOffset,
+      scrollToFn: windowScroll,
+      onChange: notifyChange,
+    })
+
+    this.cleanup = v._didMount()
+    v._willUpdate()
+  }
+
+  onUpdate() {
+    if (!v) return
+
+    const notifyChange = () => {
+      if (!v) return
+      state = {
+        items: v.getVirtualItems(),
+        totalSize: v.getTotalSize(),
+      }
+    }
+
+    v.setOptions({
+      ...v.options,
+      count: input.count,
+      estimateSize: input.estimateSize ?? (() => 50),
+      overscan: input.overscan ?? 5,
+      paddingStart: input.paddingStart,
+      paddingEnd: input.paddingEnd,
+      scrollPaddingStart: input.scrollPaddingStart,
+      scrollPaddingEnd: input.scrollPaddingEnd,
+      gap: input.gap,
+      lanes: input.lanes,
+      onChange: notifyChange,
+    })
+
+    v._willUpdate()
+  }
+
+  onDestroy() {
+    this.cleanup?.()
+    v = null
+  }
+/>
+
+<return={
+  virtualItems: state.items,
+  totalSize: state.totalSize,
+  measureElement: v?.measureElement,
+  scrollToIndex: (index: number, options?: ScrollToIndexOptions) =>
+    v?.scrollToIndex(index, options),
+  scrollToOffset: (offset: number, options?: ScrollToOffsetOptions) =>
+    v?.scrollToOffset(offset, options),
+}/>

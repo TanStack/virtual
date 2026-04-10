@@ -1,0 +1,66 @@
+{
+  "name": "@tanstack/marko-virtual",
+  "version": "3.13.23",
+  "description": "Headless UI for virtualizing scrollable elements in Marko 6",
+  "author": "Tanner Linsley",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TanStack/virtual.git",
+    "directory": "packages/marko-virtual"
+  },
+  "homepage": "https://tanstack.com/virtual",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "keywords": [
+    "marko",
+    "virtual",
+    "virtual-core",
+    "virtualizer",
+    "datagrid"
+  ],
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "src/tags",
+    "marko.json",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "premove ./dist ./coverage",
+    "test:eslint": "eslint ./src",
+    "test:types": "tsc",
+    "test:lib": "vitest",
+    "test:lib:dev": "pnpm run test:lib --watch",
+    "test:build": "publint --strict",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@tanstack/virtual-core": "workspace:*"
+  },
+  "devDependencies": {
+    "marko": ">=6.0.0"
+  },
+  "peerDependencies": {
+    "marko": ">=6.0.0"
+  }
+}
