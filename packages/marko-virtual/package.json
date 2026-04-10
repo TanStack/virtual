@@ -36,7 +36,9 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./marko.json": "./marko.json",
+    "./src/tags/": "./src/tags/"
   },
   "sideEffects": false,
   "files": [
