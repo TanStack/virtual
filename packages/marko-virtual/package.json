@@ -60,6 +60,9 @@
     "@tanstack/virtual-core": "workspace:*"
   },
   "devDependencies": {
+    "@marko/testing-library": "^1.1.0",
+    "@marko/vite": "^3.0.0",
+    "@testing-library/dom": "^10.0.0",
     "marko": ">=6.0.0"
   },
   "peerDependencies": {
