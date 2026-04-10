@@ -13,56 +13,56 @@
       .item { display: flex; align-items: center; padding: 0 16px; font-size: 14px; border-bottom: 1px solid #f3f4f6; box-sizing: border-box; }
       .item-even { background: #f9fafb; }
       .item-odd  { background: #ffffff; }
-      .status { color: #9ca3af; font-style: italic; font-size: 13px; }
+      .placeholder { color: #9ca3af; font-style: italic; font-size: 13px; }
       .footer { font-size: 12px; color: #9ca3af; margin-top: 8px; text-align: right; }
     </style>
   </head>
   <body>
     <h1>Infinite Scroll Virtualisation</h1>
-    <p>Rows are fetched in pages as you scroll toward the end of the list.</p>
+    <p>500 rows fetched in pages of 20 as you scroll. The virtualizer reserves all 500 slots upfront — unloaded rows show a placeholder.</p>
 
-    <const/TOTAL = 500/>
+    <const/TOTAL     = 500/>
     <const/PAGE_SIZE = 20/>
 
-    <let/rows = ([] as string[])/>
-    <let/hasMore = true/>
+    <let/rows    = ([] as string[])/>
     <let/loading = false/>
-    <let/nextOffset = 0/>
+    <let/hasMore = true/>
+    <let/offset  = 0/>
     <let/mounted = false/>
-
-    <const/loadPage = async () => {
-      if (loading || !hasMore) return
-      loading = true
-      await new Promise<void>(r => setTimeout(r, 500))
-      const offset = nextOffset
-      const count = Math.min(PAGE_SIZE, TOTAL - offset)
-      const newRows = Array.from({ length: count }, (_, k) =>
-        "Row #" + (offset + k + 1) + " — loaded at offset " + offset
-      )
-      rows = [...rows, ...newRows]
-      nextOffset = offset + count
-      hasMore = nextOffset < TOTAL
-      loading = false
-    }/>
 
     <script() {
       mounted = true
-      loadPage()
+      loading = true
+      new Promise<void>(r => setTimeout(r, 400)).then(() => {
+        const n = Math.min(PAGE_SIZE, TOTAL)
+        rows = Array.from({ length: n }, (_, k) => "Row #" + (k + 1))
+        offset = n
+        hasMore = n < TOTAL
+        loading = false
+      })
     }/>
-
-    <const/count = hasMore ? rows.length + 1 : rows.length/>
 
     <div/scrollEl class="scroll-container">
       <if=mounted>
         <virtualizer|{ virtualItems, totalSize }|
-          count=count
+          count=TOTAL
           estimateSize=() => 52
           getScrollElement=scrollEl
           overscan=5
         >
           <script() {
             const last = virtualItems[virtualItems.length - 1]
-            if (last && last.index >= rows.length - 1) loadPage()
+            if (last && last.index >= rows.length - 1 && !loading && hasMore) {
+              const off = offset
+              loading = true
+              new Promise<void>(r => setTimeout(r, 400)).then(() => {
+                const n = Math.min(PAGE_SIZE, TOTAL - off)
+                rows = [...rows, ...Array.from({ length: n }, (_, k) => "Row #" + (off + k + 1))]
+                offset = off + n
+                hasMore = offset < TOTAL
+                loading = false
+              })
+            }
           }/>
 
           <div style=`height: ${totalSize}px; width: 100%; position: relative`>
@@ -75,7 +75,9 @@
                   ${rows[item.index]}
                 </if>
                 <else>
-                  <span class="status">${loading ? "Loading more…" : hasMore ? "Scroll to load more" : "All rows loaded"}</span>
+                  <span class="placeholder">
+                    ${loading && item.index === rows.length ? "Loading…" : "—"}
+                  </span>
                 </else>
               </div>
             </for>
@@ -84,8 +86,6 @@
       </if>
     </div>
 
-    <p class="footer">
-      ${rows.length} of ${TOTAL} rows loaded
-    </p>
+    <p class="footer">${rows.length} of ${TOTAL} rows loaded</p>
   </body>
 </html>

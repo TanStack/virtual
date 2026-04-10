@@ -36,12 +36,13 @@
         >
           <div style=`height: ${totalSize}px; width: 100%; position: relative`>
             <for|item| of=virtualItems>
-              <div/$el
+              <div/itemEl
+                data-index=item.index
                 class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
                 style=`position: absolute; top: 0; left: 0; width: 100%; transform: translateY(${item.start}px)`
               >
                 <script() {
-                  const node = el()
+                  const node = itemEl()
                   if (node && measureElement) measureElement(node)
                 }/>
                 <strong>${items[item.index]!.id}.</strong> ${items[item.index]!.text}
