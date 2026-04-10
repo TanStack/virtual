@@ -9,6 +9,7 @@
       body { font-family: system-ui, sans-serif; padding: 24px; }
       h1 { font-size: 24px; margin-bottom: 8px; }
       p { color: #555; margin-bottom: 16px; }
+      code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 13px; }
       .scroll-container { height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; position: relative; }
       .item { display: flex; align-items: center; padding: 0 12px; font-size: 13px; border-bottom: 1px solid #f3f4f6; box-sizing: border-box; }
       .item-even { background: #f9fafb; }
@@ -20,14 +21,10 @@
   </head>
   <body>
     <h1>Smooth Scroll Virtualisation</h1>
-    <p>scrollToIndex uses a custom easing function for smooth animated scrolling.</p>
-
-    import { elementScroll } from "@tanstack/marko-virtual"
-    import type { VirtualizerOptions } from "@tanstack/marko-virtual"
-
-    static function easeInOutQuint(t: number) {
-      return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
-    }
+    <p>
+      Uses <code>scrollToIndex</code> with <code>behavior: 'smooth'</code> for
+      native CSS smooth scrolling to any item.
+    </p>
 
     <let/mounted = false/>
     <script() { mounted = true }/>
@@ -51,9 +48,9 @@
           </div>
 
           <div class="controls">
-            <button onClick=() => scrollToIndex(0)>↑ Top</button>
-            <button onClick=() => scrollToIndex(Math.floor(Math.random() * 10000))>→ Random</button>
-            <button onClick=() => scrollToIndex(9999)>↓ Bottom</button>
+            <button onClick=() => scrollToIndex(0, { behavior: 'smooth' })>↑ Top</button>
+            <button onClick=() => scrollToIndex(Math.floor(Math.random() * 10000), { behavior: 'smooth' })>→ Random</button>
+            <button onClick=() => scrollToIndex(9999, { behavior: 'smooth' })>↓ Bottom</button>
           </div>
         </virtualizer>
       </if>

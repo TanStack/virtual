@@ -13,49 +13,41 @@
       .item { display: flex; align-items: center; padding: 0 16px; font-size: 14px; border-bottom: 1px solid #f3f4f6; box-sizing: border-box; }
       .item-even { background: #f9fafb; }
       .item-odd  { background: #ffffff; }
-      .loading { color: #9ca3af; font-style: italic; font-size: 13px; }
-      .end { color: #6b7280; font-size: 13px; }
-      .status { font-size: 12px; color: #9ca3af; margin-top: 8px; text-align: right; }
+      .status { color: #9ca3af; font-style: italic; font-size: 13px; }
+      .footer { font-size: 12px; color: #9ca3af; margin-top: 8px; text-align: right; }
     </style>
   </head>
   <body>
     <h1>Infinite Scroll Virtualisation</h1>
-    <p>Rows are fetched in pages as you scroll toward the end.</p>
+    <p>Rows are fetched in pages as you scroll toward the end of the list.</p>
 
-    static async function fetchPage(offset: number, limit: number) {
-      await new Promise(r => setTimeout(r, 500))
-      const total = 500
-      const rows = Array.from({ length: Math.min(limit, total - offset) }, (_, i) =>
-        `Row #${offset + i + 1} — loaded at offset ${offset}`
-      )
-      return { rows, nextOffset: offset + rows.length, hasMore: offset + rows.length < total }
-    }
+    <const/TOTAL = 500/>
+    <const/PAGE_SIZE = 20/>
 
     <let/rows = ([] as string[])/>
     <let/hasMore = true/>
     <let/loading = false/>
-    <let/offset = 0/>
+    <let/nextOffset = 0/>
     <let/mounted = false/>
+
+    <const/loadPage = async () => {
+      if (loading || !hasMore) return
+      loading = true
+      await new Promise<void>(r => setTimeout(r, 500))
+      const offset = nextOffset
+      const count = Math.min(PAGE_SIZE, TOTAL - offset)
+      const newRows = Array.from({ length: count }, (_, k) =>
+        "Row #" + (offset + k + 1) + " — loaded at offset " + offset
+      )
+      rows = [...rows, ...newRows]
+      nextOffset = offset + count
+      hasMore = nextOffset < TOTAL
+      loading = false
+    }/>
 
     <script() {
       mounted = true
-      loading = true
-      fetchPage(0, 20).then(result => {
-        rows = result.rows
-        offset = result.nextOffset
-        hasMore = result.hasMore
-        loading = false
-      })
-    }/>
-
-    <const/loadMore = async () => {
-      if (loading || !hasMore) return
-      loading = true
-      const result = await fetchPage(offset, 20)
-      rows = [...rows, ...result.rows]
-      offset = result.nextOffset
-      hasMore = result.hasMore
-      loading = false
+      loadPage()
     }/>
 
     <const/count = hasMore ? rows.length + 1 : rows.length/>
@@ -69,8 +61,8 @@
           overscan=5
         >
           <script() {
-            const lastItem = virtualItems[virtualItems.length - 1]
-            if (lastItem && lastItem.index >= rows.length - 1) loadMore()
+            const last = virtualItems[virtualItems.length - 1]
+            if (last && last.index >= rows.length - 1) loadPage()
           }/>
 
           <div style=`height: ${totalSize}px; width: 100%; position: relative`>
@@ -83,12 +75,7 @@
                   ${rows[item.index]}
                 </if>
                 <else>
-                  <if=loading>
-                    <span class="loading">Loading more…</span>
-                  </if>
-                  <else>
-                    <span class="end">${hasMore ? "Scroll to load more" : `All ${rows.length} rows loaded`}</span>
-                  </else>
+                  <span class="status">${loading ? "Loading more…" : hasMore ? "Scroll to load more" : "All rows loaded"}</span>
                 </else>
               </div>
             </for>
@@ -97,8 +84,8 @@
       </if>
     </div>
 
-    <p class="status">
-      ${rows.length} rows loaded${hasMore ? " · more available" : " · end of list"}
+    <p class="footer">
+      ${rows.length} of ${TOTAL} rows loaded
     </p>
   </body>
 </html>

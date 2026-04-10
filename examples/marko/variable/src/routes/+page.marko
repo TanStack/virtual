@@ -21,10 +21,10 @@
   </head>
   <body>
     <h1>Variable Virtualisation</h1>
-    <p>Each item has a variable but knowable size — passed via estimateSize so no DOM measurement is needed.</p>
-
-    static const rowSizes = Array.from({ length: 10000 }, () => 25 + Math.round(Math.random() * 100))
-    static const colSizes = Array.from({ length: 10000 }, () => 75 + Math.round(Math.random() * 100))
+    <p>
+      Each item has a variable but knowable size — passed directly via
+      <code>estimateSize</code> using a deterministic formula so no DOM measurement is needed.
+    </p>
 
     <let/mounted = false/>
     <script() { mounted = true }/>
@@ -34,8 +34,8 @@
       <div/rowScroll class="scroll-row">
         <if=mounted>
           <virtualizer|{ virtualItems, totalSize }|
-            count=rowSizes.length
-            estimateSize=(i) => rowSizes[i]!
+            count=10000
+            estimateSize=(i) => 25 + ((i * 17 + 31) % 100)
             getScrollElement=rowScroll
           >
             <div style=`height: ${totalSize}px; width: 100%; position: relative`>
@@ -58,8 +58,8 @@
       <div/colScroll class="scroll-col">
         <if=mounted>
           <virtualizer|{ virtualItems, totalSize }|
-            count=colSizes.length
-            estimateSize=(i) => colSizes[i]!
+            count=10000
+            estimateSize=(i) => 75 + ((i * 13 + 43) % 100)
             horizontal=true
             getScrollElement=colScroll
           >
@@ -83,8 +83,8 @@
       <div/masonryScroll class="scroll-masonry">
         <if=mounted>
           <virtualizer|{ virtualItems, totalSize }|
-            count=rowSizes.length
-            estimateSize=(i) => rowSizes[i]!
+            count=10000
+            estimateSize=(i) => 25 + ((i * 17 + 31) % 100)
             lanes=4
             getScrollElement=masonryScroll
           >

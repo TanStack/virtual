@@ -19,24 +19,19 @@
     <h1>Grid Virtualisation</h1>
     <p>A 1000 × 1000 grid — two &lt;virtualizer&gt; tags sharing the same scroll element.</p>
 
-    static const ROW_COUNT = 1000
-    static const COL_COUNT = 1000
-    static const rowSizes = Array.from({ length: ROW_COUNT }, () => 30 + Math.round(Math.random() * 20))
-    static const colSizes = Array.from({ length: COL_COUNT }, () => 80 + Math.round(Math.random() * 80))
-
     <let/mounted = false/>
     <script() { mounted = true }/>
 
     <div/gridScroll class="scroll-grid">
       <if=mounted>
         <virtualizer|{ virtualItems: rowItems, totalSize: rowTotal }|
-          count=ROW_COUNT
-          estimateSize=(i) => rowSizes[i]!
+          count=1000
+          estimateSize=(i) => 30 + ((i * 7 + 11) % 20)
           getScrollElement=gridScroll
         >
           <virtualizer|{ virtualItems: colItems, totalSize: colTotal }|
-            count=COL_COUNT
-            estimateSize=(i) => colSizes[i]!
+            count=1000
+            estimateSize=(i) => 80 + ((i * 11 + 17) % 80)
             horizontal=true
             getScrollElement=gridScroll
           >
