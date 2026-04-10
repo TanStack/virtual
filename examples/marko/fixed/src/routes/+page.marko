@@ -27,7 +27,10 @@
     <p>Fixed sizes — every item's dimensions are hard-coded to the same value and never change.</p>
 
     <let/mounted = false/>
-    <script() { mounted = true }/>
+    <script>
+      // @ts-expect-error — Marko LS types <let> as read-only; assignment is valid Marko 6
+      mounted = true
+    </script>
 
     <section>
       <h2>Rows</h2>

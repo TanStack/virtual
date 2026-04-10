@@ -4,11 +4,8 @@ import {
   observeElementOffset,
   elementScroll,
 } from "@tanstack/virtual-core"
-import type {
-  VirtualItem,
-  ScrollToIndexOptions,
-  ScrollToOffsetOptions,
-} from "@tanstack/virtual-core"
+import type { VirtualItem, ScrollToOptions } from "@tanstack/virtual-core"
+import { setInstance, getInstance, deleteInstance } from "./store"
 
 export interface Input {
   count: number
@@ -23,32 +20,26 @@ export interface Input {
   gap?: number
   lanes?: number
   initialOffset?: number | (() => number)
-  // Tag parameters — the body content receives virtualItems, totalSize, etc.
   content: Marko.Body<[{
     virtualItems: VirtualItem[]
     totalSize: number
     measureElement: ((el: Element | null) => void) | undefined
-    scrollToIndex: (index: number, options?: ScrollToIndexOptions) => void
-    scrollToOffset: (offset: number, options?: ScrollToOffsetOptions) => void
+    scrollToIndex: (index: number, options?: ScrollToOptions) => void
+    scrollToOffset: (offset: number, options?: ScrollToOptions) => void
   }]>
 }
 
-// Module-level Map — class instances never stored in reactive signals
-static const _instances = new Map<string, Virtualizer<Element, Element>>()
-static const _cleanups  = new Map<string, () => void>()
-static let   _nextId    = 0
-
-<let/id    = (`v${++_nextId}`)/>
+<let/id    = (Math.random().toString(36).slice(2))/>
 <let/items = ([] as VirtualItem[])/>
 <let/size  = 0/>
 
 <lifecycle<{}>
   onMount() {
     const notify = () => {
-      const v = _instances.get(id)
-      if (!v) return
-      items = v.getVirtualItems()
-      size  = v.getTotalSize()
+      const entry = getInstance(id)
+      if (!entry) return
+      items = entry.v.getVirtualItems()
+      size  = entry.v.getTotalSize()
     }
 
     const v = new Virtualizer<Element, Element>({
@@ -70,14 +61,14 @@ static let   _nextId    = 0
       onChange: notify,
     })
 
-    _instances.set(id, v)
-    _cleanups.set(id, v._didMount())
+    setInstance(id, { v, cleanup: v._didMount() })
     v._willUpdate()
   }
 
   onUpdate() {
-    const v = _instances.get(id)
-    if (!v) return
+    const entry = getInstance(id)
+    if (!entry) return
+    const { v } = entry
 
     const notify = () => {
       items = v.getVirtualItems()
@@ -102,21 +93,22 @@ static let   _nextId    = 0
     })
 
     v._willUpdate()
+    notify()
   }
 
   onDestroy() {
-    _cleanups.get(id)?.()
-    _instances.delete(id)
-    _cleanups.delete(id)
+    const entry = getInstance(id)
+    if (entry) {
+      entry.cleanup()
+      deleteInstance(id)
+    }
   }
 />
 
-// Render the body content with virtual items passed as tag parameters.
-// When items/size signals change, this re-renders with updated values.
 <${input.content}
   virtualItems=items
   totalSize=size
-  measureElement=_instances.get(id)?.measureElement
-  scrollToIndex=(index: number, options?: ScrollToIndexOptions) => _instances.get(id)?.scrollToIndex(index, options)
-  scrollToOffset=(offset: number, options?: ScrollToOffsetOptions) => _instances.get(id)?.scrollToOffset(offset, options)
+  measureElement=getInstance(id)?.v?.measureElement
+  scrollToIndex=(index: number, options?: ScrollToOptions) => getInstance(id)?.v?.scrollToIndex(index, options)
+  scrollToOffset=(offset: number, options?: ScrollToOptions) => getInstance(id)?.v?.scrollToOffset(offset, options)
 />

@@ -75,8 +75,8 @@ describe("<virtualizer> rows", () => {
     const el = mountFixture(Virtualizer, { count: 100 })
     await waitFor(() => {
       const items = el.querySelectorAll("[data-testid='virtual-item']")
-      expect(items[0].getAttribute("data-index")).toBe("0")
-      expect(items[1].getAttribute("data-index")).toBe("1")
+      expect(items[0]!.getAttribute("data-index")).toBe("0")
+      expect(items[1]!.getAttribute("data-index")).toBe("1")
     })
   })
 
@@ -121,7 +121,7 @@ describe("<virtualizer> columns", () => {
     await waitFor(() => {
       const items = el.querySelectorAll("[data-testid='virtual-item']")
       expect(items.length).toBeGreaterThan(0)
-      expect((items[0] as HTMLElement).style.transform).toContain("translateX(0px)")
+      expect((items[0]! as HTMLElement).style.transform).toContain("translateX(0px)")
     })
   })
 })
@@ -160,7 +160,8 @@ describe("<window-virtualizer>", () => {
     const el = mountFixture(WindowVirtualizer, { count: 100 })
     await waitFor(() =>
       expect(
-        el.querySelectorAll("[data-testid='virtual-item']")[0].getAttribute("data-index")
+        el.querySelectorAll("[data-testid='virtual-item']")
+          .item(0)?.getAttribute("data-index")
       ).toBe("0")
     )
   })
