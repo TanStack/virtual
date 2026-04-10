@@ -1,160 +1,106 @@
-/**
- * Variable-size virtualisation example
- *
- * Each item has a unique but knowable size at render time.
- * We pass the exact size via estimateSize so no DOM measurement is needed.
- * For truly unknown sizes (rendered content), see the dynamic example.
- */
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Variable Virtualisation — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      h2 { font-size: 18px; margin: 24px 0 12px; }
+      p { color: #555; margin-bottom: 16px; }
+      section { margin-bottom: 32px; }
+      .scroll-row { height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; position: relative; }
+      .scroll-col { width: 400px; height: 80px; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 6px; position: relative; }
+      .scroll-masonry { height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; position: relative; }
+      .item { display: flex; align-items: center; padding: 0 12px; font-size: 12px; border-bottom: 1px solid #f3f4f6; box-sizing: border-box; }
+      .item-even { background: #f9fafb; }
+      .item-odd  { background: #ffffff; }
+    </style>
+  </head>
+  <body>
+    <h1>Variable Virtualisation</h1>
+    <p>Each item has a variable but knowable size — passed via estimateSize so no DOM measurement is needed.</p>
 
-static const rowSizes = Array.from({ length: 10000 }, () =>
-  25 + Math.round(Math.random() * 100)
-)
+    static const rowSizes = Array.from({ length: 10000 }, () => 25 + Math.round(Math.random() * 100))
+    static const colSizes = Array.from({ length: 10000 }, () => 75 + Math.round(Math.random() * 100))
 
-static const colSizes = Array.from({ length: 10000 }, () =>
-  75 + Math.round(Math.random() * 100)
-)
-
-<let/mounted = false/>
-<script() { mounted = true }/>
-
-<div class="page">
-  <h1>Variable Virtualisation</h1>
-  <p>
-    Each item has a <strong>variable</strong> but knowable size — passed
-    directly via <code>estimateSize</code> so no DOM measurement is needed.
-  </p>
-
-  <if=mounted>
-
-    <!-- ── Rows ─────────────────────────────────────────────────────── -->
+    <let/mounted = false/>
+    <script() { mounted = true }/>
 
     <section>
       <h2>Rows</h2>
-      <div/$rowScroll class="scroll-container" style="height: 200px; overflow-y: auto">
-        <virtualizer|{ virtualItems, totalSize }|
-          count=rowSizes.length
-          estimateSize=(i) => rowSizes[i]!
-          getScrollElement=rowScroll
-        >
-          <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-            <for|item| of=virtualItems>
-              <div
-                class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                style=`
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  width: 100%;
-                  height: ${item.size}px;
-                  transform: translateY(${item.start}px);
-                `
-              >
-                Row ${item.index} — ${item.size}px
-              </div>
-            </for>
-          </div>
-        </virtualizer>
+      <div/rowScroll class="scroll-row">
+        <if=mounted>
+          <virtualizer|{ virtualItems, totalSize }|
+            count=rowSizes.length
+            estimateSize=(i) => rowSizes[i]!
+            getScrollElement=rowScroll
+          >
+            <div style=`height: ${totalSize}px; width: 100%; position: relative`>
+              <for|item| of=virtualItems>
+                <div
+                  class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+                  style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+                >
+                  Row ${item.index} — ${item.size}px
+                </div>
+              </for>
+            </div>
+          </virtualizer>
+        </if>
       </div>
     </section>
-
-    <!-- ── Columns ──────────────────────────────────────────────────── -->
 
     <section>
       <h2>Columns</h2>
-      <div/$colScroll class="scroll-container" style="width: 400px; height: 80px; overflow-x: auto">
-        <virtualizer|{ virtualItems, totalSize }|
-          count=colSizes.length
-          estimateSize=(i) => colSizes[i]!
-          horizontal=true
-          getScrollElement=colScroll
-        >
-          <div style=`width: ${totalSize}px; height: 100%; position: relative`>
-            <for|item| of=virtualItems>
-              <div
-                class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                style=`
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  height: 100%;
-                  width: ${item.size}px;
-                  transform: translateX(${item.start}px);
-                `
-              >
-                Col ${item.index}
-              </div>
-            </for>
-          </div>
-        </virtualizer>
+      <div/colScroll class="scroll-col">
+        <if=mounted>
+          <virtualizer|{ virtualItems, totalSize }|
+            count=colSizes.length
+            estimateSize=(i) => colSizes[i]!
+            horizontal=true
+            getScrollElement=colScroll
+          >
+            <div style=`width: ${totalSize}px; height: 100%; position: relative`>
+              <for|item| of=virtualItems>
+                <div
+                  class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+                  style=`position: absolute; top: 0; left: 0; height: 100%; width: ${item.size}px; transform: translateX(${item.start}px)`
+                >
+                  Col ${item.index}
+                </div>
+              </for>
+            </div>
+          </virtualizer>
+        </if>
       </div>
     </section>
-
-    <!-- ── Masonry (vertical) ────────────────────────────────────────── -->
 
     <section>
       <h2>Masonry (vertical, 4 lanes)</h2>
-      <div/$masonryScroll class="scroll-container" style="height: 300px; overflow-y: auto">
-        <virtualizer|{ virtualItems, totalSize }|
-          count=rowSizes.length
-          estimateSize=(i) => rowSizes[i]!
-          lanes=4
-          getScrollElement=masonryScroll
-        >
-          <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-            <for|item| of=virtualItems>
-              <div
-                class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                style=`
-                  position: absolute;
-                  top: 0;
-                  left: ${item.lane * 25}%;
-                  width: 25%;
-                  height: ${item.size}px;
-                  transform: translateY(${item.start}px);
-                  box-sizing: border-box;
-                `
-              >
-                ${item.index}
-              </div>
-            </for>
-          </div>
-        </virtualizer>
+      <div/masonryScroll class="scroll-masonry">
+        <if=mounted>
+          <virtualizer|{ virtualItems, totalSize }|
+            count=rowSizes.length
+            estimateSize=(i) => rowSizes[i]!
+            lanes=4
+            getScrollElement=masonryScroll
+          >
+            <div style=`height: ${totalSize}px; width: 100%; position: relative`>
+              <for|item| of=virtualItems>
+                <div
+                  class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+                  style=`position: absolute; top: 0; left: ${item.lane * 25}%; width: 25%; height: ${item.size}px; transform: translateY(${item.start}px); box-sizing: border-box`
+                >
+                  ${item.index}
+                </div>
+              </for>
+            </div>
+          </virtualizer>
+        </if>
       </div>
     </section>
-
-  </if>
-</div>
-
-<style>
-  .page {
-    font-family: system-ui, sans-serif;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 24px;
-  }
-
-  h1 { font-size: 24px; margin-bottom: 8px; }
-  h2 { font-size: 18px; margin: 24px 0 12px; }
-  p { color: #555; margin-bottom: 16px; }
-  code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
-
-  section { margin-bottom: 32px; }
-
-  .scroll-container {
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    position: relative;
-  }
-
-  .item {
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    font-size: 12px;
-    border-bottom: 1px solid #f3f4f6;
-    box-sizing: border-box;
-  }
-
-  .item-even { background: #f9fafb; }
-  .item-odd  { background: #ffffff; }
-</style>
+  </body>
+</html>

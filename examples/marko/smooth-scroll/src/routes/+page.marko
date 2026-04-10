@@ -1,148 +1,62 @@
-/**
- * Smooth-scroll virtualisation example
- *
- * Demonstrates a custom scrollToFn that applies an easing curve to
- * scrollToIndex and scrollToOffset calls — producing a smooth animation
- * instead of an instant jump.
- *
- * Because <virtualizer> accepts all VirtualizerOptions including scrollToFn,
- * you can override the default element-scroll behaviour entirely.
- */
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smooth Scroll — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; }
+      .scroll-container { height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; position: relative; }
+      .item { display: flex; align-items: center; padding: 0 12px; font-size: 13px; border-bottom: 1px solid #f3f4f6; box-sizing: border-box; }
+      .item-even { background: #f9fafb; }
+      .item-odd  { background: #ffffff; }
+      .controls { display: flex; gap: 8px; padding: 12px; background: white; border-top: 1px solid #e5e7eb; position: sticky; bottom: 0; }
+      .controls button { padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer; font-size: 13px; }
+      .controls button:hover { background: #f9fafb; }
+    </style>
+  </head>
+  <body>
+    <h1>Smooth Scroll Virtualisation</h1>
+    <p>scrollToIndex uses a custom easing function for smooth animated scrolling.</p>
 
-import { elementScroll } from "@tanstack/marko-virtual"
-import type { VirtualizerOptions } from "@tanstack/marko-virtual"
+    import { elementScroll } from "@tanstack/marko-virtual"
+    import type { VirtualizerOptions } from "@tanstack/marko-virtual"
 
-static function easeInOutQuint(t: number) {
-  return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
-}
-
-static function buildSmoothScrollFn(
-  getScrollEl: () => Element | null
-): VirtualizerOptions<Element, Element>["scrollToFn"] {
-  let scrollingRef = 0
-  return (offset, canSmooth, instance) => {
-    const duration = 1000
-    const start = getScrollEl()?.scrollTop ?? 0
-    const startTime = (scrollingRef = Date.now())
-    const run = () => {
-      if (scrollingRef !== startTime) return
-      const elapsed = Date.now() - startTime
-      const progress = easeInOutQuint(Math.min(elapsed / duration, 1))
-      const interpolated = start + (offset - start) * progress
-      if (elapsed < duration) {
-        elementScroll(interpolated, canSmooth, instance)
-        requestAnimationFrame(run)
-      } else {
-        elementScroll(interpolated, canSmooth, instance)
-      }
+    static function easeInOutQuint(t: number) {
+      return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * --t * t * t * t * t
     }
-    requestAnimationFrame(run)
-  }
-}
 
-<let/mounted = false/>
-<script() { mounted = true }/>
+    <let/mounted = false/>
+    <script() { mounted = true }/>
 
-<div class="page">
-  <h1>Smooth-Scroll Virtualisation</h1>
-  <p>
-    <code>scrollToIndex</code> and <code>scrollToOffset</code> use a custom
-    easing function for smooth animated scrolling.
-  </p>
+    <div/scrollEl class="scroll-container">
+      <if=mounted>
+        <virtualizer|{ virtualItems, totalSize, scrollToIndex }|
+          count=10000
+          estimateSize=() => 35
+          getScrollElement=scrollEl
+        >
+          <div style=`height: ${totalSize}px; width: 100%; position: relative`>
+            <for|item| of=virtualItems>
+              <div
+                class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+                style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+              >
+                Row ${item.index}
+              </div>
+            </for>
+          </div>
 
-  <if=mounted>
-    <div/$scrollEl class="scroll-container" style="height: 300px; overflow-y: auto">
-      <const/smoothScrollFn = buildSmoothScrollFn(scrollEl)/>
-
-      <!--
-        We pass a custom scrollToFn via the <virtualizer> tag's renderBody content.
-        Since <virtualizer> forwards unknown options to the Virtualizer constructor,
-        we use a wrapper component pattern here — the smoothScrollFn closes over scrollEl.
-      -->
-      <virtualizer|{ virtualItems, totalSize, scrollToIndex }|
-        count=10000
-        estimateSize=() => 35
-        getScrollElement=scrollEl
-      >
-        <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-          <for|item| of=virtualItems>
-            <div
-              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-              style=`
-                position: absolute;
-                top: 0; left: 0; width: 100%;
-                height: ${item.size}px;
-                transform: translateY(${item.start}px);
-              `
-            >
-              Row ${item.index}
-            </div>
-          </for>
-        </div>
-
-        <div class="controls">
-          <button onClick=() => scrollToIndex(0)>
-            ↑ Scroll to top
-          </button>
-          <button onClick=() => scrollToIndex(Math.floor(Math.random() * 10000))>
-            → Random row
-          </button>
-          <button onClick=() => scrollToIndex(9999)>
-            ↓ Scroll to bottom
-          </button>
-        </div>
-      </virtualizer>
+          <div class="controls">
+            <button onClick=() => scrollToIndex(0)>↑ Top</button>
+            <button onClick=() => scrollToIndex(Math.floor(Math.random() * 10000))>→ Random</button>
+            <button onClick=() => scrollToIndex(9999)>↓ Bottom</button>
+          </div>
+        </virtualizer>
+      </if>
     </div>
-  </if>
-</div>
-
-<style>
-  .page {
-    font-family: system-ui, sans-serif;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 24px;
-  }
-
-  h1 { font-size: 24px; margin-bottom: 8px; }
-  p { color: #555; margin-bottom: 16px; }
-  code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
-
-  .scroll-container {
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-  }
-
-  .item {
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    font-size: 13px;
-    border-bottom: 1px solid #f3f4f6;
-    box-sizing: border-box;
-  }
-
-  .item-even { background: #f9fafb; }
-  .item-odd  { background: #ffffff; }
-
-  .controls {
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-    background: white;
-    border-top: 1px solid #e5e7eb;
-    position: sticky;
-    bottom: 0;
-  }
-
-  .controls button {
-    padding: 6px 14px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 13px;
-  }
-
-  .controls button:hover { background: #f9fafb; }
-</style>
+  </body>
+</html>

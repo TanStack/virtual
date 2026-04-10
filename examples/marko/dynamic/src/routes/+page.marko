@@ -1,100 +1,55 @@
-/**
- * Dynamic-size virtualisation example
- *
- * Item sizes are unknown at render time — they depend on rendered content.
- * We use measureElement to let the virtualizer observe each item's actual
- * size via ResizeObserver after it renders into the DOM.
- *
- * This is the correct approach when content determines height (e.g. text
- * that wraps, images with unknown aspect ratios, or any dynamic content).
- */
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dynamic Virtualisation — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
+      .scroll-container { height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; }
+      .item { padding: 10px 12px; font-size: 14px; border-bottom: 1px solid #f3f4f6; box-sizing: border-box; line-height: 1.5; }
+      .item-even { background: #f9fafb; }
+      .item-odd  { background: #ffffff; }
+    </style>
+  </head>
+  <body>
+    <h1>Dynamic Virtualisation</h1>
+    <p>Item sizes are unknown at render time. Each item is measured after render via measureElement.</p>
 
-static const items = Array.from({ length: 1000 }, (_, i) => ({
-  id: i,
-  // Simulate content of varying length
-  text: "Item " + i + " — " + "lorem ipsum ".repeat(1 + (i % 5)),
-}))
+    static const items = Array.from({ length: 1000 }, (_, i) => ({
+      id: i,
+      text: "Item " + i + " — " + "lorem ipsum ".repeat(1 + (i % 5)),
+    }))
 
-<let/mounted = false/>
-<script() { mounted = true }/>
+    <let/mounted = false/>
+    <script() { mounted = true }/>
 
-<div class="page">
-  <h1>Dynamic Virtualisation</h1>
-  <p>
-    Item sizes are <strong>unknown</strong> at render time. Each rendered item
-    is measured by the virtualizer via <code>measureElement</code>, and the
-    scroll space is updated as real sizes are discovered.
-  </p>
-  <p class="note">
-    Notice: provide a rough <code>estimateSize</code> so the initial scroll
-    space is reasonable before measurement completes.
-  </p>
-
-  <if=mounted>
-    <div/$scrollEl class="scroll-container" style="height: 400px; overflow-y: auto">
-      <virtualizer|{ virtualItems, totalSize, measureElement }|
-        count=items.length
-        estimateSize=() => 45
-        getScrollElement=scrollEl
-      >
-        <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-          <for|item| of=virtualItems>
-            <!--
-              DOM ref pattern for dynamic measurement:
-              1. /$el captures a ref to this DOM node
-              2. <script> runs after render and calls measureElement(el())
-                 so the virtualizer learns the real height via ResizeObserver
-            -->
-            <div/$el
-              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-              style=`
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                transform: translateY(${item.start}px);
-                padding: 10px 12px;
-                box-sizing: border-box;
-              `
-            >
-              <script() {
-                const node = el()
-                if (node && measureElement) measureElement(node)
-              }/>
-              <strong>${items[item.index]!.id}.</strong>
-              ${items[item.index]!.text}
-            </div>
-          </for>
-        </div>
-      </virtualizer>
+    <div/scrollEl class="scroll-container">
+      <if=mounted>
+        <virtualizer|{ virtualItems, totalSize, measureElement }|
+          count=items.length
+          estimateSize=() => 45
+          getScrollElement=scrollEl
+        >
+          <div style=`height: ${totalSize}px; width: 100%; position: relative`>
+            <for|item| of=virtualItems>
+              <div/$el
+                class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+                style=`position: absolute; top: 0; left: 0; width: 100%; transform: translateY(${item.start}px)`
+              >
+                <script() {
+                  const node = el()
+                  if (node && measureElement) measureElement(node)
+                }/>
+                <strong>${items[item.index]!.id}.</strong> ${items[item.index]!.text}
+              </div>
+            </for>
+          </div>
+        </virtualizer>
+      </if>
     </div>
-  </if>
-</div>
-
-<style>
-  .page {
-    font-family: system-ui, sans-serif;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 24px;
-  }
-
-  h1 { font-size: 24px; margin-bottom: 8px; }
-  p { color: #555; margin-bottom: 12px; }
-  .note { font-size: 13px; color: #888; font-style: italic; }
-  code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
-
-  .scroll-container {
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-  }
-
-  .item {
-    font-size: 14px;
-    line-height: 1.5;
-    border-bottom: 1px solid #f3f4f6;
-  }
-
-  .item-even { background: #f9fafb; }
-  .item-odd  { background: #ffffff; }
-</style>
+  </body>
+</html>

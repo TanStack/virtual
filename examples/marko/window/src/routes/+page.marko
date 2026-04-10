@@ -1,36 +1,27 @@
-/**
- * Window virtualisation example
- *
- * Uses <window-virtualizer> so the entire page scrolls rather than
- * a fixed-height container. Items are positioned relative to the list's
- * offset from the top of the page.
- */
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Window Virtualisation — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; }
+      .item { display: flex; align-items: center; padding: 0 12px; font-size: 13px; border-bottom: 1px solid #f3f4f6; box-sizing: border-box; }
+      .item-even { background: #f9fafb; }
+      .item-odd  { background: #ffffff; }
+    </style>
+  </head>
+  <body>
+    <h1>Window Virtualisation</h1>
+    <p>Uses &lt;window-virtualizer&gt; — the entire page scrolls. Scroll down to see rows.</p>
 
-<let/mounted = false/>
-<let/listOffsetTop = 0/>
-<div/$listEl/>
+    <let/mounted = false/>
+    <script() { mounted = true }/>
 
-<script() {
-  mounted = true
-  // Capture the list's offset from the top of the page so the virtualizer
-  // can correctly calculate which items are in the viewport.
-  listOffsetTop = listEl()?.offsetTop ?? 0
-}/>
-
-<div class="page">
-  <h1>Window Virtualisation</h1>
-  <p>
-    Uses <code>&lt;window-virtualizer&gt;</code> — the entire page scrolls.
-    Scroll down to see rows virtualised against the window viewport.
-  </p>
-  <p class="note">
-    The <code>scrollMargin</code> accounts for content above the list
-    (page header, intro text) so the virtualizer correctly maps scroll
-    position to visible items.
-  </p>
-
-  <if=mounted>
-    <div style="position: relative" ref=listEl>
+    <if=mounted>
       <window-virtualizer|{ virtualItems, totalSize }|
         count=10000
         estimateSize=() => 35
@@ -40,44 +31,13 @@
           <for|item| of=virtualItems>
             <div
               class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-              style=`
-                position: absolute;
-                top: 0; left: 0; width: 100%;
-                height: ${item.size}px;
-                transform: translateY(${item.start - listOffsetTop}px);
-              `
+              style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
             >
               Row ${item.index}
             </div>
           </for>
         </div>
       </window-virtualizer>
-    </div>
-  </if>
-</div>
-
-<style>
-  .page {
-    font-family: system-ui, sans-serif;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 24px;
-  }
-
-  h1 { font-size: 24px; margin-bottom: 8px; }
-  p { color: #555; margin-bottom: 12px; }
-  .note { font-size: 13px; color: #888; font-style: italic; }
-  code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
-
-  .item {
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    font-size: 13px;
-    border-bottom: 1px solid #f3f4f6;
-    box-sizing: border-box;
-  }
-
-  .item-even { background: #f9fafb; }
-  .item-odd  { background: #ffffff; }
-</style>
+    </if>
+  </body>
+</html>
