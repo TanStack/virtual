@@ -1,25 +1,45 @@
 # @tanstack/marko-virtual
 
-Marko 6 adapter for [TanStack Virtual](https://tanstack.com/virtual). Provides
-row, column, and grid virtualisation via two auto-discovered Marko tags.
+Headless UI for virtualizing scrollable elements in [Marko 6](https://markojs.com), built on top of [`@tanstack/virtual-core`](https://tanstack.com/virtual).
+
+Part of the [TanStack Virtual](https://tanstack.com/virtual) family.
 
 ## Installation
 
-```sh
+```bash
 npm install @tanstack/marko-virtual
+# or
+pnpm add @tanstack/marko-virtual
 ```
 
-Tags are auto-discovered by the Marko compiler — no imports needed in your
-`.marko` files. Just use `<virtualizer>` or `<window-virtualizer>` directly.
+**Peer dependency:** `marko >= 6.0.0`
 
-## Quick start
+## Setup
+
+Add to your project's `marko.json` to make the tags available:
+
+```json
+{
+  "taglib-imports": ["@tanstack/marko-virtual/marko.json"]
+}
+```
+
+## Usage
+
+### `<virtualizer>` — scrollable container
+
+Use when you control the scroll element (a div with `overflow: auto`).
 
 ```marko
+<!DOCTYPE html>
+<html>
+<body>
+
 <let/mounted = false/>
 <script() { mounted = true }/>
 
-<if=mounted>
-  <div/$scrollEl style="height: 400px; overflow-y: auto">
+<div/scrollEl style="height: 400px; overflow-y: auto">
+  <if=mounted>
     <virtualizer|{ virtualItems, totalSize }|
       count=10000
       estimateSize=() => 35
@@ -27,76 +47,146 @@ Tags are auto-discovered by the Marko compiler — no imports needed in your
     >
       <div style=`height: ${totalSize}px; position: relative`>
         <for|item| of=virtualItems>
-          <div style=`
-            position: absolute; top: 0; left: 0; width: 100%;
-            height: ${item.size}px;
-            transform: translateY(${item.start}px);
-          `>
+          <div
+            data-index=item.index
+            style=`position: absolute; transform: translateY(${item.start}px);
+                   height: ${item.size}px; width: 100%`
+          >
             Row ${item.index}
           </div>
         </for>
       </div>
     </virtualizer>
-  </div>
-</if>
+  </if>
+</div>
+
+</body>
+</html>
 ```
 
-## Tags
+> **Why `mounted`?** The virtualizer measures the scroll element's dimensions on mount. During SSR the DOM has no layout, so `offsetHeight` is 0 and no items would be calculated. The `<if=mounted>` guard ensures the virtualizer only renders after the browser has real dimensions available.
+
+### `<window-virtualizer>` — full-page scrolling
+
+Use when the page itself is the scroll container.
+
+```marko
+<!DOCTYPE html>
+<html>
+<body>
+
+<window-virtualizer|{ virtualItems, totalSize }| count=10000 estimateSize=() => 35>
+  <div style=`height: ${totalSize}px; position: relative`>
+    <for|item| of=virtualItems>
+      <div
+        data-index=item.index
+        style=`position: absolute; transform: translateY(${item.start}px);
+               height: ${item.size}px; width: 100%`
+      >
+        Row ${item.index}
+      </div>
+    </for>
+  </div>
+</window-virtualizer>
+
+</body>
+</html>
+```
+
+## Tag parameters
+
+Both tags use Marko 6's tag parameters pattern. The body receives virtual state via `|{ ... }|` destructuring:
+
+```marko
+<virtualizer|{ virtualItems, totalSize, measureElement, scrollToIndex, scrollToOffset }|
+  count=...
+  getScrollElement=...
+>
+  <!-- virtualItems, totalSize etc are in scope here -->
+</virtualizer>
+```
+
+## API Reference
 
 ### `<virtualizer>`
 
-Element-based virtualisation. Covers:
-
-- **Rows** — default (`horizontal` not set)
-- **Columns** — `horizontal=true`
-- **Grid** — compose two `<virtualizer>` tags sharing the same scroll element
-
-| Prop | Type | Default | Description |
+| Attribute | Type | Required | Description |
 |---|---|---|---|
-| `count` | `number` | required | Number of items |
-| `getScrollElement` | `() => Element \| null` | required | Scroll container |
-| `estimateSize` | `(index: number) => number` | `() => 50` | Estimated item size in px |
-| `overscan` | `number` | `5` | Items to render beyond the visible area |
-| `horizontal` | `boolean` | `false` | Virtualise horizontally |
-| `paddingStart` | `number` | — | Padding before first item |
-| `paddingEnd` | `number` | — | Padding after last item |
-| `gap` | `number` | — | Gap between items |
-| `lanes` | `number` | `1` | Lanes for masonry layouts |
-| `initialOffset` | `number \| (() => number)` | — | Initial scroll offset |
+| `count` | `number` | ✅ | Total number of items |
+| `getScrollElement` | `() => Element \| null` | ✅ | Returns the scroll container |
+| `estimateSize` | `(index: number) => number` | | Estimated item size in px (default: `50`) |
+| `overscan` | `number` | | Items to render outside the viewport (default: `5`) |
+| `horizontal` | `boolean` | | Enable horizontal scrolling (default: `false`) |
+| `paddingStart` | `number` | | Padding before the first item in px |
+| `paddingEnd` | `number` | | Padding after the last item in px |
+| `scrollPaddingStart` | `number` | | Scroll padding at the start |
+| `scrollPaddingEnd` | `number` | | Scroll padding at the end |
+| `gap` | `number` | | Gap between items in px |
+| `lanes` | `number` | | Number of lanes for grid layouts |
+| `initialOffset` | `number \| (() => number)` | | Initial scroll offset |
+
+**Tag parameters provided to body:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `virtualItems` | `VirtualItem[]` | Items to render, with `index`, `start`, `size`, `key` |
+| `totalSize` | `number` | Total scrollable size in px — set on the inner container |
+| `measureElement` | `(el: Element \| null) => void` | Pass to `ref` for dynamic size measurement |
+| `scrollToIndex` | `(index: number, options?: ScrollToOptions) => void` | Scroll to an item by index |
+| `scrollToOffset` | `(offset: number, options?: ScrollToOptions) => void` | Scroll to a px offset |
 
 ### `<window-virtualizer>`
 
-Window-based virtualisation — the entire page scrolls. Same props as
-`<virtualizer>` except `getScrollElement` and `horizontal` are not accepted.
-
-### Tag variable
-
-Both tags expose the same shape via `<tag|{ ... }|>`:
-
-| Property | Type | Description |
-|---|---|---|
-| `virtualItems` | `VirtualItem[]` | Currently visible items |
-| `totalSize` | `number` | Total scrollable size in px |
-| `measureElement` | `(el: Element \| null) => void` | For dynamic/variable sizes |
-| `scrollToIndex` | `(index: number, options?) => void` | Scroll to item by index |
-| `scrollToOffset` | `(offset: number, options?) => void` | Scroll to pixel offset |
-
-## SSR
-
-`<virtualizer>` and `<window-virtualizer>` are client-only — the
-`<lifecycle>` tag inside them never runs during SSR. Always wrap in
-`<if=mounted>` where `mounted` is set by `<script>`.
+Same as `<virtualizer>` except there is no `getScrollElement`, `horizontal`, or `initialOffset` — the window is always the scroll container.
 
 ## Examples
 
-- [Fixed sizes](https://tanstack.com/virtual/latest/docs/framework/marko/examples/fixed)
-- [Variable sizes](https://tanstack.com/virtual/latest/docs/framework/marko/examples/variable)
-- [Dynamic sizes](https://tanstack.com/virtual/latest/docs/framework/marko/examples/dynamic)
-- [Grid](https://tanstack.com/virtual/latest/docs/framework/marko/examples/grid)
-- [Smooth scroll](https://tanstack.com/virtual/latest/docs/framework/marko/examples/smooth-scroll)
-- [Infinite scroll](https://tanstack.com/virtual/latest/docs/framework/marko/examples/infinite-scroll)
-- [Window](https://tanstack.com/virtual/latest/docs/framework/marko/examples/window)
+All examples use `@marko/run`. Run any with:
+
+```bash
+pnpm --filter tanstack-marko-virtual-example-<name> dev
+```
+
+| Example | Description |
+|---|---|
+| `fixed` | Fixed-size rows, columns, and grid |
+| `variable` | Variable sizes via `estimateSize` |
+| `dynamic` | Unknown sizes measured via `measureElement` |
+| `grid` | Two virtualizers sharing one scroll element |
+| `smooth-scroll` | `scrollToIndex` with CSS smooth scrolling |
+| `infinite-scroll` | Lazy data loading with a fixed total count |
+| `window` | Full-page scrolling with `<window-virtualizer>` |
+
+## Dynamic sizing
+
+Use `measureElement` to measure items whose size isn't known upfront:
+
+```marko
+<virtualizer|{ virtualItems, totalSize, measureElement }|
+  count=items.length
+  estimateSize=() => 50
+  getScrollElement=scrollEl
+>
+  <div style=`height: ${totalSize}px; position: relative`>
+    <for|item| of=virtualItems>
+      <div
+        ref=measureElement
+        data-index=item.index
+        style=`position: absolute; transform: translateY(${item.start}px); width: 100%`
+      >
+        ${items[item.index]}
+      </div>
+    </for>
+  </div>
+</virtualizer>
+```
+
+> `data-index` is required on measured elements — the virtualizer uses it to map measurements back to items.
+
+## TypeScript
+
+The tags are fully typed. The Marko language server reads the source `.marko` files directly — no `.d.ts` generation is needed. Ensure `@marko/language-tools` is installed in your editor for IDE support.
 
 ## License
 
-MIT
+MIT © [Tanner Linsley](https://github.com/tannerlinsley)

@@ -1,1 +1,1 @@
-{ "tags-dir": "./src/tags" }
+{ "tags-dir": "./src/tags", "script-lang": "ts" }
