@@ -86,13 +86,17 @@ export interface Input {
     })
 
     v._willUpdate()
+    notify()
   }
 
   onDestroy() {
     const entry = getInstance(id)
     if (entry) {
-      entry.cleanup()
-      deleteInstance(id)
+      try {
+        entry.cleanup()
+      } finally {
+        deleteInstance(id)
+      }
     }
   }
 />

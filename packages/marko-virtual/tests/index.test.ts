@@ -10,17 +10,17 @@
  * Marko compilation pipeline. Those are not set up here but should be added
  * as e2e tests using @marko/run's test utilities in a future iteration.
  */
-import { describe, test, expect, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import {
-  Virtualizer,
-  elementScroll,
-  observeElementRect,
-  observeElementOffset,
-  observeWindowRect,
-  observeWindowOffset,
-  windowScroll,
-  defaultRangeExtractor,
   defaultKeyExtractor,
+  defaultRangeExtractor,
+  elementScroll,
+  observeElementOffset,
+  observeElementRect,
+  observeWindowOffset,
+  observeWindowRect,
+  Virtualizer,
+  windowScroll,
 } from '../src/index'
 
 // ---------------------------------------------------------------------------
@@ -167,9 +167,11 @@ describe('row virtualizer', () => {
       onChange,
     })
 
-    v._didMount()
+    const cleanup = v._didMount()
     v._willUpdate()
     expect(onChange).toHaveBeenCalled()
+
+    cleanup()
   })
 })
 

@@ -13,9 +13,18 @@ declare module "*.marko" {
   export default template
 }
 
-// Type declaration for @marko/vite plugin.
-// The actual package may ship its own types; this is a fallback.
+// Type declarations for @marko/vite and @marko/run/vite.
+// Both export the same Vite plugin factory; @marko/run/vite re-exports from
+// @marko/vite. Users may import from either path depending on their setup.
+// The actual packages may ship their own types; these are fallbacks.
 declare module "@marko/vite" {
+  import type { Plugin } from "vite"
+
+  function marko(options?: Record<string, unknown>): Plugin
+  export default marko
+}
+
+declare module "@marko/run/vite" {
   import type { Plugin } from "vite"
 
   function marko(options?: Record<string, unknown>): Plugin

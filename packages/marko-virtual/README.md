@@ -12,7 +12,7 @@ npm install @tanstack/marko-virtual
 pnpm add @tanstack/marko-virtual
 ```
 
-**Peer dependency:** `marko >= 6.0.0`
+**Peer dependency:** `marko ^6.0.0`
 
 ## Setup
 

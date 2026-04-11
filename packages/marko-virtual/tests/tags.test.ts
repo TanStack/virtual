@@ -37,15 +37,20 @@ const WindowVirtualizer = WindowVirtualizerFixture as any
 // Test helpers
 // ---------------------------------------------------------------------------
 
+const instances: Array<{ destroy(): void }> = []
+
 function mountFixture(Template: any, input: Record<string, unknown> = {}) {
   const container = document.createElement("div")
   document.body.appendChild(container)
-  Template.mount(input, container)
+  const instance = Template.mount(input, container)
+  instances.push(instance)
   return container
 }
 
 afterEach(() => {
-  // Reset DOM between tests
+  // Destroy Marko instances to run onDestroy lifecycle (cleans up store entries)
+  instances.forEach((i) => i.destroy())
+  instances.length = 0
   document.body.innerHTML = ""
 })
 

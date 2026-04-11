@@ -99,8 +99,11 @@ export interface Input {
   onDestroy() {
     const entry = getInstance(id)
     if (entry) {
-      entry.cleanup()
-      deleteInstance(id)
+      try {
+        entry.cleanup()
+      } finally {
+        deleteInstance(id)
+      }
     }
   }
 />
