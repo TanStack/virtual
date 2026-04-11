@@ -4,6 +4,7 @@
     "src/**/*.ts",
     "tests/**/*.ts",
     "eslint.config.js",
-    "vite.config.ts"
+    "vite.config.ts",
+    "vitest.config.ts"
   ]
 }

@@ -8,8 +8,8 @@
     "preview": "marko-run preview"
   },
   "dependencies": {
-    "@tanstack/marko-virtual": "workspace:*",
     "@marko/run": "^0.7.0",
+    "@tanstack/marko-virtual": "workspace:*",
     "marko": "^6.0.0"
   },
   "devDependencies": {

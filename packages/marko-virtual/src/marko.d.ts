@@ -5,10 +5,10 @@
 // minimal shape we actually use.
 declare module "*.marko" {
   const template: {
-    mount(
+    mount: (
       input: Record<string, unknown>,
       container: Element | DocumentFragment,
-    ): { destroy(): void }
+    ) => { destroy: () => void }
   }
   export default template
 }
@@ -17,6 +17,7 @@ declare module "*.marko" {
 // The actual package may ship its own types; this is a fallback.
 declare module "@marko/vite" {
   import type { Plugin } from "vite"
+
   function marko(options?: Record<string, unknown>): Plugin
   export default marko
 }

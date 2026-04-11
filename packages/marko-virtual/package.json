@@ -22,23 +22,23 @@
     "datagrid"
   ],
   "type": "module",
-  "types": "dist/index.d.ts",
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
+  "types": "dist/esm/index.d.ts",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.js",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
       },
       "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
       }
     },
     "./package.json": "./package.json",
     "./marko.json": "./marko.json",
-    "./src/tags/": "./src/tags/"
+    "./src/tags/*": "./src/tags/*"
   },
   "sideEffects": false,
   "files": [
@@ -63,9 +63,9 @@
     "@marko/testing-library": "^1.1.0",
     "@marko/vite": "^3.0.0",
     "@testing-library/dom": "^10.0.0",
-    "marko": ">=6.0.0"
+    "marko": "^6.0.0"
   },
   "peerDependencies": {
-    "marko": ">=6.0.0"
+    "marko": "^6.0.0"
   }
 }
