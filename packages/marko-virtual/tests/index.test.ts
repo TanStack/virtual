@@ -216,10 +216,11 @@ describe('column virtualizer', () => {
       onChange,
     })
 
-    v._didMount()
+    const cleanup = v._didMount()
     // After mount with a 400px-wide container, virtual items should exist
     const items = v.getVirtualItems()
     expect(Array.isArray(items)).toBe(true)
+    cleanup()
   })
 })
 

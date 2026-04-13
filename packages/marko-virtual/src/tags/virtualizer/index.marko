@@ -70,7 +70,10 @@ export interface Input {
     if (!entry) return
     const { v } = entry
 
+    // Guard mirrors onMount's notify: bail if the instance was destroyed
+    // between the time onUpdate was called and when onChange fires async.
     const notify = () => {
+      if (!getInstance(id)) return
       items = v.getVirtualItems()
       size  = v.getTotalSize()
     }

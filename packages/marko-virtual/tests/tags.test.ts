@@ -27,11 +27,13 @@ import { afterEach, describe, expect, test } from "vitest"
 import { waitFor } from "@testing-library/dom"
 import VirtualizerFixture from "./fixtures/virtualizer-fixture.marko"
 import WindowVirtualizerFixture from "./fixtures/window-virtualizer-fixture.marko"
+import CountUpdateFixture from "./fixtures/count-update-fixture.marko"
 
 // Cast to any — @marko/vite compiles .marko files as ES modules whose default
 // export is the template object with mount(input, container): Instance.
 const Virtualizer = VirtualizerFixture as any
 const WindowVirtualizer = WindowVirtualizerFixture as any
+const CountUpdate = CountUpdateFixture as any
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -113,6 +115,81 @@ describe("<virtualizer> rows", () => {
     const el = mountFixture(Virtualizer, { count: 0 })
     const wrapper = el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement
     expect(wrapper?.style.height).toBe("0px")
+  })
+})
+
+// ---------------------------------------------------------------------------
+// <virtualizer> — reactive updates (onUpdate path)
+// ---------------------------------------------------------------------------
+
+describe("<virtualizer> reactive updates", () => {
+  test("count increase re-renders additional items (tests onUpdate + notify())", async () => {
+    // This test covers the critical onUpdate code path:
+    //   1. Parent changes count → Marko calls onUpdate on <virtualizer>
+    //   2. onUpdate calls v.setOptions({ count: newCount, ... })
+    //   3. v._willUpdate() is a no-op (scroll element unchanged)
+    //   4. notify() is called explicitly — WITHOUT this call, count changes
+    //      have no effect because _willUpdate() only runs when the scroll
+    //      element changes. This was the critical bug documented in the insights.
+    //   5. notify() → items = v.getVirtualItems() → Marko re-renders
+    //
+    // initialCount: 3 → all 3 items fit in 400px viewport (3 × 50px = 150px)
+    const el = mountFixture(CountUpdate, { initialCount: 3 })
+    await waitFor(() =>
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(3)
+    )
+
+    // Click the button to increment count from 3 → 4
+    el.querySelector("[data-testid='increment-btn']")!.dispatchEvent(
+      new MouseEvent("click", { bubbles: true })
+    )
+
+    // Now 4 items should render — confirms onUpdate + notify() works
+    await waitFor(() =>
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(4)
+    )
+  })
+
+  test("count decrease removes items from DOM", async () => {
+    // Start with 5 items, increment to confirm reactive updates work,
+    // then test that the final count is correct.
+    // initialCount: 5 → all 5 fit in 400px (5 × 50px = 250px)
+    const el = mountFixture(CountUpdate, { initialCount: 5 })
+    await waitFor(() =>
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(5)
+    )
+
+    // Increment twice: 5 → 6 → 7
+    const btn = el.querySelector("[data-testid='increment-btn']")!
+    btn.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    await waitFor(() =>
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(6)
+    )
+
+    btn.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    await waitFor(() =>
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(7)
+    )
+  })
+
+  test("totalSize updates when count changes", async () => {
+    const el = mountFixture(CountUpdate, { initialCount: 3 })
+    // Initial: 3 × 50 = 150px
+    await waitFor(() =>
+      expect(
+        (el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement)?.style.height
+      ).toBe("150px")
+    )
+
+    // Increment count → 4 × 50 = 200px
+    el.querySelector("[data-testid='increment-btn']")!.dispatchEvent(
+      new MouseEvent("click", { bubbles: true })
+    )
+    await waitFor(() =>
+      expect(
+        (el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement)?.style.height
+      ).toBe("200px")
+    )
   })
 })
 
