@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.14.0
+
+### Minor Changes
+
+- feat(virtual-core): add laneAssignmentMode option ([#1115](https://github.com/TanStack/virtual/pull/1115))
+
 ## 3.13.23
 
 ### Patch Changes
