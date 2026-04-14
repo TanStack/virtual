@@ -1,0 +1,113 @@
+import {
+  Virtualizer,
+  observeWindowRect,
+  observeWindowOffset,
+  windowScroll,
+} from "@tanstack/virtual-core"
+import type { VirtualItem, ScrollToOptions } from "@tanstack/virtual-core"
+import { setInstance, getInstance, deleteInstance } from "./store"
+
+export interface Input {
+  count: number
+  estimateSize?: (index: number) => number
+  overscan?: number
+  paddingStart?: number
+  paddingEnd?: number
+  scrollPaddingStart?: number
+  scrollPaddingEnd?: number
+  gap?: number
+  lanes?: number
+  content: Marko.Body<[{
+    virtualItems: VirtualItem[]
+    totalSize: number
+    measureElement: ((el: Element | null) => void) | undefined
+    scrollToIndex: (index: number, options?: ScrollToOptions) => void
+    scrollToOffset: (offset: number, options?: ScrollToOptions) => void
+  }]>
+}
+
+<let/id    = (Math.random().toString(36).slice(2))/>
+<let/items = ([] as VirtualItem[])/>
+<let/size  = 0/>
+
+<lifecycle<{}>
+  onMount() {
+    const notify = () => {
+      const entry = getInstance(id)
+      if (!entry) return
+      items = entry.v.getVirtualItems()
+      size  = entry.v.getTotalSize()
+    }
+
+    const v = new Virtualizer<Window, Element>({
+      count:                input.count,
+      estimateSize:         input.estimateSize ?? (() => 50),
+      getScrollElement:     () => typeof document !== "undefined" ? window : null,
+      overscan:             input.overscan ?? 5,
+      paddingStart:         input.paddingStart,
+      paddingEnd:           input.paddingEnd,
+      scrollPaddingStart:   input.scrollPaddingStart,
+      scrollPaddingEnd:     input.scrollPaddingEnd,
+      gap:                  input.gap,
+      lanes:                input.lanes,
+      initialOffset:        () => typeof document !== "undefined" ? window.scrollY : 0,
+      observeElementRect:   observeWindowRect,
+      observeElementOffset: observeWindowOffset,
+      scrollToFn:           windowScroll,
+      onChange:             notify,
+    })
+
+    setInstance(id, { v, cleanup: v._didMount() })
+    v._willUpdate()
+  }
+
+  onUpdate() {
+    const entry = getInstance(id)
+    if (!entry) return
+    const { v } = entry
+
+    // Guard mirrors onMount's notify: bail if the instance was destroyed
+    // between the time onUpdate was called and when onChange fires async.
+    const notify = () => {
+      if (!getInstance(id)) return
+      items = v.getVirtualItems()
+      size  = v.getTotalSize()
+    }
+
+    v.setOptions({
+      ...v.options,
+      count:              input.count,
+      estimateSize:       input.estimateSize ?? (() => 50),
+      overscan:           input.overscan ?? 5,
+      paddingStart:       input.paddingStart,
+      paddingEnd:         input.paddingEnd,
+      scrollPaddingStart: input.scrollPaddingStart,
+      scrollPaddingEnd:   input.scrollPaddingEnd,
+      gap:                input.gap,
+      lanes:              input.lanes,
+      onChange:           notify,
+    })
+
+    v._willUpdate()
+    notify()
+  }
+
+  onDestroy() {
+    const entry = getInstance(id)
+    if (entry) {
+      try {
+        entry.cleanup()
+      } finally {
+        deleteInstance(id)
+      }
+    }
+  }
+/>
+
+<${input.content}
+  virtualItems=items
+  totalSize=size
+  measureElement=getInstance(id)?.v?.measureElement
+  scrollToIndex=(index: number, options?: ScrollToOptions) => getInstance(id)?.v?.scrollToIndex(index, options)
+  scrollToOffset=(offset: number, options?: ScrollToOptions) => getInstance(id)?.v?.scrollToOffset(offset, options)
+/>
