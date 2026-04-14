@@ -292,6 +292,8 @@ export const elementScroll = <T extends Element>(
   })
 }
 
+type LaneAssignmentMode = 'estimate' | 'measured'
+
 export interface VirtualizerOptions<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
@@ -346,6 +348,7 @@ export interface VirtualizerOptions<
   enabled?: boolean
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
+  laneAssignmentMode?: LaneAssignmentMode
 }
 
 type ScrollState = {
@@ -476,6 +479,7 @@ export class Virtualizer<
       isRtl: false,
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
+      laneAssignmentMode: 'estimate',
       ...opts,
     }
   }
@@ -727,8 +731,17 @@ export class Virtualizer<
       this.options.getItemKey,
       this.options.enabled,
       this.options.lanes,
+      this.options.laneAssignmentMode,
     ],
-    (count, paddingStart, scrollMargin, getItemKey, enabled, lanes) => {
+    (
+      count,
+      paddingStart,
+      scrollMargin,
+      getItemKey,
+      enabled,
+      lanes,
+      laneAssignmentMode,
+    ) => {
       const lanesChanged =
         this.prevLanes !== undefined && this.prevLanes !== lanes
 
@@ -747,6 +760,7 @@ export class Virtualizer<
         getItemKey,
         enabled,
         lanes,
+        laneAssignmentMode,
       }
     },
     {
@@ -757,7 +771,15 @@ export class Virtualizer<
   private getMeasurements = memo(
     () => [this.getMeasurementOptions(), this.itemSizeCache],
     (
-      { count, paddingStart, scrollMargin, getItemKey, enabled, lanes },
+      {
+        count,
+        paddingStart,
+        scrollMargin,
+        getItemKey,
+        enabled,
+        lanes,
+        laneAssignmentMode,
+      },
       itemSizeCache,
     ) => {
       if (!enabled) {
@@ -832,6 +854,9 @@ export class Virtualizer<
         let lane: number
         let start: number
 
+        const shouldCacheLane =
+          laneAssignmentMode === 'estimate' || itemSizeCache.has(key)
+
         if (cachedLane !== undefined && this.options.lanes > 1) {
           // Use cached lane - O(1) lookup for previous item in same lane
           lane = cachedLane
@@ -856,8 +881,7 @@ export class Virtualizer<
             ? furthestMeasurement.lane
             : i % this.options.lanes
 
-          // Cache the lane assignment
-          if (this.options.lanes > 1) {
+          if (this.options.lanes > 1 && shouldCacheLane) {
             this.laneAssignments.set(i, lane)
           }
         }
