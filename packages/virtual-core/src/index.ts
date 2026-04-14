@@ -854,9 +854,8 @@ export class Virtualizer<
         let lane: number
         let start: number
 
-        // Check if this item has been measured (for laneAssignmentMode)
-        const isMeasured = itemSizeCache.has(key)
-        const shouldDeferLane = laneAssignmentMode === 'measured' && !isMeasured
+        const shouldCacheLane =
+          laneAssignmentMode === 'estimate' || itemSizeCache.has(key)
 
         if (cachedLane !== undefined && this.options.lanes > 1) {
           // Use cached lane - O(1) lookup for previous item in same lane
@@ -882,8 +881,7 @@ export class Virtualizer<
             ? furthestMeasurement.lane
             : i % this.options.lanes
 
-          // Cache the lane assignment (skip if deferring and not yet measured)
-          if (this.options.lanes > 1 && !shouldDeferLane) {
+          if (this.options.lanes > 1 && shouldCacheLane) {
             this.laneAssignments.set(i, lane)
           }
         }
