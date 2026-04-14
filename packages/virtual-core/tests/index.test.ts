@@ -233,12 +233,12 @@ test('should not throw when component unmounts during scrollToIndex rAF loop', (
   }).not.toThrow()
 })
 
-test('should defer lane caching until measurement when deferLaneAssignment is true', () => {
+test("should defer lane caching until measurement when laneAssignmentMode is 'measured'", () => {
   const virtualizer = new Virtualizer({
     count: 4,
     lanes: 2,
     estimateSize: () => 100,
-    deferLaneAssignment: true,
+    laneAssignmentMode: 'measured',
     getScrollElement: () => null,
     scrollToFn: vi.fn(),
     observeElementRect: vi.fn(),
@@ -270,12 +270,12 @@ test('should defer lane caching until measurement when deferLaneAssignment is tr
   expect(lanesBeforeResize).toEqual(lanesAfterResize)
 })
 
-test('should cache lanes incrementally as items are measured with deferLaneAssignment', () => {
+test("should cache lanes incrementally as items are measured when laneAssignmentMode is 'measured'", () => {
   const virtualizer = new Virtualizer({
     count: 4,
     lanes: 2,
     estimateSize: () => 100,
-    deferLaneAssignment: true,
+    laneAssignmentMode: 'measured',
     getScrollElement: () => null,
     scrollToFn: vi.fn(),
     observeElementRect: vi.fn(),
@@ -307,11 +307,12 @@ test('should cache lanes incrementally as items are measured with deferLaneAssig
   expect(m2[1].lane).toBe(lane1)
 })
 
-test('should cache lanes immediately when deferLaneAssignment is false (default)', () => {
+test("should cache lanes immediately when laneAssignmentMode is 'estimate' (default)", () => {
   const virtualizer = new Virtualizer({
     count: 4,
     lanes: 2,
     estimateSize: () => 100,
+    laneAssignmentMode: 'estimate',
     getScrollElement: () => null,
     scrollToFn: vi.fn(),
     observeElementRect: vi.fn(),

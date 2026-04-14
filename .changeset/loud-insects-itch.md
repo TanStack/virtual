@@ -1,5 +1,5 @@
 ---
-'@tanstack/virtual-core': patch
+'@tanstack/virtual-core': minor
 ---
 
-feat(virtual-core): add deferLaneAssignment option
+feat(virtual-core): add laneAssignmentMode option

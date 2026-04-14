@@ -292,6 +292,8 @@ export const elementScroll = <T extends Element>(
   })
 }
 
+type LaneAssignmentMode = 'estimate' | 'measured'
+
 export interface VirtualizerOptions<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
@@ -346,7 +348,7 @@ export interface VirtualizerOptions<
   enabled?: boolean
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
-  deferLaneAssignment?: boolean
+  laneAssignmentMode?: LaneAssignmentMode
 }
 
 type ScrollState = {
@@ -477,7 +479,7 @@ export class Virtualizer<
       isRtl: false,
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
-      deferLaneAssignment: false,
+      laneAssignmentMode: 'estimate',
       ...opts,
     }
   }
@@ -729,9 +731,17 @@ export class Virtualizer<
       this.options.getItemKey,
       this.options.enabled,
       this.options.lanes,
-      this.options.deferLaneAssignment,
+      this.options.laneAssignmentMode,
     ],
-    (count, paddingStart, scrollMargin, getItemKey, enabled, lanes, deferLaneAssignment) => {
+    (
+      count,
+      paddingStart,
+      scrollMargin,
+      getItemKey,
+      enabled,
+      lanes,
+      laneAssignmentMode,
+    ) => {
       const lanesChanged =
         this.prevLanes !== undefined && this.prevLanes !== lanes
 
@@ -750,7 +760,7 @@ export class Virtualizer<
         getItemKey,
         enabled,
         lanes,
-        deferLaneAssignment,
+        laneAssignmentMode,
       }
     },
     {
@@ -761,7 +771,15 @@ export class Virtualizer<
   private getMeasurements = memo(
     () => [this.getMeasurementOptions(), this.itemSizeCache],
     (
-      { count, paddingStart, scrollMargin, getItemKey, enabled, lanes, deferLaneAssignment },
+      {
+        count,
+        paddingStart,
+        scrollMargin,
+        getItemKey,
+        enabled,
+        lanes,
+        laneAssignmentMode,
+      },
       itemSizeCache,
     ) => {
       if (!enabled) {
@@ -836,9 +854,9 @@ export class Virtualizer<
         let lane: number
         let start: number
 
-        // Check if this item has been measured (for deferLaneAssignment mode)
+        // Check if this item has been measured (for laneAssignmentMode)
         const isMeasured = itemSizeCache.has(key)
-        const shouldDeferLane = deferLaneAssignment && !isMeasured
+        const shouldDeferLane = laneAssignmentMode === 'measured' && !isMeasured
 
         if (cachedLane !== undefined && this.options.lanes > 1) {
           // Use cached lane - O(1) lookup for previous item in same lane
