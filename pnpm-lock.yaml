@@ -1340,16 +1340,10 @@ importers:
       '@tanstack/virtual-core':
         specifier: workspace:*
         version: link:../virtual-core
-      tslib:
-        specifier: ^2.8.1
-        version: 2.8.1
     devDependencies:
       '@angular/core':
         specifier: ^19.0.0
         version: 19.2.20(rxjs@7.8.2)(zone.js@0.15.1)
-      ng-packagr:
-        specifier: ^19.0.0
-        version: 19.2.2(@angular/compiler-cli@19.2.20(@angular/compiler@19.2.20)(typescript@5.6.3))(tslib@2.8.1)(typescript@5.6.3)
       typescript:
         specifier: 5.6.3
         version: 5.6.3
@@ -10849,19 +10843,12 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
-  '@rollup/plugin-json@6.1.0(rollup@4.52.5)':
+  '@rollup/plugin-json@6.1.0(rollup@4.59.0)':
     dependencies:
-      '@rollup/pluginutils': 5.3.0(rollup@4.52.5)
+      '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
     optionalDependencies:
-      rollup: 4.52.5
-
-  '@rollup/pluginutils@5.3.0(rollup@4.52.5)':
-    dependencies:
-      '@types/estree': 1.0.8
-      estree-walker: 2.0.2
-      picomatch: 4.0.3
-    optionalDependencies:
-      rollup: 4.52.5
+      rollup: 4.59.0
+    optional: true
 
   '@rollup/pluginutils@5.3.0(rollup@4.59.0)':
     dependencies:
@@ -11017,6 +11004,7 @@ snapshots:
       '@types/estree': 1.0.8
     optionalDependencies:
       fsevents: 2.3.3
+    optional: true
 
   '@rushstack/node-core-library@5.7.0(@types/node@24.9.2)':
     dependencies:
@@ -12556,7 +12544,8 @@ snapshots:
     dependencies:
       delayed-stream: 1.0.0
 
-  commander@13.1.0: {}
+  commander@13.1.0:
+    optional: true
 
   commander@2.20.3: {}
 
@@ -12564,7 +12553,8 @@ snapshots:
 
   common-path-prefix@3.0.0: {}
 
-  commondir@1.0.1: {}
+  commondir@1.0.1:
+    optional: true
 
   compare-versions@6.1.1: {}
 
@@ -12755,7 +12745,8 @@ snapshots:
 
   dependency-graph@0.11.0: {}
 
-  dependency-graph@1.0.0: {}
+  dependency-graph@1.0.0:
+    optional: true
 
   dequal@2.0.3: {}
 
@@ -12964,6 +12955,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.25.12
       '@esbuild/win32-ia32': 0.25.12
       '@esbuild/win32-x64': 0.25.12
+    optional: true
 
   esbuild@0.25.4:
     optionalDependencies:
@@ -13262,6 +13254,7 @@ snapshots:
       commondir: 1.0.1
       make-dir: 3.1.0
       pkg-dir: 4.2.0
+    optional: true
 
   find-cache-dir@4.0.0:
     dependencies:
@@ -13624,6 +13617,7 @@ snapshots:
   injection-js@2.6.1:
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   internal-ip@6.2.0:
     dependencies:
@@ -13982,6 +13976,7 @@ snapshots:
       mime: 1.6.0
       needle: 3.3.1
       source-map: 0.6.1
+    optional: true
 
   levn@0.4.1:
     dependencies:
@@ -14135,6 +14130,7 @@ snapshots:
   make-dir@3.1.0:
     dependencies:
       semver: 6.3.1
+    optional: true
 
   make-dir@4.0.0:
     dependencies:
@@ -14354,11 +14350,11 @@ snapshots:
   ng-packagr@19.2.2(@angular/compiler-cli@19.2.20(@angular/compiler@19.2.20)(typescript@5.6.3))(tslib@2.8.1)(typescript@5.6.3):
     dependencies:
       '@angular/compiler-cli': 19.2.20(@angular/compiler@19.2.20)(typescript@5.6.3)
-      '@rollup/plugin-json': 6.1.0(rollup@4.52.5)
+      '@rollup/plugin-json': 6.1.0(rollup@4.59.0)
       '@rollup/wasm-node': 4.52.5
-      ajv: 8.17.1
+      ajv: 8.18.0
       ansi-colors: 4.1.3
-      browserslist: 4.27.0
+      browserslist: 4.28.2
       chokidar: 4.0.3
       commander: 13.1.0
       convert-source-map: 2.0.0
@@ -14377,7 +14373,8 @@ snapshots:
       tslib: 2.8.1
       typescript: 5.6.3
     optionalDependencies:
-      rollup: 4.52.5
+      rollup: 4.59.0
+    optional: true
 
   node-addon-api@6.1.0:
     optional: true
@@ -14799,10 +14796,12 @@ snapshots:
   piscina@4.9.2:
     optionalDependencies:
       '@napi-rs/nice': 1.1.1
+    optional: true
 
   pkg-dir@4.2.0:
     dependencies:
       find-up: 4.1.0
+    optional: true
 
   pkg-dir@7.0.0:
     dependencies:
@@ -15208,6 +15207,7 @@ snapshots:
       source-map-js: 1.2.1
     optionalDependencies:
       '@parcel/watcher': 2.5.1
+    optional: true
 
   sax@1.4.1:
     optional: true
