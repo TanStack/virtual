@@ -1,10 +1,7 @@
 import {
-  DestroyRef,
-  afterNextRender,
+  afterRenderEffect,
   computed,
-  effect,
-  inject,
-  signal,
+  linkedSignal,
   untracked,
 } from '@angular/core'
 import {
@@ -16,8 +13,8 @@ import {
   observeWindowRect,
   windowScroll,
 } from '@tanstack/virtual-core'
-import { proxyVirtualizer } from './proxy'
-import type { ElementRef, Signal } from '@angular/core'
+import { signalProxy } from './proxy'
+import type { ElementRef } from '@angular/core'
 import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 import type { AngularVirtualizer } from './types'
 
@@ -28,58 +25,78 @@ function createVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 >(
-  options: Signal<VirtualizerOptions<TScrollElement, TItemElement>>,
-): AngularVirtualizer<TScrollElement, TItemElement> {
-  let virtualizer: Virtualizer<TScrollElement, TItemElement>
-  function lazyInit() {
-    virtualizer ??= new Virtualizer(options())
-    return virtualizer
-  }
-
-  const virtualizerSignal = signal(virtualizer!, { equal: () => false })
-
-  // two-way sync options
-  effect(
-    () => {
-      const _options = options()
-      lazyInit()
-      virtualizerSignal.set(virtualizer)
-      virtualizer.setOptions({
-        ..._options,
-        onChange: (instance, sync) => {
-          // update virtualizerSignal so that dependent computeds recompute.
-          virtualizerSignal.set(instance)
-          _options.onChange?.(instance, sync)
-        },
-      })
-      // update virtualizerSignal so that dependent computeds recompute.
-      virtualizerSignal.set(virtualizer)
-    },
-    { allowSignalWrites: true },
-  )
-
-  const scrollElement = computed(() => options().getScrollElement())
-  // let the virtualizer know when the scroll element is changed
-  effect(
-    () => {
-      const el = scrollElement()
-      if (el) {
-        untracked(virtualizerSignal)._willUpdate()
-      }
-    },
-    { allowSignalWrites: true },
-  )
-
-  let cleanup: (() => void) | undefined
-  afterNextRender({
-    read: () => {
-      cleanup = (virtualizer ?? lazyInit())._didMount()
-    },
+  options: () => VirtualizerOptions<TScrollElement, TItemElement>,
+) {
+  const resolvedOptions = computed<VirtualizerOptions<TScrollElement, TItemElement>>(() => {
+    const _options = options()
+    return {
+      ..._options,
+      onChange: (instance, sync) => {
+        // Update the main signal to trigger a re-render
+        reactiveVirtualizer.set(instance)
+        _options.onChange?.(instance, sync)
+      },
+    }
   })
 
-  inject(DestroyRef).onDestroy(() => cleanup?.())
+  const lazyVirtualizer = computed(() => new Virtualizer(untracked(options)))
 
-  return proxyVirtualizer(virtualizerSignal, lazyInit)
+  const reactiveVirtualizer = linkedSignal(() => {
+    const virtualizer = lazyVirtualizer()
+    // If setOptions does not call onChange, it's safe to call it here
+    virtualizer.setOptions(resolvedOptions())
+    return virtualizer
+  }, { equal: () => false })
+
+  afterRenderEffect((cleanup) => {
+    cleanup(lazyVirtualizer()._didMount())
+  })
+
+  afterRenderEffect(() => {
+    reactiveVirtualizer()._willUpdate()
+  })
+
+  return signalProxy(
+    reactiveVirtualizer,
+    // Methods that pass through: call on the instance without tracking the signal read
+    [
+      '_didMount',
+      '_willUpdate',
+      'calculateRange',
+      'getVirtualIndexes',
+      'measure',
+      'measureElement',
+      'resizeItem',
+      'scrollBy',
+      'scrollToIndex',
+      'scrollToOffset',
+      'setOptions',
+    ],
+    // Attributes that will be transformed to signals
+    [
+      'isScrolling',
+      'measurementsCache',
+      'options',
+      'range',
+      'scrollDirection',
+      'scrollElement',
+      'scrollOffset',
+      'scrollRect',
+    ],
+    // Methods that will be tracked to the virtualizer signal
+    [
+      'getOffsetForAlignment',
+      'getOffsetForIndex',
+      'getVirtualItemForOffset',
+      'indexFromElement',
+    ],
+    // Zero-arg methods exposed as computed signals
+    [
+      'getTotalSize',
+      'getVirtualItems'
+    ],
+    // The rest is passed as is, and can be accessed or called before initialization
+  ) as unknown as AngularVirtualizer<TScrollElement, TItemElement>
 }
 
 export function injectVirtualizer<
@@ -93,23 +110,23 @@ export function injectVirtualizer<
     scrollElement: ElementRef<TScrollElement> | TScrollElement | undefined
   },
 ): AngularVirtualizer<TScrollElement, TItemElement> {
-  const resolvedOptions = computed(() => {
+  return createVirtualizerBase<TScrollElement, TItemElement>(() => {
+    const _options = options()
     return {
       observeElementRect: observeElementRect,
       observeElementOffset: observeElementOffset,
       scrollToFn: elementScroll,
       getScrollElement: () => {
-        const elementOrRef = options().scrollElement
+        const elementOrRef = _options.scrollElement
         return (
           (isElementRef(elementOrRef)
             ? elementOrRef.nativeElement
             : elementOrRef) ?? null
         )
       },
-      ...options(),
+      ..._options,
     }
   })
-  return createVirtualizerBase<TScrollElement, TItemElement>(resolvedOptions)
 }
 
 function isElementRef<T extends Element>(
@@ -127,16 +144,13 @@ export function injectWindowVirtualizer<TItemElement extends Element>(
     | 'scrollToFn'
   >,
 ): AngularVirtualizer<Window, TItemElement> {
-  const resolvedOptions = computed(() => {
-    return {
-      getScrollElement: () => (typeof document !== 'undefined' ? window : null),
-      observeElementRect: observeWindowRect,
-      observeElementOffset: observeWindowOffset,
-      scrollToFn: windowScroll,
-      initialOffset: () =>
-        typeof document !== 'undefined' ? window.scrollY : 0,
-      ...options(),
-    }
-  })
-  return createVirtualizerBase<Window, TItemElement>(resolvedOptions)
+  return createVirtualizerBase<Window, TItemElement>(() => ({
+    getScrollElement: () => (typeof document !== 'undefined' ? window : null),
+    observeElementRect: observeWindowRect,
+    observeElementOffset: observeWindowOffset,
+    scrollToFn: windowScroll,
+    initialOffset: () =>
+      typeof document !== 'undefined' ? window.scrollY : 0,
+    ...options(),
+  }))
 }
