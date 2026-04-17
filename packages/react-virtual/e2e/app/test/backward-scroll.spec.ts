@@ -41,9 +41,7 @@ test('does not jump when scrolling backward from the middle of a dynamic list', 
     await page.mouse.wheel(0, -120)
     // Yield to the browser so RO/scroll events can flush
     await page.waitForTimeout(40)
-    const top = await container.evaluate(
-      (el) => (el as HTMLElement).scrollTop,
-    )
+    const top = await container.evaluate((el) => (el as HTMLElement).scrollTop)
     samples.push(top)
   }
 
