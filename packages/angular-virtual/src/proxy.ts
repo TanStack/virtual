@@ -72,8 +72,8 @@ export function signalProxy<
         return (target[property] = computed(() => inputSignal()[property as keyof TInput]))
       }
 
-      // All other fiels. Any field that is not handled above will fail if the signal includes
-      // a input or model from a component and this is accessed before initialization.
+      // All other fiels. Any fields that is not handled above will fail if the signal includes
+      // input or model signals from a component and this is accessed before initialization.
       return untracked(inputSignal)[property as keyof TInput]
     },
     has(_, property: string) {
