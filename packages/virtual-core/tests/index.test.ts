@@ -167,14 +167,18 @@ test('should not throw when component unmounts during scrollToIndex rAF loop', (
     return rafCallbacks.length
   })
 
-  const mockWindow = {
-    requestAnimationFrame: mockRaf,
-    cancelAnimationFrame: vi.fn(),
-    ResizeObserver: vi.fn(() => ({
+  const MockResizeObserver = vi.fn(function () {
+    return {
       observe: vi.fn(),
       unobserve: vi.fn(),
       disconnect: vi.fn(),
-    })),
+    }
+  })
+
+  const mockWindow = {
+    requestAnimationFrame: mockRaf,
+    cancelAnimationFrame: vi.fn(),
+    ResizeObserver: MockResizeObserver,
   }
 
   const mockScrollElement = {
@@ -333,15 +337,19 @@ function createMockEnvironment() {
   })
   const mockCancelRaf = vi.fn()
 
+  const MockResizeObserver = vi.fn(function () {
+    return {
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    }
+  })
+
   const mockWindow = {
     requestAnimationFrame: mockRaf,
     cancelAnimationFrame: mockCancelRaf,
     performance: { now: () => Date.now() },
-    ResizeObserver: vi.fn(() => ({
-      observe: vi.fn(),
-      unobserve: vi.fn(),
-      disconnect: vi.fn(),
-    })),
+    ResizeObserver: MockResizeObserver,
   }
 
   const mockScrollElement = {
