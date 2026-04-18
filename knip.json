@@ -1,4 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreWorkspaces": ["examples/**", "packages/react-virtual/e2e/**"]
+  "ignoreWorkspaces": ["examples/**"],
+  "ignoreDependencies": ["@angular/cli"],
+  "ignore": ["packages/react-virtual/e2e/app/**"]
 }
