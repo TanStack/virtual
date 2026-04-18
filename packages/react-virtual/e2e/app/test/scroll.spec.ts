@@ -28,7 +28,7 @@ test('scrolls to index 1000', async ({ page }) => {
   await expect(page.locator('[data-testid="item-1000"]')).toBeVisible()
 
   const delta = await page.evaluate(check)
-  expect(delta).toBeLessThan(4.5) // Angular needs a higher tolerance
+  expect(delta).toBeLessThan(1.01)
 })
 
 test('scrolls to last item', async ({ page }) => {
