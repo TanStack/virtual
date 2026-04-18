@@ -1,11 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   afterRenderEffect,
   viewChild,
   viewChildren,
 } from '@angular/core'
+import type { ElementRef } from '@angular/core'
 import { injectVirtualizer } from '@tanstack/angular-virtual'
 
 function getRandomInt(min: number, max: number) {

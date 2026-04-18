@@ -76,7 +76,7 @@ export function signalProxy<
       // input or model signals from a component and this is accessed before initialization.
       return untracked(inputSignal)[property as keyof TInput]
     },
-    has(_, property: string) {
+    has(_, property: PropertyKey) {
       return property in untracked(inputSignal)
     },
     ownKeys() {
@@ -86,7 +86,6 @@ export function signalProxy<
       return {
         enumerable: true,
         configurable: true,
-        writable: true,
       }
     },
   }) as SignalProxy<

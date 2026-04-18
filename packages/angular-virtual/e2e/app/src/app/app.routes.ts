@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router'
+import type { Routes } from '@angular/router'
 import { MeasureElementComponent } from './measure-element.component'
 import { SmoothScrollComponent } from './smooth-scroll.component'
 import { ScrollComponent } from './scroll.component'

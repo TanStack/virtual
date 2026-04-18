@@ -1,12 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   afterRenderEffect,
   signal,
   viewChild,
   viewChildren,
 } from '@angular/core'
+import type { ElementRef } from '@angular/core'
 import { injectVirtualizer } from '@tanstack/angular-virtual'
 
 interface Item {
