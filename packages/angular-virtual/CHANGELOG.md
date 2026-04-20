@@ -1,5 +1,11 @@
 # @tanstack/angular-virtual
 
+## 4.0.13
+
+### Patch Changes
+
+- fix: capture \_didMount cleanup to remove scroll/resize listeners on destroy ([#1159](https://github.com/TanStack/virtual/pull/1159))
+
 ## 4.0.12
 
 ### Patch Changes
