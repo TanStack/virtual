@@ -70,8 +70,12 @@ function createVirtualizerBase<
     { allowSignalWrites: true },
   )
 
-  let cleanup: () => void | undefined
-  afterNextRender({ read: () => (virtualizer ?? lazyInit())._didMount() })
+  let cleanup: (() => void) | undefined
+  afterNextRender({
+    read: () => {
+      cleanup = (virtualizer ?? lazyInit())._didMount()
+    },
+  })
 
   inject(DestroyRef).onDestroy(() => cleanup?.())
 
