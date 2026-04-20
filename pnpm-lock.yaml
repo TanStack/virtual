@@ -102,7 +102,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -154,7 +154,7 @@ importers:
         specifier: ^18.1.0
         version: 18.2.14(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -209,7 +209,7 @@ importers:
         specifier: 5.80.7
         version: 5.80.7(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -261,7 +261,7 @@ importers:
         specifier: ^18.1.0
         version: 18.2.14(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -313,7 +313,7 @@ importers:
         specifier: ^18.1.0
         version: 18.2.14(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -368,7 +368,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -426,7 +426,7 @@ importers:
         specifier: 8.21.3
         version: 8.21.3(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -478,7 +478,7 @@ importers:
         specifier: ^18.1.0
         version: 18.2.14(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -530,7 +530,7 @@ importers:
         specifier: ^18.1.0
         version: 18.2.14(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@18.2.14(@angular/animations@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@18.2.14(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@18.2.14(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^4.0.12
+        specifier: ^4.0.13
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
