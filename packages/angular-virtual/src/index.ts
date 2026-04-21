@@ -1,10 +1,13 @@
 import {
   ApplicationRef,
   DestroyRef,
+  Injector,
   afterRenderEffect,
+  assertInInjectionContext,
   computed,
   inject,
   linkedSignal,
+  runInInjectionContext,
   untracked,
 } from '@angular/core'
 import {
@@ -35,6 +38,14 @@ export type AngularVirtualizerOptions<
   useApplicationRefTick?: boolean
 }
 
+export type AngularExtensionOptions = {
+  /**
+   * The injector to use for the virtualizer.
+   * @default inject(Injector)
+   */
+  injector?: Injector
+}
+
 // Flush CD after virtual-core updates so template bindings hit the DOM
 // before the next frame's scroll reconciliation reads `scrollHeight`.
 function injectScheduleDomFlushViaAppRefTick() {
@@ -62,81 +73,90 @@ function injectVirtualizerBase<
   TItemElement extends Element,
 >(
   options: () => AngularVirtualizerOptions<TScrollElement, TItemElement>,
+  extensions: AngularExtensionOptions = {},
 ) {
-  const scheduleDomFlush = injectScheduleDomFlushViaAppRefTick()
+  let injector = extensions.injector;
+  if (!injector) {
+    assertInInjectionContext(injectVirtualizerBase)
+    injector = inject(Injector)
+  }
 
-  const resolvedOptions = computed<VirtualizerOptions<TScrollElement, TItemElement>>(() => {
-    const { useApplicationRefTick = true, ..._options } = options()
-    return {
-      ..._options,
-      onChange: (instance, sync) => {
-        reactiveVirtualizer.set(instance)
-        if (useApplicationRefTick) {
-          scheduleDomFlush()
-        }
-        _options.onChange?.(instance, sync)
-      },
-    }
+  return runInInjectionContext(injector, () => {
+    const scheduleDomFlush = injectScheduleDomFlushViaAppRefTick()
+
+    const resolvedOptions = computed<VirtualizerOptions<TScrollElement, TItemElement>>(() => {
+      const { useApplicationRefTick = true, ..._options } = options()
+      return {
+        ..._options,
+        onChange: (instance, sync) => {
+          reactiveVirtualizer.set(instance)
+          if (useApplicationRefTick) {
+            scheduleDomFlush()
+          }
+          _options.onChange?.(instance, sync)
+        },
+      }
+    })
+
+    const lazyVirtualizer = computed(() => new Virtualizer(untracked(resolvedOptions)))
+
+    const reactiveVirtualizer = linkedSignal(() => {
+      const virtualizer = lazyVirtualizer()
+      // If setOptions does not call onChange, it's safe to call it here
+      virtualizer.setOptions(resolvedOptions())
+      return virtualizer
+    }, { equal: () => false })
+
+    afterRenderEffect((cleanup) => {
+      cleanup(lazyVirtualizer()._didMount())
+    })
+
+    afterRenderEffect(() => {
+      reactiveVirtualizer()._willUpdate()
+    })
+
+    return signalProxy(
+      reactiveVirtualizer,
+      // Methods that pass through: call on the instance without tracking the signal read
+      [
+        '_didMount',
+        '_willUpdate',
+        'calculateRange',
+        'getVirtualIndexes',
+        'measure',
+        'measureElement',
+        'resizeItem',
+        'scrollBy',
+        'scrollToIndex',
+        'scrollToOffset',
+        'setOptions',
+      ],
+      // Attributes that will be transformed to signals
+      [
+        'isScrolling',
+        'measurementsCache',
+        'options',
+        'range',
+        'scrollDirection',
+        'scrollElement',
+        'scrollOffset',
+        'scrollRect',
+      ],
+      // Methods that will be tracked to the virtualizer signal
+      [
+        'getOffsetForAlignment',
+        'getOffsetForIndex',
+        'getVirtualItemForOffset',
+        'indexFromElement',
+      ],
+      // Zero-arg methods exposed as computed signals
+      [
+        'getTotalSize',
+        'getVirtualItems'
+      ],
+      // The rest is passed as is, and can be accessed or called before initialization
+    ) as unknown as AngularVirtualizer<TScrollElement, TItemElement>
   })
-
-  const lazyVirtualizer = computed(() => new Virtualizer(untracked(resolvedOptions)))
-
-  const reactiveVirtualizer = linkedSignal(() => {
-    const virtualizer = lazyVirtualizer()
-    // If setOptions does not call onChange, it's safe to call it here
-    virtualizer.setOptions(resolvedOptions())
-    return virtualizer
-  }, { equal: () => false })
-
-  afterRenderEffect((cleanup) => {
-    cleanup(lazyVirtualizer()._didMount())
-  })
-
-  afterRenderEffect(() => {
-    reactiveVirtualizer()._willUpdate()
-  })
-
-  return signalProxy(
-    reactiveVirtualizer,
-    // Methods that pass through: call on the instance without tracking the signal read
-    [
-      '_didMount',
-      '_willUpdate',
-      'calculateRange',
-      'getVirtualIndexes',
-      'measure',
-      'measureElement',
-      'resizeItem',
-      'scrollBy',
-      'scrollToIndex',
-      'scrollToOffset',
-      'setOptions',
-    ],
-    // Attributes that will be transformed to signals
-    [
-      'isScrolling',
-      'measurementsCache',
-      'options',
-      'range',
-      'scrollDirection',
-      'scrollElement',
-      'scrollOffset',
-      'scrollRect',
-    ],
-    // Methods that will be tracked to the virtualizer signal
-    [
-      'getOffsetForAlignment',
-      'getOffsetForIndex',
-      'getVirtualItemForOffset',
-      'indexFromElement',
-    ],
-    // Zero-arg methods exposed as computed signals
-    [
-      'getTotalSize',
-      'getVirtualItems'
-    ],
-    // The rest is passed as is, and can be accessed or called before initialization
-  ) as unknown as AngularVirtualizer<TScrollElement, TItemElement>
 }
 
 export function injectVirtualizer<
