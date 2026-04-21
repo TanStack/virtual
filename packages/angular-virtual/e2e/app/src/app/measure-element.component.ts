@@ -30,37 +30,38 @@ const initialItems: Array<Item> = [
         style="position: relative; width: 100%;"
         [style.height.px]="virtualizer.getTotalSize()"
       >
-        @for (row of virtualizer.getVirtualItems(); track itemKey(row.index)) {
+        @for (row of virtualizer.getVirtualItems(); track row.key) {
+          @let item = this.items()[row.index]!;
           <div
             #virtualItem
-            [attr.data-testid]="itemKey(row.index)"
+            [attr.data-testid]="item.id"
             [attr.data-index]="row.index"
             style="position: absolute; top: 0; left: 0; width: 100%;"
             [style.transform]="'translateY(' + row.start + 'px)'"
           >
             <div style="display: flex; gap: 8px; align-items: center; padding: 4px;">
-              <span>Row {{ itemFor(row.index).label }}</span>
+              <span>Row {{ item.label }}</span>
               <button
-                [attr.data-testid]="'expand-' + itemKey(row.index)"
+                [attr.data-testid]="'expand-' + item.id"
                 type="button"
-                (click)="toggleExpand(itemKey(row.index))"
+                (click)="toggleExpand(item.id)"
               >
-                {{ expandedId() === itemKey(row.index) ? 'Collapse' : 'Expand' }}
+                {{ expandedId() === item.id ? 'Collapse' : 'Expand' }}
               </button>
               <button
-                [attr.data-testid]="'delete-' + itemKey(row.index)"
+                [attr.data-testid]="'delete-' + item.id"
                 type="button"
-                (click)="deleteItem(itemKey(row.index))"
+                (click)="deleteItem(item.id)"
               >
                 Delete
               </button>
             </div>
-            @if (expandedId() === itemKey(row.index)) {
+            @if (expandedId() === item.id) {
               <div
-                [attr.data-testid]="'content-' + itemKey(row.index)"
+                [attr.data-testid]="'content-' + item.id"
                 style="height: 124px; background: #eee; padding: 8px;"
               >
-                Expanded content for {{ itemFor(row.index).label }}
+                Expanded content for {{ item.label }}
               </div>
             }
           </div>
@@ -93,14 +94,6 @@ export class MeasureElementComponent {
     estimateSize: () => 36,
     getItemKey: (index) => this.items()[index]!.id,
   }))
-
-  itemFor(index: number) {
-    return this.items()[index]!
-  }
-
-  itemKey(index: number) {
-    return this.items()[index]!.id
-  }
 
   toggleExpand(id: string) {
     this.expandedId.update((current) => (current === id ? null : id))
