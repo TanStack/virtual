@@ -45,11 +45,19 @@ const randomHeightForKey = (() => {
       >
         Scroll to last
       </button>
-      <button id="scroll-to-0" type="button" (click)="virtualizer.scrollToIndex(0)">
+      <button
+        id="scroll-to-0"
+        type="button"
+        (click)="virtualizer.scrollToIndex(0)"
+      >
         Scroll to 0
       </button>
 
-      <div #scrollElement id="scroll-container" style="height: 400px; overflow: auto;">
+      <div
+        #scrollElement
+        id="scroll-container"
+        style="height: 400px; overflow: auto;"
+      >
         <div
           style="position: relative; width: 100%;"
           [style.height.px]="virtualizer.getTotalSize()"
@@ -62,7 +70,9 @@ const randomHeightForKey = (() => {
               style="position: absolute; top: 0; left: 0; width: 100%;"
               [style.transform]="'translateY(' + row.start + 'px)'"
             >
-              <div [style.height.px]="randomHeight(row.key)">Row {{ row.index }}</div>
+              <div [style.height.px]="randomHeight(row.key)">
+                Row {{ row.index }}
+              </div>
             </div>
           }
         </div>

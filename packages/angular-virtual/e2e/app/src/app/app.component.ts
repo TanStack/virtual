@@ -12,7 +12,9 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
       |
       <a routerLink="/smooth-scroll" routerLinkActive="active">Smooth scroll</a>
       |
-      <a routerLink="/measure-element" routerLinkActive="active">Measure element</a>
+      <a routerLink="/measure-element" routerLinkActive="active"
+        >Measure element</a
+      >
       |
       <a routerLink="/stale-index" routerLinkActive="active">Stale index</a>
     </nav>

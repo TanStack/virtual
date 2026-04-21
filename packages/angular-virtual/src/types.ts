@@ -17,7 +17,7 @@ export type AngularVirtualizer<
   | 'scrollRect'
   | 'measurementsCache'
 > & {
-  (): Virtualizer<TScrollElement, TItemElement>,
+  (): Virtualizer<TScrollElement, TItemElement>
   getTotalSize: Signal<
     ReturnType<Virtualizer<TScrollElement, TItemElement>['getTotalSize']>
   >

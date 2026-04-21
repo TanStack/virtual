@@ -10,12 +10,12 @@ type SignalProxy<
 > = {
   [K in TMethodsToPassThrough]: TInput[K]
 } & {
-    [K in TAttributesToTransformToSignals]: Signal<TInput[K]>
-  } & {
-    [K in TMethodsToTrack]: TInput[K]
-  } & {
-    [K in TMethodsToTransformToSignals]: Signal<ReturnType<TInput[K]>>
-  }
+  [K in TAttributesToTransformToSignals]: Signal<TInput[K]>
+} & {
+  [K in TMethodsToTrack]: TInput[K]
+} & {
+  [K in TMethodsToTransformToSignals]: Signal<ReturnType<TInput[K]>>
+}
 
 export function signalProxy<
   TInput extends Record<string | symbol, any>,
@@ -50,26 +50,38 @@ export function signalProxy<
 
       // Methods that pass through: call on the instance without tracking the signal read
       if (methodsToPassThrough.includes(property as TMethodsToPassThrough)) {
-        return (target[property] = (...args: Parameters<TInput[typeof property]>) =>
-          untracked(inputSignal)[property as keyof TInput](...args))
+        return (target[property] = (
+          ...args: Parameters<TInput[typeof property]>
+        ) => untracked(inputSignal)[property as keyof TInput](...args))
       }
 
       // Zero-arg methods exposed as computed signals (matches main list A for getTotalSize / getVirtualItems)
-      if (methodsToTransformToSignals.includes(property as TMethodsToTransformToSignals)) {
-        return (target[property] = computed(
-          () => (inputSignal()[property as keyof TInput] as () => unknown)()
+      if (
+        methodsToTransformToSignals.includes(
+          property as TMethodsToTransformToSignals,
+        )
+      ) {
+        return (target[property] = computed(() =>
+          (inputSignal()[property as keyof TInput] as () => unknown)(),
         ))
       }
 
       // Methods that need to be tracked, track instance changes and call the method
       if (methodsToTrack.includes(property as TMethodsToTrack)) {
-        return (target[property] = (...args: Parameters<TInput[typeof property]>) =>
-          inputSignal()[property as keyof TInput](...args))
+        return (target[property] = (
+          ...args: Parameters<TInput[typeof property]>
+        ) => inputSignal()[property as keyof TInput](...args))
       }
 
       // Other values that are tracked as signals
-      if (attributesToTransformToSignals.includes(property as TAttributesToTransformToSignals)) {
-        return (target[property] = computed(() => inputSignal()[property as keyof TInput]))
+      if (
+        attributesToTransformToSignals.includes(
+          property as TAttributesToTransformToSignals,
+        )
+      ) {
+        return (target[property] = computed(
+          () => inputSignal()[property as keyof TInput],
+        ))
       }
 
       // All other fiels. Any fields that is not handled above will fail if the signal includes

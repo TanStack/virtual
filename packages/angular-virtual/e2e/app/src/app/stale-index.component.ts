@@ -27,7 +27,11 @@ function makeItems(count: number): Array<Item> {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div>
-      <button data-testid="remove-items" type="button" (click)="removeLastFive()">
+      <button
+        data-testid="remove-items"
+        type="button"
+        (click)="removeLastFive()"
+      >
         Remove last 5
       </button>
       <div data-testid="item-count">Count: {{ items().length }}</div>
@@ -35,7 +39,11 @@ function makeItems(count: number): Array<Item> {
         <div data-testid="error">{{ error() }}</div>
       }
 
-      <div #scrollElement data-testid="scroll-container" style="height: 300px; overflow: auto;">
+      <div
+        #scrollElement
+        data-testid="scroll-container"
+        style="height: 300px; overflow: auto;"
+      >
         <div
           style="position: relative; width: 100%;"
           [style.height.px]="virtualizer.getTotalSize()"

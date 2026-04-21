@@ -25,7 +25,11 @@ const initialItems: Array<Item> = [
   selector: 'app-measure-element',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div #scrollElement id="scroll-container" style="height: 400px; overflow: auto;">
+    <div
+      #scrollElement
+      id="scroll-container"
+      style="height: 400px; overflow: auto;"
+    >
       <div
         style="position: relative; width: 100%;"
         [style.height.px]="virtualizer.getTotalSize()"
@@ -39,7 +43,9 @@ const initialItems: Array<Item> = [
             style="position: absolute; top: 0; left: 0; width: 100%;"
             [style.transform]="'translateY(' + row.start + 'px)'"
           >
-            <div style="display: flex; gap: 8px; align-items: center; padding: 4px;">
+            <div
+              style="display: flex; gap: 8px; align-items: center; padding: 4px;"
+            >
               <span>Row {{ item.label }}</span>
               <button
                 [attr.data-testid]="'expand-' + item.id"

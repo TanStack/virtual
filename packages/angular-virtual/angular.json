@@ -21,13 +21,9 @@
             "outputPath": "e2e/app/dist/angular-virtual-e2e",
             "index": "e2e/app/src/index.html",
             "browser": "e2e/app/src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "e2e/app/tsconfig.app.json",
-            "styles": [
-              "e2e/app/src/styles.css"
-            ],
+            "styles": ["e2e/app/src/styles.css"],
             "scripts": []
           },
           "configurations": {

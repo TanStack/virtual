@@ -75,7 +75,7 @@ function injectVirtualizerBase<
   options: () => AngularVirtualizerOptions<TScrollElement, TItemElement>,
   extensions: AngularExtensionOptions = {},
 ) {
-  let injector = extensions.injector;
+  let injector = extensions.injector
   if (!injector) {
     assertInInjectionContext(injectVirtualizerBase)
     injector = inject(Injector)
@@ -84,7 +84,9 @@ function injectVirtualizerBase<
   return runInInjectionContext(injector, () => {
     const scheduleDomFlush = injectScheduleDomFlushViaAppRefTick()
 
-    const resolvedOptions = computed<VirtualizerOptions<TScrollElement, TItemElement>>(() => {
+    const resolvedOptions = computed<
+      VirtualizerOptions<TScrollElement, TItemElement>
+    >(() => {
       const { useApplicationRefTick = true, ..._options } = options()
       return {
         ..._options,
@@ -98,14 +100,19 @@ function injectVirtualizerBase<
       }
     })
 
-    const lazyVirtualizer = computed(() => new Virtualizer(untracked(resolvedOptions)))
+    const lazyVirtualizer = computed(
+      () => new Virtualizer(untracked(resolvedOptions)),
+    )
 
-    const reactiveVirtualizer = linkedSignal(() => {
-      const virtualizer = lazyVirtualizer()
-      // If setOptions does not call onChange, it's safe to call it here
-      virtualizer.setOptions(resolvedOptions())
-      return virtualizer
-    }, { equal: () => false })
+    const reactiveVirtualizer = linkedSignal(
+      () => {
+        const virtualizer = lazyVirtualizer()
+        // If setOptions does not call onChange, it's safe to call it here
+        virtualizer.setOptions(resolvedOptions())
+        return virtualizer
+      },
+      { equal: () => false },
+    )
 
     afterRenderEffect((cleanup) => {
       cleanup(lazyVirtualizer()._didMount())
@@ -150,10 +157,7 @@ function injectVirtualizerBase<
         'indexFromElement',
       ],
       // Zero-arg methods exposed as computed signals
-      [
-        'getTotalSize',
-        'getVirtualItems'
-      ],
+      ['getTotalSize', 'getVirtualItems'],
       // The rest is passed as is, and can be accessed or called before initialization
     ) as unknown as AngularVirtualizer<TScrollElement, TItemElement>
   })
@@ -164,7 +168,10 @@ export function injectVirtualizer<
   TItemElement extends Element,
 >(
   options: () => PartialKeys<
-    Omit<AngularVirtualizerOptions<TScrollElement, TItemElement>, 'getScrollElement'>,
+    Omit<
+      AngularVirtualizerOptions<TScrollElement, TItemElement>,
+      'getScrollElement'
+    >,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
   > & {
     scrollElement: ElementRef<TScrollElement> | TScrollElement | undefined
@@ -209,8 +216,7 @@ export function injectWindowVirtualizer<TItemElement extends Element>(
     observeElementRect: observeWindowRect,
     observeElementOffset: observeWindowOffset,
     scrollToFn: windowScroll,
-    initialOffset: () =>
-      typeof document !== 'undefined' ? window.scrollY : 0,
+    initialOffset: () => (typeof document !== 'undefined' ? window.scrollY : 0),
     ...options(),
   }))
 }

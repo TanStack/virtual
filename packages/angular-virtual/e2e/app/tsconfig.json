@@ -17,18 +17,11 @@
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
+    "lib": ["ES2022", "dom"],
     "baseUrl": ".",
     "paths": {
-      "@tanstack/angular-virtual": [
-        "../../src/index.ts"
-      ],
-      "@tanstack/virtual-core": [
-        "../../../virtual-core/src/index.ts"
-      ]
+      "@tanstack/angular-virtual": ["../../src/index.ts"],
+      "@tanstack/virtual-core": ["../../../virtual-core/src/index.ts"]
     }
   },
   "angularCompilerOptions": {
