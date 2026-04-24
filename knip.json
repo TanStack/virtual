@@ -1,24 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreWorkspaces": [
-    "examples/**",
-    "packages/react-virtual/e2e/**"
-  ],
+  "ignoreWorkspaces": ["examples/**", "packages/react-virtual/e2e/**"],
   "workspaces": {
     "packages/marko-virtual": {
-      "entry": [
-        "src/index.ts",
-        "src/tags/**/*.{ts,marko}",
-        "tests/**/*.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,marko}",
-        "tests/**/*.ts"
-      ],
-      "ignoreDependencies": [
-        "@marko/testing-library",
-        "marko"
-      ]
+      "entry": ["src/index.ts", "src/tags/**/*.{ts,marko}", "tests/**/*.ts"],
+      "project": ["src/**/*.{ts,marko}", "tests/**/*.ts"],
+      "ignoreDependencies": ["@marko/testing-library", "marko"]
     }
   }
 }

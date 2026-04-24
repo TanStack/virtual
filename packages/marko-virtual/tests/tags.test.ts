@@ -23,11 +23,11 @@
  * that virtual items appear in the DOM.
  */
 
-import { afterEach, describe, expect, test } from "vitest"
-import { waitFor } from "@testing-library/dom"
-import VirtualizerFixture from "./fixtures/virtualizer-fixture.marko"
-import WindowVirtualizerFixture from "./fixtures/window-virtualizer-fixture.marko"
-import CountUpdateFixture from "./fixtures/count-update-fixture.marko"
+import { afterEach, describe, expect, test } from 'vitest'
+import { waitFor } from '@testing-library/dom'
+import VirtualizerFixture from './fixtures/virtualizer-fixture.marko'
+import WindowVirtualizerFixture from './fixtures/window-virtualizer-fixture.marko'
+import CountUpdateFixture from './fixtures/count-update-fixture.marko'
 
 // Cast to any — @marko/vite compiles .marko files as ES modules whose default
 // export is the template object with mount(input, container): Instance.
@@ -42,7 +42,7 @@ const CountUpdate = CountUpdateFixture as any
 const instances: Array<{ destroy(): void }> = []
 
 function mountFixture(Template: any, input: Record<string, unknown> = {}) {
-  const container = document.createElement("div")
+  const container = document.createElement('div')
   document.body.appendChild(container)
   const instance = Template.mount(input, container)
   instances.push(instance)
@@ -53,15 +53,15 @@ afterEach(() => {
   // Destroy Marko instances to run onDestroy lifecycle (cleans up store entries)
   instances.forEach((i) => i.destroy())
   instances.length = 0
-  document.body.innerHTML = ""
+  document.body.innerHTML = ''
 })
 
 // ---------------------------------------------------------------------------
 // <virtualizer> — row virtualisation
 // ---------------------------------------------------------------------------
 
-describe("<virtualizer> rows", () => {
-  test("renders body content — catches <return> vs <${input.content}> bug", () => {
+describe('<virtualizer> rows', () => {
+  test('renders body content — catches <return> vs <${input.content}> bug', () => {
     // With <return=...>:        body never renders → virtual-wrapper missing
     // With <${input.content}>:  body IS rendered   → virtual-wrapper present
     // This test definitively catches the architecture bug.
@@ -69,52 +69,59 @@ describe("<virtualizer> rows", () => {
     expect(el.querySelector("[data-testid='virtual-wrapper']")).toBeTruthy()
   })
 
-  test("populates virtualItems after mount", async () => {
+  test('populates virtualItems after mount', async () => {
     // onMount fires → _willUpdate → observeElementRect (sync, mocked 400px)
     // → notify() → items signal → Marko RAF flush → DOM updated
     const el = mountFixture(Virtualizer, { count: 100 })
     await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']").length).toBeGreaterThan(0)
+      expect(
+        el.querySelectorAll("[data-testid='virtual-item']").length,
+      ).toBeGreaterThan(0),
     )
   })
 
-  test("items have sequential data-index starting from 0", async () => {
+  test('items have sequential data-index starting from 0', async () => {
     const el = mountFixture(Virtualizer, { count: 100 })
     await waitFor(() => {
       const items = el.querySelectorAll("[data-testid='virtual-item']")
-      expect(items[0]!.getAttribute("data-index")).toBe("0")
-      expect(items[1]!.getAttribute("data-index")).toBe("1")
+      expect(items[0]!.getAttribute('data-index')).toBe('0')
+      expect(items[1]!.getAttribute('data-index')).toBe('1')
     })
   })
 
-  test("totalSize equals count × estimateSize in px", async () => {
+  test('totalSize equals count × estimateSize in px', async () => {
     const el = mountFixture(Virtualizer, { count: 100, itemHeight: 50 })
     await waitFor(() =>
       expect(
-        (el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement)?.style.height
-      ).toBe("5000px")
+        (el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement)
+          ?.style.height,
+      ).toBe('5000px'),
     )
   })
 
-  test("renders exactly count items when count < viewport capacity", async () => {
+  test('renders exactly count items when count < viewport capacity', async () => {
     // 3 items × 50px = 150px < 400px mocked viewport → all 3 rendered
     const el = mountFixture(Virtualizer, { count: 3 })
     await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(3)
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(
+        3,
+      ),
     )
   })
 
-  test("renders no items when count is 0", () => {
+  test('renders no items when count is 0', () => {
     const el = mountFixture(Virtualizer, { count: 0 })
     // Wrapper exists (body content rendered) but no items
     expect(el.querySelector("[data-testid='virtual-wrapper']")).toBeTruthy()
     expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(0)
   })
 
-  test("totalSize is 0 when count is 0", () => {
+  test('totalSize is 0 when count is 0', () => {
     const el = mountFixture(Virtualizer, { count: 0 })
-    const wrapper = el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement
-    expect(wrapper?.style.height).toBe("0px")
+    const wrapper = el.querySelector(
+      "[data-testid='virtual-wrapper']",
+    ) as HTMLElement
+    expect(wrapper?.style.height).toBe('0px')
   })
 })
 
@@ -122,8 +129,8 @@ describe("<virtualizer> rows", () => {
 // <virtualizer> — reactive updates (onUpdate path)
 // ---------------------------------------------------------------------------
 
-describe("<virtualizer> reactive updates", () => {
-  test("count increase re-renders additional items (tests onUpdate + notify())", async () => {
+describe('<virtualizer> reactive updates', () => {
+  test('count increase re-renders additional items (tests onUpdate + notify())', async () => {
     // This test covers the critical onUpdate code path:
     //   1. Parent changes count → Marko calls onUpdate on <virtualizer>
     //   2. onUpdate calls v.setOptions({ count: newCount, ... })
@@ -136,59 +143,71 @@ describe("<virtualizer> reactive updates", () => {
     // initialCount: 3 → all 3 items fit in 400px viewport (3 × 50px = 150px)
     const el = mountFixture(CountUpdate, { initialCount: 3 })
     await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(3)
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(
+        3,
+      ),
     )
 
     // Click the button to increment count from 3 → 4
     el.querySelector("[data-testid='increment-btn']")!.dispatchEvent(
-      new MouseEvent("click", { bubbles: true })
+      new MouseEvent('click', { bubbles: true }),
     )
 
     // Now 4 items should render — confirms onUpdate + notify() works
     await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(4)
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(
+        4,
+      ),
     )
   })
 
-  test("count decrease removes items from DOM", async () => {
+  test('count decrease removes items from DOM', async () => {
     // Start with 5 items, increment to confirm reactive updates work,
     // then test that the final count is correct.
     // initialCount: 5 → all 5 fit in 400px (5 × 50px = 250px)
     const el = mountFixture(CountUpdate, { initialCount: 5 })
     await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(5)
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(
+        5,
+      ),
     )
 
     // Increment twice: 5 → 6 → 7
     const btn = el.querySelector("[data-testid='increment-btn']")!
-    btn.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(6)
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(
+        6,
+      ),
     )
 
-    btn.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(7)
+      expect(el.querySelectorAll("[data-testid='virtual-item']")).toHaveLength(
+        7,
+      ),
     )
   })
 
-  test("totalSize updates when count changes", async () => {
+  test('totalSize updates when count changes', async () => {
     const el = mountFixture(CountUpdate, { initialCount: 3 })
     // Initial: 3 × 50 = 150px
     await waitFor(() =>
       expect(
-        (el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement)?.style.height
-      ).toBe("150px")
+        (el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement)
+          ?.style.height,
+      ).toBe('150px'),
     )
 
     // Increment count → 4 × 50 = 200px
     el.querySelector("[data-testid='increment-btn']")!.dispatchEvent(
-      new MouseEvent("click", { bubbles: true })
+      new MouseEvent('click', { bubbles: true }),
     )
     await waitFor(() =>
       expect(
-        (el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement)?.style.height
-      ).toBe("200px")
+        (el.querySelector("[data-testid='virtual-wrapper']") as HTMLElement)
+          ?.style.height,
+      ).toBe('200px'),
     )
   })
 })
@@ -197,13 +216,15 @@ describe("<virtualizer> reactive updates", () => {
 // <virtualizer> — column virtualisation
 // ---------------------------------------------------------------------------
 
-describe("<virtualizer> columns", () => {
-  test("horizontal mode renders items with translateX positioning", async () => {
+describe('<virtualizer> columns', () => {
+  test('horizontal mode renders items with translateX positioning', async () => {
     const el = mountFixture(Virtualizer, { count: 100, horizontal: true })
     await waitFor(() => {
       const items = el.querySelectorAll("[data-testid='virtual-item']")
       expect(items.length).toBeGreaterThan(0)
-      expect((items[0]! as HTMLElement).style.transform).toContain("translateX(0px)")
+      expect((items[0]! as HTMLElement).style.transform).toContain(
+        'translateX(0px)',
+      )
     })
   })
 })
@@ -212,11 +233,13 @@ describe("<virtualizer> columns", () => {
 // <virtualizer> — masonry lanes
 // ---------------------------------------------------------------------------
 
-describe("<virtualizer> lanes", () => {
-  test("multi-lane layout renders items", async () => {
+describe('<virtualizer> lanes', () => {
+  test('multi-lane layout renders items', async () => {
     const el = mountFixture(Virtualizer, { count: 20, lanes: 3 })
     await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']").length).toBeGreaterThan(0)
+      expect(
+        el.querySelectorAll("[data-testid='virtual-item']").length,
+      ).toBeGreaterThan(0),
     )
   })
 })
@@ -225,26 +248,30 @@ describe("<virtualizer> lanes", () => {
 // <window-virtualizer>
 // ---------------------------------------------------------------------------
 
-describe("<window-virtualizer>", () => {
-  test("renders body content", () => {
+describe('<window-virtualizer>', () => {
+  test('renders body content', () => {
     const el = mountFixture(WindowVirtualizer, { count: 100 })
     expect(el.querySelector("[data-testid='virtual-wrapper']")).toBeTruthy()
   })
 
-  test("populates virtualItems after mount", async () => {
-    const el = mountFixture(WindowVirtualizer, { count: 100 })
-    await waitFor(() =>
-      expect(el.querySelectorAll("[data-testid='virtual-item']").length).toBeGreaterThan(0)
-    )
-  })
-
-  test("items have data-index starting from 0", async () => {
+  test('populates virtualItems after mount', async () => {
     const el = mountFixture(WindowVirtualizer, { count: 100 })
     await waitFor(() =>
       expect(
-        el.querySelectorAll("[data-testid='virtual-item']")
-          .item(0)?.getAttribute("data-index")
-      ).toBe("0")
+        el.querySelectorAll("[data-testid='virtual-item']").length,
+      ).toBeGreaterThan(0),
+    )
+  })
+
+  test('items have data-index starting from 0', async () => {
+    const el = mountFixture(WindowVirtualizer, { count: 100 })
+    await waitFor(() =>
+      expect(
+        el
+          .querySelectorAll("[data-testid='virtual-item']")
+          .item(0)
+          ?.getAttribute('data-index'),
+      ).toBe('0'),
     )
   })
 })

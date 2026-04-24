@@ -1,4 +1,4 @@
-import type { Virtualizer } from "@tanstack/virtual-core"
+import type { Virtualizer } from '@tanstack/virtual-core'
 
 // Instance storage lives in a plain .ts file to avoid Marko LS misparses
 // of Map<K, V>() constructor calls in static declarations.

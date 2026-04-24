@@ -110,30 +110,30 @@ Both tags use Marko 6's tag parameters pattern. The body receives virtual state 
 
 ### `<virtualizer>`
 
-| Attribute | Type | Required | Description |
-|---|---|---|---|
-| `count` | `number` | ✅ | Total number of items |
-| `getScrollElement` | `() => Element \| null` | ✅ | Returns the scroll container |
-| `estimateSize` | `(index: number) => number` | | Estimated item size in px (default: `50`) |
-| `overscan` | `number` | | Items to render outside the viewport (default: `5`) |
-| `horizontal` | `boolean` | | Enable horizontal scrolling (default: `false`) |
-| `paddingStart` | `number` | | Padding before the first item in px |
-| `paddingEnd` | `number` | | Padding after the last item in px |
-| `scrollPaddingStart` | `number` | | Scroll padding at the start |
-| `scrollPaddingEnd` | `number` | | Scroll padding at the end |
-| `gap` | `number` | | Gap between items in px |
-| `lanes` | `number` | | Number of lanes for grid layouts |
-| `initialOffset` | `number \| (() => number)` | | Initial scroll offset |
+| Attribute            | Type                        | Required | Description                                         |
+| -------------------- | --------------------------- | -------- | --------------------------------------------------- |
+| `count`              | `number`                    | ✅       | Total number of items                               |
+| `getScrollElement`   | `() => Element \| null`     | ✅       | Returns the scroll container                        |
+| `estimateSize`       | `(index: number) => number` |          | Estimated item size in px (default: `50`)           |
+| `overscan`           | `number`                    |          | Items to render outside the viewport (default: `5`) |
+| `horizontal`         | `boolean`                   |          | Enable horizontal scrolling (default: `false`)      |
+| `paddingStart`       | `number`                    |          | Padding before the first item in px                 |
+| `paddingEnd`         | `number`                    |          | Padding after the last item in px                   |
+| `scrollPaddingStart` | `number`                    |          | Scroll padding at the start                         |
+| `scrollPaddingEnd`   | `number`                    |          | Scroll padding at the end                           |
+| `gap`                | `number`                    |          | Gap between items in px                             |
+| `lanes`              | `number`                    |          | Number of lanes for grid layouts                    |
+| `initialOffset`      | `number \| (() => number)`  |          | Initial scroll offset                               |
 
 **Tag parameters provided to body:**
 
-| Parameter | Type | Description |
-|---|---|---|
-| `virtualItems` | `VirtualItem[]` | Items to render, with `index`, `start`, `size`, `key` |
-| `totalSize` | `number` | Total scrollable size in px — set on the inner container |
-| `measureElement` | `(el: Element \| null) => void` | Pass to `ref` for dynamic size measurement |
-| `scrollToIndex` | `(index: number, options?: ScrollToOptions) => void` | Scroll to an item by index |
-| `scrollToOffset` | `(offset: number, options?: ScrollToOptions) => void` | Scroll to a px offset |
+| Parameter        | Type                                                  | Description                                              |
+| ---------------- | ----------------------------------------------------- | -------------------------------------------------------- |
+| `virtualItems`   | `VirtualItem[]`                                       | Items to render, with `index`, `start`, `size`, `key`    |
+| `totalSize`      | `number`                                              | Total scrollable size in px — set on the inner container |
+| `measureElement` | `(el: Element \| null) => void`                       | Pass to `ref` for dynamic size measurement               |
+| `scrollToIndex`  | `(index: number, options?: ScrollToOptions) => void`  | Scroll to an item by index                               |
+| `scrollToOffset` | `(offset: number, options?: ScrollToOptions) => void` | Scroll to a px offset                                    |
 
 ### `<window-virtualizer>`
 
@@ -147,15 +147,15 @@ All examples use `@marko/run`. Run any with:
 pnpm --filter tanstack-marko-virtual-example-<name> dev
 ```
 
-| Example | Description |
-|---|---|
-| `fixed` | Fixed-size rows, columns, and grid |
-| `variable` | Variable sizes via `estimateSize` |
-| `dynamic` | Unknown sizes measured via `measureElement` |
-| `grid` | Two virtualizers sharing one scroll element |
-| `smooth-scroll` | `scrollToIndex` with CSS smooth scrolling |
-| `infinite-scroll` | Lazy data loading with a fixed total count |
-| `window` | Full-page scrolling with `<window-virtualizer>` |
+| Example           | Description                                     |
+| ----------------- | ----------------------------------------------- |
+| `fixed`           | Fixed-size rows, columns, and grid              |
+| `variable`        | Variable sizes via `estimateSize`               |
+| `dynamic`         | Unknown sizes measured via `measureElement`     |
+| `grid`            | Two virtualizers sharing one scroll element     |
+| `smooth-scroll`   | `scrollToIndex` with CSS smooth scrolling       |
+| `infinite-scroll` | Lazy data loading with a fixed total count      |
+| `window`          | Full-page scrolling with `<window-virtualizer>` |
 
 ## Dynamic sizing
 
