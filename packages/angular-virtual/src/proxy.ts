@@ -10,12 +10,12 @@ type SignalProxy<
 > = {
   [K in TMethodsToPassThrough]: TInput[K]
 } & {
-  [K in TAttributesToTransformToSignals]: Signal<TInput[K]>
-} & {
-  [K in TMethodsToTrack]: TInput[K]
-} & {
-  [K in TMethodsToTransformToSignals]: Signal<ReturnType<TInput[K]>>
-}
+    [K in TAttributesToTransformToSignals]: Signal<TInput[K]>
+  } & {
+    [K in TMethodsToTrack]: TInput[K]
+  } & {
+    [K in TMethodsToTransformToSignals]: Signal<ReturnType<TInput[K]>>
+  }
 
 export function signalProxy<
   TInput extends Record<string | symbol, any>,
@@ -55,7 +55,7 @@ export function signalProxy<
         ) => untracked(inputSignal)[property as keyof TInput](...args))
       }
 
-      // Zero-arg methods exposed as computed signals (matches main list A for getTotalSize / getVirtualItems)
+      // Zero-arg methods exposed as computed signals
       if (
         methodsToTransformToSignals.includes(
           property as TMethodsToTransformToSignals,
@@ -84,7 +84,7 @@ export function signalProxy<
         ))
       }
 
-      // All other fiels. Any fields that is not handled above will fail if the signal includes
+      // All other fields. Any field that is not handled above will fail if the signal includes
       // input or model signals from a component and this is accessed before initialization.
       return untracked(inputSignal)[property as keyof TInput]
     },

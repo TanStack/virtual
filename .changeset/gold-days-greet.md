@@ -1,5 +1,5 @@
 ---
-'@tanstack/angular-virtual': minor
+'@tanstack/angular-virtual': major
 ---
 
-angular +19 with proper lazy init
+Angular +19 with proper lazy init
