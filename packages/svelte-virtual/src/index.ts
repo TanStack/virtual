@@ -8,7 +8,11 @@ import {
   windowScroll,
 } from '@tanstack/virtual-core'
 import { derived, writable } from 'svelte/store'
-import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  Key,
+  PartialKeys,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 import type { Readable, Writable } from 'svelte/store'
 
 export * from '@tanstack/virtual-core'
@@ -16,26 +20,28 @@ export * from '@tanstack/virtual-core'
 export type SvelteVirtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
-> = Omit<Virtualizer<TScrollElement, TItemElement>, 'setOptions'> & {
+  TKey extends Key = Key,
+> = Omit<Virtualizer<TScrollElement, TItemElement, TKey>, 'setOptions'> & {
   setOptions: (
-    options: Partial<VirtualizerOptions<TScrollElement, TItemElement>>,
+    options: Partial<VirtualizerOptions<TScrollElement, TItemElement, TKey>>,
   ) => void
 }
 
 function createVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
+  TKey extends Key = Key,
 >(
-  initialOptions: VirtualizerOptions<TScrollElement, TItemElement>,
-): Readable<SvelteVirtualizer<TScrollElement, TItemElement>> {
+  initialOptions: VirtualizerOptions<TScrollElement, TItemElement, TKey>,
+): Readable<SvelteVirtualizer<TScrollElement, TItemElement, TKey>> {
   const virtualizer = new Virtualizer(initialOptions)
   const originalSetOptions = virtualizer.setOptions
 
   // eslint-disable-next-line prefer-const
-  let virtualizerWritable: Writable<Virtualizer<TScrollElement, TItemElement>>
+  let virtualizerWritable: Writable<Virtualizer<TScrollElement, TItemElement, TKey>>
 
   const setOptions = (
-    options: Partial<VirtualizerOptions<TScrollElement, TItemElement>>,
+    options: Partial<VirtualizerOptions<TScrollElement, TItemElement, TKey>>,
   ) => {
     const resolvedOptions = {
       ...virtualizer.options,
@@ -45,7 +51,7 @@ function createVirtualizerBase<
     originalSetOptions({
       ...resolvedOptions,
       onChange: (
-        instance: Virtualizer<TScrollElement, TItemElement>,
+        instance: Virtualizer<TScrollElement, TItemElement, TKey>,
         sync: boolean,
       ) => {
         virtualizerWritable.set(instance)
@@ -73,13 +79,14 @@ function createVirtualizerBase<
 export function createVirtualizer<
   TScrollElement extends Element,
   TItemElement extends Element,
+  TKey extends Key = Key,
 >(
   options: PartialKeys<
-    VirtualizerOptions<TScrollElement, TItemElement>,
+    VirtualizerOptions<TScrollElement, TItemElement, TKey>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
   >,
-): Readable<SvelteVirtualizer<TScrollElement, TItemElement>> {
-  return createVirtualizerBase<TScrollElement, TItemElement>({
+): Readable<SvelteVirtualizer<TScrollElement, TItemElement, TKey>> {
+  return createVirtualizerBase<TScrollElement, TItemElement, TKey>({
     observeElementRect: observeElementRect,
     observeElementOffset: observeElementOffset,
     scrollToFn: elementScroll,
@@ -87,16 +94,19 @@ export function createVirtualizer<
   })
 }
 
-export function createWindowVirtualizer<TItemElement extends Element>(
+export function createWindowVirtualizer<
+  TItemElement extends Element,
+  TKey extends Key = Key,
+>(
   options: PartialKeys<
-    VirtualizerOptions<Window, TItemElement>,
+    VirtualizerOptions<Window, TItemElement, TKey>,
     | 'getScrollElement'
     | 'observeElementRect'
     | 'observeElementOffset'
     | 'scrollToFn'
   >,
-): Readable<SvelteVirtualizer<Window, TItemElement>> {
-  return createVirtualizerBase<Window, TItemElement>({
+): Readable<SvelteVirtualizer<Window, TItemElement, TKey>> {
+  return createVirtualizerBase<Window, TItemElement, TKey>({
     getScrollElement: () => (typeof document !== 'undefined' ? window : null),
     observeElementRect: observeWindowRect,
     observeElementOffset: observeWindowOffset,

@@ -1,11 +1,12 @@
 import type { Signal } from '@angular/core'
-import type { Virtualizer } from '@tanstack/virtual-core'
+import type { Key, Virtualizer } from '@tanstack/virtual-core'
 
 export type AngularVirtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
+  TKey extends Key = Key,
 > = Omit<
-  Virtualizer<TScrollElement, TItemElement>,
+  Virtualizer<TScrollElement, TItemElement, TKey>,
   | 'getTotalSize'
   | 'getVirtualItems'
   | 'isScrolling'
@@ -17,22 +18,22 @@ export type AngularVirtualizer<
   | 'scrollRect'
 > & {
   getTotalSize: Signal<
-    ReturnType<Virtualizer<TScrollElement, TItemElement>['getTotalSize']>
+    ReturnType<Virtualizer<TScrollElement, TItemElement, TKey>['getTotalSize']>
   >
   getVirtualItems: Signal<
-    ReturnType<Virtualizer<TScrollElement, TItemElement>['getVirtualItems']>
+    ReturnType<Virtualizer<TScrollElement, TItemElement, TKey>['getVirtualItems']>
   >
-  isScrolling: Signal<Virtualizer<TScrollElement, TItemElement>['isScrolling']>
-  options: Signal<Virtualizer<TScrollElement, TItemElement>['options']>
-  range: Signal<Virtualizer<TScrollElement, TItemElement>['range']>
+  isScrolling: Signal<Virtualizer<TScrollElement, TItemElement, TKey>['isScrolling']>
+  options: Signal<Virtualizer<TScrollElement, TItemElement, TKey>['options']>
+  range: Signal<Virtualizer<TScrollElement, TItemElement, TKey>['range']>
   scrollDirection: Signal<
-    Virtualizer<TScrollElement, TItemElement>['scrollDirection']
+    Virtualizer<TScrollElement, TItemElement, TKey>['scrollDirection']
   >
   scrollElement: Signal<
-    Virtualizer<TScrollElement, TItemElement>['scrollElement']
+    Virtualizer<TScrollElement, TItemElement, TKey>['scrollElement']
   >
   scrollOffset: Signal<
-    Virtualizer<TScrollElement, TItemElement>['scrollOffset']
+    Virtualizer<TScrollElement, TItemElement, TKey>['scrollOffset']
   >
-  scrollRect: Signal<Virtualizer<TScrollElement, TItemElement>['scrollRect']>
+  scrollRect: Signal<Virtualizer<TScrollElement, TItemElement, TKey>['scrollRect']>
 }
