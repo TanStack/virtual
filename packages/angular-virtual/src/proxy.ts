@@ -1,84 +1,98 @@
 import { computed, untracked } from '@angular/core'
-import type { Signal, WritableSignal } from '@angular/core'
-import type { Virtualizer } from '@tanstack/virtual-core'
-import type { AngularVirtualizer } from './types'
+import type { Signal } from '@angular/core'
 
-export function proxyVirtualizer<
-  V extends Virtualizer<any, any>,
-  S extends Element | Window = V extends Virtualizer<infer U, any> ? U : never,
-  I extends Element = V extends Virtualizer<any, infer U> ? U : never,
+type SignalProxy<
+  TInput extends Record<string | symbol, any>,
+  TMethodsToPassThrough extends keyof TInput,
+  TAttributesToTransformToSignals extends keyof TInput,
+  TMethodsToTrack extends keyof TInput,
+  TMethodsToTransformToSignals extends keyof TInput,
+> = {
+  [K in TMethodsToPassThrough]: TInput[K]
+} & {
+  [K in TAttributesToTransformToSignals]: Signal<TInput[K]>
+} & {
+  [K in TMethodsToTrack]: TInput[K]
+} & {
+  [K in TMethodsToTransformToSignals]: Signal<ReturnType<TInput[K]>>
+}
+
+export function signalProxy<
+  TInput extends Record<string | symbol, any>,
+  TMethodsToPassThrough extends keyof TInput,
+  TAttributesToTransformToSignals extends keyof TInput,
+  TMethodsToTrack extends keyof TInput,
+  TMethodsToTransformToSignals extends keyof TInput,
 >(
-  virtualizerSignal: WritableSignal<V>,
-  lazyInit: () => V,
-): AngularVirtualizer<S, I> {
-  return new Proxy(virtualizerSignal, {
+  inputSignal: Signal<TInput>,
+  methodsToPassThrough: Array<TMethodsToPassThrough>,
+  attributesToTransformToSignals: Array<TAttributesToTransformToSignals>,
+  methodsToTrack: Array<TMethodsToTrack>,
+  methodsToTransformToSignals: Array<TMethodsToTransformToSignals>,
+): SignalProxy<
+  TInput,
+  TMethodsToPassThrough,
+  TAttributesToTransformToSignals,
+  TMethodsToTrack,
+  TMethodsToTransformToSignals
+> {
+  // Type needed to proxy with the apply handler
+  const callableTarget = (() => inputSignal()) as (() => TInput) &
+    Record<PropertyKey, unknown>
+
+  return new Proxy(callableTarget, {
     apply() {
-      return virtualizerSignal()
+      return inputSignal()
     },
     get(target, property) {
-      const untypedTarget = target as any
-      if (untypedTarget[property]) {
-        return untypedTarget[property]
-      }
-      let virtualizer = untracked(virtualizerSignal)
-      if (virtualizer == null) {
-        virtualizer = lazyInit()
-        untracked(() => virtualizerSignal.set(virtualizer))
+      const fieldValue = target[property as keyof typeof callableTarget]
+      if (fieldValue !== undefined) return fieldValue
+
+      // Methods that pass through: call on the instance without tracking the signal read
+      if (methodsToPassThrough.includes(property as TMethodsToPassThrough)) {
+        return (target[property] = (
+          ...args: Parameters<TInput[typeof property]>
+        ) => untracked(inputSignal)[property as keyof TInput](...args))
       }
 
-      // Create computed signals for each property that represents a reactive value
+      // Zero-arg methods exposed as computed signals
       if (
-        typeof property === 'string' &&
-        [
-          'getTotalSize',
-          'getVirtualItems',
-          'isScrolling',
-          'options',
-          'range',
-          'scrollDirection',
-          'scrollElement',
-          'scrollOffset',
-          'scrollRect',
-          'measureElementCache',
-          'measurementsCache',
-        ].includes(property)
+        methodsToTransformToSignals.includes(
+          property as TMethodsToTransformToSignals,
+        )
       ) {
-        const isFunction =
-          typeof virtualizer[property as keyof V] === 'function'
-        Object.defineProperty(untypedTarget, property, {
-          value: isFunction
-            ? computed(() => (target()[property as keyof V] as Function)())
-            : computed(() => target()[property as keyof V]),
-          configurable: true,
-          enumerable: true,
-        })
+        return (target[property] = computed(() =>
+          (inputSignal()[property as keyof TInput] as () => unknown)(),
+        ))
       }
 
-      // Create plain signals for functions that accept arguments and return reactive values
+      // Methods that need to be tracked, track instance changes and call the method
+      if (methodsToTrack.includes(property as TMethodsToTrack)) {
+        return (target[property] = (
+          ...args: Parameters<TInput[typeof property]>
+        ) => inputSignal()[property as keyof TInput](...args))
+      }
+
+      // Other values that are tracked as signals
       if (
-        typeof property === 'string' &&
-        [
-          'getOffsetForAlignment',
-          'getOffsetForIndex',
-          'getVirtualItemForOffset',
-          'indexFromElement',
-        ].includes(property)
+        attributesToTransformToSignals.includes(
+          property as TAttributesToTransformToSignals,
+        )
       ) {
-        const fn = virtualizer[property as keyof V] as Function
-        Object.defineProperty(untypedTarget, property, {
-          value: toComputed(virtualizerSignal, fn),
-          configurable: true,
-          enumerable: true,
-        })
+        return (target[property] = computed(
+          () => inputSignal()[property as keyof TInput],
+        ))
       }
 
-      return untypedTarget[property] || virtualizer[property as keyof V]
+      // All other fields. Any field that is not handled above will fail if the signal includes
+      // input or model signals from a component and this is accessed before initialization.
+      return untracked(inputSignal)[property as keyof TInput]
     },
-    has(_, property: string) {
-      return !!untracked(virtualizerSignal)[property as keyof V]
+    has(_, property: PropertyKey) {
+      return property in untracked(inputSignal)
     },
     ownKeys() {
-      return Reflect.ownKeys(untracked(virtualizerSignal))
+      return Reflect.ownKeys(untracked(inputSignal))
     },
     getOwnPropertyDescriptor() {
       return {
@@ -86,32 +100,11 @@ export function proxyVirtualizer<
         configurable: true,
       }
     },
-  }) as unknown as AngularVirtualizer<S, I>
-}
-
-function toComputed<V extends Virtualizer<any, any>>(
-  signal: Signal<V>,
-  fn: Function,
-) {
-  const computedCache: Record<string, Signal<unknown>> = {}
-
-  return (...args: Array<any>) => {
-    // Cache computeds by their arguments to avoid re-creating the computed on each call
-    const serializedArgs = serializeArgs(...args)
-    if (computedCache.hasOwnProperty(serializedArgs)) {
-      return computedCache[serializedArgs]?.()
-    }
-    const computedSignal = computed(() => {
-      void signal()
-      return fn(...args)
-    })
-
-    computedCache[serializedArgs] = computedSignal
-
-    return computedSignal()
-  }
-}
-
-function serializeArgs(...args: Array<any>) {
-  return JSON.stringify(args)
+  }) as SignalProxy<
+    TInput,
+    TMethodsToPassThrough,
+    TAttributesToTransformToSignals,
+    TMethodsToTrack,
+    TMethodsToTransformToSignals
+  >
 }

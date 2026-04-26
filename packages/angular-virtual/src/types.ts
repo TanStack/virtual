@@ -15,7 +15,9 @@ export type AngularVirtualizer<
   | 'scrollElement'
   | 'scrollOffset'
   | 'scrollRect'
+  | 'measurementsCache'
 > & {
+  (): Virtualizer<TScrollElement, TItemElement>
   getTotalSize: Signal<
     ReturnType<Virtualizer<TScrollElement, TItemElement>['getTotalSize']>
   >
@@ -23,6 +25,9 @@ export type AngularVirtualizer<
     ReturnType<Virtualizer<TScrollElement, TItemElement>['getVirtualItems']>
   >
   isScrolling: Signal<Virtualizer<TScrollElement, TItemElement>['isScrolling']>
+  measurementsCache: Signal<
+    Virtualizer<TScrollElement, TItemElement>['measurementsCache']
+  >
   options: Signal<Virtualizer<TScrollElement, TItemElement>['options']>
   range: Signal<Virtualizer<TScrollElement, TItemElement>['range']>
   scrollDirection: Signal<
