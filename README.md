@@ -56,7 +56,7 @@ A headless, framework‑agnostic virtualization library for rendering massive li
 
 <table align="center">
   <tr>
-        <td>
+    <td>
       <a href="https://www.coderabbit.ai/?via=tanstack&dub_id=aCcEEdAOqqutX6OS" >
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="https://tanstack.com/assets/coderabbit-dark-D643Zkrv.svg" />
