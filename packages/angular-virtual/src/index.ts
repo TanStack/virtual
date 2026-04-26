@@ -104,7 +104,7 @@ function injectVirtualizerBase<
     // allowing it to be created after input/model signals are initialized.
     // Options are untracked to maintain a single instance of the Virtualizer.
     const lazyVirtualizer = computed(
-      () => new Virtualizer(untracked(resolvedOptions))
+      () => new Virtualizer(untracked(resolvedOptions)),
     )
 
     // The reference in onChange is safe since computed signals are not evaluated eagerly.

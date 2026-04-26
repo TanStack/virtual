@@ -10,12 +10,12 @@ type SignalProxy<
 > = {
   [K in TMethodsToPassThrough]: TInput[K]
 } & {
-    [K in TAttributesToTransformToSignals]: Signal<TInput[K]>
-  } & {
-    [K in TMethodsToTrack]: TInput[K]
-  } & {
-    [K in TMethodsToTransformToSignals]: Signal<ReturnType<TInput[K]>>
-  }
+  [K in TAttributesToTransformToSignals]: Signal<TInput[K]>
+} & {
+  [K in TMethodsToTrack]: TInput[K]
+} & {
+  [K in TMethodsToTransformToSignals]: Signal<ReturnType<TInput[K]>>
+}
 
 export function signalProxy<
   TInput extends Record<string | symbol, any>,
