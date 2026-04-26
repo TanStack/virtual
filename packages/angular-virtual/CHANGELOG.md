@@ -1,5 +1,11 @@
 # @tanstack/angular-virtual
 
+## 5.0.0
+
+### Major Changes
+
+- Angular +19 with proper lazy init ([#1158](https://github.com/TanStack/virtual/pull/1158))
+
 ## 4.0.13
 
 ### Patch Changes
