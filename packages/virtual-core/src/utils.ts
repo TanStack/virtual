@@ -1,6 +1,19 @@
 export type NoInfer<A extends any> = [A][A extends any ? 0 : never]
 
 export type PartialKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+/**
+ * checks whether the dependencies array has changed by comparing it with the previous one.
+ *
+ * @param newDeps new array of dependencies
+ * @param deps previous array of dependencies
+ * @returns  `true` if the length of the arrays differ or if at least one dependency has changed; otherwise, `false`
+ */
+const isDepsChanged = <TDeps extends ReadonlyArray<any>>(
+  newDeps: Array<TDeps>,
+  deps: TDeps,
+): boolean =>
+  newDeps.length !== deps.length ||
+  newDeps.some((dep, index: number) => deps[index] !== dep)
 
 export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   getDeps: () => [...TDeps],
@@ -18,41 +31,35 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   let isInitial = true
 
   function memoizedFunction(): TResult {
+    const enabledDebug = Boolean(opts.key && opts.debug?.())
+    let resultTime: number
     let depTime: number
-    if (opts.key && opts.debug?.()) depTime = Date.now()
+
+    if (enabledDebug) {
+      depTime = Date.now()
+    }
 
     const newDeps = getDeps()
 
-    const depsChanged =
-      newDeps.length !== deps.length ||
-      newDeps.some((dep: any, index: number) => deps[index] !== dep)
-
-    if (!depsChanged) {
+    if (!isDepsChanged(newDeps, deps)) {
       return result!
     }
 
     deps = newDeps
 
-    let resultTime: number
-    if (opts.key && opts.debug?.()) resultTime = Date.now()
+    if (enabledDebug) {
+      resultTime = Date.now()
+    }
 
     result = fn(...newDeps)
 
-    if (opts.key && opts.debug?.()) {
+    if (enabledDebug) {
       const depEndTime = Math.round((Date.now() - depTime!) * 100) / 100
       const resultEndTime = Math.round((Date.now() - resultTime!) * 100) / 100
       const resultFpsPercentage = resultEndTime / 16
 
-      const pad = (str: number | string, num: number) => {
-        str = String(str)
-        while (str.length < num) {
-          str = ' ' + str
-        }
-        return str
-      }
-
       console.info(
-        `%c⏱ ${pad(resultEndTime, 5)} /${pad(depEndTime, 5)} ms`,
+        `%c⏱ ${String(resultEndTime).padStart(5, ' ')}/${String(depEndTime).padStart(5, ' ')} ms`,
         `
             font-size: .6rem;
             font-weight: bold;
