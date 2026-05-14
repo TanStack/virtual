@@ -384,6 +384,10 @@ export class Virtualizer<
   private prevLanes: number | undefined = undefined
   private lanesChangedFlag = false
   private lanesSettling = false
+  // Set while we are skipping RO-driven re-measurements during backward
+  // user scrolling. When scrolling stops we flush by re-measuring all
+  // currently rendered items so the cache catches up with the DOM.
+  private skippedBackwardMeasurements = false
   scrollRect: Rect | null = null
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
@@ -421,6 +425,22 @@ export class Virtualizer<
             }
 
             if (this.shouldMeasureDuringScroll(index)) {
+              // During user-initiated backward scrolling, skip re-measuring
+              // items that already have a cached size to avoid scroll
+              // adjustments causing visible jumps. When scrolling stops we
+              // re-measure all rendered items so the cache catches up.
+              if (
+                this.isScrolling &&
+                this.scrollDirection === 'backward' &&
+                !this.scrollState
+              ) {
+                const item = this.measurementsCache[index]
+                if (item && this.itemSizeCache.has(item.key)) {
+                  this.skippedBackwardMeasurements = true
+                  return
+                }
+              }
+
               this.resizeItem(
                 index,
                 this.options.measureElement(node, entry, this),
@@ -448,6 +468,17 @@ export class Virtualizer<
 
   constructor(opts: VirtualizerOptions<TScrollElement, TItemElement>) {
     this.setOptions(opts)
+  }
+
+  private flushPendingBackwardScrollMeasures = () => {
+    if (!this.skippedBackwardMeasurements) return
+    this.skippedBackwardMeasurements = false
+    this.elementsCache.forEach((node) => {
+      if (!node.isConnected) return
+      const index = this.indexFromElement(node)
+      if (index < 0) return
+      this.resizeItem(index, this.options.measureElement(node, undefined, this))
+    })
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement>) => {
@@ -523,6 +554,7 @@ export class Virtualizer<
     this.scrollState = null
     this.scrollElement = null
     this.targetWindow = null
+    this.skippedBackwardMeasurements = false
   }
 
   _didMount = () => {
@@ -572,7 +604,12 @@ export class Virtualizer<
               : 'backward'
             : null
           this.scrollOffset = offset
+          const wasScrolling = this.isScrolling
           this.isScrolling = isScrolling
+
+          if (wasScrolling && !isScrolling) {
+            this.flushPendingBackwardScrollMeasures()
+          }
 
           if (this.scrollState) {
             this.scheduleScrollReconcile()

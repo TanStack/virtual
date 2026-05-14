@@ -15,6 +15,10 @@ export default defineConfig({
         ),
         'smooth-scroll': path.resolve(__dirname, 'smooth-scroll/index.html'),
         'stale-index': path.resolve(__dirname, 'stale-index/index.html'),
+        'backward-scroll': path.resolve(
+          __dirname,
+          'backward-scroll/index.html',
+        ),
       },
     },
   },
