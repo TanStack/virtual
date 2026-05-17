@@ -379,6 +379,7 @@ export class Virtualizer<
   private scrollState: ScrollState | null = null
   measurementsCache: Array<VirtualItem> = []
   private itemSizeCache = new Map<Key, number>()
+  private itemSizeCacheVersion = 0
   private laneAssignments = new Map<number, number>() // index → lane cache
   private pendingMeasuredCacheIndexes: Array<number> = []
   private prevLanes: number | undefined = undefined
@@ -769,7 +770,7 @@ export class Virtualizer<
   )
 
   private getMeasurements = memo(
-    () => [this.getMeasurementOptions(), this.itemSizeCache],
+    () => [this.getMeasurementOptions(), this.itemSizeCacheVersion],
     (
       {
         count,
@@ -780,8 +781,9 @@ export class Virtualizer<
         lanes,
         laneAssignmentMode,
       },
-      itemSizeCache,
+      _itemSizeCacheVersion,
     ) => {
+      const itemSizeCache = this.itemSizeCache
       if (!enabled) {
         this.measurementsCache = []
         this.itemSizeCache.clear()
@@ -1079,7 +1081,8 @@ export class Virtualizer<
       }
 
       this.pendingMeasuredCacheIndexes.push(item.index)
-      this.itemSizeCache = new Map(this.itemSizeCache.set(item.key, size))
+      this.itemSizeCache.set(item.key, size)
+      this.itemSizeCacheVersion++
 
       this.notify(false)
     }
@@ -1320,8 +1323,9 @@ export class Virtualizer<
   }
 
   measure = () => {
-    this.itemSizeCache = new Map()
-    this.laneAssignments = new Map() // Clear lane cache for full re-layout
+    this.itemSizeCache.clear()
+    this.laneAssignments.clear() // Clear lane cache for full re-layout
+    this.itemSizeCacheVersion++
     this.notify(false)
   }
 }

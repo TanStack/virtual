@@ -502,3 +502,229 @@ test('cleanup should cancel pending RAF and clear scrollState', () => {
   expect(virtualizer['rafId']).toBeNull()
   expect(mockWindow.cancelAnimationFrame).toHaveBeenCalled()
 })
+
+// ─── resizeItem / measurement cache invalidation ─────────────────────────────
+// These tests pin down the contract that resizeItem invalidates the
+// getMeasurements memo so subsequent reads reflect the new sizes.
+// They guard against regressions when changing the invalidation mechanism
+// (e.g. Map clone → version counter).
+
+test('resizeItem should persist size for a single index', () => {
+  const virtualizer = new Virtualizer({
+    count: 5,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  // Seed measurementsCache
+  virtualizer['getMeasurements']()
+
+  virtualizer.resizeItem(2, 130)
+
+  const measurements = virtualizer['getMeasurements']()
+  expect(measurements[2]!.size).toBe(130)
+  // Items after should be shifted by the delta (130 - 50 = 80)
+  expect(measurements[3]!.start).toBe(50 + 50 + 130)
+  expect(measurements[4]!.start).toBe(50 + 50 + 130 + 50)
+})
+
+test('resizeItem should persist sizes across many sequential calls', () => {
+  const N = 50
+  const virtualizer = new Virtualizer({
+    count: N,
+    estimateSize: () => 10,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  // Resize every item to a unique size
+  for (let i = 0; i < N; i++) {
+    virtualizer.resizeItem(i, 100 + i)
+  }
+
+  const measurements = virtualizer['getMeasurements']()
+  let runningStart = 0
+  for (let i = 0; i < N; i++) {
+    expect(measurements[i]!.size).toBe(100 + i)
+    expect(measurements[i]!.start).toBe(runningStart)
+    runningStart += 100 + i
+  }
+})
+
+test('resizeItem should invalidate getMeasurements memo even when same key resized twice', () => {
+  const virtualizer = new Virtualizer({
+    count: 3,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  virtualizer.resizeItem(1, 100)
+  expect(virtualizer['getMeasurements']()[1]!.size).toBe(100)
+
+  virtualizer.resizeItem(1, 200)
+  expect(virtualizer['getMeasurements']()[1]!.size).toBe(200)
+
+  virtualizer.resizeItem(1, 75)
+  expect(virtualizer['getMeasurements']()[1]!.size).toBe(75)
+})
+
+test('resizeItem with same size as cached should be a no-op (no invalidation)', () => {
+  const virtualizer = new Virtualizer({
+    count: 3,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+  virtualizer.resizeItem(0, 80)
+  const before = virtualizer['getMeasurements']()
+  const beforeRef = before
+  // Same value, should short-circuit (delta === 0)
+  virtualizer.resizeItem(0, 80)
+  const after = virtualizer['getMeasurements']()
+  // Memo should return the same array reference
+  expect(after).toBe(beforeRef)
+})
+
+test('measure() should clear size cache and lane assignments', () => {
+  const virtualizer = new Virtualizer({
+    count: 4,
+    lanes: 2,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+  virtualizer.resizeItem(0, 200)
+  virtualizer.resizeItem(1, 100)
+
+  expect(virtualizer['itemSizeCache'].size).toBe(2)
+  expect(virtualizer['laneAssignments'].size).toBeGreaterThan(0)
+
+  virtualizer.measure()
+
+  expect(virtualizer['itemSizeCache'].size).toBe(0)
+  expect(virtualizer['laneAssignments'].size).toBe(0)
+
+  // After measure(), sizes should fall back to estimateSize
+  const measurements = virtualizer['getMeasurements']()
+  expect(measurements[0]!.size).toBe(50)
+  expect(measurements[1]!.size).toBe(50)
+})
+
+test('measure() should trigger a re-measurement on subsequent getMeasurements', () => {
+  let sizeFn = (i: number) => 50
+  const virtualizer = new Virtualizer({
+    count: 3,
+    estimateSize: (i) => sizeFn(i),
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  const before = virtualizer['getMeasurements']()
+  expect(before[0]!.size).toBe(50)
+
+  // Change the estimateSize function via setOptions
+  sizeFn = () => 100
+  virtualizer.measure()
+
+  const after = virtualizer['getMeasurements']()
+  expect(after[0]!.size).toBe(100)
+})
+
+test('resizeItem on unknown index is a no-op', () => {
+  const virtualizer = new Virtualizer({
+    count: 3,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+  // Index out of bounds — should not crash
+  expect(() => virtualizer.resizeItem(99, 100)).not.toThrow()
+
+  // Cache should be untouched
+  expect(virtualizer['itemSizeCache'].size).toBe(0)
+})
+
+test('resizeItem out-of-order should produce correct positions regardless of measurement order', () => {
+  const N = 10
+  const virtualizer = new Virtualizer({
+    count: N,
+    estimateSize: () => 20,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  // Resize in reverse order — should still produce a valid prefix-sum
+  for (let i = N - 1; i >= 0; i--) {
+    virtualizer.resizeItem(i, 30 + i)
+  }
+
+  const measurements = virtualizer['getMeasurements']()
+  let runningStart = 0
+  for (let i = 0; i < N; i++) {
+    expect(measurements[i]!.size).toBe(30 + i)
+    expect(measurements[i]!.start).toBe(runningStart)
+    runningStart += 30 + i
+  }
+})
+
+test('getMeasurements memo should return same array reference when nothing changed', () => {
+  const virtualizer = new Virtualizer({
+    count: 5,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  const a = virtualizer['getMeasurements']()
+  const b = virtualizer['getMeasurements']()
+  expect(a).toBe(b)
+})
+
+test('getMeasurements memo should return new array reference after resizeItem', () => {
+  const virtualizer = new Virtualizer({
+    count: 5,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  const a = virtualizer['getMeasurements']()
+  virtualizer.resizeItem(0, 100)
+  const b = virtualizer['getMeasurements']()
+  expect(a).not.toBe(b)
+  expect(b[0]!.size).toBe(100)
+})
