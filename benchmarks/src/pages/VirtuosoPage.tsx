@@ -15,8 +15,13 @@ interface Props {
 
 export function VirtuosoPage({ scenario }: Props) {
   const items = useMemo(
-    () => makeDataset(scenario.count, scenario.dynamic),
-    [scenario.count, scenario.dynamic],
+    () =>
+      makeDataset(
+        scenario.count,
+        scenario.dynamic,
+        scenario.action === 'jump-wide-variance-accuracy',
+      ),
+    [scenario.count, scenario.dynamic, scenario.action],
   )
 
   const ref = useRef<VirtuosoHandle>(null)

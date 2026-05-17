@@ -18,6 +18,9 @@ export interface ScenarioInput {
     | 'scroll-to-bottom'
     | 'jump-to-end'
     | 'jump-to-middle-accuracy'
+    | 'jump-to-last-accuracy'
+    | 'jump-while-measuring-accuracy'
+    | 'jump-wide-variance-accuracy'
     | 'wait-dynamic-measure'
 }
 
@@ -116,5 +119,36 @@ export const SCENARIOS: ScenarioInput[] = [
     itemSize: 30,
     dynamic: true,
     action: 'jump-to-middle-accuracy',
+  },
+  {
+    // End-alignment edge case: scrollToIndex(last, { align: 'end' }) should
+    // pin the last item to the bottom of the viewport. The cumulative size
+    // sum on dynamic items can drift from estimates, and end-alignment
+    // amplifies any prefix-sum error.
+    id: 'jump-to-last-accuracy-dynamic-10k',
+    count: 10_000,
+    itemSize: 30,
+    dynamic: true,
+    action: 'jump-to-last-accuracy',
+  },
+  {
+    // Race condition: scrollToIndex called BEFORE the visible items have
+    // measured. Tests how each library handles target drift while
+    // simultaneous measurements come in.
+    id: 'jump-while-measuring-accuracy-dynamic-10k',
+    count: 10_000,
+    itemSize: 30,
+    dynamic: true,
+    action: 'jump-while-measuring-accuracy',
+  },
+  {
+    // Wide size variance: items range 30..500px. estimateSize stays at 30.
+    // The 16x gap between estimate and actual exaggerates the running
+    // prefix-sum error that scrollToIndex relies on.
+    id: 'jump-wide-variance-accuracy-10k',
+    count: 10_000,
+    itemSize: 30,
+    dynamic: true,
+    action: 'jump-wide-variance-accuracy',
   },
 ]

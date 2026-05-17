@@ -215,6 +215,69 @@ export function installBenchAPI(): void {
           // Item not in the DOM at all — major accuracy failure
           ;(window as any).__landingErrorPx = -1
         }
+      } else if (
+        scenario.action === 'jump-to-last-accuracy' ||
+        scenario.action === 'jump-while-measuring-accuracy' ||
+        scenario.action === 'jump-wide-variance-accuracy'
+      ) {
+        // Three accuracy edge cases sharing the same measurement skeleton:
+        //  - jump-to-last: align='end', target = last index. Tests cumulative
+        //    prefix-sum error on dynamic lists; end-alignment amplifies any
+        //    drift between estimates and real measurements.
+        //  - jump-while-measuring: scroll BEFORE the initial visible window
+        //    has finished measuring. The race condition that competitors
+        //    handle differently (virtuoso retries, virtua pre-measures).
+        //  - jump-wide-variance: 30..500px items, 16x size variance vs the
+        //    30px estimate. Tests how each lib converges when estimates are
+        //    drastically wrong.
+        const isLast = scenario.action === 'jump-to-last-accuracy'
+        const isWhileMeasuring =
+          scenario.action === 'jump-while-measuring-accuracy'
+        // Target choice + alignment per case
+        const targetIndex = isLast
+          ? scenario.count - 1
+          : Math.floor(scenario.count / 2)
+        const align: 'start' | 'end' = isLast ? 'end' : 'start'
+
+        // For jump-while-measuring, do NOT wait — scroll immediately so the
+        // race condition is realistic. For others, wait a tick to allow
+        // initial measurements.
+        if (!isWhileMeasuring) {
+          await nextFrame()
+        }
+
+        const t0 = performance.now()
+        if (h.scrollToIndex) {
+          h.scrollToIndex(targetIndex, { align })
+        }
+        // Wait for scroll to fully settle
+        let stableCount = 0
+        let lastTop = container.scrollTop
+        while (stableCount < 8 && performance.now() - t0 < 5000) {
+          await nextFrame()
+          const cur = container.scrollTop
+          if (Math.abs(cur - lastTop) < 0.5) stableCount++
+          else stableCount = 0
+          lastTop = cur
+        }
+        actionMs = performance.now() - t0
+
+        // Compute landing error: distance between the relevant edge of the
+        // target item and the relevant edge of the viewport.
+        const itemEl = container.querySelector(
+          `[data-index="${targetIndex}"]`,
+        ) as HTMLElement | null
+        if (itemEl) {
+          const iRect = itemEl.getBoundingClientRect()
+          const cRect = container.getBoundingClientRect()
+          const err =
+            align === 'end'
+              ? Math.abs(iRect.bottom - cRect.bottom)
+              : Math.abs(iRect.top - cRect.top)
+          ;(window as any).__landingErrorPx = err
+        } else {
+          ;(window as any).__landingErrorPx = -1
+        }
       } else if (scenario.action === 'wait-dynamic-measure') {
         // Uniform metric across libraries: time until the total scroll height
         // stops changing for 8 consecutive frames. Libraries finish measuring

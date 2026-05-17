@@ -27,6 +27,9 @@ const ALL_SCENARIOS = [
   'fast-scroll-dynamic-10k',
   'jump-to-end-dynamic-10k',
   'jump-to-middle-accuracy-dynamic-10k',
+  'jump-to-last-accuracy-dynamic-10k',
+  'jump-while-measuring-accuracy-dynamic-10k',
+  'jump-wide-variance-accuracy-10k',
 ]
 
 function parseArgs() {
@@ -174,7 +177,12 @@ function makeTable(results, libs, scenarios) {
     {
       title: 'scrollToIndex landing accuracy — px offset from target (lower is better)',
       key: 'landingErrorPx',
-      scenarios: ['jump-to-middle-accuracy-dynamic-10k'],
+      scenarios: [
+        'jump-to-middle-accuracy-dynamic-10k',
+        'jump-to-last-accuracy-dynamic-10k',
+        'jump-while-measuring-accuracy-dynamic-10k',
+        'jump-wide-variance-accuracy-10k',
+      ],
     },
     {
       title: 'Memory after mount (lower is better, MB)',

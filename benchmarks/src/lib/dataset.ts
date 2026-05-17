@@ -27,20 +27,36 @@ function lcg(seed: number) {
   }
 }
 
-export function makeDataset(count: number, dynamic: boolean): Item[] {
+export function makeDataset(
+  count: number,
+  dynamic: boolean,
+  wideVariance = false,
+): Item[] {
   const rand = lcg(424242)
   const items: Item[] = new Array(count)
   for (let i = 0; i < count; i++) {
     if (dynamic) {
-      // 5..14 words → ~ one line; lengths picked deterministically.
-      const wc = 5 + Math.floor(rand() * 10)
-      const parts: string[] = new Array(wc)
-      for (let w = 0; w < wc; w++) {
-        parts[w] = WORDS[Math.floor(rand() * WORDS.length)]!
+      if (wideVariance) {
+        // Wide-variance dataset: heights span ~30..500 px (≈16× ratio).
+        // 1 → 50 words distributed log-normally so most items are short
+        // but a meaningful tail is very tall.
+        const wc = 1 + Math.floor(Math.pow(rand(), 2) * 49)
+        const parts: string[] = new Array(wc)
+        for (let w = 0; w < wc; w++) {
+          parts[w] = WORDS[Math.floor(rand() * WORDS.length)]!
+        }
+        items[i] = { id: i, text: `#${i} ${parts.join(' ')}` }
+      } else {
+        // 5..14 words → ~ one line; lengths picked deterministically.
+        const wc = 5 + Math.floor(rand() * 10)
+        const parts: string[] = new Array(wc)
+        for (let w = 0; w < wc; w++) {
+          parts[w] = WORDS[Math.floor(rand() * WORDS.length)]!
+        }
+        // 25% of dynamic items get a multi-line burst for height variation.
+        const burst = rand() < 0.25 ? ' ' + parts.join(' ') + ' ' + parts.join(' ') : ''
+        items[i] = { id: i, text: `#${i} ${parts.join(' ')}${burst}` }
       }
-      // 25% of dynamic items get a multi-line burst for height variation.
-      const burst = rand() < 0.25 ? ' ' + parts.join(' ') + ' ' + parts.join(' ') : ''
-      items[i] = { id: i, text: `#${i} ${parts.join(' ')}${burst}` }
     } else {
       items[i] = { id: i, text: `Item ${i}` }
     }

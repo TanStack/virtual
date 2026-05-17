@@ -16,8 +16,13 @@ interface Props {
 export function TanstackPage({ scenario }: Props) {
   // Mount-start mark is set BEFORE this component renders by main.tsx.
   const items = useMemo(
-    () => makeDataset(scenario.count, scenario.dynamic),
-    [scenario.count, scenario.dynamic],
+    () =>
+      makeDataset(
+        scenario.count,
+        scenario.dynamic,
+        scenario.action === 'jump-wide-variance-accuracy',
+      ),
+    [scenario.count, scenario.dynamic, scenario.action],
   )
 
   const parentRef = useRef<HTMLDivElement>(null)
