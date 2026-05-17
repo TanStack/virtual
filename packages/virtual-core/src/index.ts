@@ -1,6 +1,7 @@
 import { approxEqual, debounce, memo, notUndefined } from './utils'
 
-export * from './utils'
+export { approxEqual, debounce, memo, notUndefined } from './utils'
+export type { NoInfer, PartialKeys } from './utils'
 
 //
 

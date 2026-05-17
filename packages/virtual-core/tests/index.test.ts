@@ -1381,6 +1381,32 @@ test('observeWindowOffset: attaches scroll listener and fires callback with scro
   expect(listeners.has('scroll')).toBe(false)
 })
 
+// ─── Public-exports lockdown ─────────────────────────────────────────────────
+// If any of these go missing the next minor bump silently breaks consumers.
+
+test('public runtime exports from @tanstack/virtual-core', async () => {
+  const mod = await import('../src/index')
+  // Class + helpers
+  expect(typeof mod.Virtualizer).toBe('function')
+  expect(typeof mod.defaultKeyExtractor).toBe('function')
+  expect(typeof mod.defaultRangeExtractor).toBe('function')
+  // Observers
+  expect(typeof mod.observeElementRect).toBe('function')
+  expect(typeof mod.observeWindowRect).toBe('function')
+  expect(typeof mod.observeElementOffset).toBe('function')
+  expect(typeof mod.observeWindowOffset).toBe('function')
+  // Scrollers
+  expect(typeof mod.elementScroll).toBe('function')
+  expect(typeof mod.windowScroll).toBe('function')
+  // Measurement
+  expect(typeof mod.measureElement).toBe('function')
+  // Utilities (historically re-exported from utils)
+  expect(typeof mod.memo).toBe('function')
+  expect(typeof mod.debounce).toBe('function')
+  expect(typeof mod.notUndefined).toBe('function')
+  expect(typeof mod.approxEqual).toBe('function')
+})
+
 test('observeWindowOffset: reads scrollX when horizontal', () => {
   const cb = vi.fn()
   const listeners = new Map<string, EventListener>()
