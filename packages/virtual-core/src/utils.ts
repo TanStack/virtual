@@ -18,8 +18,15 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
   let isInitial = true
 
   function memoizedFunction(): TResult {
-    let depTime: number
-    if (opts.key && opts.debug?.()) depTime = Date.now()
+    // Debug-only timing. In production builds, `process.env.NODE_ENV !==
+    // 'production'` is constant-folded to `false` by downstream minifiers
+    // (Terser/esbuild/swc with `define`), which DCEs the entire block.
+    const debugEnabled =
+      process.env.NODE_ENV !== 'production' &&
+      !!opts.key &&
+      !!opts.debug?.()
+    let depTime = 0
+    if (debugEnabled) depTime = Date.now()
 
     const newDeps = getDeps()
 
@@ -33,14 +40,14 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
 
     deps = newDeps
 
-    let resultTime: number
-    if (opts.key && opts.debug?.()) resultTime = Date.now()
+    let resultTime = 0
+    if (debugEnabled) resultTime = Date.now()
 
     result = fn(...newDeps)
 
-    if (opts.key && opts.debug?.()) {
-      const depEndTime = Math.round((Date.now() - depTime!) * 100) / 100
-      const resultEndTime = Math.round((Date.now() - resultTime!) * 100) / 100
+    if (debugEnabled) {
+      const depEndTime = Math.round((Date.now() - depTime) * 100) / 100
+      const resultEndTime = Math.round((Date.now() - resultTime) * 100) / 100
       const resultFpsPercentage = resultEndTime / 16
 
       const pad = (str: number | string, num: number) => {
