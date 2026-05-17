@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest'
-import { Virtualizer } from '../src/index'
+import { Virtualizer, defaultRangeExtractor } from '../src/index'
 
 test('should export the Virtualizer class', () => {
   expect(Virtualizer).toBeDefined()
@@ -942,6 +942,83 @@ test('resizeItem in massive storm (10k items) does not crash on min lookup', () 
   let expected = 0
   for (let i = 0; i < N; i++) expected += 20 + (i % 13)
   expect(measurements[N - 1]!.start + measurements[N - 1]!.size).toBe(expected)
+})
+
+// ─── defaultRangeExtractor ───────────────────────────────────────────────────
+
+test('defaultRangeExtractor: simple range with no overscan', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 5,
+    endIndex: 10,
+    overscan: 0,
+    count: 100,
+  })
+  expect(result).toEqual([5, 6, 7, 8, 9, 10])
+})
+
+test('defaultRangeExtractor: range with overscan', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 5,
+    endIndex: 10,
+    overscan: 2,
+    count: 100,
+  })
+  expect(result).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+})
+
+test('defaultRangeExtractor: clamps start to 0 when overscan would go negative', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 1,
+    endIndex: 5,
+    overscan: 5,
+    count: 100,
+  })
+  expect(result).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  expect(result[0]).toBe(0)
+})
+
+test('defaultRangeExtractor: clamps end to count-1 when overscan would go past', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 95,
+    endIndex: 99,
+    overscan: 5,
+    count: 100,
+  })
+  expect(result).toEqual([90, 91, 92, 93, 94, 95, 96, 97, 98, 99])
+  expect(result[result.length - 1]).toBe(99)
+})
+
+test('defaultRangeExtractor: single item range', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 5,
+    endIndex: 5,
+    overscan: 0,
+    count: 100,
+  })
+  expect(result).toEqual([5])
+})
+
+test('defaultRangeExtractor: returns a plain Array (not iterable proxy)', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 0,
+    endIndex: 3,
+    overscan: 0,
+    count: 100,
+  })
+  expect(Array.isArray(result)).toBe(true)
+  expect(result.length).toBe(4)
+})
+
+test('defaultRangeExtractor: large range produces correct length', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 0,
+    endIndex: 999,
+    overscan: 0,
+    count: 1000,
+  })
+  expect(result.length).toBe(1000)
+  expect(result[0]).toBe(0)
+  expect(result[999]).toBe(999)
 })
 
 test('setOptions: explicit value overrides default', () => {

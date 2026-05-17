@@ -54,13 +54,12 @@ export const defaultKeyExtractor = (index: number) => index
 export const defaultRangeExtractor = (range: Range) => {
   const start = Math.max(range.startIndex - range.overscan, 0)
   const end = Math.min(range.endIndex + range.overscan, range.count - 1)
+  const len = end - start + 1
 
-  const arr = []
-
-  for (let i = start; i <= end; i++) {
-    arr.push(i)
+  const arr = new Array<number>(len)
+  for (let i = 0; i < len; i++) {
+    arr[i] = start + i
   }
-
   return arr
 }
 
