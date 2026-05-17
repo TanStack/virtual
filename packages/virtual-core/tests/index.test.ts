@@ -729,6 +729,176 @@ test('getMeasurements memo should return new array reference after resizeItem', 
   expect(b[0]!.size).toBe(100)
 })
 
+// ─── elementsCache leak: disconnected node cleanup ───────────────────────────
+
+test('RO callback should remove disconnected node from elementsCache', () => {
+  // Pins down that when the ResizeObserver fires for a node that has been
+  // disconnected from the DOM, that node is removed from elementsCache.
+  // Without the fix, elementsCache accumulates stale entries.
+  let roCallback: ResizeObserverCallback | null = null
+  const MockResizeObserver = vi.fn(function (cb: ResizeObserverCallback) {
+    roCallback = cb
+    return {
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    }
+  })
+
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    performance: { now: () => Date.now() },
+    ResizeObserver: MockResizeObserver,
+  }
+
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 1000,
+    scrollHeight: 5000,
+    offsetWidth: 400,
+    offsetHeight: 600,
+    ownerDocument: { defaultView: mockWindow },
+  } as unknown as HTMLDivElement
+
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn: vi.fn(),
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+
+  // Simulate React mounting an element by calling measureElement ref callback
+  const node = {
+    getAttribute: (name: string) => (name === 'data-index' ? '3' : null),
+    getBoundingClientRect: () => ({ height: 50, width: 400 }),
+    isConnected: true,
+    setAttribute: vi.fn(),
+  } as unknown as HTMLElement
+
+  virtualizer.measureElement(node)
+  expect(virtualizer.elementsCache.get(3)).toBe(node)
+
+  // Now simulate the node being disconnected from DOM
+  ;(node as any).isConnected = false
+
+  // Fire the RO callback for this node — pretending it just resized
+  expect(roCallback).not.toBeNull()
+  roCallback!(
+    [
+      {
+        target: node,
+        contentRect: { height: 50, width: 400 } as DOMRectReadOnly,
+        borderBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+        contentBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+        devicePixelContentBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+      } as ResizeObserverEntry,
+    ],
+    {} as ResizeObserver,
+  )
+
+  // elementsCache should no longer contain the disconnected node
+  expect(virtualizer.elementsCache.has(3)).toBe(false)
+})
+
+test('RO callback should not delete cache entry if node was replaced by React', () => {
+  // Edge case: if React unmounts node A and mounts node B for the same key,
+  // a delayed RO callback for the now-disconnected node A must not delete
+  // the entry that now points to node B.
+  let roCallback: ResizeObserverCallback | null = null
+  const MockResizeObserver = vi.fn(function (cb: ResizeObserverCallback) {
+    roCallback = cb
+    return {
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    }
+  })
+
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    performance: { now: () => Date.now() },
+    ResizeObserver: MockResizeObserver,
+  }
+
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 1000,
+    scrollHeight: 5000,
+    offsetWidth: 400,
+    offsetHeight: 600,
+    ownerDocument: { defaultView: mockWindow },
+  } as unknown as HTMLDivElement
+
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn: vi.fn(),
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+
+  // Mount nodeA at index 3
+  const nodeA = {
+    getAttribute: () => '3',
+    getBoundingClientRect: () => ({ height: 50, width: 400 }),
+    isConnected: true,
+    setAttribute: vi.fn(),
+  } as unknown as HTMLElement
+  virtualizer.measureElement(nodeA)
+  expect(virtualizer.elementsCache.get(3)).toBe(nodeA)
+
+  // Mount nodeB for the same index — replaces nodeA in elementsCache
+  const nodeB = {
+    getAttribute: () => '3',
+    getBoundingClientRect: () => ({ height: 50, width: 400 }),
+    isConnected: true,
+    setAttribute: vi.fn(),
+  } as unknown as HTMLElement
+  virtualizer.measureElement(nodeB)
+  expect(virtualizer.elementsCache.get(3)).toBe(nodeB)
+
+  // Now fire a delayed RO callback for the now-disconnected nodeA.
+  // This must NOT delete elementsCache[3] (which points to nodeB).
+  ;(nodeA as any).isConnected = false
+  roCallback!(
+    [
+      {
+        target: nodeA,
+        contentRect: { height: 50, width: 400 } as DOMRectReadOnly,
+        borderBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+        contentBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+        devicePixelContentBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+      } as ResizeObserverEntry,
+    ],
+    {} as ResizeObserver,
+  )
+
+  expect(virtualizer.elementsCache.get(3)).toBe(nodeB)
+})
+
 // ─── setOptions behavioral contract ──────────────────────────────────────────
 // These tests pin down how setOptions merges defaults with user-supplied opts.
 // They guard against regressions when changing the merge mechanism

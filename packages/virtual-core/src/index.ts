@@ -418,6 +418,15 @@ export class Virtualizer<
 
             if (!node.isConnected) {
               this.observer.unobserve(node)
+              if (index >= 0) {
+                const key = this.options.getItemKey(index)
+                // Only delete if this node is still the cached one — guard
+                // against the case where React mounted a new node for the
+                // same key after this one disconnected.
+                if (this.elementsCache.get(key) === node) {
+                  this.elementsCache.delete(key)
+                }
+              }
               return
             }
 
