@@ -1443,6 +1443,234 @@ test('iOS deferral: multiple resizes during scroll accumulate and flush as one',
   })
 })
 
+// ─── Phase 1: touch event distinction ────────────────────────────────────────
+
+function dispatchTouchEvent(el: HTMLElement | EventTarget, type: 'touchstart' | 'touchend') {
+  const ev = new Event(type, { bubbles: true })
+  el.dispatchEvent(ev)
+}
+
+function makeIOSVirtualizerWithRealEl(
+  scrollToFn: ReturnType<typeof vi.fn>,
+  mockWindow: any,
+) {
+  // We need a real EventTarget so addEventListener('touchstart',...) works.
+  // We back it with a DOM element to inherit real EventTarget semantics.
+  const el = document.createElement('div')
+  Object.defineProperties(el, {
+    scrollTop: { value: 100, writable: true, configurable: true },
+    scrollLeft: { value: 0, writable: true, configurable: true },
+    scrollHeight: { value: 500, configurable: true },
+    clientHeight: { value: 200, configurable: true },
+    offsetHeight: { value: 200, configurable: true },
+    ownerDocument: { value: { defaultView: mockWindow }, configurable: true },
+  })
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => el as any,
+    scrollToFn,
+    observeElementRect: () => {},
+    observeElementOffset: (_inst, cb) => {
+      cb(100, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+  return { v, el }
+}
+
+test('iOS Phase 1: touchstart sets _iosTouching=true and clears justTouchEnded', () => {
+  withFakeIOSUserAgent(() => {
+    const mockWindow = {
+      setTimeout: globalThis.setTimeout.bind(globalThis),
+      clearTimeout: globalThis.clearTimeout.bind(globalThis),
+    }
+    const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
+    ;(v as any)._iosJustTouchEnded = true // pretend a prior touchend left this set
+    dispatchTouchEvent(el, 'touchstart')
+    expect(v['_iosTouching']).toBe(true)
+    expect(v['_iosJustTouchEnded']).toBe(false)
+  })
+})
+
+test('iOS Phase 1: touchend sets justTouchEnded + starts grace timer, then expires', async () => {
+  await withFakeIOSUserAgent(async () => {
+    let timerId = 0
+    const timers = new Map<number, () => void>()
+    const mockWindow = {
+      setTimeout: (fn: () => void, _ms: number) => {
+        const id = ++timerId
+        timers.set(id, fn)
+        return id
+      },
+      clearTimeout: (id: number) => timers.delete(id),
+    }
+    const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
+    dispatchTouchEvent(el, 'touchstart')
+    dispatchTouchEvent(el, 'touchend')
+    expect(v['_iosTouching']).toBe(false)
+    expect(v['_iosJustTouchEnded']).toBe(true)
+    expect(v['_iosTouchEndTimerId']).not.toBeNull()
+
+    // Fire the timer manually (simulating 150ms elapsing).
+    const fn = timers.get(v['_iosTouchEndTimerId']!)!
+    fn()
+    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(v['_iosTouchEndTimerId']).toBeNull()
+  })
+})
+
+test('iOS Phase 1: resize during active touch defers (no scrollTop write)', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    const mockWindow = {
+      setTimeout: globalThis.setTimeout.bind(globalThis),
+      clearTimeout: globalThis.clearTimeout.bind(globalThis),
+    }
+    const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
+    // Bring scroll state to a typical "user touched the screen" pose.
+    dispatchTouchEvent(el, 'touchstart')
+    scrollToFn.mockClear()
+
+    // Above-viewport item resizes mid-drag. Must defer.
+    v.resizeItem(0, 100)
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+  })
+})
+
+test('iOS Phase 1: resize in post-touchend grace window defers; flushes when timer fires', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let timerId = 0
+    const timers = new Map<number, () => void>()
+    const mockWindow = {
+      setTimeout: (fn: () => void, _ms: number) => {
+        const id = ++timerId
+        timers.set(id, fn)
+        return id
+      },
+      clearTimeout: (id: number) => timers.delete(id),
+    }
+    const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
+    dispatchTouchEvent(el, 'touchstart')
+    dispatchTouchEvent(el, 'touchend')
+    expect(v['_iosJustTouchEnded']).toBe(true)
+    scrollToFn.mockClear()
+
+    // Items measure during the grace window — must defer
+    v.resizeItem(0, 100)
+    v.resizeItem(1, 65)
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(50 + 15)
+
+    // Expire the grace timer; the timer callback flushes the accumulated delta.
+    const fn = timers.get(v['_iosTouchEndTimerId']!)!
+    fn()
+    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
+test('iOS Phase 1: scroll-event after touchend timer cleanup also flushes', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback: ((o: number, s: boolean) => void) | null = null
+    const el = document.createElement('div')
+    Object.defineProperties(el, {
+      scrollTop: { value: 100, writable: true, configurable: true },
+      scrollLeft: { value: 0, writable: true, configurable: true },
+      scrollHeight: { value: 500, configurable: true },
+      clientHeight: { value: 200, configurable: true },
+      offsetHeight: { value: 200, configurable: true },
+      ownerDocument: {
+        value: {
+          defaultView: {
+            setTimeout: globalThis.setTimeout.bind(globalThis),
+            clearTimeout: globalThis.clearTimeout.bind(globalThis),
+          },
+        },
+        configurable: true,
+      },
+    })
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () => el as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(100, true) // scrolling
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    // Resize during scroll (no touch tracked here — pure scroll).
+    v.resizeItem(0, 100)
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+
+    // Scroll ends. Touch never started here, so the flush gate's
+    // !isScrolling && !_iosTouching && !_iosJustTouchEnded all hold.
+    scrollCallback!(100, false)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
+test('iOS Phase 1: new touchstart during grace window cancels pending flush timer', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let timerId = 0
+    const timers = new Map<number, () => void>()
+    const mockWindow = {
+      setTimeout: (fn: () => void, _ms: number) => {
+        const id = ++timerId
+        timers.set(id, fn)
+        return id
+      },
+      clearTimeout: (id: number) => timers.delete(id),
+    }
+    const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
+    dispatchTouchEvent(el, 'touchstart')
+    dispatchTouchEvent(el, 'touchend')
+    const firstTimerId = v['_iosTouchEndTimerId']!
+    expect(timers.has(firstTimerId)).toBe(true)
+
+    // User puts finger back down before grace window expired.
+    dispatchTouchEvent(el, 'touchstart')
+    // The pending timer must have been canceled.
+    expect(timers.has(firstTimerId)).toBe(false)
+    expect(v['_iosTouchEndTimerId']).toBeNull()
+    expect(v['_iosTouching']).toBe(true)
+  })
+})
+
+test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
+  // On non-iOS, touchend should not arm the grace timer.
+  _resetIOSDetectionForTests()
+  const scrollToFn = vi.fn()
+  const mockWindow = {
+    setTimeout: globalThis.setTimeout.bind(globalThis),
+    clearTimeout: globalThis.clearTimeout.bind(globalThis),
+  }
+  const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
+
+  dispatchTouchEvent(el, 'touchstart')
+  expect(v['_iosTouching']).toBe(true) // touchstart still flips the flag (cheap)
+  dispatchTouchEvent(el, 'touchend')
+  // Non-iOS path returns before setting justTouchEnded / arming timer
+  expect(v['_iosJustTouchEnded']).toBe(false)
+  expect(v['_iosTouchEndTimerId']).toBeNull()
+})
+
 test('non-iOS: adjustment is applied immediately during scroll (no regression)', () => {
   // Without the iOS user-agent, the normal flow should run unchanged.
   _resetIOSDetectionForTests()

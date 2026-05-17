@@ -381,8 +381,16 @@ export class Virtualizer<
   private scrollAdjustments = 0
   // Sum of size-change deltas above-viewport that were skipped during
   // iOS momentum scroll (writing scrollTop mid-momentum cancels it).
-  // Flushed in a single scrollTo when isScrolling transitions back to false.
+  // Flushed in a single scrollTo when iOS is fully settled.
   private _iosDeferredAdjustment = 0
+  // Touch state. iOS WebKit cancels momentum when scrollTop is written, so
+  // we defer adjustments not only during `isScrolling` but also through the
+  // touchstart→touchend window (active drag) and a short tail after
+  // touchend (early-momentum window — iOS only fires touch events once at
+  // the start of momentum, so we use a timer rather than another event).
+  private _iosTouching = false
+  private _iosJustTouchEnded = false
+  private _iosTouchEndTimerId: number | null = null
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -573,7 +581,6 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset, isScrolling) => {
-          const wasScrolling = this.isScrolling
           this.scrollAdjustments = 0
           this.scrollDirection = isScrolling
             ? this.getScrollOffset() < offset
@@ -583,22 +590,10 @@ export class Virtualizer<
           this.scrollOffset = offset
           this.isScrolling = isScrolling
 
-          // Flush deferred iOS adjustments now that momentum has ended. The
-          // browser is no longer in momentum-scroll, so writing scrollTop is
-          // safe and we can compensate for the cumulative above-viewport size
-          // changes that occurred during the scroll session.
-          if (
-            wasScrolling &&
-            !isScrolling &&
-            this._iosDeferredAdjustment !== 0
-          ) {
-            const delta = this._iosDeferredAdjustment
-            this._iosDeferredAdjustment = 0
-            this._scrollToOffset(this.getScrollOffset(), {
-              adjustments: delta,
-              behavior: undefined,
-            })
-          }
+          // Flush deferred iOS adjustments if we're now fully settled.
+          // "Fully settled" means: not actively scrolling, no finger on
+          // screen, and the post-touchend grace window has expired.
+          this._flushIosDeferredIfReady()
 
           if (this.scrollState) {
             this.scheduleScrollReconcile()
@@ -607,11 +602,84 @@ export class Virtualizer<
         }),
       )
 
+      // Touch event listeners (iOS-aware deferral). We attach unconditionally
+      // — the listeners are passive and cheap; on non-touch devices they
+      // simply never fire. The gating by isIOSWebKit() lives in resizeItem
+      // and _flushIosDeferredIfReady so we only burn the path on iOS.
+      if ('addEventListener' in this.scrollElement) {
+        const scrollEl = this.scrollElement as unknown as EventTarget
+        const onTouchStart = () => {
+          this._iosTouching = true
+          this._iosJustTouchEnded = false
+          if (
+            this._iosTouchEndTimerId !== null &&
+            this.targetWindow != null
+          ) {
+            this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
+            this._iosTouchEndTimerId = null
+          }
+        }
+        const onTouchEnd = () => {
+          this._iosTouching = false
+          if (!isIOSWebKit() || this.targetWindow == null) {
+            // Non-iOS: nothing more to track. Just clear the touching flag.
+            return
+          }
+          this._iosJustTouchEnded = true
+          // After ~150 ms with no scroll/touch events, momentum is done.
+          this._iosTouchEndTimerId = this.targetWindow.setTimeout(() => {
+            this._iosJustTouchEnded = false
+            this._iosTouchEndTimerId = null
+            // After the grace window, attempt to flush. The scroll event
+            // for momentum decay may have already fired before our timer.
+            this._flushIosDeferredIfReady()
+          }, 150)
+        }
+        scrollEl.addEventListener(
+          'touchstart',
+          onTouchStart,
+          addEventListenerOptions,
+        )
+        scrollEl.addEventListener(
+          'touchend',
+          onTouchEnd,
+          addEventListenerOptions,
+        )
+        this.unsubs.push(() => {
+          scrollEl.removeEventListener('touchstart', onTouchStart)
+          scrollEl.removeEventListener('touchend', onTouchEnd)
+          if (
+            this._iosTouchEndTimerId !== null &&
+            this.targetWindow != null
+          ) {
+            this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
+            this._iosTouchEndTimerId = null
+          }
+        })
+      }
+
       this._scrollToOffset(this.getScrollOffset(), {
         adjustments: undefined,
         behavior: undefined,
       })
     }
+  }
+
+  // Apply any accumulated iOS-deferred scroll adjustment, but only when we're
+  // truly settled — not actively scrolling, not under an active touch, and
+  // past the post-touchend grace window. Called from the scroll callback
+  // and the touchend grace-timer.
+  private _flushIosDeferredIfReady = () => {
+    if (this._iosDeferredAdjustment === 0) return
+    if (this.isScrolling) return
+    if (this._iosTouching) return
+    if (this._iosJustTouchEnded) return
+    const delta = this._iosDeferredAdjustment
+    this._iosDeferredAdjustment = 0
+    this._scrollToOffset(this.getScrollOffset(), {
+      adjustments: delta,
+      behavior: undefined,
+    })
   }
 
   private rafId: number | null = null
@@ -1211,11 +1279,14 @@ export class Virtualizer<
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
         }
-        // On iOS WebKit, writing scrollTop during momentum-scroll cancels
-        // the momentum. Defer the adjustment until the scroll settles; we
-        // flush the accumulated delta in the observeElementOffset callback
-        // when isScrolling transitions back to false.
-        if (this.isScrolling && isIOSWebKit()) {
+        // On iOS WebKit, writing scrollTop while a finger is on screen or
+        // momentum-scroll is running cancels the in-flight scroll. Defer
+        // the adjustment until iOS is fully settled — flushed by either
+        // the scroll callback or the touchend grace-timer.
+        if (
+          isIOSWebKit() &&
+          (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
+        ) {
           this._iosDeferredAdjustment += delta
         } else {
           this._scrollToOffset(this.getScrollOffset(), {
