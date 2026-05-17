@@ -479,7 +479,7 @@ export class Virtualizer<
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
       laneAssignmentMode: 'estimate',
-    } as Required<VirtualizerOptions<TScrollElement, TItemElement>>
+    } as unknown as Required<VirtualizerOptions<TScrollElement, TItemElement>>
 
     for (const key in opts) {
       const v = (opts as any)[key]
