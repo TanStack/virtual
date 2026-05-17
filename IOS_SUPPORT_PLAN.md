@@ -247,6 +247,42 @@ After this, our iOS code-path count goes from 0 → ~10 (vs virtua's 17+). The r
 2. **Phase 2a** as a follow-up; it's the subtlest piece because of the 1.5 px tolerance.
 3. **Phase 2b** last, behind a feature flag (`useElasticOverscrollClamp: false` default for one release) since "iOS elastic overscroll behaves differently" is the kind of change that could surprise apps relying on quirks.
 
+## Bundle impact
+
+Measured against the current shipped bundle (5,847 B gzip):
+
+| Item | Source size | Gzip impact | Notes |
+|---|---:|---:|---|
+| Exp 2 (already shipped) | ~250 B | **103 B** | The `isIOSWebKit()` detection + `_iosDeferredAdjustment` field + flush logic |
+| Phase 1 (touch distinction) | ~280 B | **~150 B** | 3 fields + 2 listeners + 150ms timer + flush gate |
+| Phase 2a (subpixel reconciliation) | ~120 B | **~80 B** | 1 field + tracking logic in `_scrollToOffset` + callback |
+| Phase 2b (scrollTopMax clamp) | ~80 B | **~50 B** | `inElasticZone` guard around the flush write |
+| **Total iOS cost (post Phase 1+2)** | **~730 B** | **~383 B** | ~6.5% of total bundle |
+
+### Does it tree-shake?
+
+**No.** The iOS gate is runtime (`navigator.userAgent` check), so the source ships in every bundle. Verified by building with `--platform=node`: same byte count, meaning bundlers can't statically eliminate the iOS branches even when there's no DOM at all.
+
+What this means in practice:
+
+| Consumer | Downloads | First-time runtime | Per-event cost |
+|---|---|---|---|
+| Chrome/Firefox desktop | All ~390 B | One UA-regex call (cached) | One bool check |
+| iOS Safari | All ~390 B | One UA-regex call (cached) | Activates deferral |
+| Next.js SSR (Node) | All ~390 B | `typeof navigator === 'undefined'` → early-return | Never executes |
+
+### Could we make it shake out?
+
+Three options if bundle weight ever becomes a real complaint:
+
+1. **Build-time flag `process.env.TANSTACK_NO_IOS`** — wrap iOS code in `if (process.env.TANSTACK_NO_IOS !== 'true') { … }` so consumer minifiers DCE when defined. Adds opt-out story to docs.
+2. **Separate `@tanstack/virtual-core/no-ios` entry** — two builds, two doc paths. High DX cost, low practical uptake.
+3. **Status quo (chosen)** — ship to all, runtime-skip on non-iOS. Matches virtua's choice; virtua doesn't separate iOS code either.
+
+### Why ship default-on anyway
+
+iOS Safari is 25-30% of US mobile traffic and even higher for the consumer apps that use virtualization heavily (chats, feeds, message lists). The bundle cost (~390 B / 6.5%) buys correct momentum-scroll behavior for that entire population. The non-iOS runtime cost is one boolean check per scroll/resize event — well below noise.
+
 ## Things explicitly out of scope
 
 - **The `overflow:hidden` momentum-break hack** (virtua's `scroller.ts:339-346`). Effective but spooky; consider only if a Phase-1-fixable case slips through.
