@@ -1014,6 +1014,13 @@ export class Virtualizer<
               outerSize,
               scrollOffset,
               lanes,
+              // Pass the typed array so binary search + forward-walk can
+              // read start/end directly from Float64Array, skipping the
+              // Proxy traps that materialize a full VirtualItem per probe.
+              flat:
+                lanes === 1 && this._flatMeasurements != null
+                  ? this._flatMeasurements
+                  : null,
             })
           : null)
     },
@@ -1241,16 +1248,20 @@ export class Virtualizer<
     if (measurements.length === 0) {
       return undefined
     }
-    return notUndefined(
-      measurements[
-        findNearestBinarySearch(
-          0,
-          measurements.length - 1,
-          (index: number) => notUndefined(measurements[index]).start,
-          offset,
-        )
-      ],
+    // Same fast-path as calculateRange: read start values directly from the
+    // typed array during binary search to skip the Proxy.get materialization
+    // per probe.
+    const flat = this._flatMeasurements
+    const useFlat = this.options.lanes === 1 && flat != null
+    const idx = findNearestBinarySearch(
+      0,
+      measurements.length - 1,
+      useFlat
+        ? (i: number) => flat![i * 2]!
+        : (i: number) => notUndefined(measurements[i]).start,
+      offset,
     )
+    return notUndefined(measurements[idx])
   }
 
   private getMaxScrollOffset = () => {
@@ -1523,14 +1534,24 @@ function calculateRange({
   outerSize,
   scrollOffset,
   lanes,
+  flat,
 }: {
   measurements: Array<VirtualItem>
   outerSize: number
   scrollOffset: number
   lanes: number
+  flat: Float64Array | null
 }) {
   const lastIndex = measurements.length - 1
-  const getOffset = (index: number) => measurements[index]!.start
+  // When the lanes===1 fast-path is active, read start/end directly from the
+  // flat Float64Array instead of going through the lazy-view Proxy. Cuts
+  // ~17 Proxy.get traps per scroll for the binary search alone.
+  const getStart = flat
+    ? (index: number) => flat[index * 2]!
+    : (index: number) => measurements[index]!.start
+  const getEnd = flat
+    ? (index: number) => flat[index * 2]! + flat[index * 2 + 1]!
+    : (index: number) => measurements[index]!.end
 
   // handle case when item count is less than or equal to lanes
   if (measurements.length <= lanes) {
@@ -1543,16 +1564,13 @@ function calculateRange({
   let startIndex = findNearestBinarySearch(
     0,
     lastIndex,
-    getOffset,
+    getStart,
     scrollOffset,
   )
   let endIndex = startIndex
 
   if (lanes === 1) {
-    while (
-      endIndex < lastIndex &&
-      measurements[endIndex]!.end < scrollOffset + outerSize
-    ) {
+    while (endIndex < lastIndex && getEnd(endIndex) < scrollOffset + outerSize) {
       endIndex++
     }
   } else if (lanes > 1) {
