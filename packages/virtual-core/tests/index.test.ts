@@ -1653,6 +1653,111 @@ test('iOS Phase 1: new touchstart during grace window cancels pending flush time
   })
 })
 
+// ─── Phase 2a: subpixel scrollTop reconciliation ─────────────────────────────
+
+test('Phase 2a: browser-rounded scrollTop after self-write is reconciled to intended value', () => {
+  let scrollCallback: ((o: number, s: boolean) => void) | null = null
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: 0,
+        scrollLeft: 0,
+        scrollHeight: 500,
+        clientHeight: 200,
+        offsetHeight: 200,
+        scrollTo: vi.fn(),
+      }) as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: () => {},
+    observeElementOffset: (_inst, cb) => {
+      scrollCallback = cb
+      cb(0, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+
+  // Simulate a self-write to 123.5 (subpixel target).
+  v.scrollToOffset(123.5, { behavior: 'auto' })
+  expect(v['_intendedScrollOffset']).toBe(123.5)
+
+  // Browser fires a scroll event reporting 123 (integer-rounded).
+  scrollCallback!(123, false)
+
+  // We should have reconciled the offset back to the intended 123.5,
+  // not stored the browser's rounded 123.
+  expect(v.scrollOffset).toBe(123.5)
+  expect(v['_intendedScrollOffset']).toBeNull()
+})
+
+test('Phase 2a: user-initiated scroll (large delta) is NOT reconciled to intended value', () => {
+  let scrollCallback: ((o: number, s: boolean) => void) | null = null
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: 0,
+        scrollLeft: 0,
+        scrollHeight: 500,
+        clientHeight: 200,
+        offsetHeight: 200,
+        scrollTo: vi.fn(),
+      }) as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: () => {},
+    observeElementOffset: (_inst, cb) => {
+      scrollCallback = cb
+      cb(0, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v.scrollToOffset(100, { behavior: 'auto' })
+  expect(v['_intendedScrollOffset']).toBe(100)
+
+  // User then scrolls way past — browser reports 500. Diff (400) > 1.5 px
+  // tolerance, so we trust the browser-reported value.
+  scrollCallback!(500, true)
+  expect(v.scrollOffset).toBe(500)
+  expect(v['_intendedScrollOffset']).toBeNull()
+})
+
+test('Phase 2a: a second self-write replaces the intended target', () => {
+  let scrollCallback: ((o: number, s: boolean) => void) | null = null
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: 0,
+        scrollLeft: 0,
+        scrollHeight: 500,
+        clientHeight: 200,
+        offsetHeight: 200,
+        scrollTo: vi.fn(),
+      }) as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: () => {},
+    observeElementOffset: (_inst, cb) => {
+      scrollCallback = cb
+      cb(0, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v.scrollToOffset(100, { behavior: 'auto' })
+  v.scrollToOffset(200.7, { behavior: 'auto' })
+  expect(v['_intendedScrollOffset']).toBe(200.7)
+  // First scrollTo's offset (100) was overwritten — a scroll event near it
+  // would NOT reconcile.
+  scrollCallback!(101, true)
+  // 101 is not within 1.5px of 200.7, so browser value wins.
+  expect(v.scrollOffset).toBe(101)
+})
+
 test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   // On non-iOS, touchend should not arm the grace timer.
   _resetIOSDetectionForTests()

@@ -391,6 +391,16 @@ export class Virtualizer<
   private _iosTouching = false
   private _iosJustTouchEnded = false
   private _iosTouchEndTimerId: number | null = null
+  // Subpixel reconciliation. Safari (and Chrome/Firefox under certain DPRs)
+  // round scrollTop/scrollLeft writes to integer pixels. If we wrote 12345.5
+  // but the browser reports back 12346, the next reconcileScroll sees a
+  // "target changed" and re-fires scrollTo — a feedback loop that the
+  // approxEqual(<1.01) tolerance otherwise absorbs as a workaround.
+  // By remembering the intended value of our most-recent self-driven
+  // scrollTo, we can match the browser's rounded read back to the intended
+  // value when the diff is < 1.5 px, distinguishing it from a real user
+  // scroll. The +0.5 over Math.abs lets us also absorb the +1 / -1 cases.
+  private _intendedScrollOffset: number | null = null
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -581,6 +591,21 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset, isScrolling) => {
+          // If this scroll event looks like the browser's read-back of a
+          // value we just wrote, prefer our intended (sub-pixel-accurate)
+          // value over the browser's rounded one. The 1.5 px tolerance is
+          // tight enough to avoid mistaking a real user scroll for a
+          // self-write — by the time the user has moved 1.5 px, the
+          // intended value will already have been consumed by a prior
+          // scroll event and cleared.
+          if (
+            this._intendedScrollOffset !== null &&
+            Math.abs(offset - this._intendedScrollOffset) < 1.5
+          ) {
+            offset = this._intendedScrollOffset
+          }
+          this._intendedScrollOffset = null
+
           this.scrollAdjustments = 0
           this.scrollDirection = isScrolling
             ? this.getScrollOffset() < offset
@@ -1584,6 +1609,9 @@ export class Virtualizer<
       behavior: ScrollBehavior | undefined
     },
   ) => {
+    // Record the intended logical scroll target so the next scroll event
+    // can reconcile against subpixel rounding by the browser.
+    this._intendedScrollOffset = offset + (adjustments ?? 0)
     this.options.scrollToFn(offset, { behavior, adjustments }, this)
   }
 
