@@ -1,6 +1,7 @@
 import { expect, test, vi } from 'vitest'
 import {
   Virtualizer,
+  _resetIOSDetectionForTests,
   defaultRangeExtractor,
   elementScroll,
   observeElementOffset,
@@ -1333,6 +1334,146 @@ test('lazy fast path: large list (1M items) does not allocate per-item objects u
   const elapsed = performance.now() - start
   // Should be sub-50ms even at 1M items (typed array fill + proxy alloc only)
   expect(elapsed).toBeLessThan(50)
+})
+
+// ─── iOS momentum-safe scroll adjustments ───────────────────────────────────
+
+function withFakeIOSUserAgent<T>(fn: () => T): T {
+  // jsdom navigator.userAgent lives on the prototype; we set an own property
+  // to shadow it, then remove the own property in finally so the prototype
+  // value is visible again for subsequent tests.
+  Object.defineProperty(navigator, 'userAgent', {
+    value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
+    configurable: true,
+  })
+  _resetIOSDetectionForTests()
+  try {
+    return fn()
+  } finally {
+    delete (navigator as any).userAgent
+    _resetIOSDetectionForTests()
+  }
+}
+
+test('iOS deferral: scroll-position write is deferred during isScrolling', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({
+          scrollTop: 100,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(100, true) // Start scrolling
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    // Resize an item above the current scroll position while isScrolling=true
+    // The default condition (item.start < scrollOffset + scrollAdjustments)
+    // would normally trigger an immediate scroll adjustment.
+    v.resizeItem(0, 100) // item 0 was at start=0; now 50→100 grows by 50
+
+    // On iOS during scroll, the adjustment should be DEFERRED — scrollToFn
+    // should NOT have been called for the adjustment.
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+
+    // Now transition isScrolling → false
+    scrollCallback!(100, false)
+
+    // The deferred adjustment should be flushed.
+    expect(scrollToFn).toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
+test('iOS deferral: multiple resizes during scroll accumulate and flush as one', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({
+          scrollTop: 200,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(200, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    // Three resizes during scroll: 10 + 15 + 20 = 45 total
+    v.resizeItem(0, 60)
+    v.resizeItem(1, 65)
+    v.resizeItem(2, 70)
+
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(45)
+
+    scrollCallback!(200, false)
+    // Single flush call
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
+test('non-iOS: adjustment is applied immediately during scroll (no regression)', () => {
+  // Without the iOS user-agent, the normal flow should run unchanged.
+  _resetIOSDetectionForTests()
+  const scrollToFn = vi.fn()
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: 100,
+        scrollLeft: 0,
+        scrollHeight: 500,
+        clientHeight: 200,
+        offsetHeight: 200,
+      }) as any,
+    scrollToFn,
+    observeElementRect: () => {},
+    observeElementOffset: (_inst, cb) => {
+      cb(100, true)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+  scrollToFn.mockClear()
+
+  v.resizeItem(0, 100)
+
+  // Should have fired immediately
+  expect(scrollToFn).toHaveBeenCalled()
+  expect(v['_iosDeferredAdjustment']).toBe(0)
 })
 
 test('lazy fast path: lanes>1 still uses eager path (regression guard)', () => {

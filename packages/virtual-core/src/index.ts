@@ -1,6 +1,28 @@
 import { createLazyMeasurementsView } from './lazy-measurements'
 import { approxEqual, debounce, memo, notUndefined } from './utils'
 
+// Browser-aware iOS detection. Programmatic `scrollTo`/`scrollTop` writes
+// during a momentum-scroll cancel the momentum on iOS WebKit, so we defer
+// scroll-position adjustments triggered by mid-scroll resizes until the
+// scroll settles. SSR-safe (returns false when navigator is unavailable).
+let _isIOSResult: boolean | undefined
+const isIOSWebKit = (): boolean => {
+  if (_isIOSResult !== undefined) return _isIOSResult
+  if (typeof navigator === 'undefined') return (_isIOSResult = false)
+  if (/iP(hone|od|ad)/.test(navigator.userAgent)) return (_isIOSResult = true)
+  // iPadOS 13+ reports as MacIntel; touch-points distinguishes it from desktop.
+  return (_isIOSResult =
+    navigator.platform === 'MacIntel' &&
+    (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints !==
+      undefined &&
+    (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints! > 0)
+}
+
+// Test hook: reset the iOS detection cache. Not exported.
+export const _resetIOSDetectionForTests = () => {
+  _isIOSResult = undefined
+}
+
 export { approxEqual, debounce, memo, notUndefined } from './utils'
 export type { NoInfer, PartialKeys } from './utils'
 
@@ -357,6 +379,10 @@ export class Virtualizer<
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments = 0
+  // Sum of size-change deltas above-viewport that were skipped during
+  // iOS momentum scroll (writing scrollTop mid-momentum cancels it).
+  // Flushed in a single scrollTo when isScrolling transitions back to false.
+  private _iosDeferredAdjustment = 0
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -547,6 +573,7 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset, isScrolling) => {
+          const wasScrolling = this.isScrolling
           this.scrollAdjustments = 0
           this.scrollDirection = isScrolling
             ? this.getScrollOffset() < offset
@@ -555,6 +582,23 @@ export class Virtualizer<
             : null
           this.scrollOffset = offset
           this.isScrolling = isScrolling
+
+          // Flush deferred iOS adjustments now that momentum has ended. The
+          // browser is no longer in momentum-scroll, so writing scrollTop is
+          // safe and we can compensate for the cumulative above-viewport size
+          // changes that occurred during the scroll session.
+          if (
+            wasScrolling &&
+            !isScrolling &&
+            this._iosDeferredAdjustment !== 0
+          ) {
+            const delta = this._iosDeferredAdjustment
+            this._iosDeferredAdjustment = 0
+            this._scrollToOffset(this.getScrollOffset(), {
+              adjustments: delta,
+              behavior: undefined,
+            })
+          }
 
           if (this.scrollState) {
             this.scheduleScrollReconcile()
@@ -1129,10 +1173,18 @@ export class Virtualizer<
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
         }
-        this._scrollToOffset(this.getScrollOffset(), {
-          adjustments: (this.scrollAdjustments += delta),
-          behavior: undefined,
-        })
+        // On iOS WebKit, writing scrollTop during momentum-scroll cancels
+        // the momentum. Defer the adjustment until the scroll settles; we
+        // flush the accumulated delta in the observeElementOffset callback
+        // when isScrolling transitions back to false.
+        if (this.isScrolling && isIOSWebKit()) {
+          this._iosDeferredAdjustment += delta
+        } else {
+          this._scrollToOffset(this.getScrollOffset(), {
+            adjustments: (this.scrollAdjustments += delta),
+            behavior: undefined,
+          })
+        }
       }
 
       if (this.pendingMin === null || index < this.pendingMin) {
