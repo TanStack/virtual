@@ -699,9 +699,17 @@ export class Virtualizer<
     if (this.isScrolling) return
     if (this._iosTouching) return
     if (this._iosJustTouchEnded) return
+    // Phase 2b: Safari elastic-overscroll (rubber-band) lets scrollTop go
+    // negative or beyond scrollHeight - clientHeight. Writing scrollTop
+    // while in that zone snaps the page back to the clamped value at the
+    // end of the bounce, often discarding the user's intent. Skip the
+    // flush; the next in-bounds scroll event will retry.
+    const cur = this.getScrollOffset()
+    const max = this.getMaxScrollOffset()
+    if (cur < 0 || cur > max) return
     const delta = this._iosDeferredAdjustment
     this._iosDeferredAdjustment = 0
-    this._scrollToOffset(this.getScrollOffset(), {
+    this._scrollToOffset(cur, {
       adjustments: delta,
       behavior: undefined,
     })

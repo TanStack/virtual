@@ -1445,25 +1445,37 @@ test('iOS deferral: multiple resizes during scroll accumulate and flush as one',
 
 // ─── Phase 1: touch event distinction ────────────────────────────────────────
 
-function dispatchTouchEvent(el: HTMLElement | EventTarget, type: 'touchstart' | 'touchend') {
-  const ev = new Event(type, { bubbles: true })
-  el.dispatchEvent(ev)
+// Mock EventTarget that records listeners so tests can dispatch events
+// without requiring a real DOM. Works in any environment, jsdom or not.
+function makeMockScrollElement(props: Record<string, any>) {
+  const listeners = new Map<string, Set<(e: Event) => void>>()
+  return {
+    ...props,
+    addEventListener(name: string, fn: (e: Event) => void) {
+      let s = listeners.get(name)
+      if (!s) listeners.set(name, (s = new Set()))
+      s.add(fn)
+    },
+    removeEventListener(name: string, fn: (e: Event) => void) {
+      listeners.get(name)?.delete(fn)
+    },
+    _dispatch(name: string) {
+      listeners.get(name)?.forEach((fn) => fn({} as Event))
+    },
+  } as any
 }
 
 function makeIOSVirtualizerWithRealEl(
   scrollToFn: ReturnType<typeof vi.fn>,
   mockWindow: any,
 ) {
-  // We need a real EventTarget so addEventListener('touchstart',...) works.
-  // We back it with a DOM element to inherit real EventTarget semantics.
-  const el = document.createElement('div')
-  Object.defineProperties(el, {
-    scrollTop: { value: 100, writable: true, configurable: true },
-    scrollLeft: { value: 0, writable: true, configurable: true },
-    scrollHeight: { value: 500, configurable: true },
-    clientHeight: { value: 200, configurable: true },
-    offsetHeight: { value: 200, configurable: true },
-    ownerDocument: { value: { defaultView: mockWindow }, configurable: true },
+  const el = makeMockScrollElement({
+    scrollTop: 100,
+    scrollLeft: 0,
+    scrollHeight: 500,
+    clientHeight: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: mockWindow },
   })
   const v = new Virtualizer({
     count: 10,
@@ -1479,6 +1491,13 @@ function makeIOSVirtualizerWithRealEl(
   v._willUpdate()
   v['getMeasurements']()
   return { v, el }
+}
+
+function dispatchTouchEvent(
+  el: any,
+  type: 'touchstart' | 'touchend',
+) {
+  el._dispatch(type)
 }
 
 test('iOS Phase 1: touchstart sets _iosTouching=true and clears justTouchEnded', () => {
@@ -1579,21 +1598,17 @@ test('iOS Phase 1: scroll-event after touchend timer cleanup also flushes', () =
   withFakeIOSUserAgent(() => {
     const scrollToFn = vi.fn()
     let scrollCallback: ((o: number, s: boolean) => void) | null = null
-    const el = document.createElement('div')
-    Object.defineProperties(el, {
-      scrollTop: { value: 100, writable: true, configurable: true },
-      scrollLeft: { value: 0, writable: true, configurable: true },
-      scrollHeight: { value: 500, configurable: true },
-      clientHeight: { value: 200, configurable: true },
-      offsetHeight: { value: 200, configurable: true },
+    const el = makeMockScrollElement({
+      scrollTop: 100,
+      scrollLeft: 0,
+      scrollHeight: 500,
+      clientHeight: 200,
+      offsetHeight: 200,
       ownerDocument: {
-        value: {
-          defaultView: {
-            setTimeout: globalThis.setTimeout.bind(globalThis),
-            clearTimeout: globalThis.clearTimeout.bind(globalThis),
-          },
+        defaultView: {
+          setTimeout: globalThis.setTimeout.bind(globalThis),
+          clearTimeout: globalThis.clearTimeout.bind(globalThis),
         },
-        configurable: true,
       },
     })
     const v = new Virtualizer({
@@ -1723,6 +1738,150 @@ test('Phase 2a: user-initiated scroll (large delta) is NOT reconciled to intende
   scrollCallback!(500, true)
   expect(v.scrollOffset).toBe(500)
   expect(v['_intendedScrollOffset']).toBeNull()
+})
+
+// ─── Phase 2b: scrollTopMax elastic-overscroll clamp ─────────────────────────
+
+test('Phase 2b: flush skipped when scrollTop is in elastic-overscroll zone (negative)', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCb: ((o: number, s: boolean) => void) | null = null
+    const el = makeMockScrollElement({
+      scrollTop: 100,
+      scrollLeft: 0,
+      scrollHeight: 500,
+      clientHeight: 200,
+      offsetHeight: 200,
+      ownerDocument: {
+        defaultView: {
+          setTimeout: globalThis.setTimeout.bind(globalThis),
+          clearTimeout: globalThis.clearTimeout.bind(globalThis),
+        },
+      },
+    })
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () => el as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCb = cb
+        cb(100, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    // Resize during scroll: defers
+    v.resizeItem(0, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+
+    // User rubber-bands past the top: scrollTop becomes negative.
+    // Even though isScrolling=false now, the elastic-zone check blocks
+    // the flush so we don't snap-back to a clamped position.
+    el.scrollTop = -25
+    scrollCb!(-25, false)
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(50) // still deferred
+
+    // User releases, scroll snaps back in-bounds. Next scroll event
+    // should successfully flush.
+    el.scrollTop = 100
+    scrollCb!(100, false)
+    expect(scrollToFn).toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
+test('Phase 2b: flush skipped when scrollTop > scrollHeight-clientHeight (overscroll bottom)', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCb: ((o: number, s: boolean) => void) | null = null
+    const el = makeMockScrollElement({
+      scrollTop: 100,
+      scrollLeft: 0,
+      scrollHeight: 500,
+      clientHeight: 200, // max valid scrollTop = 300
+      offsetHeight: 200,
+      ownerDocument: {
+        defaultView: {
+          setTimeout: globalThis.setTimeout.bind(globalThis),
+          clearTimeout: globalThis.clearTimeout.bind(globalThis),
+        },
+      },
+    })
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () => el as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCb = cb
+        cb(100, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    v.resizeItem(0, 100)
+
+    // User pulls past the bottom: scrollTop becomes 350 (> max 300).
+    el.scrollTop = 350
+    scrollCb!(350, false)
+    expect(scrollToFn).not.toHaveBeenCalled()
+
+    // Bounce-back resolves
+    el.scrollTop = 300
+    scrollCb!(300, false)
+    expect(scrollToFn).toHaveBeenCalled()
+  })
+})
+
+test('Phase 2b: in-bounds flush proceeds normally (no regression)', () => {
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCb: ((o: number, s: boolean) => void) | null = null
+    const el = makeMockScrollElement({
+      scrollTop: 100,
+      scrollLeft: 0,
+      scrollHeight: 500,
+      clientHeight: 200,
+      offsetHeight: 200,
+      ownerDocument: {
+        defaultView: {
+          setTimeout: globalThis.setTimeout.bind(globalThis),
+          clearTimeout: globalThis.clearTimeout.bind(globalThis),
+        },
+      },
+    })
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () => el as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCb = cb
+        cb(100, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    v.resizeItem(0, 100)
+    el.scrollTop = 150
+    scrollCb!(150, false) // in-bounds (0..300)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
 })
 
 test('Phase 2a: a second self-write replaces the intended target', () => {
