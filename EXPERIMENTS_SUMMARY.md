@@ -68,19 +68,19 @@ All 6 experiments committed locally (not pushed). 72/72 unit tests pass, 6/6 Rea
 | 5 (takeSnapshot) | New public API | Ship — pure addition |
 | 6 (Proxy bypass) | Marginal perf | Ship with 1 |
 
-## Numbers vs all competitors (post-experiment)
+## Numbers vs all competitors (final, post-Exp-7)
 
 ### Mount time (ms, lower is better)
 
 | Scenario | tanstack | virtua | virtuoso | window |
 |---|---:|---:|---:|---:|
-| `mount-fixed-1k` | **0.7** ¹ | 0.7 ¹ | 1.9 | 2.0 |
-| `mount-fixed-10k` | 1.5 | **0.9** | 1.9 | 2.3 |
-| `mount-fixed-100k` | 4.7 ⇒ | **3.1** | 5.4 | 4.2 |
-| `mount-dynamic-1k` | **1.6** | 1.7 | 2.8 | 3.1 |
-| `mount-dynamic-10k` | **7.1** | 8.1 | 9.3 | 7.5 |
+| `mount-fixed-1k` | **0.7** ¹ | 0.7 ¹ | 1.6 | 1.9 |
+| `mount-fixed-10k` | 1.4 | **1.0** | 1.8 | 2.3 |
+| `mount-fixed-100k` | 4.5 ⇒ | **3.0** | 4.9 | 4.0 |
+| `mount-dynamic-1k` | **1.7** | 1.9 | 2.7 | 3.4 |
+| `mount-dynamic-10k` | **7.0** | 8.0 | 9.7 | 8.2 |
 
-¹ Tied · ⇒ Closed 47% of pre-experiment gap to virtua
+¹ Tied · ⇒ Closed 53% of pre-experiment gap to virtua (6.1 → 4.5 vs 3.0)
 
 ### Other categories (no change since pre-experiment)
 
