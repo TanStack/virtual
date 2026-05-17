@@ -1476,6 +1476,48 @@ test('non-iOS: adjustment is applied immediately during scroll (no regression)',
   expect(v['_iosDeferredAdjustment']).toBe(0)
 })
 
+test('reconcileScroll: smooth scroll retargets remain smooth while distance > viewport', () => {
+  // When target drifts during a smooth scroll (because newly visible items
+  // measured in and shifted positions), the prior behavior snapped to
+  // behavior:'auto' on the first retarget. New behavior: keep smooth while
+  // we're still more than a viewport away, snap only on final approach.
+  const { rafCallbacks, mockScrollElement, scrollToFn } = createMockEnvironment()
+  const virtualizer = new Virtualizer({
+    count: 10000,
+    estimateSize: () => 50,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn,
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  virtualizer.scrollToIndex(5000, { behavior: 'smooth' })
+  // First call: smooth, with our best estimate target
+  const firstCall = scrollToFn.mock.calls[0]
+  expect(firstCall![1].behavior).toBe('smooth')
+
+  // Simulate a measurement that moved the target. Force resizeItem at a
+  // visible-enough position so getOffsetForIndex(5000) returns a different
+  // value than what scrollState.lastTargetOffset has.
+  virtualizer.resizeItem(0, 80)
+
+  // Now trigger the reconcile RAF
+  rafCallbacks.forEach((cb) => cb(0))
+
+  // The reconcile retarget should be smooth (we're far from target).
+  const lastCall =
+    scrollToFn.mock.calls[scrollToFn.mock.calls.length - 1]
+  expect(lastCall![1].behavior).toBe('smooth')
+})
+
 test('lazy fast path: lanes>1 still uses eager path (regression guard)', () => {
   const v = new Virtualizer({
     count: 10,

@@ -664,14 +664,26 @@ export class Virtualizer<
       this.scrollState.stableFrames = 0
 
       if (targetChanged) {
+        // When the target moves during smooth scroll (because items came into
+        // view and got measured, shifting positions), the original logic was
+        // to immediately snap to 'auto' — visibly jarring on long
+        // scroll-to-index calls. Now: keep smooth while we're still far
+        // (more than a viewport) from the new target. Only fall back to
+        // 'auto' for the final approach, so the user sees one continuous
+        // motion that smoothly adjusts its endpoint as measurements arrive.
+        const viewport = this.getSize() || 600
+        const distance = Math.abs(targetOffset - this.getScrollOffset())
+        const keepSmooth =
+          this.scrollState.behavior === 'smooth' && distance > viewport
+
         this.scrollState.lastTargetOffset = targetOffset
-        // Switch to 'auto' behavior once measurements cause target to change
-        // We want to jump directly to the correct position, not smoothly animate to it
-        this.scrollState.behavior = 'auto'
+        if (!keepSmooth) {
+          this.scrollState.behavior = 'auto'
+        }
 
         this._scrollToOffset(targetOffset, {
           adjustments: undefined,
-          behavior: 'auto',
+          behavior: keepSmooth ? 'smooth' : 'auto',
         })
       }
     }
