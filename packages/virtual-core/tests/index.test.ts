@@ -1198,6 +1198,160 @@ test('defaultRangeExtractor: large range produces correct length', () => {
   expect(result[999]).toBe(999)
 })
 
+// ─── Lazy fast path (lanes === 1) edge cases ─────────────────────────────────
+// Pins down behavior of the typed-array-backed lazy measurements view.
+
+test('lazy fast path: empty list (count=0)', () => {
+  const v = new Virtualizer({
+    count: 0,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const m = v['getMeasurements']()
+  expect(m.length).toBe(0)
+  expect(v.getTotalSize()).toBe(0)
+})
+
+test('lazy fast path: respects paddingStart + scrollMargin + gap', () => {
+  const v = new Virtualizer({
+    count: 5,
+    estimateSize: () => 40,
+    paddingStart: 10,
+    scrollMargin: 20,
+    gap: 8,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const m = v['getMeasurements']()
+  // First item starts at paddingStart + scrollMargin = 30
+  expect(m[0]!.start).toBe(30)
+  expect(m[0]!.size).toBe(40)
+  expect(m[0]!.end).toBe(70)
+  // Subsequent items separated by gap
+  expect(m[1]!.start).toBe(70 + 8) // prev.end + gap
+  expect(m[1]!.size).toBe(40)
+})
+
+test('lazy fast path: VirtualItem fields are correct', () => {
+  const v = new Virtualizer({
+    count: 3,
+    estimateSize: () => 50,
+    getItemKey: (i) => `item-${i}`,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const m = v['getMeasurements']()
+  expect(m[0]!.index).toBe(0)
+  expect(m[0]!.key).toBe('item-0')
+  expect(m[0]!.start).toBe(0)
+  expect(m[0]!.size).toBe(50)
+  expect(m[0]!.end).toBe(50)
+  expect(m[0]!.lane).toBe(0)
+  expect(m[1]!.index).toBe(1)
+  expect(m[1]!.key).toBe('item-1')
+  expect(m[2]!.key).toBe('item-2')
+})
+
+test('lazy fast path: same item read twice returns identical reference (cache works)', () => {
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 30,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const m = v['getMeasurements']()
+  const a = m[5]
+  const b = m[5]
+  expect(a).toBe(b)
+})
+
+test('lazy fast path: out-of-range access returns undefined', () => {
+  const v = new Virtualizer({
+    count: 5,
+    estimateSize: () => 30,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const m = v['getMeasurements']()
+  expect(m[10]).toBeUndefined()
+  expect(m[-1]).toBeUndefined()
+  expect(m[5]).toBeUndefined()
+})
+
+test('lazy fast path: getTotalSize after resizeItem reflects new size', () => {
+  const v = new Virtualizer({
+    count: 5,
+    estimateSize: () => 30,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  expect(v.getTotalSize()).toBe(150)
+  v.resizeItem(2, 100)
+  expect(v.getTotalSize()).toBe(120 + 100) // 4 * 30 + 100
+})
+
+test('lazy fast path: getVirtualItemForOffset binary search returns correct item', () => {
+  const v = new Virtualizer({
+    count: 100,
+    estimateSize: () => 30,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const found = v.getVirtualItemForOffset(500)
+  // Item at offset 500 should be index 16 (500/30 = 16.67)
+  expect(found?.index).toBe(16)
+  expect(found?.start).toBe(480)
+  expect(found?.end).toBe(510)
+})
+
+test('lazy fast path: large list (1M items) does not allocate per-item objects upfront', () => {
+  const start = performance.now()
+  const v = new Virtualizer({
+    count: 1_000_000,
+    estimateSize: () => 30,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  v['getMeasurements']()
+  const elapsed = performance.now() - start
+  // Should be sub-50ms even at 1M items (typed array fill + proxy alloc only)
+  expect(elapsed).toBeLessThan(50)
+})
+
+test('lazy fast path: lanes>1 still uses eager path (regression guard)', () => {
+  const v = new Virtualizer({
+    count: 10,
+    lanes: 2,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const m = v['getMeasurements']()
+  // Eager array, so m is a real Array; both lanes present
+  const lanes = new Set(m.map((x) => x.lane))
+  expect(lanes.has(0)).toBe(true)
+  expect(lanes.has(1)).toBe(true)
+})
+
 test('setOptions: explicit value overrides default', () => {
   const virtualizer = new Virtualizer({
     count: 10,

@@ -22,6 +22,42 @@ function makeVirt(count: number, lanes = 1): Virtualizer<any, any> {
   return v
 }
 
+// ─── Exp 1: Cold-mount cost — getMeasurements with no measured items ─────────
+
+describe('Exp 1: Cold mount — first getMeasurements call (no measurements)', () => {
+  for (const n of [1000, 10000, 100000, 500000]) {
+    bench(`n=${n}`, () => {
+      const v = new Virtualizer({
+        count: n,
+        estimateSize: () => 30,
+        getScrollElement: () => null,
+        scrollToFn: () => {},
+        observeElementRect: () => {},
+        observeElementOffset: () => {},
+      })
+      ;(v as any).getMeasurements()
+    })
+  }
+})
+
+describe('Exp 1: Cold mount — visible-range query for visible window only', () => {
+  // Realistic: mount then ask "what is at offset 0" — should not materialize
+  // the whole list, only walk to ~20 items.
+  for (const n of [1000, 10000, 100000, 500000]) {
+    bench(`n=${n} getVirtualItemForOffset(0)`, () => {
+      const v = new Virtualizer({
+        count: n,
+        estimateSize: () => 30,
+        getScrollElement: () => null,
+        scrollToFn: () => {},
+        observeElementRect: () => {},
+        observeElementOffset: () => {},
+      })
+      ;(v as any).getVirtualItemForOffset(0)
+    })
+  }
+})
+
 // ─── Layer 1: Map clone bug — resizeItem under measure storm ─────────────────
 
 describe('Layer 1: resizeItem measure storm — full N resizes then 1× getMeasurements', () => {
