@@ -46,6 +46,67 @@ describe('Layer 1: resizeItem measure storm — getMeasurements per call', () =>
   }
 })
 
+describe('Layer 4: notify cost — no-op vs realistic onChange', () => {
+  // Comparison: how much time does the notify call add per resizeItem?
+  const N = 10000
+  bench(`n=${N}, no-op onChange (lower bound)`, () => {
+    const v = new Virtualizer({
+      count: N,
+      estimateSize: () => 30,
+      getScrollElement: () => null,
+      scrollToFn: () => {},
+      observeElementRect: () => {},
+      observeElementOffset: () => {},
+    })
+    ;(v as any).getMeasurements()
+    for (let i = 0; i < N; i++) v.resizeItem(i, 30 + (i % 7))
+  })
+  bench(`n=${N}, realistic onChange (alloc per call)`, () => {
+    let prev: any = null
+    const v = new Virtualizer({
+      count: N,
+      estimateSize: () => 30,
+      getScrollElement: () => null,
+      scrollToFn: () => {},
+      observeElementRect: () => {},
+      observeElementOffset: () => {},
+      onChange: () => {
+        prev = {}
+      },
+    })
+    ;(v as any).getMeasurements()
+    for (let i = 0; i < N; i++) v.resizeItem(i, 30 + (i % 7))
+  })
+})
+
+describe('Layer 4: onChange callbacks fired per resize-storm', () => {
+  // Pre-Layer-4: resizeItem calls notify(false) on every call, even when
+  // the visible range doesn't change. This benchmark counts callbacks and
+  // measures cost when onChange is a non-trivial function (closer to real
+  // React adapter cost than the no-op default).
+  for (const n of [100, 1000, 10000]) {
+    bench(`n=${n}, realistic onChange (counter + identity check)`, () => {
+      let count = 0
+      let prev: any = null
+      const v = new Virtualizer({
+        count: n,
+        estimateSize: () => 30,
+        getScrollElement: () => null,
+        scrollToFn: () => {},
+        observeElementRect: () => {},
+        observeElementOffset: () => {},
+        // Simulates React adapter: dispatches a "rerender" each call
+        onChange: (instance) => {
+          count++
+          prev = { state: count } // alloc per call, like useReducer(() => ({}))
+        },
+      })
+      ;(v as any).getMeasurements()
+      for (let i = 0; i < n; i++) v.resizeItem(i, 30 + (i % 7))
+    })
+  }
+})
+
 describe('Layer 3: pending-min lookup under heavy storms', () => {
   // Stress the "find earliest dirty index" path. Pre-Layer-3 used
   // `Math.min(...pendingMeasuredCacheIndexes)` which spreads onto the stack.
