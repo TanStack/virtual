@@ -46,6 +46,20 @@ describe('Layer 1: resizeItem measure storm — getMeasurements per call', () =>
   }
 })
 
+describe('Layer 3: pending-min lookup under heavy storms', () => {
+  // Stress the "find earliest dirty index" path. Pre-Layer-3 used
+  // `Math.min(...pendingMeasuredCacheIndexes)` which spreads onto the stack.
+  for (const n of [10000, 50000, 100000]) {
+    bench(`n=${n} resizes in reverse order (worst case for running min)`, () => {
+      const v = makeVirt(n)
+      // Reverse order means every push lowers the min — exercises the
+      // running-min branch on every single push.
+      for (let i = n - 1; i >= 0; i--) v.resizeItem(i, 30 + (i % 7))
+      ;(v as any).getMeasurements()
+    })
+  }
+})
+
 describe('Layer 1: repeated resize at index 0', () => {
   for (const n of [1000, 10000, 50000]) {
     bench(`n=${n}, 100× resize+getMeasurements`, () => {

@@ -381,7 +381,8 @@ export class Virtualizer<
   private itemSizeCache = new Map<Key, number>()
   private itemSizeCacheVersion = 0
   private laneAssignments = new Map<number, number>() // index → lane cache
-  private pendingMeasuredCacheIndexes: Array<number> = []
+  // Earliest index dirtied since last getMeasurements() rebuild, or null.
+  private pendingMin: number | null = null
   private prevLanes: number | undefined = undefined
   private lanesChangedFlag = false
   private lanesSettling = false
@@ -756,7 +757,7 @@ export class Virtualizer<
       }
 
       this.prevLanes = lanes
-      this.pendingMeasuredCacheIndexes = []
+      this.pendingMin = null
 
       return {
         count,
@@ -811,8 +812,8 @@ export class Virtualizer<
         this.measurementsCache = []
         this.itemSizeCache.clear()
         this.laneAssignments.clear() // Clear lane cache for new lane count
-        // Clear pending indexes to force min = 0
-        this.pendingMeasuredCacheIndexes = []
+        // Force min = 0 on the rebuild
+        this.pendingMin = null
       }
 
       // Don't restore from initialMeasurementsCache during lane changes
@@ -824,13 +825,9 @@ export class Virtualizer<
         })
       }
 
-      // ✅ During lanes settling, ignore pendingMeasuredCacheIndexes to prevent repositioning
-      const min = this.lanesSettling
-        ? 0
-        : this.pendingMeasuredCacheIndexes.length > 0
-          ? Math.min(...this.pendingMeasuredCacheIndexes)
-          : 0
-      this.pendingMeasuredCacheIndexes = []
+      // During lanes settling, ignore pendingMin to prevent repositioning
+      const min = this.lanesSettling ? 0 : (this.pendingMin ?? 0)
+      this.pendingMin = null
 
       // ✅ End settling period when cache is fully built
       if (this.lanesSettling && this.measurementsCache.length === count) {
@@ -1084,7 +1081,9 @@ export class Virtualizer<
         })
       }
 
-      this.pendingMeasuredCacheIndexes.push(item.index)
+      if (this.pendingMin === null || item.index < this.pendingMin) {
+        this.pendingMin = item.index
+      }
       this.itemSizeCache.set(item.key, size)
       this.itemSizeCacheVersion++
 

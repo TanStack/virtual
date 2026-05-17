@@ -871,6 +871,79 @@ test('setOptions: does not mutate the caller-supplied opts object', () => {
   expect('overscan' in userOpts).toBe(true)
 })
 
+// ─── pending min pointer for measure storms ──────────────────────────────────
+
+test('resizeItem random order should rebuild from earliest dirty index', () => {
+  // This pins down the min-of-pending-indices behavior. If indices 5, 0, 8 are
+  // dirtied in that order, getMeasurements must rebuild from index 0 onward so
+  // all later items have correct offsets.
+  const N = 20
+  const virtualizer = new Virtualizer({
+    count: N,
+    estimateSize: () => 10,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  virtualizer.resizeItem(5, 50)
+  virtualizer.resizeItem(0, 30)
+  virtualizer.resizeItem(8, 70)
+  virtualizer.resizeItem(15, 100)
+  virtualizer.resizeItem(3, 40)
+
+  const measurements = virtualizer['getMeasurements']()
+  // Sizes
+  expect(measurements[0]!.size).toBe(30)
+  expect(measurements[3]!.size).toBe(40)
+  expect(measurements[5]!.size).toBe(50)
+  expect(measurements[8]!.size).toBe(70)
+  expect(measurements[15]!.size).toBe(100)
+
+  // Verify start/end are correct (prefix-sum invariant) for ALL items,
+  // even those that were not resized — they must have absorbed the shifts
+  // from earlier resized items.
+  let runningStart = 0
+  for (let i = 0; i < N; i++) {
+    expect(measurements[i]!.start).toBe(runningStart)
+    runningStart += measurements[i]!.size
+  }
+})
+
+test('resizeItem in massive storm (10k items) does not crash on min lookup', () => {
+  // Regression: Math.min(...arr) spreads the array onto the call stack.
+  // V8's argument-list limit is around 125k. With many pending indices,
+  // this can throw RangeError. We test 10k to be well within range but
+  // catch any regression in the running-min mechanism.
+  const N = 10_000
+  const virtualizer = new Virtualizer({
+    count: N,
+    estimateSize: () => 10,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  // Resize every item before reading measurements — accumulates N pending indices
+  for (let i = 0; i < N; i++) {
+    virtualizer.resizeItem(i, 20 + (i % 13))
+  }
+
+  expect(() => virtualizer['getMeasurements']()).not.toThrow()
+  const measurements = virtualizer['getMeasurements']()
+  expect(measurements.length).toBe(N)
+  // Verify last item has correct prefix-sum
+  let expected = 0
+  for (let i = 0; i < N; i++) expected += 20 + (i % 13)
+  expect(measurements[N - 1]!.start + measurements[N - 1]!.size).toBe(expected)
+})
+
 test('setOptions: explicit value overrides default', () => {
   const virtualizer = new Virtualizer({
     count: 10,
