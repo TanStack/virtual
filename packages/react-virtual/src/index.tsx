@@ -33,7 +33,7 @@ function useVirtualizerBase<
   TScrollElement,
   TItemElement
 > {
-  const rerender = React.useReducer(() => ({}), {})[1]
+  const rerender = React.useReducer((x: number) => x + 1, 0)[1]
 
   const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
     ...options,
