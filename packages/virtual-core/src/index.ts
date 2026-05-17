@@ -1437,6 +1437,40 @@ export class Virtualizer<
     )
   }
 
+  /**
+   * Returns a snapshot of currently-measured items suitable for round-
+   * tripping through state storage (sessionStorage, history, etc.) and
+   * passing back as `initialMeasurementsCache` on remount. Pair with the
+   * current `scrollOffset` to restore exact scroll position after navigation.
+   *
+   * Only items the consumer has actually rendered (and thus measured) appear
+   * in the snapshot; unmeasured items will fall back to `estimateSize` on
+   * restore. Returns an empty array if no items have been measured.
+   */
+  takeSnapshot = (): Array<VirtualItem> => {
+    const snapshot: Array<VirtualItem> = []
+    if (this.itemSizeCache.size === 0) return snapshot
+    // Iterate measurementsCache only for indices whose key is in itemSizeCache
+    // (i.e., have been measured). We build VirtualItem objects with the
+    // current start/size/end so they can be persisted as plain data.
+    const m = this.getMeasurements()
+    for (let i = 0; i < m.length; i++) {
+      const item = m[i]
+      if (item && this.itemSizeCache.has(item.key)) {
+        // Force materialization (lazy path) and copy plain fields.
+        snapshot.push({
+          index: item.index,
+          key: item.key,
+          start: item.start,
+          size: item.size,
+          end: item.end,
+          lane: item.lane,
+        })
+      }
+    }
+    return snapshot
+  }
+
   private _scrollToOffset = (
     offset: number,
     {

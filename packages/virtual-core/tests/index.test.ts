@@ -1582,6 +1582,73 @@ test('scroll-up jank: idle (scrollDirection=null) still applies adjustment', () 
   expect(scrollToFn).toHaveBeenCalled()
 })
 
+test('takeSnapshot: returns measured items only, restorable via initialMeasurementsCache', () => {
+  const v1 = new Virtualizer({
+    count: 20,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  v1['getMeasurements']()
+
+  // No measurements yet → empty snapshot
+  expect(v1.takeSnapshot()).toEqual([])
+
+  // Measure a few items
+  v1.resizeItem(0, 80)
+  v1.resizeItem(1, 60)
+  v1.resizeItem(2, 100)
+
+  const snapshot = v1.takeSnapshot()
+  expect(snapshot.length).toBe(3)
+  expect(snapshot[0]!.size).toBe(80)
+  expect(snapshot[1]!.size).toBe(60)
+  expect(snapshot[2]!.size).toBe(100)
+  // snapshot entries are plain objects (not Proxy refs)
+  expect(Object.keys(snapshot[0]!).sort()).toEqual(
+    ['end', 'index', 'key', 'lane', 'size', 'start'],
+  )
+
+  // Restore: pass snapshot to a fresh virtualizer
+  const v2 = new Virtualizer({
+    count: 20,
+    estimateSize: () => 50,
+    initialMeasurementsCache: snapshot,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const m2 = v2['getMeasurements']()
+  // Restored sizes match the snapshot
+  expect(m2[0]!.size).toBe(80)
+  expect(m2[1]!.size).toBe(60)
+  expect(m2[2]!.size).toBe(100)
+  // Unmeasured items fall back to estimateSize
+  expect(m2[5]!.size).toBe(50)
+})
+
+test('takeSnapshot: works with lanes>1 too', () => {
+  const v = new Virtualizer({
+    count: 6,
+    lanes: 2,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  v['getMeasurements']()
+  v.resizeItem(0, 80)
+  v.resizeItem(1, 90)
+  const snap = v.takeSnapshot()
+  expect(snap.length).toBe(2)
+  expect(snap[0]!.size).toBe(80)
+  expect(snap[1]!.size).toBe(90)
+})
+
 test('reconcileScroll: smooth scroll retargets remain smooth while distance > viewport', () => {
   // When target drifts during a smooth scroll (because newly visible items
   // measured in and shifted positions), the prior behavior snapped to
