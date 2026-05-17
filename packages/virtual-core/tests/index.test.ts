@@ -1,5 +1,12 @@
 import { expect, test, vi } from 'vitest'
-import { Virtualizer, defaultRangeExtractor } from '../src/index'
+import {
+  Virtualizer,
+  defaultRangeExtractor,
+  elementScroll,
+  observeElementOffset,
+  observeWindowOffset,
+  windowScroll,
+} from '../src/index'
 
 test('should export the Virtualizer class', () => {
   expect(Virtualizer).toBeDefined()
@@ -1207,4 +1214,186 @@ test('setOptions: explicit value overrides default', () => {
   expect(virtualizer.options.overscan).toBe(7)
   expect(virtualizer.options.gap).toBe(12)
   expect(virtualizer.options.lanes).toBe(3)
+})
+
+// ─── elementScroll / windowScroll public exports ─────────────────────────────
+
+function makeBaseInstance(scrollEl: any, opts: any = {}) {
+  return {
+    scrollElement: scrollEl,
+    options: {
+      horizontal: false,
+      ...opts,
+    },
+  } as any
+}
+
+test('elementScroll: calls scrollTo with top + behavior on the scroll element', () => {
+  const scrollTo = vi.fn()
+  const scrollEl = { scrollTo }
+  elementScroll(
+    100,
+    { behavior: 'smooth' },
+    makeBaseInstance(scrollEl) as any,
+  )
+  expect(scrollTo).toHaveBeenCalledWith({ top: 100, behavior: 'smooth' })
+})
+
+test('elementScroll: applies adjustments offset', () => {
+  const scrollTo = vi.fn()
+  const scrollEl = { scrollTo }
+  elementScroll(
+    100,
+    { adjustments: 50, behavior: 'auto' },
+    makeBaseInstance(scrollEl) as any,
+  )
+  expect(scrollTo).toHaveBeenCalledWith({ top: 150, behavior: 'auto' })
+})
+
+test('elementScroll: uses left when horizontal is true', () => {
+  const scrollTo = vi.fn()
+  const scrollEl = { scrollTo }
+  elementScroll(
+    100,
+    { behavior: 'auto' },
+    makeBaseInstance(scrollEl, { horizontal: true }) as any,
+  )
+  expect(scrollTo).toHaveBeenCalledWith({ left: 100, behavior: 'auto' })
+})
+
+test('windowScroll: calls scrollTo with top + behavior on the window', () => {
+  const scrollTo = vi.fn()
+  const win = { scrollTo }
+  windowScroll(
+    250,
+    { behavior: 'smooth' },
+    makeBaseInstance(win) as any,
+  )
+  expect(scrollTo).toHaveBeenCalledWith({ top: 250, behavior: 'smooth' })
+})
+
+test('windowScroll: applies adjustments + horizontal', () => {
+  const scrollTo = vi.fn()
+  const win = { scrollTo }
+  windowScroll(
+    250,
+    { adjustments: -10, behavior: 'auto' },
+    makeBaseInstance(win, { horizontal: true }) as any,
+  )
+  expect(scrollTo).toHaveBeenCalledWith({ left: 240, behavior: 'auto' })
+})
+
+test('elementScroll / windowScroll: no-op when scrollElement is null', () => {
+  expect(() =>
+    elementScroll(100, {}, makeBaseInstance(null) as any),
+  ).not.toThrow()
+  expect(() =>
+    windowScroll(100, {}, makeBaseInstance(null) as any),
+  ).not.toThrow()
+})
+
+// ─── observeElementOffset / observeWindowOffset ──────────────────────────────
+
+function makeObserveInstance(
+  element: any,
+  opts: { horizontal?: boolean; isRtl?: boolean; useScrollendEvent?: boolean; isScrollingResetDelay?: number } = {},
+  targetWindow: any = {
+    setTimeout: globalThis.setTimeout.bind(globalThis),
+    clearTimeout: globalThis.clearTimeout.bind(globalThis),
+  },
+) {
+  return {
+    scrollElement: element,
+    targetWindow,
+    options: {
+      horizontal: false,
+      isRtl: false,
+      useScrollendEvent: false,
+      isScrollingResetDelay: 150,
+      ...opts,
+    },
+  } as any
+}
+
+test('observeElementOffset: returns undefined when scrollElement is null', () => {
+  const cb = vi.fn()
+  expect(observeElementOffset(makeObserveInstance(null) as any, cb)).toBeUndefined()
+  expect(cb).not.toHaveBeenCalled()
+})
+
+test('observeElementOffset: attaches scroll listener and fires callback with scrollTop', () => {
+  const cb = vi.fn()
+  const listeners = new Map<string, EventListener>()
+  const el: any = {
+    scrollTop: 50,
+    scrollLeft: 0,
+    addEventListener: (name: string, fn: any) => listeners.set(name, fn),
+    removeEventListener: (name: string) => listeners.delete(name),
+  }
+  const cleanup = observeElementOffset(makeObserveInstance(el) as any, cb)
+  expect(listeners.has('scroll')).toBe(true)
+  // No scrollend listener by default
+  expect(listeners.has('scrollend')).toBe(false)
+  // Trigger scroll
+  listeners.get('scroll')!({} as Event)
+  expect(cb).toHaveBeenCalledWith(50, true)
+  cleanup?.()
+  expect(listeners.has('scroll')).toBe(false)
+})
+
+test('observeElementOffset: reads scrollLeft + applies isRtl when horizontal', () => {
+  const cb = vi.fn()
+  const listeners = new Map<string, EventListener>()
+  const el: any = {
+    scrollTop: 0,
+    scrollLeft: 80,
+    addEventListener: (name: string, fn: any) => listeners.set(name, fn),
+    removeEventListener: (name: string) => listeners.delete(name),
+  }
+  observeElementOffset(
+    makeObserveInstance(el, { horizontal: true, isRtl: true }) as any,
+    cb,
+  )
+  listeners.get('scroll')!({} as Event)
+  // isRtl flips sign
+  expect(cb).toHaveBeenCalledWith(-80, true)
+})
+
+test('observeWindowOffset: returns undefined when scrollElement is null', () => {
+  const cb = vi.fn()
+  expect(observeWindowOffset(makeObserveInstance(null) as any, cb)).toBeUndefined()
+})
+
+test('observeWindowOffset: attaches scroll listener and fires callback with scrollY', () => {
+  const cb = vi.fn()
+  const listeners = new Map<string, EventListener>()
+  const win: any = {
+    scrollX: 0,
+    scrollY: 120,
+    addEventListener: (name: string, fn: any) => listeners.set(name, fn),
+    removeEventListener: (name: string) => listeners.delete(name),
+  }
+  const cleanup = observeWindowOffset(makeObserveInstance(win) as any, cb)
+  expect(listeners.has('scroll')).toBe(true)
+  listeners.get('scroll')!({} as Event)
+  expect(cb).toHaveBeenCalledWith(120, true)
+  cleanup?.()
+  expect(listeners.has('scroll')).toBe(false)
+})
+
+test('observeWindowOffset: reads scrollX when horizontal', () => {
+  const cb = vi.fn()
+  const listeners = new Map<string, EventListener>()
+  const win: any = {
+    scrollX: 75,
+    scrollY: 0,
+    addEventListener: (name: string, fn: any) => listeners.set(name, fn),
+    removeEventListener: (name: string) => listeners.delete(name),
+  }
+  observeWindowOffset(
+    makeObserveInstance(win, { horizontal: true }) as any,
+    cb,
+  )
+  listeners.get('scroll')!({} as Event)
+  expect(cb).toHaveBeenCalledWith(75, true)
 })

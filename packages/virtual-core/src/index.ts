@@ -142,9 +142,13 @@ const supportsScrollend =
 
 type ObserveOffsetCallBack = (offset: number, isScrolling: boolean) => void
 
-export const observeElementOffset = <T extends Element>(
+// Shared core: both element and window variants attach scroll/scrollend
+// listeners with the same lifecycle; they only differ in how to read the
+// current offset from the scroll target.
+const observeOffset = <T extends Element | Window>(
   instance: Virtualizer<T, any>,
   cb: ObserveOffsetCallBack,
+  readOffset: (target: T) => number,
 ) => {
   const element = instance.scrollElement
   if (!element) {
@@ -155,32 +159,27 @@ export const observeElementOffset = <T extends Element>(
     return
   }
 
-  let offset = 0
-  const fallback =
+  const registerScrollendEvent =
     instance.options.useScrollendEvent && supportsScrollend
-      ? () => undefined
-      : debounce(
-          targetWindow,
-          () => {
-            cb(offset, false)
-          },
-          instance.options.isScrollingResetDelay,
-        )
+
+  let offset = 0
+  const fallback = registerScrollendEvent
+    ? null
+    : debounce(
+        targetWindow,
+        () => cb(offset, false),
+        instance.options.isScrollingResetDelay,
+      )
 
   const createHandler = (isScrolling: boolean) => () => {
-    const { horizontal, isRtl } = instance.options
-    offset = horizontal
-      ? element['scrollLeft'] * ((isRtl && -1) || 1)
-      : element['scrollTop']
-    fallback()
+    offset = readOffset(element)
+    fallback?.()
     cb(offset, isScrolling)
   }
   const handler = createHandler(true)
   const endHandler = createHandler(false)
 
   element.addEventListener('scroll', handler, addEventListenerOptions)
-  const registerScrollendEvent =
-    instance.options.useScrollendEvent && supportsScrollend
   if (registerScrollendEvent) {
     element.addEventListener('scrollend', endHandler, addEventListenerOptions)
   }
@@ -191,53 +190,23 @@ export const observeElementOffset = <T extends Element>(
     }
   }
 }
+
+export const observeElementOffset = <T extends Element>(
+  instance: Virtualizer<T, any>,
+  cb: ObserveOffsetCallBack,
+) =>
+  observeOffset(instance, cb, (el) => {
+    const { horizontal, isRtl } = instance.options
+    return horizontal ? el.scrollLeft * ((isRtl && -1) || 1) : el.scrollTop
+  })
 
 export const observeWindowOffset = (
   instance: Virtualizer<Window, any>,
   cb: ObserveOffsetCallBack,
-) => {
-  const element = instance.scrollElement
-  if (!element) {
-    return
-  }
-  const targetWindow = instance.targetWindow
-  if (!targetWindow) {
-    return
-  }
-
-  let offset = 0
-  const fallback =
-    instance.options.useScrollendEvent && supportsScrollend
-      ? () => undefined
-      : debounce(
-          targetWindow,
-          () => {
-            cb(offset, false)
-          },
-          instance.options.isScrollingResetDelay,
-        )
-
-  const createHandler = (isScrolling: boolean) => () => {
-    offset = element[instance.options.horizontal ? 'scrollX' : 'scrollY']
-    fallback()
-    cb(offset, isScrolling)
-  }
-  const handler = createHandler(true)
-  const endHandler = createHandler(false)
-
-  element.addEventListener('scroll', handler, addEventListenerOptions)
-  const registerScrollendEvent =
-    instance.options.useScrollendEvent && supportsScrollend
-  if (registerScrollendEvent) {
-    element.addEventListener('scrollend', endHandler, addEventListenerOptions)
-  }
-  return () => {
-    element.removeEventListener('scroll', handler)
-    if (registerScrollendEvent) {
-      element.removeEventListener('scrollend', endHandler)
-    }
-  }
-}
+) =>
+  observeOffset(instance, cb, (win) =>
+    instance.options.horizontal ? win.scrollX : win.scrollY,
+  )
 
 export const measureElement = <TItemElement extends Element>(
   element: TItemElement,
@@ -259,37 +228,31 @@ export const measureElement = <TItemElement extends Element>(
   ]
 }
 
-export const windowScroll = <T extends Window>(
+const scrollWithAdjustments = (
   offset: number,
   {
     adjustments = 0,
     behavior,
   }: { adjustments?: number; behavior?: ScrollBehavior },
-  instance: Virtualizer<T, any>,
+  instance: Virtualizer<any, any>,
 ) => {
-  const toOffset = offset + adjustments
-
   instance.scrollElement?.scrollTo?.({
-    [instance.options.horizontal ? 'left' : 'top']: toOffset,
+    [instance.options.horizontal ? 'left' : 'top']: offset + adjustments,
     behavior,
   })
 }
 
-export const elementScroll = <T extends Element>(
+export const windowScroll: <T extends Window>(
   offset: number,
-  {
-    adjustments = 0,
-    behavior,
-  }: { adjustments?: number; behavior?: ScrollBehavior },
+  options: { adjustments?: number; behavior?: ScrollBehavior },
   instance: Virtualizer<T, any>,
-) => {
-  const toOffset = offset + adjustments
+) => void = scrollWithAdjustments
 
-  instance.scrollElement?.scrollTo?.({
-    [instance.options.horizontal ? 'left' : 'top']: toOffset,
-    behavior,
-  })
-}
+export const elementScroll: <T extends Element>(
+  offset: number,
+  options: { adjustments?: number; behavior?: ScrollBehavior },
+  instance: Virtualizer<T, any>,
+) => void = scrollWithAdjustments
 
 type LaneAssignmentMode = 'estimate' | 'measured'
 
