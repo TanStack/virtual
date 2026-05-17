@@ -1426,7 +1426,16 @@ export class Virtualizer<
     if (measurements.length === 0) {
       end = this.options.paddingStart
     } else if (this.options.lanes === 1) {
-      end = measurements[measurements.length - 1]?.end ?? 0
+      // Fast path: read last item's end directly from the flat typed array
+      // when available; avoids a Proxy.get + VirtualItem materialization
+      // just to call getTotalSize (which React renders trigger every commit).
+      const lastIdx = measurements.length - 1
+      const flat = this._flatMeasurements
+      if (flat != null) {
+        end = flat[lastIdx * 2]! + flat[lastIdx * 2 + 1]!
+      } else {
+        end = measurements[lastIdx]?.end ?? 0
+      }
     } else {
       const endByLane = Array<number | null>(this.options.lanes).fill(null)
       let endIndex = measurements.length - 1
