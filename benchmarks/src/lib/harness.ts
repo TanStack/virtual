@@ -176,6 +176,45 @@ export function installBenchAPI(): void {
           lastTop = cur
         }
         actionMs = performance.now() - t0
+      } else if (scenario.action === 'jump-to-middle-accuracy') {
+        // Accuracy test: ask the library to scroll to a specific index in
+        // the middle of a dynamic-height list, then verify how close the
+        // resulting scroll position is to where that item *actually* lives.
+        // Smaller landingErrorPx means more accurate scrollToIndex.
+        const targetIndex = Math.floor(scenario.count / 2) // e.g. 5000 of 10000
+        const t0 = performance.now()
+        if (h.scrollToIndex) {
+          h.scrollToIndex(targetIndex, { align: 'start' })
+        }
+        // Wait for the scroll to fully settle.
+        let stableCount = 0
+        let lastTop = container.scrollTop
+        while (stableCount < 8 && performance.now() - t0 < 5000) {
+          await nextFrame()
+          const cur = container.scrollTop
+          if (Math.abs(cur - lastTop) < 0.5) stableCount++
+          else stableCount = 0
+          lastTop = cur
+        }
+        actionMs = performance.now() - t0
+
+        // Now: find the DOM element for the target index. Its viewport-relative
+        // top tells us where it actually landed. With align:'start', we want
+        // item[targetIndex]'s top to be at viewport top — i.e., offset 0.
+        const itemSelector = `[data-index="${targetIndex}"]`
+        const itemEl = container.querySelector(itemSelector) as HTMLElement | null
+        if (itemEl) {
+          const itemRect = itemEl.getBoundingClientRect()
+          const containerRect = container.getBoundingClientRect()
+          // Distance from container's top to item's top — should be ≈ 0
+          // for align:'start'. Anything > 1px is a landing error.
+          ;(window as any).__landingErrorPx = Math.abs(
+            itemRect.top - containerRect.top,
+          )
+        } else {
+          // Item not in the DOM at all — major accuracy failure
+          ;(window as any).__landingErrorPx = -1
+        }
       } else if (scenario.action === 'wait-dynamic-measure') {
         // Uniform metric across libraries: time until the total scroll height
         // stops changing for 8 consecutive frames. Libraries finish measuring
@@ -200,6 +239,12 @@ export function installBenchAPI(): void {
           ? mem.usedJSHeapSize
           : null
 
+      const landingErrorPx =
+        typeof (window as any).__landingErrorPx === 'number'
+          ? (window as any).__landingErrorPx
+          : null
+      ;(window as any).__landingErrorPx = undefined
+
       return {
         mountMs,
         firstPaintMs,
@@ -208,6 +253,7 @@ export function installBenchAPI(): void {
         longFrames,
         jankMs,
         memoryBytes,
+        landingErrorPx,
       }
     },
   }

@@ -657,6 +657,18 @@ export class Virtualizer<
     if (!targetChanged && approxEqual(targetOffset, this.getScrollOffset())) {
       this.scrollState.stableFrames++
       if (this.scrollState.stableFrames >= STABLE_FRAMES) {
+        // Final-pass exact landing. The reconcile-stable check uses a 1.01px
+        // tolerance (approxEqual) so we don't fight subpixel browser rounding
+        // during the converging phase. Once we're definitively settled,
+        // commit the exact target so consumers calling scrollToIndex(N)
+        // end up at the EXACT computed position of item N — matching
+        // virtuoso's 0px landing accuracy rather than our prior 0.5-1px.
+        if (this.getScrollOffset() !== targetOffset) {
+          this._scrollToOffset(targetOffset, {
+            adjustments: undefined,
+            behavior: 'auto',
+          })
+        }
         this.scrollState = null
         return
       }

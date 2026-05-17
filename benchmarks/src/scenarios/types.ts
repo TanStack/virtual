@@ -17,6 +17,7 @@ export interface ScenarioInput {
     | 'idle'
     | 'scroll-to-bottom'
     | 'jump-to-end'
+    | 'jump-to-middle-accuracy'
     | 'wait-dynamic-measure'
 }
 
@@ -35,6 +36,9 @@ export interface ScenarioMetrics {
   jankMs: number | null
   /** Heap snapshot after mount (Chromium only; null elsewhere). */
   memoryBytes: number | null
+  /** Accuracy metric for jump-to-middle: |actual landing position - target| in pixels.
+   * Lower is better. Null for scenarios that don't measure accuracy. */
+  landingErrorPx: number | null
 }
 
 export interface ScenarioResult {
@@ -105,5 +109,12 @@ export const SCENARIOS: ScenarioInput[] = [
     itemSize: 30,
     dynamic: true,
     action: 'jump-to-end',
+  },
+  {
+    id: 'jump-to-middle-accuracy-dynamic-10k',
+    count: 10_000,
+    itemSize: 30,
+    dynamic: true,
+    action: 'jump-to-middle-accuracy',
   },
 ]
