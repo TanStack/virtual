@@ -61,7 +61,7 @@ describe('Layer 1: repeated resize at index 0', () => {
 // ─── Layer 2: setOptions per render ──────────────────────────────────────────
 
 describe('Layer 2: setOptions() — simulating React render storm', () => {
-  bench('setOptions × 10,000 (current pattern with delete)', () => {
+  bench('setOptions × 10,000', () => {
     const v = new Virtualizer({
       count: 1000,
       estimateSize: () => 30,

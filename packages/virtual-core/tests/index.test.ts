@@ -728,3 +728,163 @@ test('getMeasurements memo should return new array reference after resizeItem', 
   expect(a).not.toBe(b)
   expect(b[0]!.size).toBe(100)
 })
+
+// ─── setOptions behavioral contract ──────────────────────────────────────────
+// These tests pin down how setOptions merges defaults with user-supplied opts.
+// They guard against regressions when changing the merge mechanism
+// (currently: mutate opts + spread with defaults; will become: copy-without-undefined).
+
+test('setOptions: undefined values should fall back to defaults', () => {
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+    paddingStart: 100,
+  })
+
+  // First confirm explicit value sticks
+  expect(virtualizer.options.paddingStart).toBe(100)
+
+  // Now setOptions with paddingStart: undefined → should fall back to default (0)
+  virtualizer.setOptions({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+    paddingStart: undefined as any,
+  })
+
+  expect(virtualizer.options.paddingStart).toBe(0)
+})
+
+test('setOptions: missing keys should fall back to defaults', () => {
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  // Defaults should apply for all unset options
+  expect(virtualizer.options.paddingStart).toBe(0)
+  expect(virtualizer.options.paddingEnd).toBe(0)
+  expect(virtualizer.options.overscan).toBe(1)
+  expect(virtualizer.options.horizontal).toBe(false)
+  expect(virtualizer.options.gap).toBe(0)
+  expect(virtualizer.options.lanes).toBe(1)
+  expect(virtualizer.options.enabled).toBe(true)
+})
+
+test('setOptions: explicit falsy values (0, false) should NOT fall back to defaults', () => {
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+    paddingStart: 50,
+    overscan: 3,
+    enabled: true,
+  })
+
+  // Now set them all to explicit falsy values
+  virtualizer.setOptions({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+    paddingStart: 0,
+    overscan: 0,
+    enabled: false,
+  })
+
+  expect(virtualizer.options.paddingStart).toBe(0)
+  expect(virtualizer.options.overscan).toBe(0)
+  expect(virtualizer.options.enabled).toBe(false)
+})
+
+test('setOptions: subsequent calls do not accumulate stale options', () => {
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+    paddingStart: 100,
+    overscan: 5,
+  })
+
+  // Now call again with only count — paddingStart and overscan should reset to defaults
+  virtualizer.setOptions({
+    count: 20,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  expect(virtualizer.options.count).toBe(20)
+  expect(virtualizer.options.paddingStart).toBe(0)
+  expect(virtualizer.options.overscan).toBe(1)
+})
+
+test('setOptions: does not mutate the caller-supplied opts object', () => {
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  const userOpts = {
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+    paddingStart: undefined as any,
+    overscan: undefined as any,
+  }
+  const beforeKeys = Object.keys(userOpts).sort()
+
+  virtualizer.setOptions(userOpts)
+
+  const afterKeys = Object.keys(userOpts).sort()
+  expect(afterKeys).toEqual(beforeKeys)
+  // Specifically: undefined-valued keys should still exist on the user's object
+  expect('paddingStart' in userOpts).toBe(true)
+  expect('overscan' in userOpts).toBe(true)
+})
+
+test('setOptions: explicit value overrides default', () => {
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+    overscan: 7,
+    gap: 12,
+    lanes: 3,
+  })
+
+  expect(virtualizer.options.overscan).toBe(7)
+  expect(virtualizer.options.gap).toBe(12)
+  expect(virtualizer.options.lanes).toBe(3)
+})

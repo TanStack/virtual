@@ -452,11 +452,9 @@ export class Virtualizer<
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement>) => {
-    Object.entries(opts).forEach(([key, value]) => {
-      if (typeof value === 'undefined') delete (opts as any)[key]
-    })
-
-    this.options = {
+    // Skip `{...defaults, ...opts}` because explicit `undefined` values in
+    // opts would override defaults with `undefined`.
+    const merged = {
       debug: false,
       initialOffset: 0,
       overscan: 1,
@@ -481,8 +479,14 @@ export class Virtualizer<
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
       laneAssignmentMode: 'estimate',
-      ...opts,
+    } as Required<VirtualizerOptions<TScrollElement, TItemElement>>
+
+    for (const key in opts) {
+      const v = (opts as any)[key]
+      if (v !== undefined) (merged as any)[key] = v
     }
+
+    this.options = merged
   }
 
   private notify = (sync: boolean) => {
