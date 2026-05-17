@@ -1180,7 +1180,14 @@ export class Virtualizer<
               delta,
               this,
             )
-          : itemStart < this.getScrollOffset() + this.scrollAdjustments)
+          : // Default: adjust scrollTop only when the resize is an above-
+            // viewport item AND we're not actively scrolling backward.
+            // Adjusting during backward scroll fights the user's scroll
+            // direction and produces the "items jump while scrolling up"
+            // jank reported across many issues. Users who want the old
+            // behavior can pass shouldAdjustScrollPositionOnItemSizeChange.
+            itemStart < this.getScrollOffset() + this.scrollAdjustments &&
+            this.scrollDirection !== 'backward')
       ) {
         if (process.env.NODE_ENV !== 'production' && this.options.debug) {
           console.info('correction', delta)
