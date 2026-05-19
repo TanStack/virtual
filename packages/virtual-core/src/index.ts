@@ -11,11 +11,10 @@ const isIOSWebKit = (): boolean => {
   if (typeof navigator === 'undefined') return (_isIOSResult = false)
   if (/iP(hone|od|ad)/.test(navigator.userAgent)) return (_isIOSResult = true)
   // iPadOS 13+ reports as MacIntel; touch-points distinguishes it from desktop.
+  const mtp = (navigator as Navigator & { maxTouchPoints?: number })
+    .maxTouchPoints
   return (_isIOSResult =
-    navigator.platform === 'MacIntel' &&
-    (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints !==
-      undefined &&
-    (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints! > 0)
+    navigator.platform === 'MacIntel' && mtp !== undefined && mtp > 0)
 }
 
 // Test hook: reset the iOS detection cache. Not exported.
@@ -1373,7 +1372,7 @@ export class Virtualizer<
       0,
       measurements.length - 1,
       useFlat
-        ? (i: number) => flat![i * 2]!
+        ? (i: number) => flat[i * 2]!
         : (i: number) => notUndefined(measurements[i]).start,
       offset,
     )
@@ -1590,8 +1589,7 @@ export class Virtualizer<
     // (i.e., have been measured). We build VirtualItem objects with the
     // current start/size/end so they can be persisted as plain data.
     const m = this.getMeasurements()
-    for (let i = 0; i < m.length; i++) {
-      const item = m[i]
+    for (const item of m) {
       if (item && this.itemSizeCache.has(item.key)) {
         // Force materialization (lazy path) and copy plain fields.
         snapshot.push({
