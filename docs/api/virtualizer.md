@@ -273,6 +273,18 @@ isRtl: boolean
 
 Whether to invert horizontal scrolling to support right-to-left language locales.
 
+### `initialMeasurementsCache`
+
+```tsx
+initialMeasurementsCache: Array<VirtualItem>
+```
+
+**Default:** `[]`
+
+A previously-captured snapshot of measured item sizes (from `takeSnapshot()`) to seed the virtualizer with on mount. Useful for restoring scroll position after navigation: persist the result of `takeSnapshot()` (plus the current `scrollOffset`) in your route state, then pass them back as `initialMeasurementsCache` and `initialOffset` to land users at the same position without re-measuring everything from scratch.
+
+Items not present in the cache fall back to `estimateSize`; items present have their measured `size` restored. The cache is consumed only once, on the first `getMeasurements()` call after mount.
+
 ### `useAnimationFrameWithResizeObserver`
 
 ```tsx
@@ -393,6 +405,38 @@ measure: () => void
 
 Resets any prev item measurements.
 
+### `takeSnapshot`
+
+```tsx
+takeSnapshot: () => Array<VirtualItem>
+```
+
+Returns a snapshot of currently-measured items as plain `VirtualItem`
+objects, suitable for round-tripping through state storage and feeding
+back as `initialMeasurementsCache` on remount. Pair with the current
+`scrollOffset` to restore exact scroll position after navigation.
+
+Only items the consumer has actually rendered (and thus measured) appear
+in the snapshot; unmeasured items will fall back to `estimateSize` on
+restore. Returns an empty array if no items have been measured.
+
+```tsx
+// Capture state on unmount
+const snapshot = virtualizer.takeSnapshot()
+const offset = virtualizer.scrollOffset
+sessionStorage.setItem('myList', JSON.stringify({ snapshot, offset }))
+
+// Restore on remount
+const saved = JSON.parse(sessionStorage.getItem('myList') ?? 'null')
+useVirtualizer({
+  count: items.length,
+  estimateSize: () => 50,
+  getScrollElement: () => parentRef.current,
+  initialMeasurementsCache: saved?.snapshot,
+  initialOffset: saved?.offset,
+})
+```
+
 ### `measureElement`
 
 ```tsx
@@ -438,7 +482,11 @@ Current `Rect` of the scroll element.
 shouldAdjustScrollPositionOnItemSizeChange: undefined | ((item: VirtualItem, delta: number, instance: Virtualizer<TScrollElement, TItemElement>) => boolean)
 ```
 
-The shouldAdjustScrollPositionOnItemSizeChange method enables fine-grained control over the adjustment of scroll position when the size of dynamically rendered items differs from the estimated size. When jumping in the middle of the list and scrolling backward new elements may have a different size than the initially estimated size. This discrepancy can cause subsequent items to shift, potentially disrupting the user's scrolling experience, particularly when navigating backward through the list. 
+Provides fine-grained control over the scroll-position adjustment that fires when an above-viewport item's measured size differs from its estimated size. By default the virtualizer applies this correction only when the user is **not** scrolling backward, which avoids the well-known "items jump while scrolling up" jank. Supply this callback only if you want to override that default — for example, to apply corrections during backward scroll, or to skip them in additional scenarios.
+
+The callback receives the resized `item`, the size `delta`, and the `instance`; return `true` to apply the scroll adjustment, `false` to skip it.
+
+On iOS WebKit, scroll-position writes are deferred regardless of this callback while a finger is on screen, during momentum-scroll, and during elastic-overscroll bounce. The cumulative delta is flushed in a single write once the scroll settles, preserving iOS's native momentum physics.
 
 ### `isScrolling`
 
