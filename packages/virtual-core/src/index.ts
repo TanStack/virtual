@@ -429,13 +429,18 @@ export class Virtualizer<
 
             if (!node.isConnected) {
               this.observer.unobserve(node)
-              if (index >= 0) {
-                const key = this.options.getItemKey(index)
-                // Only delete if this node is still the cached one — guard
-                // against the case where React mounted a new node for the
-                // same key after this one disconnected.
-                if (this.elementsCache.get(key) === node) {
-                  this.elementsCache.delete(key)
+              // Find the cache entry pointing to this exact node and remove
+              // it. We can't call getItemKey(index) here because items may
+              // have been removed since this node was rendered — the index
+              // could be stale and out-of-bounds in the user's data array
+              // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
+              // The === comparison naturally handles the React-replaced-
+              // a-node-for-the-same-key case: that entry now points to a
+              // different node, so this loop won't match.
+              for (const [cacheKey, cachedNode] of this.elementsCache) {
+                if (cachedNode === node) {
+                  this.elementsCache.delete(cacheKey)
+                  break
                 }
               }
               return
