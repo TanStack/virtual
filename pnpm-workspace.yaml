@@ -9,6 +9,7 @@ packages:
   - 'examples/svelte/*'
   - 'examples/vue/*'
   - 'examples/lit/*'
+  - 'benchmarks'
 
 allowBuilds:
   # root dependency
