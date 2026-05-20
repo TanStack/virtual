@@ -59,13 +59,16 @@ Only items the consumer actually rendered show up in the snapshot, since unmeasu
 
 Compared to the current published version:
 
-- Cold mount at 100k items: 6.1 ms → 4.5 ms in real React, 2.5 ms → 0.54 ms in the synthetic bench
-- Cold mount at 500k items: 14 ms → 2.7 ms synthetic
-- Worst-case `resizeItem` storm on 10k items: 1.9 seconds → 1.3 ms
-- `setOptions` on every React render: 14.4 ms → 1.3 ms for 10,000 calls
-- `scrollToIndex` landing accuracy on dynamic 10k lists: 0.0 px across every edge case
-- iOS Safari momentum scroll: works
-- Backward-scroll jank: gone by default
+| Metric | Before | After |
+|---|---|---|
+| Cold mount @ 100k items (real React) | 6.1 ms | 4.5 ms |
+| Cold mount @ 100k items (synthetic) | 2.5 ms | 0.54 ms |
+| Cold mount @ 500k items (synthetic) | 14 ms | 2.7 ms |
+| `resizeItem` storm on 10k items | 1.9 s | 1.3 ms |
+| `setOptions` × 10,000 (per render) | 14.4 ms | 1.3 ms |
+| `scrollToIndex` landing accuracy on dynamic 10k lists | within 1 px | 0.0 px |
+| iOS Safari momentum scroll | broken | works |
+| Backward-scroll jank with dynamic items | recurring | gone by default |
 
 Bundle delta is about +900 bytes gzip, mostly the lazy fast-path machinery and the iOS code. Production minified comes out around 6.1 kB total. 91 unit tests, all green.
 
