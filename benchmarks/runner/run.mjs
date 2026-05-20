@@ -86,10 +86,11 @@ async function runScenario(page, lib, scenarioId) {
     timeout: 15_000,
   })
   // Pull the scenario object back from the page so we run with the exact same
-  // shape the page is using.
+  // shape the page is using. We read from window.bench.scenarios (populated
+  // at mount) rather than a runtime `import('/src/scenarios/types.ts')`,
+  // since `vite preview` only serves the built dist, not source files.
   const result = await page.evaluate(async (id) => {
-    const mod = await import('/src/scenarios/types.ts')
-    const scenario = mod.SCENARIOS.find((s) => s.id === id)
+    const scenario = window.bench?.scenarios.find((s) => s.id === id)
     if (!scenario) throw new Error('unknown scenario: ' + id)
     // Force GC where supported so memory readings aren't poisoned by previous run.
     if ('gc' in globalThis) {
@@ -97,7 +98,8 @@ async function runScenario(page, lib, scenarioId) {
         globalThis.gc()
       } catch {}
     }
-    return await window.bench.run(scenario)
+    const metrics = await window.bench.run(scenario)
+    return { scenario, metrics }
   }, scenarioId)
   return result
 }
@@ -264,10 +266,14 @@ async function main() {
             `\n  ${lib.padEnd(9)} ${scenarioId.padEnd(28)} run ${r + 1}/${opts.runs} ... `,
           )
           try {
-            const metrics = await runScenario(page, lib, scenarioId)
+            const { scenario, metrics } = await runScenario(
+              page,
+              lib,
+              scenarioId,
+            )
             results.push({
               library: lib,
-              scenario: { id: scenarioId },
+              scenario,
               metrics,
               ranAt: new Date().toISOString(),
             })
@@ -287,6 +293,7 @@ async function main() {
                 longFrames: null,
                 jankMs: null,
                 memoryBytes: null,
+                landingErrorPx: null,
               },
               ranAt: new Date().toISOString(),
               notes: 'error: ' + e.message,

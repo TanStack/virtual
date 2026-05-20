@@ -54,9 +54,9 @@ export function makeDataset(
   count: number,
   dynamic: boolean,
   wideVariance = false,
-): Item[] {
+): Array<Item> {
   const rand = lcg(424242)
-  const items: Item[] = new Array(count)
+  const items: Array<Item> = new Array(count)
   for (let i = 0; i < count; i++) {
     if (dynamic) {
       if (wideVariance) {
@@ -64,7 +64,7 @@ export function makeDataset(
         // 1 → 50 words distributed log-normally so most items are short
         // but a meaningful tail is very tall.
         const wc = 1 + Math.floor(Math.pow(rand(), 2) * 49)
-        const parts: string[] = new Array(wc)
+        const parts: Array<string> = new Array(wc)
         for (let w = 0; w < wc; w++) {
           parts[w] = WORDS[Math.floor(rand() * WORDS.length)]!
         }
@@ -72,7 +72,7 @@ export function makeDataset(
       } else {
         // 5..14 words → ~ one line; lengths picked deterministically.
         const wc = 5 + Math.floor(rand() * 10)
-        const parts: string[] = new Array(wc)
+        const parts: Array<string> = new Array(wc)
         for (let w = 0; w < wc; w++) {
           parts[w] = WORDS[Math.floor(rand() * WORDS.length)]!
         }

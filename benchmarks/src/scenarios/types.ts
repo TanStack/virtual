@@ -56,7 +56,7 @@ export interface ScenarioResult {
 
 // The fixed scenarios all libraries run. Adding scenarios here surfaces them
 // in the runner without further plumbing.
-export const SCENARIOS: ScenarioInput[] = [
+export const SCENARIOS: Array<ScenarioInput> = [
   {
     id: 'mount-fixed-1k',
     count: 1_000,

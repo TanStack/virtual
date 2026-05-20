@@ -36,11 +36,13 @@ export function VirtuaPage({ scenario }: Props) {
           align: opts?.align ?? 'start',
         }),
       getTotalSize: () => {
+        // VList sets scrollSize implicitly on its sized inner div; prefer
+        // that node's scrollHeight, then firstElementChild, then host.
         const el = hostRef.current?.querySelector(
           '[style*="height:"]',
         ) as HTMLElement | null
-        // VList sets scrollSize implicitly; fall back to scrollHeight.
         return (
+          el?.scrollHeight ??
           (hostRef.current?.firstElementChild as HTMLElement | null)
             ?.scrollHeight ??
           hostRef.current?.scrollHeight ??

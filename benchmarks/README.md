@@ -28,7 +28,7 @@ Results land in `benchmarks/results/<timestamp>.json` (raw, every run) and
 
 ## How it works
 
-```
+```text
 benchmarks/
 ├── src/
 │   ├── main.tsx                Reads ?lib=... &scenario=...
@@ -159,7 +159,7 @@ it's measuring — it just calls one global function per page.
   TanStack uses `useVirtualizer` + `measureElement`; virtua uses `VList` with
   the `data`/`item` props; virtuoso uses `Virtuoso` with `fixedItemHeight`
   when applicable; react-window uses `List` + `useDynamicRowHeight`.
-- React 19 runs in production mode (no `<StrictMode>`).
+- React 18 runs in production mode (no `<StrictMode>`).
 - Dataset is deterministic (LCG-seeded) and identical across libraries.
 - `--enable-precise-memory-info` + `--js-flags=--expose-gc` are passed to
   Chromium so memory readings aren't bucketed and we can force GC between

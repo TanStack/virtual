@@ -1,3 +1,4 @@
+import { SCENARIOS } from '../scenarios/types'
 import type { ScenarioInput, ScenarioMetrics } from '../scenarios/types'
 
 // Each library page mounts and waits, then a global driver runs the scripted
@@ -31,6 +32,10 @@ declare global {
     bench?: {
       run: (scenario: ScenarioInput) => Promise<ScenarioMetrics>
       ready: () => boolean
+      // Exposed so the Node-side Playwright runner can resolve a scenario
+      // id to its full object without a runtime source-file import (which
+      // wouldn't survive `vite preview`'s built-only serving).
+      scenarios: ReadonlyArray<ScenarioInput>
     }
   }
 }
@@ -128,6 +133,7 @@ export function markFirstPaint(): void {
 export function installBenchAPI(): void {
   window.bench = {
     ready: () => !!window.__bench?.ready,
+    scenarios: SCENARIOS,
     run: async (scenario: ScenarioInput): Promise<ScenarioMetrics> => {
       const h = await waitFor(() => window.__bench?.handle ?? null)
       const mountStart = window.__bench?.mountStart ?? 0

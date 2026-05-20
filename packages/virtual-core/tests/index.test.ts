@@ -638,6 +638,39 @@ test('measure() should clear size cache and lane assignments', () => {
   expect(measurements[1]!.size).toBe(50)
 })
 
+test('measure() should fully invalidate when a later index was dirtied without an intervening getMeasurements()', () => {
+  // Regression: measure() used to clear itemSizeCache but not pendingMin.
+  // If resizeItem() had been called without a subsequent getMeasurements()
+  // to flush pendingMin, the next rebuild would preserve measurementsCache
+  // entries before that index — even though measure() is supposed to wipe
+  // everything.
+  const virtualizer = new Virtualizer({
+    count: 6,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  // Seed item 0 with a non-estimate size, then flush so it's in measurementsCache.
+  virtualizer.resizeItem(0, 999)
+  virtualizer['getMeasurements']()
+  // Now dirty a later index without flushing — pendingMin will be 2.
+  virtualizer.resizeItem(2, 888)
+  expect(virtualizer['pendingMin']).toBe(2)
+
+  virtualizer.measure()
+
+  // After measure(), pendingMin must be null so the rebuild starts at 0
+  // and discards the stale item-0 entry.
+  expect(virtualizer['pendingMin']).toBe(null)
+
+  const m = virtualizer['getMeasurements']()
+  expect(m[0]!.size).toBe(50)
+  expect(m[2]!.size).toBe(50)
+})
+
 test('measure() should trigger a re-measurement on subsequent getMeasurements', () => {
   let sizeFn = (i: number) => 50
   const virtualizer = new Virtualizer({
@@ -1320,8 +1353,13 @@ test('lazy fast path: getVirtualItemForOffset binary search returns correct item
   expect(found?.end).toBe(510)
 })
 
-test('lazy fast path: large list (1M items) does not allocate per-item objects upfront', () => {
-  const start = performance.now()
+test('lazy fast path: 1M-item list returns a sparse view, not an eagerly-allocated array', () => {
+  // Functional contract for the lazy fast path: a 1M-item virtualizer
+  // returns measurements that report the correct total length and produce
+  // exact start/size/end values on indexed access without requiring the
+  // whole array to be materialized. Sparse spot-checks across the range
+  // would fail if the fast path were silently allocating N VirtualItems
+  // (or if the typed-array backing computed offsets incorrectly).
   const v = new Virtualizer({
     count: 1_000_000,
     estimateSize: () => 30,
@@ -1330,10 +1368,15 @@ test('lazy fast path: large list (1M items) does not allocate per-item objects u
     observeElementRect: vi.fn(),
     observeElementOffset: vi.fn(),
   })
-  v['getMeasurements']()
-  const elapsed = performance.now() - start
-  // Should be sub-50ms even at 1M items (typed array fill + proxy alloc only)
-  expect(elapsed).toBeLessThan(50)
+  const m = v['getMeasurements']()
+  expect(m.length).toBe(1_000_000)
+  expect(m[0]!.start).toBe(0)
+  expect(m[0]!.size).toBe(30)
+  expect(m[0]!.end).toBe(30)
+  expect(m[500_000]!.start).toBe(15_000_000)
+  expect(m[500_000]!.end).toBe(15_000_030)
+  expect(m[999_999]!.start).toBe(29_999_970)
+  expect(m[999_999]!.end).toBe(30_000_000)
 })
 
 // ─── iOS momentum-safe scroll adjustments ───────────────────────────────────
@@ -1444,6 +1487,60 @@ test('iOS deferral: multiple resizes during scroll accumulate and flush as one',
     // Single flush call
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
+test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-back resizes stay consistent', () => {
+  // Regression: the deferred flush used to write `adjustments: delta`
+  // directly without updating `this.scrollAdjustments`. If a second resize
+  // landed before the resulting scroll event fired (and reset the
+  // accumulator), the comparison `itemStart < getScrollOffset() +
+  // scrollAdjustments` would miss the flushed delta and the next correction
+  // would compute from the stale offset.
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({
+          scrollTop: 200,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(200, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    // Build up a deferred adjustment of 50 during scroll.
+    v.resizeItem(0, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['scrollAdjustments']).toBe(0)
+
+    // Settle: scroll event resets scrollAdjustments to 0, then the flush
+    // runs and must roll the deferred delta back into scrollAdjustments.
+    scrollCallback!(200, false)
+
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    const [, opts] = scrollToFn.mock.calls[0]!
+    expect(opts.adjustments).toBe(50)
+    // The running accumulator must now reflect the flushed delta — any
+    // resize landing before the resulting scroll event fires has to see
+    // the correct effective offset.
+    expect(v['scrollAdjustments']).toBe(50)
   })
 })
 

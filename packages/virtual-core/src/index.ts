@@ -702,8 +702,11 @@ export class Virtualizer<
     if (cur < 0 || cur > max) return
     const delta = this._iosDeferredAdjustment
     this._iosDeferredAdjustment = 0
+    // Roll the deferred delta into the running accumulator so any resize
+    // landing between now and the resulting scroll event computes from the
+    // post-flush offset rather than the stale one.
     this._scrollToOffset(cur, {
-      adjustments: delta,
+      adjustments: (this.scrollAdjustments += delta),
       behavior: undefined,
     })
   }
@@ -1616,6 +1619,10 @@ export class Virtualizer<
   }
 
   measure = () => {
+    // Reset pendingMin so the next getMeasurements rebuilds from index 0.
+    // Without this, a prior resizeItem() that left pendingMin > 0 would
+    // cause the rebuild to preserve stale items before that index.
+    this.pendingMin = null
     this.itemSizeCache.clear()
     this.laneAssignments.clear() // Clear lane cache for full re-layout
     this.itemSizeCacheVersion++
