@@ -1,5 +1,17 @@
 # @tanstack/react-virtual
 
+## 3.13.25
+
+### Patch Changes
+
+- Replace the `useReducer(() => ({}), {})` force-rerender pattern with an ([#1168](https://github.com/TanStack/virtual/pull/1168))
+  incrementing number counter. Same semantics (every dispatch changes the
+  reducer state, forcing a render); zero per-dispatch object allocation.
+  Trivial individual cost, but eliminates one steady-state GC source on
+  scroll-heavy apps.
+- Updated dependencies [[`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2)]:
+  - @tanstack/virtual-core@3.15.0
+
 ## 3.13.24
 
 ### Patch Changes
