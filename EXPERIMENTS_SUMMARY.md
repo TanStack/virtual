@@ -4,41 +4,41 @@ All 6 experiments committed locally (not pushed). 72/72 unit tests pass, 6/6 Rea
 
 ## Cumulative bundle cost
 
-| Build | Consumer minified gzip |
-|---|---:|
-| `origin/main` baseline | **5.22 kB** |
-| After bug-fix layers (PR #0–8) | 5.00 kB (−220 B) |
-| After 6 experiments | **5.83 kB (+830 B above pre-exp / +610 B above main)** |
+| Build                          |                                 Consumer minified gzip |
+| ------------------------------ | -----------------------------------------------------: |
+| `origin/main` baseline         |                                            **5.22 kB** |
+| After bug-fix layers (PR #0–8) |                                       5.00 kB (−220 B) |
+| After 6 experiments            | **5.83 kB (+830 B above pre-exp / +610 B above main)** |
 
 ## Cumulative perf wins
 
 ### Cold mount (lower is better)
 
-| Scenario | BEFORE | AFTER | Δ | virtua reference |
-|---|---:|---:|---:|---:|
-| n=10k getMeasurements (synthetic) | 0.21 ms | **0.05 ms** | 4.2× faster | – |
-| n=100k getMeasurements (synthetic) | 2.52 ms | **0.53 ms** | **4.7× faster** | – |
-| n=500k getMeasurements (synthetic) | 14.1 ms | **2.71 ms** | **5.2× faster** | – |
-| mount-fixed-100k (real React) | 6.1 ms | **4.7 ms** | 21% faster | 3.1 ms |
-| mount-dynamic-10k (real React) | 6.0 ms | **7.1 ms** | – | 8.1 ms (we beat them) |
-| Largest visible@0 query (n=500k) | 14 ms | **4.66 ms** | 3.0× faster | – |
+| Scenario                           |  BEFORE |       AFTER |               Δ |      virtua reference |
+| ---------------------------------- | ------: | ----------: | --------------: | --------------------: |
+| n=10k getMeasurements (synthetic)  | 0.21 ms | **0.05 ms** |     4.2× faster |                     – |
+| n=100k getMeasurements (synthetic) | 2.52 ms | **0.53 ms** | **4.7× faster** |                     – |
+| n=500k getMeasurements (synthetic) | 14.1 ms | **2.71 ms** | **5.2× faster** |                     – |
+| mount-fixed-100k (real React)      |  6.1 ms |  **4.7 ms** |      21% faster |                3.1 ms |
+| mount-dynamic-10k (real React)     |  6.0 ms |  **7.1 ms** |               – | 8.1 ms (we beat them) |
+| Largest visible@0 query (n=500k)   |   14 ms | **4.66 ms** |     3.0× faster |                     – |
 
 ### Memory at 100k (lower is better)
 
-| | BEFORE | AFTER | virtua |
-|---|---:|---:|---:|
-| `mount-fixed-100k` MB | 14.2 | 14.3 | 10.6 |
+|                       | BEFORE | AFTER | virtua |
+| --------------------- | -----: | ----: | -----: |
+| `mount-fixed-100k` MB |   14.2 |  14.3 |   10.6 |
 
 (Memory delta unchanged — our typed-array savings are offset by Proxy state. Closing this would need eliminating the JS array materialization cache.)
 
 ### Behavior improvements (no bench, but verifiable)
 
-| Issue cluster | Fix |
-|---|---|
-| iOS Safari momentum scroll breaks (#545, #622, #884) | Exp 2: defer scroll-position writes during isScrolling on iOS, flush on scrollend |
-| Items jump while scrolling up (#659, #832, #925, #1028 — the #1 cluster) | Exp 4: skip scroll-position adjustment when scrollDirection === 'backward' by default |
-| scrollToIndex course-corrects mid-animation (#468, #913, #1001, #1029) | Exp 3: keep smooth scroll alive while > 1 viewport from target; only snap on final approach |
-| No scroll-restoration / snapshot API (#378, #551, #997) | Exp 5: add `takeSnapshot()` returning plain-data measurements, pairs with existing `initialMeasurementsCache` |
+| Issue cluster                                                            | Fix                                                                                                           |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| iOS Safari momentum scroll breaks (#545, #622, #884)                     | Exp 2: defer scroll-position writes during isScrolling on iOS, flush on scrollend                             |
+| Items jump while scrolling up (#659, #832, #925, #1028 — the #1 cluster) | Exp 4: skip scroll-position adjustment when scrollDirection === 'backward' by default                         |
+| scrollToIndex course-corrects mid-animation (#468, #913, #1001, #1029)   | Exp 3: keep smooth scroll alive while > 1 viewport from target; only snap on final approach                   |
+| No scroll-restoration / snapshot API (#378, #551, #997)                  | Exp 5: add `takeSnapshot()` returning plain-data measurements, pairs with existing `initialMeasurementsCache` |
 
 ## The 6 experiments (commits)
 
@@ -59,37 +59,37 @@ All 6 experiments committed locally (not pushed). 72/72 unit tests pass, 6/6 Rea
 
 ## What I'd ship vs hold
 
-| Exp | Status | Recommendation |
-|---|---|---|
-| 1 (lazy materialization) | Solid perf win | Ship — biggest single win, well-tested |
-| 2 (iOS deferral) | Closes real complaints | Ship — clean diff, narrow scope |
-| 3 (smooth-keep-alive) | Subjective UX improvement | Ship — easy to revert if reports |
-| 4 (backward-scroll skip) | Behavior change | Ship behind a soft signal first OR opt-in for one release |
-| 5 (takeSnapshot) | New public API | Ship — pure addition |
-| 6 (Proxy bypass) | Marginal perf | Ship with 1 |
+| Exp                      | Status                    | Recommendation                                            |
+| ------------------------ | ------------------------- | --------------------------------------------------------- |
+| 1 (lazy materialization) | Solid perf win            | Ship — biggest single win, well-tested                    |
+| 2 (iOS deferral)         | Closes real complaints    | Ship — clean diff, narrow scope                           |
+| 3 (smooth-keep-alive)    | Subjective UX improvement | Ship — easy to revert if reports                          |
+| 4 (backward-scroll skip) | Behavior change           | Ship behind a soft signal first OR opt-in for one release |
+| 5 (takeSnapshot)         | New public API            | Ship — pure addition                                      |
+| 6 (Proxy bypass)         | Marginal perf             | Ship with 1                                               |
 
 ## Numbers vs all competitors (final, post-Exp-7)
 
 ### Mount time (ms, lower is better)
 
-| Scenario | tanstack | virtua | virtuoso | window |
-|---|---:|---:|---:|---:|
-| `mount-fixed-1k` | **0.7** ¹ | 0.7 ¹ | 1.6 | 1.9 |
-| `mount-fixed-10k` | 1.4 | **1.0** | 1.8 | 2.3 |
-| `mount-fixed-100k` | 4.5 ⇒ | **3.0** | 4.9 | 4.0 |
-| `mount-dynamic-1k` | **1.7** | 1.9 | 2.7 | 3.4 |
-| `mount-dynamic-10k` | **7.0** | 8.0 | 9.7 | 8.2 |
+| Scenario            |  tanstack |  virtua | virtuoso | window |
+| ------------------- | --------: | ------: | -------: | -----: |
+| `mount-fixed-1k`    | **0.7** ¹ |   0.7 ¹ |      1.6 |    1.9 |
+| `mount-fixed-10k`   |       1.4 | **1.0** |      1.8 |    2.3 |
+| `mount-fixed-100k`  |     4.5 ⇒ | **3.0** |      4.9 |    4.0 |
+| `mount-dynamic-1k`  |   **1.7** |     1.9 |      2.7 |    3.4 |
+| `mount-dynamic-10k` |   **7.0** |     8.0 |      9.7 |    8.2 |
 
 ¹ Tied · ⇒ Closed 53% of pre-experiment gap to virtua (6.1 → 4.5 vs 3.0)
 
 ### Other categories (no change since pre-experiment)
 
-| | tanstack | virtua | virtuoso | window |
-|---|---:|---:|---:|---:|
-| Dynamic measure convergence (ms) | 120 | 117 | 197 | 119 |
-| Scroll FPS | 60 | 60 | 60 | 60 |
-| Jump-to-end settle (ms) | 83 | 70 | 154 | **68** |
-| Memory @ 100k (MB) | 14.3 | **10.6** | 10.9 | 11.1 |
+|                                  | tanstack |   virtua | virtuoso | window |
+| -------------------------------- | -------: | -------: | -------: | -----: |
+| Dynamic measure convergence (ms) |      120 |      117 |      197 |    119 |
+| Scroll FPS                       |       60 |       60 |       60 |     60 |
+| Jump-to-end settle (ms)          |       83 |       70 |      154 | **68** |
+| Memory @ 100k (MB)               |     14.3 | **10.6** |     10.9 |   11.1 |
 
 ### Where we now lead
 

@@ -94,7 +94,7 @@ async function runScenario(page, lib, scenarioId) {
     // Force GC where supported so memory readings aren't poisoned by previous run.
     if ('gc' in globalThis) {
       try {
-        ;(globalThis).gc()
+        globalThis.gc()
       } catch {}
     }
     return await window.bench.run(scenario)
@@ -112,14 +112,18 @@ function fmt(n, digits = 1) {
 }
 
 function median(xs) {
-  const ys = xs.filter((x) => x != null && !Number.isNaN(x)).sort((a, b) => a - b)
+  const ys = xs
+    .filter((x) => x != null && !Number.isNaN(x))
+    .sort((a, b) => a - b)
   if (ys.length === 0) return null
   const mid = Math.floor(ys.length / 2)
   return ys.length % 2 ? ys[mid] : (ys[mid - 1] + ys[mid]) / 2
 }
 
 function p95(xs) {
-  const ys = xs.filter((x) => x != null && !Number.isNaN(x)).sort((a, b) => a - b)
+  const ys = xs
+    .filter((x) => x != null && !Number.isNaN(x))
+    .sort((a, b) => a - b)
   if (ys.length === 0) return null
   return ys[Math.min(ys.length - 1, Math.floor(ys.length * 0.95))]
 }
@@ -146,18 +150,15 @@ function makeTable(results, libs, scenarios) {
       ],
     },
     {
-      title: 'Dynamic measurement — commit → stable total size (lower is better, ms)',
+      title:
+        'Dynamic measurement — commit → stable total size (lower is better, ms)',
       key: 'actionMs',
       scenarios: ['mount-dynamic-1k', 'mount-dynamic-10k'],
     },
     {
       title: 'First paint (lower is better, ms)',
       key: 'firstPaintMs',
-      scenarios: [
-        'mount-fixed-1k',
-        'mount-fixed-10k',
-        'mount-fixed-100k',
-      ],
+      scenarios: ['mount-fixed-1k', 'mount-fixed-10k', 'mount-fixed-100k'],
     },
     {
       title: 'Scroll perf — fps (higher is better)',
@@ -175,7 +176,8 @@ function makeTable(results, libs, scenarios) {
       scenarios: ['jump-to-end-dynamic-10k'],
     },
     {
-      title: 'scrollToIndex landing accuracy — px offset from target (lower is better)',
+      title:
+        'scrollToIndex landing accuracy — px offset from target (lower is better)',
       key: 'landingErrorPx',
       scenarios: [
         'jump-to-middle-accuracy-dynamic-10k',
@@ -187,23 +189,15 @@ function makeTable(results, libs, scenarios) {
     {
       title: 'Memory after mount (lower is better, MB)',
       key: 'memoryBytes',
-      scenarios: [
-        'mount-fixed-10k',
-        'mount-fixed-100k',
-        'mount-dynamic-10k',
-      ],
+      scenarios: ['mount-fixed-10k', 'mount-fixed-100k', 'mount-dynamic-10k'],
     },
   ]
 
   const lines = []
   for (const sec of sections) {
     lines.push(`\n### ${sec.title}\n`)
-    lines.push(
-      `| Scenario | ${libs.map((l) => l).join(' | ')} |`,
-    )
-    lines.push(
-      `|---|${libs.map(() => '---:').join('|')}|`,
-    )
+    lines.push(`| Scenario | ${libs.map((l) => l).join(' | ')} |`)
+    lines.push(`|---|${libs.map(() => '---:').join('|')}|`)
     for (const s of sec.scenarios) {
       const cells = libs.map((l) => {
         const v = cell(l, s, sec.key)

@@ -32,9 +32,11 @@ export function VirtuosoPage({ scenario }: Props) {
     registerHarness({
       getScrollContainer: () => {
         // Virtuoso owns its own scroll container internally.
-        return (hostRef.current?.querySelector(
-          '[data-testid="virtuoso-scroller"]',
-        ) as HTMLElement | null) ?? hostRef.current
+        return (
+          (hostRef.current?.querySelector(
+            '[data-testid="virtuoso-scroller"]',
+          ) as HTMLElement | null) ?? hostRef.current
+        )
       },
       scrollToIndex: (i, opts) =>
         ref.current?.scrollToIndex({

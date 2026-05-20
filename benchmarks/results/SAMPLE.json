@@ -2,12 +2,7 @@
   "opts": {
     "headed": false,
     "runs": 5,
-    "libs": [
-      "tanstack",
-      "virtua",
-      "virtuoso",
-      "window"
-    ],
+    "libs": ["tanstack", "virtua", "virtuoso", "window"],
     "scenarios": [
       "mount-fixed-1k",
       "mount-fixed-10k",

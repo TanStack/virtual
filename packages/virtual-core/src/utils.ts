@@ -22,9 +22,7 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
     // 'production'` is constant-folded to `false` by downstream minifiers
     // (Terser/esbuild/swc with `define`), which DCEs the entire block.
     const debugEnabled =
-      process.env.NODE_ENV !== 'production' &&
-      !!opts.key &&
-      !!opts.debug?.()
+      process.env.NODE_ENV !== 'production' && !!opts.key && !!opts.debug?.()
     let depTime = 0
     if (debugEnabled) depTime = Date.now()
 

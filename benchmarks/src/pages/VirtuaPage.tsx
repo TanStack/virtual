@@ -64,7 +64,13 @@ export function VirtuaPage({ scenario }: Props) {
         ref={ref}
         style={{ height: '100%' }}
         data={items}
-        item={({ data, index }: { data: typeof items[number]; index: number }) => (
+        item={({
+          data,
+          index,
+        }: {
+          data: (typeof items)[number]
+          index: number
+        }) => (
           <div
             data-index={index}
             className={'item ' + (index % 2 === 0 ? 'even' : '')}

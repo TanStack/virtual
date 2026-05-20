@@ -635,10 +635,7 @@ export class Virtualizer<
         const onTouchStart = () => {
           this._iosTouching = true
           this._iosJustTouchEnded = false
-          if (
-            this._iosTouchEndTimerId !== null &&
-            this.targetWindow != null
-          ) {
+          if (this._iosTouchEndTimerId !== null && this.targetWindow != null) {
             this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
             this._iosTouchEndTimerId = null
           }
@@ -672,10 +669,7 @@ export class Virtualizer<
         this.unsubs.push(() => {
           scrollEl.removeEventListener('touchstart', onTouchStart)
           scrollEl.removeEventListener('touchend', onTouchEnd)
-          if (
-            this._iosTouchEndTimerId !== null &&
-            this.targetWindow != null
-          ) {
+          if (this._iosTouchEndTimerId !== null && this.targetWindow != null) {
             this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
             this._iosTouchEndTimerId = null
           }
@@ -1687,16 +1681,14 @@ function calculateRange({
     }
   }
 
-  let startIndex = findNearestBinarySearch(
-    0,
-    lastIndex,
-    getStart,
-    scrollOffset,
-  )
+  let startIndex = findNearestBinarySearch(0, lastIndex, getStart, scrollOffset)
   let endIndex = startIndex
 
   if (lanes === 1) {
-    while (endIndex < lastIndex && getEnd(endIndex) < scrollOffset + outerSize) {
+    while (
+      endIndex < lastIndex &&
+      getEnd(endIndex) < scrollOffset + outerSize
+    ) {
       endIndex++
     }
   } else if (lanes > 1) {

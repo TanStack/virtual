@@ -13,11 +13,13 @@
 ### Why it matters
 
 `isScrolling` doesn't distinguish three different scroll states:
+
 1. **Active drag** — finger on screen, user actively dragging
 2. **Momentum decay** — finger lifted, inertial scrolling
 3. **Programmatic** — `scrollTo`/`scrollBy` from JS
 
-Currently Experiment 2 defers scrollTop writes during *any* `isScrolling=true` and flushes when it transitions false. That works for case 2, but is overly conservative for cases 1 and 3. virtua tracks `touching` and `justTouchEnded` separately so it can:
+Currently Experiment 2 defers scrollTop writes during _any_ `isScrolling=true` and flushes when it transitions false. That works for case 2, but is overly conservative for cases 1 and 3. virtua tracks `touching` and `justTouchEnded` separately so it can:
+
 - During active drag: never write scrollTop (writes are silently dropped by iOS anyway, but tracking lets us know to defer)
 - During momentum decay: also defer (this is what we already do)
 - After both: flush (this is what we already do)
@@ -73,7 +75,9 @@ Then the flush condition (today in the `observeElementOffset` callback) tightens
 
 ```ts
 // Was: flush when isScrolling becomes false
-if (wasScrolling && !isScrolling && this._iosDeferredAdjustment !== 0) { flush }
+if (wasScrolling && !isScrolling && this._iosDeferredAdjustment !== 0) {
+  flush
+}
 
 // New: flush when truly settled — not scrolling, not touching, not in early-momentum
 if (
@@ -81,7 +85,9 @@ if (
   !isScrolling &&
   !this._iosTouching &&
   !this._iosJustTouchEnded
-) { flush }
+) {
+  flush
+}
 ```
 
 The flush is also wired into the touchend timer's expiration, so we don't sit on a deferred adjustment forever if no scroll event fires afterward.
@@ -100,11 +106,12 @@ Existing 72 tests must still pass.
 
 ### Risk
 
-**Low.** All changes are additive; the only flow change is *when* the deferred adjustment flushes (touch-aware instead of scroll-event-aware). If touch events aren't fired (non-touch device), `_iosTouching` and `_iosJustTouchEnded` stay false and we fall back to the current Experiment-2 behavior.
+**Low.** All changes are additive; the only flow change is _when_ the deferred adjustment flushes (touch-aware instead of scroll-event-aware). If touch events aren't fired (non-touch device), `_iosTouching` and `_iosJustTouchEnded` stay false and we fall back to the current Experiment-2 behavior.
 
 ### Effort estimate
 
 **4–6 hours**:
+
 - 1 h: implement the three fields, listeners, and flush gate
 - 1 h: write 7 regression tests with mocked touch events
 - 1 h: verify in a real iOS browser via Playwright (manual)
@@ -127,12 +134,13 @@ Two narrower fixes that address known Safari quirks not covered by Phase 1.
 Safari (and Chrome/Firefox in 2023+) round `scrollTop`/`scrollLeft` writes to integer pixels under some DPR settings. If we write `el.scrollTop = 12345.5`, the actual scrollTop is 12345 or 12346. Subsequent `el.scrollTop` reads can disagree with the value we wrote by up to 1 px.
 
 This currently shows up as:
+
 - Our `reconcileScroll` sees `getScrollOffset() !== targetOffset` even after a clean write → believes target shifted → re-fires `_scrollToOffset` → infinite ping-pong
 - The existing `approxEqual(a, b) < 1.01` tolerance is what protects us, but it's a workaround, not a fix
 
 #### Mechanism
 
-Track the *intended* scrollTop separately from the browser's reported value:
+Track the _intended_ scrollTop separately from the browser's reported value:
 
 ```ts
 // New field
@@ -181,7 +189,7 @@ if (isFromOurWrite) {
 
 #### Why it matters
 
-Safari's elastic scrolling (rubber-band) lets the user drag past the top or bottom of the content. During that overscroll period, `scrollTop` is negative or greater than `scrollHeight - clientHeight`. Our `resizeItem` adjustments don't check this and can write scrollTop *into* the elastic-overscroll zone, which on touchend snaps back to a different position than the user expected.
+Safari's elastic scrolling (rubber-band) lets the user drag past the top or bottom of the content. During that overscroll period, `scrollTop` is negative or greater than `scrollHeight - clientHeight`. Our `resizeItem` adjustments don't check this and can write scrollTop _into_ the elastic-overscroll zone, which on touchend snaps back to a different position than the user expected.
 
 #### Mechanism
 
@@ -193,7 +201,10 @@ const cur = this.getScrollOffset()
 const inElasticZone = cur < 0 || cur > max
 
 if (!inElasticZone) {
-  this._scrollToOffset(currentOffset, { adjustments: deferred, behavior: undefined })
+  this._scrollToOffset(currentOffset, {
+    adjustments: deferred,
+    behavior: undefined,
+  })
 }
 // else: leave the adjustment deferred; it gets re-attempted on the next
 // scroll event, by which time the elastic-bounce has resolved
@@ -222,20 +233,20 @@ if (!inElasticZone) {
 
 ## Combined Phase 2 totals
 
-| Item | Effort | Bundle |
-|---|---:|---:|
-| 2a subpixel reconciliation | 3–4 h | +80 B |
-| 2b scrollTopMax clamp | 2–3 h | +50 B |
-| **Phase 2 total** | **5–7 h** | **+130 B** |
+| Item                       |    Effort |     Bundle |
+| -------------------------- | --------: | ---------: |
+| 2a subpixel reconciliation |     3–4 h |      +80 B |
+| 2b scrollTopMax clamp      |     2–3 h |      +50 B |
+| **Phase 2 total**          | **5–7 h** | **+130 B** |
 
 ## Combined Phase 1 + 2
 
-| | Effort | Bundle | New tests | Closes / addresses |
-|---|---:|---:|---:|---|
-| Phase 1 (touch distinction) | 4–6 h | +150 B | 7 | #884 (mostly), #622, #545 cleanly |
-| Phase 2a (subpixel) | 3–4 h | +80 B | 3 | scrollToIndex precision on subpixel DPRs |
-| Phase 2b (scrollTopMax) | 2–3 h | +50 B | 4 | iOS overscroll → resize snap-back bugs |
-| **Total** | **9–13 h** | **+280 B** | **14** | All three open iOS issues + several subtle ones |
+|                             |     Effort |     Bundle | New tests | Closes / addresses                              |
+| --------------------------- | ---------: | ---------: | --------: | ----------------------------------------------- |
+| Phase 1 (touch distinction) |      4–6 h |     +150 B |         7 | #884 (mostly), #622, #545 cleanly               |
+| Phase 2a (subpixel)         |      3–4 h |      +80 B |         3 | scrollToIndex precision on subpixel DPRs        |
+| Phase 2b (scrollTopMax)     |      2–3 h |      +50 B |         4 | iOS overscroll → resize snap-back bugs          |
+| **Total**                   | **9–13 h** | **+280 B** |    **14** | All three open iOS issues + several subtle ones |
 
 After this, our iOS code-path count goes from 0 → ~10 (vs virtua's 17+). The remaining 7-ish are: the overflow:hidden momentum-break hack, dual-direction wheel handling, RTL-on-iOS quirks, and edge-case scroll-snap interactions. Those have diminishing returns; would only revisit if specific issues come in.
 
@@ -251,13 +262,13 @@ After this, our iOS code-path count goes from 0 → ~10 (vs virtua's 17+). The r
 
 Measured against the current shipped bundle (5,847 B gzip):
 
-| Item | Source size | Gzip impact | Notes |
-|---|---:|---:|---|
-| Exp 2 (already shipped) | ~250 B | **103 B** | The `isIOSWebKit()` detection + `_iosDeferredAdjustment` field + flush logic |
-| Phase 1 (touch distinction) | ~280 B | **~150 B** | 3 fields + 2 listeners + 150ms timer + flush gate |
-| Phase 2a (subpixel reconciliation) | ~120 B | **~80 B** | 1 field + tracking logic in `_scrollToOffset` + callback |
-| Phase 2b (scrollTopMax clamp) | ~80 B | **~50 B** | `inElasticZone` guard around the flush write |
-| **Total iOS cost (post Phase 1+2)** | **~730 B** | **~383 B** | ~6.5% of total bundle |
+| Item                                | Source size | Gzip impact | Notes                                                                        |
+| ----------------------------------- | ----------: | ----------: | ---------------------------------------------------------------------------- |
+| Exp 2 (already shipped)             |      ~250 B |   **103 B** | The `isIOSWebKit()` detection + `_iosDeferredAdjustment` field + flush logic |
+| Phase 1 (touch distinction)         |      ~280 B |  **~150 B** | 3 fields + 2 listeners + 150ms timer + flush gate                            |
+| Phase 2a (subpixel reconciliation)  |      ~120 B |   **~80 B** | 1 field + tracking logic in `_scrollToOffset` + callback                     |
+| Phase 2b (scrollTopMax clamp)       |       ~80 B |   **~50 B** | `inElasticZone` guard around the flush write                                 |
+| **Total iOS cost (post Phase 1+2)** |  **~730 B** |  **~383 B** | ~6.5% of total bundle                                                        |
 
 ### Does it tree-shake?
 
@@ -265,11 +276,11 @@ Measured against the current shipped bundle (5,847 B gzip):
 
 What this means in practice:
 
-| Consumer | Downloads | First-time runtime | Per-event cost |
-|---|---|---|---|
-| Chrome/Firefox desktop | All ~390 B | One UA-regex call (cached) | One bool check |
-| iOS Safari | All ~390 B | One UA-regex call (cached) | Activates deferral |
-| Next.js SSR (Node) | All ~390 B | `typeof navigator === 'undefined'` → early-return | Never executes |
+| Consumer               | Downloads  | First-time runtime                                | Per-event cost     |
+| ---------------------- | ---------- | ------------------------------------------------- | ------------------ |
+| Chrome/Firefox desktop | All ~390 B | One UA-regex call (cached)                        | One bool check     |
+| iOS Safari             | All ~390 B | One UA-regex call (cached)                        | Activates deferral |
+| Next.js SSR (Node)     | All ~390 B | `typeof navigator === 'undefined'` → early-return | Never executes     |
 
 ### Could we make it shake out?
 

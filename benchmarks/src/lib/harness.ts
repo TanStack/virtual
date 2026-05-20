@@ -132,8 +132,7 @@ export function installBenchAPI(): void {
       const h = await waitFor(() => window.__bench?.handle ?? null)
       const mountStart = window.__bench?.mountStart ?? 0
       const mountEnd = window.__bench?.mountEnd ?? performance.now()
-      const firstPaintEnd =
-        window.__bench?.firstPaintEnd ?? performance.now()
+      const firstPaintEnd = window.__bench?.firstPaintEnd ?? performance.now()
 
       const mountMs = Math.max(0, mountEnd - mountStart)
       const firstPaintMs = Math.max(0, firstPaintEnd - mountStart)
@@ -202,7 +201,9 @@ export function installBenchAPI(): void {
         // top tells us where it actually landed. With align:'start', we want
         // item[targetIndex]'s top to be at viewport top — i.e., offset 0.
         const itemSelector = `[data-index="${targetIndex}"]`
-        const itemEl = container.querySelector(itemSelector) as HTMLElement | null
+        const itemEl = container.querySelector(
+          itemSelector,
+        ) as HTMLElement | null
         if (itemEl) {
           const itemRect = itemEl.getBoundingClientRect()
           const containerRect = container.getBoundingClientRect()

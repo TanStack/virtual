@@ -1358,7 +1358,9 @@ function withFakeIOSUserAgent<T>(fn: () => T): T {
 test('iOS deferral: scroll-position write is deferred during isScrolling', () => {
   withFakeIOSUserAgent(() => {
     const scrollToFn = vi.fn()
-    let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null = null
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
     const v = new Virtualizer({
       count: 10,
       estimateSize: () => 50,
@@ -1404,7 +1406,9 @@ test('iOS deferral: scroll-position write is deferred during isScrolling', () =>
 test('iOS deferral: multiple resizes during scroll accumulate and flush as one', () => {
   withFakeIOSUserAgent(() => {
     const scrollToFn = vi.fn()
-    let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null = null
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
     const v = new Virtualizer({
       count: 10,
       estimateSize: () => 50,
@@ -1493,10 +1497,7 @@ function makeIOSVirtualizerWithRealEl(
   return { v, el }
 }
 
-function dispatchTouchEvent(
-  el: any,
-  type: 'touchstart' | 'touchend',
-) {
+function dispatchTouchEvent(el: any, type: 'touchstart' | 'touchend') {
   el._dispatch(type)
 }
 
@@ -2099,9 +2100,14 @@ test('takeSnapshot: returns measured items only, restorable via initialMeasureme
   expect(snapshot[1]!.size).toBe(60)
   expect(snapshot[2]!.size).toBe(100)
   // snapshot entries are plain objects (not Proxy refs)
-  expect(Object.keys(snapshot[0]!).sort()).toEqual(
-    ['end', 'index', 'key', 'lane', 'size', 'start'],
-  )
+  expect(Object.keys(snapshot[0]!).sort()).toEqual([
+    'end',
+    'index',
+    'key',
+    'lane',
+    'size',
+    'start',
+  ])
 
   // Restore: pass snapshot to a fresh virtualizer
   const v2 = new Virtualizer({
@@ -2146,7 +2152,8 @@ test('reconcileScroll: smooth scroll retargets remain smooth while distance > vi
   // measured in and shifted positions), the prior behavior snapped to
   // behavior:'auto' on the first retarget. New behavior: keep smooth while
   // we're still more than a viewport away, snap only on final approach.
-  const { rafCallbacks, mockScrollElement, scrollToFn } = createMockEnvironment()
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
   const virtualizer = new Virtualizer({
     count: 10000,
     estimateSize: () => 50,
@@ -2178,8 +2185,7 @@ test('reconcileScroll: smooth scroll retargets remain smooth while distance > vi
   rafCallbacks.forEach((cb) => cb(0))
 
   // The reconcile retarget should be smooth (we're far from target).
-  const lastCall =
-    scrollToFn.mock.calls[scrollToFn.mock.calls.length - 1]
+  const lastCall = scrollToFn.mock.calls[scrollToFn.mock.calls.length - 1]
   expect(lastCall![1].behavior).toBe('smooth')
 })
 
@@ -2233,11 +2239,7 @@ function makeBaseInstance(scrollEl: any, opts: any = {}) {
 test('elementScroll: calls scrollTo with top + behavior on the scroll element', () => {
   const scrollTo = vi.fn()
   const scrollEl = { scrollTo }
-  elementScroll(
-    100,
-    { behavior: 'smooth' },
-    makeBaseInstance(scrollEl) as any,
-  )
+  elementScroll(100, { behavior: 'smooth' }, makeBaseInstance(scrollEl) as any)
   expect(scrollTo).toHaveBeenCalledWith({ top: 100, behavior: 'smooth' })
 })
 
@@ -2266,11 +2268,7 @@ test('elementScroll: uses left when horizontal is true', () => {
 test('windowScroll: calls scrollTo with top + behavior on the window', () => {
   const scrollTo = vi.fn()
   const win = { scrollTo }
-  windowScroll(
-    250,
-    { behavior: 'smooth' },
-    makeBaseInstance(win) as any,
-  )
+  windowScroll(250, { behavior: 'smooth' }, makeBaseInstance(win) as any)
   expect(scrollTo).toHaveBeenCalledWith({ top: 250, behavior: 'smooth' })
 })
 
@@ -2298,7 +2296,12 @@ test('elementScroll / windowScroll: no-op when scrollElement is null', () => {
 
 function makeObserveInstance(
   element: any,
-  opts: { horizontal?: boolean; isRtl?: boolean; useScrollendEvent?: boolean; isScrollingResetDelay?: number } = {},
+  opts: {
+    horizontal?: boolean
+    isRtl?: boolean
+    useScrollendEvent?: boolean
+    isScrollingResetDelay?: number
+  } = {},
   targetWindow: any = {
     setTimeout: globalThis.setTimeout.bind(globalThis),
     clearTimeout: globalThis.clearTimeout.bind(globalThis),
@@ -2319,7 +2322,9 @@ function makeObserveInstance(
 
 test('observeElementOffset: returns undefined when scrollElement is null', () => {
   const cb = vi.fn()
-  expect(observeElementOffset(makeObserveInstance(null) as any, cb)).toBeUndefined()
+  expect(
+    observeElementOffset(makeObserveInstance(null) as any, cb),
+  ).toBeUndefined()
   expect(cb).not.toHaveBeenCalled()
 })
 
@@ -2363,7 +2368,9 @@ test('observeElementOffset: reads scrollLeft + applies isRtl when horizontal', (
 
 test('observeWindowOffset: returns undefined when scrollElement is null', () => {
   const cb = vi.fn()
-  expect(observeWindowOffset(makeObserveInstance(null) as any, cb)).toBeUndefined()
+  expect(
+    observeWindowOffset(makeObserveInstance(null) as any, cb),
+  ).toBeUndefined()
 })
 
 test('observeWindowOffset: attaches scroll listener and fires callback with scrollY', () => {
@@ -2418,10 +2425,7 @@ test('observeWindowOffset: reads scrollX when horizontal', () => {
     addEventListener: (name: string, fn: any) => listeners.set(name, fn),
     removeEventListener: (name: string) => listeners.delete(name),
   }
-  observeWindowOffset(
-    makeObserveInstance(win, { horizontal: true }) as any,
-    cb,
-  )
+  observeWindowOffset(makeObserveInstance(win, { horizontal: true }) as any, cb)
   listeners.get('scroll')!({} as Event)
   expect(cb).toHaveBeenCalledWith(75, true)
 })

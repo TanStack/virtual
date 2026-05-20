@@ -5,7 +5,11 @@ import { VirtuaPageRoot } from './pages/VirtuaPage'
 import { VirtuosoPageRoot } from './pages/VirtuosoPage'
 import { WindowPageRoot } from './pages/WindowPage'
 import { installBenchAPI } from './lib/harness'
-import { SCENARIOS, type LibraryName, type ScenarioInput } from './scenarios/types'
+import {
+  SCENARIOS,
+  type LibraryName,
+  type ScenarioInput,
+} from './scenarios/types'
 
 // Install window.bench BEFORE React renders so the Playwright runner can
 // wait for it deterministically.
@@ -15,9 +19,7 @@ function readQuery(): { lib: LibraryName; scenario: ScenarioInput } {
   const q = new URLSearchParams(window.location.search)
   const lib = (q.get('lib') ?? 'tanstack') as LibraryName
   const id = q.get('scenario') ?? 'mount-fixed-1k'
-  const scenario =
-    SCENARIOS.find((s) => s.id === id) ??
-    SCENARIOS[0]!
+  const scenario = SCENARIOS.find((s) => s.id === id) ?? SCENARIOS[0]!
   return { lib, scenario }
 }
 

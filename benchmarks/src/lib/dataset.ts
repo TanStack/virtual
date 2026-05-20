@@ -13,9 +13,32 @@ export interface Item {
 }
 
 const WORDS = [
-  'alpha','bravo','charlie','delta','echo','foxtrot','golf','hotel','india',
-  'juliet','kilo','lima','mike','november','oscar','papa','quebec','romeo',
-  'sierra','tango','uniform','victor','whiskey','x-ray','yankee','zulu',
+  'alpha',
+  'bravo',
+  'charlie',
+  'delta',
+  'echo',
+  'foxtrot',
+  'golf',
+  'hotel',
+  'india',
+  'juliet',
+  'kilo',
+  'lima',
+  'mike',
+  'november',
+  'oscar',
+  'papa',
+  'quebec',
+  'romeo',
+  'sierra',
+  'tango',
+  'uniform',
+  'victor',
+  'whiskey',
+  'x-ray',
+  'yankee',
+  'zulu',
 ]
 
 // Simple LCG so the same seed yields the same sequence in any JS runtime.
@@ -54,7 +77,8 @@ export function makeDataset(
           parts[w] = WORDS[Math.floor(rand() * WORDS.length)]!
         }
         // 25% of dynamic items get a multi-line burst for height variation.
-        const burst = rand() < 0.25 ? ' ' + parts.join(' ') + ' ' + parts.join(' ') : ''
+        const burst =
+          rand() < 0.25 ? ' ' + parts.join(' ') + ' ' + parts.join(' ') : ''
         items[i] = { id: i, text: `#${i} ${parts.join(' ')}${burst}` }
       }
     } else {

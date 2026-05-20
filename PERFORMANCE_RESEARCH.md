@@ -16,20 +16,20 @@ TanStack Virtual is structurally sound and **algorithmically competitive** with 
 
 ## Headline Findings (severity-ranked)
 
-| # | Issue | Severity | Effort | Bench Result |
-|---|---|---|---|---|
-| 1 | `new Map(this.itemSizeCache.set(...))` in `resizeItem` is **O(n) per call, O(n²) per measure storm** | 🔴 CRITICAL | XS | **3540× slower at n=10k** (2.9s real) |
-| 2 | `resizeItem` calls `notify(false)` directly, **bypassing `maybeNotify` memoization** | 🔴 HIGH | S | Triggers full React re-render per item resize |
-| 3 | `setOptions` uses `Object.entries().forEach(delete)` — **V8 dictionary-mode deopt on every render** | 🟠 HIGH | XS | **9.3× slower** (105ms vs 11ms / 100k calls) |
-| 4 | Position cache rebuild is **O(n - min)** every render when sizes change; competitors are O(1)/O(log n) | 🟠 HIGH | L | **82,000× slower** for index-0 resize at n=100k vs Fenwick |
-| 5 | `flushSync(rerender)` is the **default** during scroll | 🟠 HIGH | S | Frame drops on fast scroll; well-known anti-pattern |
-| 6 | `Math.min(...this.pendingMeasuredCacheIndexes)` spreads array — **stack overflow risk at ~125k** | 🟡 MED | XS | ~2× slower, correctness footgun |
-| 7 | `calculateRange` lanes mode: O(visible × lanes) walk with `.some()` per iteration + per-call array alloc | 🟡 MED | S | Visible on grid layouts |
-| 8 | `getFurthestMeasurement` is **O(n) per cache-miss** → O(n²) cold build of lane lists | 🟡 MED | M | Mount cost on large grids |
-| 9 | `scrollAdjustments = 0` reset is **racy** with measurement-driven `_scrollToOffset` | 🟡 MED | M | User-visible jumps during fast measure |
-| 10 | RO callback skips `elementsCache.delete()` on disconnect → small leak window | 🟢 LOW | XS | Memory only, not perf |
-| 11 | `useReducer(() => ({}), {})[1]` allocates `{}` per re-render | 🟢 LOW | XS | Trivial fix |
-| 12 | `defaultRangeExtractor` uses `push` instead of pre-sized array | 🟢 LOW | XS | ~2× but tiny absolute |
+| #   | Issue                                                                                                    | Severity    | Effort | Bench Result                                               |
+| --- | -------------------------------------------------------------------------------------------------------- | ----------- | ------ | ---------------------------------------------------------- |
+| 1   | `new Map(this.itemSizeCache.set(...))` in `resizeItem` is **O(n) per call, O(n²) per measure storm**     | 🔴 CRITICAL | XS     | **3540× slower at n=10k** (2.9s real)                      |
+| 2   | `resizeItem` calls `notify(false)` directly, **bypassing `maybeNotify` memoization**                     | 🔴 HIGH     | S      | Triggers full React re-render per item resize              |
+| 3   | `setOptions` uses `Object.entries().forEach(delete)` — **V8 dictionary-mode deopt on every render**      | 🟠 HIGH     | XS     | **9.3× slower** (105ms vs 11ms / 100k calls)               |
+| 4   | Position cache rebuild is **O(n - min)** every render when sizes change; competitors are O(1)/O(log n)   | 🟠 HIGH     | L      | **82,000× slower** for index-0 resize at n=100k vs Fenwick |
+| 5   | `flushSync(rerender)` is the **default** during scroll                                                   | 🟠 HIGH     | S      | Frame drops on fast scroll; well-known anti-pattern        |
+| 6   | `Math.min(...this.pendingMeasuredCacheIndexes)` spreads array — **stack overflow risk at ~125k**         | 🟡 MED      | XS     | ~2× slower, correctness footgun                            |
+| 7   | `calculateRange` lanes mode: O(visible × lanes) walk with `.some()` per iteration + per-call array alloc | 🟡 MED      | S      | Visible on grid layouts                                    |
+| 8   | `getFurthestMeasurement` is **O(n) per cache-miss** → O(n²) cold build of lane lists                     | 🟡 MED      | M      | Mount cost on large grids                                  |
+| 9   | `scrollAdjustments = 0` reset is **racy** with measurement-driven `_scrollToOffset`                      | 🟡 MED      | M      | User-visible jumps during fast measure                     |
+| 10  | RO callback skips `elementsCache.delete()` on disconnect → small leak window                             | 🟢 LOW      | XS     | Memory only, not perf                                      |
+| 11  | `useReducer(() => ({}), {})[1]` allocates `{}` per re-render                                             | 🟢 LOW      | XS     | Trivial fix                                                |
+| 12  | `defaultRangeExtractor` uses `push` instead of pre-sized array                                           | 🟢 LOW      | XS     | ~2× but tiny absolute                                      |
 
 ---
 
@@ -107,7 +107,7 @@ measure = () => {
 [`packages/virtual-core/src/index.ts:1084`](packages/virtual-core/src/index.ts:1084):
 
 ```ts
-this.notify(false)   // ← bypasses the [isScrolling, startIndex, endIndex] memo
+this.notify(false) // ← bypasses the [isScrolling, startIndex, endIndex] memo
 ```
 
 `maybeNotify` exists to dedupe renders by visible-range. But `resizeItem` calls `notify(false)` directly, so every off-screen item resizing triggers a React re-render — even when the visible range doesn't shift.
@@ -130,18 +130,21 @@ setOptions = (opts: VirtualizerOptions<...>) => {
 ```
 
 Two problems:
+
 1. `delete` on an object created via React's JSX spread forces V8 to transition the hidden class from a fast in-line representation to **dictionary mode**. Every subsequent `this.options.x` access is slower for the lifetime of the virtualizer.
 2. `Object.entries` allocates an array of `[key, value]` pairs every call.
 
 `setOptions` runs **on every React render** of every virtualizer ([`packages/react-virtual/src/index.tsx:54`](packages/react-virtual/src/index.tsx:54)).
 
 **Measured cost**:
+
 ```
 current 100,000 calls: 105.5ms
 fixed   100,000 calls: 11.3ms   (9.3× faster)
 ```
 
 **Fix**:
+
 ```ts
 setOptions = (opts: VirtualizerOptions<...>) => {
   this.options = { ...defaults }
@@ -186,6 +189,7 @@ this.pendingMin = null
 ## 2.1 — `virtua` (inokawa) — the strongest competitor
 
 **Architecture**:
+
 - `cache.ts` (234 lines): position cache as **two flat arrays + a high-water mark**
   - `_sizes[i]: number` — measured size or `UNCACHED = -1`
   - `_offsets[i]: number` — lazy prefix sum, only filled up to `_computedOffsetIndex`
@@ -207,7 +211,7 @@ this.pendingMin = null
 
 5. **Jump accumulator for off-viewport resize**: maintains `jump` + `pendingJump` numbers; applies compensation in `useLayoutEffect` via programmatic scroll. Has special-cased deferral for **iOS WebKit during momentum scroll** (writing scrollTop cancels momentum on iOS) and Firefox manual smooth-scroll quirks. We do `_scrollToOffset(offset, {adjustments: this.scrollAdjustments += delta})` immediately — simpler, but doesn't handle the iOS case.
 
-6. **Smooth-scroll-to-unmeasured-index pre-measurement**: Before starting smooth scroll, virtua *freezes* the destination range, awaits all items to measure, then issues a single smooth scroll. We do `scrollState` reconcile loop that switches `behavior: 'smooth'` → `'auto'` if target moves — responsive but visibly course-corrects.
+6. **Smooth-scroll-to-unmeasured-index pre-measurement**: Before starting smooth scroll, virtua _freezes_ the destination range, awaits all items to measure, then issues a single smooth scroll. We do `scrollState` reconcile loop that switches `behavior: 'smooth'` → `'auto'` if target moves — responsive but visibly course-corrects.
 
 7. **Reverse infinite scroll** (`shift=true` on items length change): virtua prepends `UNCACHED` items and adjusts scroll position automatically. **We don't support this**; it's explicitly listed as "❌" in virtua's feature comparison vs us.
 
@@ -240,6 +244,7 @@ The README has a benchmark section marked `WIP` — no specific perf-vs-tanstack
 ## 2.2 — `react-virtuoso` (petyosi)
 
 **Architecture**: An entirely different design built around:
+
 - **AA tree** (`AATree.ts`, 265 lines) — Arne Andersson 1993 self-balancing BST, **keyed by item-size-range**, not per item
 - **`gurx` reactive system** (~30 streams + 11 dependency systems via `systemToComponent`)
 - **`sizeSystem.ts` (728 lines)**: dual data structure — `sizeTree` (AA tree, range-keyed) + `offsetTree` (flat array of transition points, binary-searchable)
@@ -249,11 +254,11 @@ The README has a benchmark section marked `WIP` — no specific perf-vs-tanstack
 ```ts
 // react-virtuoso/packages/react-virtuoso/src/AATree.ts:1-26
 interface NonNilAANode<T> {
-  k: number    // key = item index where this size range begins
+  k: number // key = item index where this size range begins
   l: AANode<T>
   lvl: number
   r: AANode<T>
-  v: T         // value = size in pixels
+  v: T // value = size in pixels
 }
 ```
 
@@ -263,13 +268,13 @@ If items 0–99 are 50px, item 100 is 80px, items 101–999 are 50px, the tree o
 
 For a list where items share sizes (the common case for tables, chats, product grids):
 
-| Operation | virtuoso | virtua | TanStack |
-|---|---|---|---|
-| Insert size | O(log G) | O(1) | O(n) clone Map (!) |
-| Find size at index | O(log G) | O(1) | O(1) |
-| Offset → index | O(log G) (G ≈ 3) | O(log n) | O(log n) |
-| Resize of item k | O(log G) tree update | O(1) | O(n − min) eager rebuild |
-| Memory | O(G) — G is # distinct sizes | O(n) — 2 numbers/item | O(n) — 6-field object/item + Map |
+| Operation          | virtuoso                     | virtua                | TanStack                         |
+| ------------------ | ---------------------------- | --------------------- | -------------------------------- |
+| Insert size        | O(log G)                     | O(1)                  | O(n) clone Map (!)               |
+| Find size at index | O(log G)                     | O(1)                  | O(1)                             |
+| Offset → index     | O(log G) (G ≈ 3)             | O(log n)              | O(log n)                         |
+| Resize of item k   | O(log G) tree update         | O(1)                  | O(n − min) eager rebuild         |
+| Memory             | O(G) — G is # distinct sizes | O(n) — 2 numbers/item | O(n) — 6-field object/item + Map |
 
 For a 1M-item list with 5 size variants, virtuoso uses **5 tree nodes**. We use **6M+ numbers** plus 1M VirtualItem objects.
 
@@ -285,7 +290,7 @@ For a 1M-item list with 5 size variants, virtuoso uses **5 tree nodes**. We use 
 ### What we do better than virtuoso
 
 1. **Massively simpler API surface** (1 class vs 30 streams + 11 systems). Easier to debug, audit, and reason about.
-2. **Lower GC pressure**: virtuoso's AA tree is *persistent* — every insert clones nodes along the rotation path (~6 allocations per insert).
+2. **Lower GC pressure**: virtuoso's AA tree is _persistent_ — every insert clones nodes along the rotation path (~6 allocations per insert).
 3. **No reactive system overhead**: `pipe()` allocates closures, `combineLatest` allocates arrays per emission, `withLatestFrom([9 streams])` runs on every scroll event.
 4. **No `flushSync(call)` inside scroll listener** ([`useScrollTop.ts:67`](https://github.com/petyosi/react-virtuoso/blob/master/packages/react-virtuoso/src/hooks/useScrollTop.ts)). Their default scroll path forces synchronous renders, breaking concurrent React.
 
@@ -297,9 +302,9 @@ For a 1M-item list with 5 size variants, virtuoso uses **5 tree nodes**. We use 
 - **Range search**: **LINEAR scan** (!) — no binary search:
   ```ts
   while (currentIndex < maxIndex) {
-    const bounds = cachedBounds.get(currentIndex);
-    if (bounds.scrollOffset + bounds.size > containerScrollOffset) break;
-    currentIndex++;
+    const bounds = cachedBounds.get(currentIndex)
+    if (bounds.scrollOffset + bounds.size > containerScrollOffset) break
+    currentIndex++
   }
   ```
 - **Dynamic measurement** via opt-in `useDynamicRowHeight` hook with shared `ResizeObserver`
@@ -317,7 +322,7 @@ For a 1M-item list with 5 size variants, virtuoso uses **5 tree nodes**. We use 
 ### What we do better than v2
 
 1. **Binary search by default** — v2's linear range scan is **O(n) per scroll event**, ours is O(log n). For 100k items, that's the difference between 100k comparisons and ~17.
-2. **Incremental cache rebuild via `pendingMeasuredCacheIndexes`**: when one item resizes, we rebuild from `min` onward. **v2 rebuilds the entire cache from index 0** because its `useMemo` dep includes the `itemSize` function whose identity changes on every measurement (`useCachedBounds` recreates `createCachedBounds` from scratch). This is *strictly worse* than our pattern on dynamic lists.
+2. **Incremental cache rebuild via `pendingMeasuredCacheIndexes`**: when one item resizes, we rebuild from `min` onward. **v2 rebuilds the entire cache from index 0** because its `useMemo` dep includes the `itemSize` function whose identity changes on every measurement (`useCachedBounds` recreates `createCachedBounds` from scratch). This is _strictly worse_ than our pattern on dynamic lists.
 3. **Scroll position correction on item resize**: we have `scrollAdjustments`; v2 does not — items above viewport shift visibly when they resize.
 4. **Lanes / masonry**: v2's `<Grid>` requires both `rowHeight` and `columnWidth` upfront.
 5. **`gap`, `scrollMargin`, `paddingStart/End`, `scrollPaddingStart/End`, `getItemKey`** — more layout primitives.
@@ -325,6 +330,7 @@ For a 1M-item list with 5 size variants, virtuoso uses **5 tree nodes**. We use 
 ### v2 changelog (verbatim)
 
 > Version 2 is a major rewrite that offers the following benefits:
+>
 > - More ergonomic props API
 > - Automatic memoization of row/cell renderers and props/context
 > - Automatically sizing for List and Grid (no more need for AutoSizer)
@@ -478,7 +484,9 @@ Replace `Object.entries().forEach(delete)` with a `for...in` loop. **9.3× faste
 ```ts
 setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement>) => {
   this.options = {
-    debug: false, initialOffset: 0, overscan: 1, /* ...defaults... */
+    debug: false,
+    initialOffset: 0,
+    overscan: 1 /* ...defaults... */,
   } as Required<VirtualizerOptions<TScrollElement, TItemElement>>
   for (const key in opts) {
     const v = (opts as any)[key]
@@ -507,9 +515,9 @@ Don't allocate `VirtualItem` objects for unrendered items. Maintain `_sizes` and
 
 This is invasive — it touches `getMeasurements`, `calculateRange`, `getVirtualItems`, and every consumer that reads `measurementsCache[i]` directly. But the public API surface (`getVirtualItems()`, `getTotalSize()`, etc.) can stay identical.
 
-### 2.2 — Range-keyed size storage (virtuoso-style AA tree, *optional*)
+### 2.2 — Range-keyed size storage (virtuoso-style AA tree, _optional_)
 
-For lists with low size diversity (most real-world cases — tables, chats, products), an AA tree on size *transitions* gives O(log G) operations where G is distinct size groups. This is more invasive than 2.1 and only wins on specific workloads. **Investigate but probably defer** — the lazy prefix-sum cache from 2.1 captures most of the win with less complexity.
+For lists with low size diversity (most real-world cases — tables, chats, products), an AA tree on size _transitions_ gives O(log G) operations where G is distinct size groups. This is more invasive than 2.1 and only wins on specific workloads. **Investigate but probably defer** — the lazy prefix-sum cache from 2.1 captures most of the win with less complexity.
 
 ### 2.3 — Fix `scrollAdjustments = 0` race ([`index.ts:568`](packages/virtual-core/src/index.ts:568))
 
@@ -518,6 +526,7 @@ When measure-storm-induced `_scrollToOffset` calls intermix with browser scroll 
 ### 2.4 — Lanes mode optimization ([`index.ts:1395-1412`](packages/virtual-core/src/index.ts:1395))
 
 `calculateRange` lanes mode:
+
 - Reuse `endPerLane` / `startPerLane` as instance fields instead of allocating per call
 - Replace `.some(...)` per iteration with a fill-count check
 - Binary-search the forward expansion when measurements are large
@@ -530,23 +539,27 @@ When measure-storm-induced `_scrollToOffset` calls intermix with browser scroll 
 ## Tier 3 — Polish (XS-effort, low-but-real impact)
 
 ### 3.1 — `defaultRangeExtractor` pre-sized array ([`index.ts:54`](packages/virtual-core/src/index.ts:54))
+
 ### 3.2 — `useReducer` use numeric counter, not `()=>({})` ([`react-virtual/src/index.tsx:36`](packages/react-virtual/src/index.tsx:36))
+
 ### 3.3 — RO callback: delete from `elementsCache` on disconnect ([`index.ts:418-421`](packages/virtual-core/src/index.ts:418))
+
 ### 3.4 — `debounce` cleanup: clearTimeout in unsubscribe ([`utils.ts:94`](packages/virtual-core/src/utils.ts:94))
+
 ### 3.5 — `getTotalSize` multi-lane: inline max tracking instead of `Math.max(...)` spread ([`index.ts:1300`](packages/virtual-core/src/index.ts:1300))
 
 ## Tier 4 — New features competitors have (consider for roadmap)
 
-| Feature | virtua | virtuoso | react-cool-virtual | TanStack |
-|---|---|---|---|---|
-| Reverse infinite scroll | ✅ | ✅ | – | ❌ |
-| Scroll restoration (cache snapshot) | ✅ | ✅ | – | ❌ |
-| Built-in sticky headers | – | ✅ | ✅ | ❌ |
-| Built-in infinite scroll API | – | ✅ | ✅ | ❌ |
-| Auto-estimate default size from medians | ✅ | – | – | ❌ |
-| "Smart" alignment (no-op if visible) | – | – | – | ❌ (could borrow from react-window v2) |
-| `pointer-events: none` during scroll | ✅ | – | – | ❌ |
-| iOS WebKit momentum-scroll handling | ✅ | partial | – | ❌ |
+| Feature                                 | virtua | virtuoso | react-cool-virtual | TanStack                               |
+| --------------------------------------- | ------ | -------- | ------------------ | -------------------------------------- |
+| Reverse infinite scroll                 | ✅     | ✅       | –                  | ❌                                     |
+| Scroll restoration (cache snapshot)     | ✅     | ✅       | –                  | ❌                                     |
+| Built-in sticky headers                 | –      | ✅       | ✅                 | ❌                                     |
+| Built-in infinite scroll API            | –      | ✅       | ✅                 | ❌                                     |
+| Auto-estimate default size from medians | ✅     | –        | –                  | ❌                                     |
+| "Smart" alignment (no-op if visible)    | –      | –        | –                  | ❌ (could borrow from react-window v2) |
+| `pointer-events: none` during scroll    | ✅     | –        | –                  | ❌                                     |
+| iOS WebKit momentum-scroll handling     | ✅     | partial  | –                  | ❌                                     |
 
 The most-requested features in our issue tracker (per typical OSS patterns) are **reverse scroll and built-in sticky headers**. These are the highest-value adds.
 
@@ -554,32 +567,32 @@ The most-requested features in our issue tracker (per typical OSS patterns) are 
 
 # Part 5 — How We Stack Up by Workload
 
-| Workload | Winner | Runner-up | Our ranking |
-|---|---|---|---|
-| Fixed size, 100k+ items | react-window v1 FixedSizeList | react-window v2 | 3rd (we allocate `VirtualItem` array eagerly) |
-| Variable size, frequent resize | virtua | virtuoso | 4th today, 1st after Tier 1+2 fixes |
-| Initial render | react-window v1 FixedSizeList | react-cool-virtual | 4th (we have eager allocation) |
-| Steady-state scroll (60fps) | virtua | us | 2nd (we're competitive) |
-| Measurement-during-scroll | **us** | virtua | **1st** (this is our strength) |
-| Lanes / masonry | **us** | – | **1st** (no real competition) |
-| Reverse infinite scroll | virtua | virtuoso | n/a (we don't support) |
-| Bundle size | react-cool-virtual (3.1kB) | virtua (~3kB) | 3rd (~6-7kB) |
-| API simplicity | react-window v2 (auto-everything) | react-cool-virtual | 4th (we are headless on purpose) |
-| Concurrent-mode tearing safety | virtuoso (`useSyncExternalStore`) | – | tied-2nd (we use `useReducer`, like virtua) |
+| Workload                       | Winner                            | Runner-up          | Our ranking                                   |
+| ------------------------------ | --------------------------------- | ------------------ | --------------------------------------------- |
+| Fixed size, 100k+ items        | react-window v1 FixedSizeList     | react-window v2    | 3rd (we allocate `VirtualItem` array eagerly) |
+| Variable size, frequent resize | virtua                            | virtuoso           | 4th today, 1st after Tier 1+2 fixes           |
+| Initial render                 | react-window v1 FixedSizeList     | react-cool-virtual | 4th (we have eager allocation)                |
+| Steady-state scroll (60fps)    | virtua                            | us                 | 2nd (we're competitive)                       |
+| Measurement-during-scroll      | **us**                            | virtua             | **1st** (this is our strength)                |
+| Lanes / masonry                | **us**                            | –                  | **1st** (no real competition)                 |
+| Reverse infinite scroll        | virtua                            | virtuoso           | n/a (we don't support)                        |
+| Bundle size                    | react-cool-virtual (3.1kB)        | virtua (~3kB)      | 3rd (~6-7kB)                                  |
+| API simplicity                 | react-window v2 (auto-everything) | react-cool-virtual | 4th (we are headless on purpose)              |
+| Concurrent-mode tearing safety | virtuoso (`useSyncExternalStore`) | –                  | tied-2nd (we use `useReducer`, like virtua)   |
 
 ---
 
 # Part 6 — Honest Take on "Faster Than TanStack" Claims
 
-**virtua's claims**: Their README has no specific benchmarks against us. Their feature-comparison table claims wins on reverse scroll, RSC, scroll restoration — *features*, not raw perf. Their lazy prefix-sum cache *is* algorithmically better for dynamic resize workloads (real, structural advantage).
+**virtua's claims**: Their README has no specific benchmarks against us. Their feature-comparison table claims wins on reverse scroll, RSC, scroll restoration — _features_, not raw perf. Their lazy prefix-sum cache _is_ algorithmically better for dynamic resize workloads (real, structural advantage).
 
-**virtuoso's claims**: AA tree gives O(log G) operations. *Real*, but only matters at huge scale with low size diversity. Their reactive system overhead arguably offsets the algorithmic win for mid-size lists.
+**virtuoso's claims**: AA tree gives O(log G) operations. _Real_, but only matters at huge scale with low size diversity. Their reactive system overhead arguably offsets the algorithmic win for mid-size lists.
 
 **react-cool-virtual's claims**: "3.1kB gzip, millions of items via DOM recycling." The bundle size is real. The "millions of items" is marketing — every windowing library does that. Their per-item RO pattern is **strictly worse** than our shared RO.
 
 **react-window v2's claims**: "Smaller bundle, more ergonomic, auto-memoization." Bundle is real. Auto-memoization is a real DX win. But their **linear range scan** and **full-cache-rebuild on every measurement** make them strictly slower than us on dynamic lists.
 
-**Net assessment**: We are *not* the fastest in every dimension, but our floor is high and we have no truly catastrophic worst cases (assuming we fix the Map-clone bug). The "they are faster" complaints are typically about:
+**Net assessment**: We are _not_ the fastest in every dimension, but our floor is high and we have no truly catastrophic worst cases (assuming we fix the Map-clone bug). The "they are faster" complaints are typically about:
 
 1. The Map-clone bug (genuine, fixable) → Tier 1.1
 2. Bundle size (our headless API costs us KB) → out of scope
@@ -592,11 +605,13 @@ The most-requested features in our issue tracker (per typical OSS patterns) are 
 # Appendix A — Source File Map
 
 **TanStack Virtual** (in this repo):
+
 - [packages/virtual-core/src/index.ts](packages/virtual-core/src/index.ts) — Virtualizer class, 1421 lines
 - [packages/virtual-core/src/utils.ts](packages/virtual-core/src/utils.ts) — memo, debounce, approxEqual, 104 lines
 - [packages/react-virtual/src/index.tsx](packages/react-virtual/src/index.tsx) — useVirtualizer hook, 101 lines
 
 **Competitors** (cloned to /tmp/virt-research/):
+
 - /tmp/virt-research/virtua/src/core/cache.ts — lazy prefix-sum cache, 234 lines
 - /tmp/virt-research/virtua/src/core/store.ts — bitmask subscription store + jump accumulator, 477 lines
 - /tmp/virt-research/virtua/src/core/resizer.ts — single shared RO + batched dispatch, 293 lines
@@ -611,6 +626,7 @@ The most-requested features in our issue tracker (per typical OSS patterns) are 
 # Appendix B — Benchmark Source
 
 The Node 22 microbenchmarks used in this report:
+
 - /tmp/virt-research/bench-map-clone.mjs
 - /tmp/virt-research/bench-misc.mjs
 - /tmp/virt-research/bench-cache-rebuild.mjs

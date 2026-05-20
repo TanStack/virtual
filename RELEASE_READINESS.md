@@ -6,41 +6,41 @@
 
 33 commits ahead of `origin/main`. Broken down by category:
 
-| Category | Commits | Net effect |
-|---|---:|---|
-| Audit-driven perf fixes (Layers 1-8) | 9 | 11×–1382× on the worst measure-storm bench, defensive against several latent bugs |
-| Refactors + tree-shake fixes | 4 | Cleaner codebase, downstream-minifier wins |
-| Experimental perf rewrite (Exp 1-7) | 7 | 4.7× cold mount at 100k, 5.4× at 500k |
-| iOS Safari handling (Phase 1+2) | 3 | Closes the largest mobile complaint cluster |
-| Benchmark suite + accuracy tests | 3 | Reproducible cross-library measurement, 4 accuracy scenarios |
-| Documentation + changesets | 7 | API docs, plan docs, claim verification, blog post, changesets |
+| Category                             | Commits | Net effect                                                                        |
+| ------------------------------------ | ------: | --------------------------------------------------------------------------------- |
+| Audit-driven perf fixes (Layers 1-8) |       9 | 11×–1382× on the worst measure-storm bench, defensive against several latent bugs |
+| Refactors + tree-shake fixes         |       4 | Cleaner codebase, downstream-minifier wins                                        |
+| Experimental perf rewrite (Exp 1-7)  |       7 | 4.7× cold mount at 100k, 5.4× at 500k                                             |
+| iOS Safari handling (Phase 1+2)      |       3 | Closes the largest mobile complaint cluster                                       |
+| Benchmark suite + accuracy tests     |       3 | Reproducible cross-library measurement, 4 accuracy scenarios                      |
+| Documentation + changesets           |       7 | API docs, plan docs, claim verification, blog post, changesets                    |
 
 ## Quality gates
 
-| Gate | Status |
-|---|---|
-| `pnpm test:lib` (unit tests, all packages) | ✅ 91/91 passing |
-| `pnpm test:types` | ✅ Clean |
-| `pnpm test:eslint` | ✅ Clean (was 2 errors + 1 warning; fixed) |
-| `pnpm test:build` | ✅ Clean |
-| `pnpm test:knip` | ✅ Clean (added `benchmarks` to ignore) |
-| `pnpm test:sherif` | ✅ Clean (aligned `benchmarks/package.json` versions) |
-| `pnpm test:docs` | ✅ No broken links |
-| `pnpm test:e2e` (angular, react) | ⚠️ Pre-existing on `main` — not from this branch |
-| Cross-library benchmark (`pnpm bench`) | ✅ Runs to completion across all 4 libraries |
+| Gate                                       | Status                                                |
+| ------------------------------------------ | ----------------------------------------------------- |
+| `pnpm test:lib` (unit tests, all packages) | ✅ 91/91 passing                                      |
+| `pnpm test:types`                          | ✅ Clean                                              |
+| `pnpm test:eslint`                         | ✅ Clean (was 2 errors + 1 warning; fixed)            |
+| `pnpm test:build`                          | ✅ Clean                                              |
+| `pnpm test:knip`                           | ✅ Clean (added `benchmarks` to ignore)               |
+| `pnpm test:sherif`                         | ✅ Clean (aligned `benchmarks/package.json` versions) |
+| `pnpm test:docs`                           | ✅ No broken links                                    |
+| `pnpm test:e2e` (angular, react)           | ⚠️ Pre-existing on `main` — not from this branch      |
+| Cross-library benchmark (`pnpm bench`)     | ✅ Runs to completion across all 4 libraries          |
 
 ## Changesets
 
 Six changesets covering all user-visible changes. All `@tanstack/virtual-core` except the last which is `@tanstack/react-virtual`:
 
-| File | Bump | Theme |
-|---|---|---|
-| `perf-core-mount-and-measure-storm.md` | minor | Lazy materialization rewrite + 8 audit hotfixes |
-| `feat-core-ios-scroll-handling.md` | minor | iOS Safari deferral (3 phases) |
-| `feat-core-scroll-up-jank-default.md` | minor | Backward-scroll skip default |
-| `feat-core-take-snapshot.md` | minor | New `takeSnapshot()` public method |
-| `feat-core-scroll-to-index-smooth.md` | patch | Smooth scroll keeps alive while > viewport from target |
-| `perf-react-virtual-rerender-alloc.md` | patch | `useReducer` numeric counter |
+| File                                   | Bump  | Theme                                                  |
+| -------------------------------------- | ----- | ------------------------------------------------------ |
+| `perf-core-mount-and-measure-storm.md` | minor | Lazy materialization rewrite + 8 audit hotfixes        |
+| `feat-core-ios-scroll-handling.md`     | minor | iOS Safari deferral (3 phases)                         |
+| `feat-core-scroll-up-jank-default.md`  | minor | Backward-scroll skip default                           |
+| `feat-core-take-snapshot.md`           | minor | New `takeSnapshot()` public method                     |
+| `feat-core-scroll-to-index-smooth.md`  | patch | Smooth scroll keeps alive while > viewport from target |
+| `perf-react-virtual-rerender-alloc.md` | patch | `useReducer` numeric counter                           |
 
 ## Behavior changes default-on consumers should know about
 
@@ -61,10 +61,10 @@ These three could surprise an existing user, although each one is well-defended 
 
 ## Bundle size
 
-| Build | Pre-release (origin/main) | This branch | Δ |
-|---|---:|---:|---:|
-| Consumer-minified gzip (esbuild prod) | 5.22 kB | **6.11 kB** | +890 B (+17%) |
-| Unminified ESM gzip (npm dist) | 6.48 kB | 8.33 kB | +1.85 kB |
+| Build                                 | Pre-release (origin/main) | This branch |             Δ |
+| ------------------------------------- | ------------------------: | ----------: | ------------: |
+| Consumer-minified gzip (esbuild prod) |                   5.22 kB | **6.11 kB** | +890 B (+17%) |
+| Unminified ESM gzip (npm dist)        |                   6.48 kB |     8.33 kB |      +1.85 kB |
 
 The 890 B gzip delta breaks down roughly: lazy materialization machinery (~430 B), iOS code (~370 B), and the various smaller fixes/refactors (~90 B). I went back and forth on the lazy machinery's bundle cost and came down on shipping it — the consumers who hit our worst mount-time cases are past the point where 400 bytes makes the difference, and the alternatives I tried either went the wrong direction on memory or required breaking changes to `measurementsCache`.
 
