@@ -1,5 +1,137 @@
 # @tanstack/virtual-core
 
+## 3.15.0
+
+### Minor Changes
+
+- iOS Safari momentum-scroll handling. Writing `scrollTop` while a finger ([#1168](https://github.com/TanStack/virtual/pull/1168))
+  is on the screen, during momentum decay, or while the page is in the
+  elastic-overscroll bounce zone all cancel the in-flight scroll in iOS
+  WebKit. The virtualizer previously had no iOS-specific handling, which
+  manifested as the recurring "scroll abruptly stops when content above
+  resizes" complaints on Safari mobile.
+
+  Adds three layers of protection, default-on, all transparent to
+  consumers:
+  - **Touch event distinction.** A touchstart→touchend window plus a
+    150 ms grace timer for the early-momentum phase. Scroll-position
+    adjustments triggered during any of these states accumulate into a
+    `_iosDeferredAdjustment` field instead of writing `scrollTop`.
+  - **Subpixel reconciliation.** When the browser reports back a rounded
+    `scrollTop` within 1.5 px of a value we just wrote, the virtualizer
+    prefers the intended value rather than treating the round-trip as a
+    user scroll.
+  - **Elastic-overscroll clamp.** The deferred-adjustment flush is skipped
+    when `scrollTop` is outside `[0, scrollHeight - clientHeight]`,
+    preventing a snap-back jolt at end-of-bounce. The next in-bounds
+    scroll event retries.
+
+  Non-iOS code paths are unchanged. iOS detection is SSR-safe and cached
+  after first call. Bundle cost is ~370 B gzip in the consumer-minified
+  production build — kept default-on because iOS Safari is a large share
+  of mobile traffic for the apps that use virtualization heavily.
+
+- Skip the scroll-position adjustment while the user is scrolling backward ([#1168](https://github.com/TanStack/virtual/pull/1168))
+  by default. When an above-viewport item resizes during backward scroll
+  (images load, content reflows, etc.) the prior behavior wrote `scrollTop`
+  to keep the visible window stable — but on backward scroll that write
+  fights the user's direction and produces visible "items jump up while I
+  scroll up" jank. This was the largest single complaint cluster in the
+  issue tracker (multiple recurring threads spanning years; users had
+  independently rediscovered the same workaround at least five times).
+
+  Forward-scroll and idle (mount-time) adjustments still fire as before
+  to preserve visual stability of the visible window. Consumers who want
+  the old behavior — adjusting on every above-viewport resize regardless
+  of direction — can supply `shouldAdjustScrollPositionOnItemSizeChange`
+  which is checked before the default branch.
+
+- Add `takeSnapshot()` instance method for scroll-restoration round-trips. ([#1168](https://github.com/TanStack/virtual/pull/1168))
+  Returns the currently-measured items as plain `VirtualItem` objects;
+  pair with the current `scrollOffset` to persist scroll position across
+  remounts (route navigation, list-view modals, etc.). The result feeds
+  back through the existing `initialMeasurementsCache` option:
+
+  ```tsx
+  const snapshot = virtualizer.takeSnapshot()
+  const offset = virtualizer.scrollOffset
+  // later, on remount:
+  useVirtualizer({
+    // …
+    initialMeasurementsCache: snapshot,
+    initialOffset: offset,
+  })
+  ```
+
+  Closes the gap to virtua's `takeCacheSnapshot()` and react-virtuoso's
+  `getState`. Only items actually rendered (and thus measured) are
+  included; unmeasured items fall back to `estimateSize` on restore.
+
+- Mount-time, measurement, and memory rewrite for huge lists. The hot path ([#1168](https://github.com/TanStack/virtual/pull/1168))
+  through `getMeasurements()` no longer allocates a `VirtualItem` object per
+  index for single-lane lists; instead it fills a `Float64Array` of
+  start/size pairs and materializes `VirtualItem` objects lazily through a
+  `Proxy`-backed view when consumers index into them. Internal hot paths
+  (`calculateRange`, `getVirtualItemForOffset`, `getTotalSize`, `resizeItem`)
+  read directly from the typed-array storage to avoid the Proxy.
+
+  Also collapses a chain of smaller hotspots discovered in an audit pass:
+  the per-resize `Map` clone in `resizeItem`, the `Object.entries+delete`
+  deopt in `setOptions`, the `Math.min(...pendingMeasuredCacheIndexes)`
+  spread, the `defaultRangeExtractor` `push` growth pattern, the eager
+  `measurementsCache` reference invalidation, and the leaked `elementsCache`
+  entries when a `ResizeObserver` fires for a node React already replaced.
+
+  Headline impact (measured against actual `Virtualizer` instances with
+  vitest bench):
+  - Cold mount @ 100k items: ~2.5 ms → ~0.5 ms (4.7×)
+  - Cold mount @ 500k items: ~14 ms → ~2.7 ms (5.2×)
+  - `resizeItem` storm of 10,000 measurements + final `getMeasurements`:
+    ~1.9 s → ~1.3 ms (≈1382×) — this was the dominant `Map`-clone bug
+  - `setOptions` × 10,000 calls (React-render-storm proxy): ~14 ms → ~1.3 ms
+    (11×)
+
+  The lanes>1 path keeps the previous eager allocation (lane assignment is
+  order-dependent and harder to defer cleanly); behavior is unchanged
+  there.
+
+  No public API change. `measurementsCache` is still an
+  `Array<VirtualItem>`-shaped value supporting `[i]`, `.length`, iteration,
+  etc. Internal consumers that previously read fields off `VirtualItem`
+  objects continue to do so transparently.
+
+### Patch Changes
+
+- `scrollToIndex(N, { behavior: 'smooth' })` on a dynamic-height list no ([#1168](https://github.com/TanStack/virtual/pull/1168))
+  longer snaps to `behavior: 'auto'` the moment a measurement shifts the
+  computed target offset. While the scroll is still more than a viewport
+  away from the new target, smooth scroll continues with the updated
+  endpoint; only on the final approach do we fall back to 'auto' for
+  precise landing. The user-visible effect is one continuous smooth
+  motion that subtly adjusts its endpoint as measurements arrive,
+  instead of the prior animation-then-snap pattern.
+
+  Also: once `reconcileScroll` reaches its stable-frames threshold, it
+  writes the exact target offset one final time. This is a no-op when
+  `scrollTop` already equals the target (the common case) but corrects
+  the rare subpixel-rounding case where smooth scroll undershoots by
+  less than 1 px.
+
+- Don't call `getItemKey` with a possibly-stale index when cleaning up ([#1168](https://github.com/TanStack/virtual/pull/1168))
+  `elementsCache` for a disconnected node. The cleanup now finds the
+  matching entry by node identity, so removing items from the end of
+  the list while a `ResizeObserver` still has the now-detached node
+  queued no longer throws (regression of #1148).
+
+- Two correctness fixes in the new code: ([#1168](https://github.com/TanStack/virtual/pull/1168))
+  - `measure()` now resets `pendingMin` so a prior `resizeItem()` that left
+    it non-null can't preserve stale `measurementsCache` entries before that
+    index. The next rebuild is guaranteed to start at 0.
+  - The iOS deferred-adjustment flush now rolls its accumulated delta into
+    `scrollAdjustments`. Without this, a resize landing between the flush
+    and the resulting scroll event would compute the next correction from
+    the stale pre-flush offset.
+
 ## 3.14.0
 
 ### Minor Changes
