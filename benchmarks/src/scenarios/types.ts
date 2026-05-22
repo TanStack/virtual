@@ -1,7 +1,12 @@
 // Shared scenario definitions used by every library page + the Playwright runner.
 // JSON-serializable so the runner can pass them as JS args via page.evaluate().
 
-export type LibraryName = 'tanstack' | 'virtua' | 'virtuoso' | 'window'
+export type LibraryName =
+  | 'tanstack'
+  | 'virtua'
+  | 'virtuoso'
+  | 'window'
+  | 'mui-x'
 
 export interface ScenarioInput {
   /** Stable id used for table keys and result filenames. */

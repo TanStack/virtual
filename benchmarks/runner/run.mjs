@@ -16,7 +16,7 @@ const BENCH_DIR = path.resolve(__dirname, '..')
 const PORT = 4173
 const BASE = `http://localhost:${PORT}`
 
-const ALL_LIBS = ['tanstack', 'virtua', 'virtuoso', 'window']
+const ALL_LIBS = ['tanstack', 'virtua', 'virtuoso', 'window', 'mui-x']
 const ALL_SCENARIOS = [
   'mount-fixed-1k',
   'mount-fixed-10k',

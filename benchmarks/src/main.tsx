@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MuiPageRoot } from './pages/MuiPage'
 import { TanstackPageRoot } from './pages/TanstackPage'
 import { VirtuaPageRoot } from './pages/VirtuaPage'
 import { VirtuosoPageRoot } from './pages/VirtuosoPage'
@@ -34,6 +35,8 @@ function App() {
       return <VirtuosoPageRoot scenario={scenario} />
     case 'window':
       return <WindowPageRoot scenario={scenario} />
+    case 'mui-x':
+      return <MuiPageRoot scenario={scenario} />
     default:
       return (
         <div style={{ padding: 24 }}>

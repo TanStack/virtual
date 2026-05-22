@@ -11,6 +11,7 @@
     "bench:headed": "node runner/run.mjs --headed"
   },
   "dependencies": {
+    "@mui/x-virtualizer": "^9.0.0-alpha.7",
     "@tanstack/react-virtual": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

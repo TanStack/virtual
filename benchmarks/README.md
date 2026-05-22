@@ -1,6 +1,6 @@
 # Virtualization benchmarks
 
-Reproducible browser benchmarks comparing **@tanstack/react-virtual**, **virtua**, **react-virtuoso**, and **react-window** v2.
+Reproducible browser benchmarks comparing **@tanstack/react-virtual**, **virtua**, **react-virtuoso**, **react-window** v2, and **@mui/x-virtualizer**.
 
 Same data, same scenarios, same harness — driven by Playwright against a real browser running a real Vite-built React app for each library.
 
@@ -159,6 +159,12 @@ it's measuring — it just calls one global function per page.
   TanStack uses `useVirtualizer` + `measureElement`; virtua uses `VList` with
   the `data`/`item` props; virtuoso uses `Virtuoso` with `fixedItemHeight`
   when applicable; react-window uses `List` + `useDynamicRowHeight`.
+- `@mui/x-virtualizer` is a grid-oriented engine; we adapt it to a list with
+  `LayoutList` and the default 1-column placeholder (the only way the library
+  is currently exposed for non-grid use). It still carries column/dimensions
+  bookkeeping the others don't, so its mount numbers should be read with
+  that caveat in mind. Dynamic rows use `getRowHeight: () => 'auto'` plus
+  the per-row `observeRowHeight` ref callback.
 - React 18 runs in production mode (no `<StrictMode>`).
 - Dataset is deterministic (LCG-seeded) and identical across libraries.
 - `--enable-precise-memory-info` + `--js-flags=--expose-gc` are passed to
