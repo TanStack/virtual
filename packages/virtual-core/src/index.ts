@@ -402,6 +402,8 @@ export class Virtualizer<
   private getScale = (): number => {
     const virtualTotal = this.getTotalVirtualSize()
     const max = this.options.maxScrollSize
+    // Invalid values disable scaling to keep math stable.
+    if (!Number.isFinite(max) || max <= 0) return 1
     return virtualTotal > max ? virtualTotal / max : 1
   }
 
