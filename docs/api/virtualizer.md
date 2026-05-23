@@ -283,6 +283,43 @@ scrollEndThreshold?: number
 
 The pixel threshold used by `isAtEnd()` and `followOnAppend` to decide whether the viewport is close enough to the end to count as pinned.
 
+### `maxScrollSize`
+
+```tsx
+maxScrollSize?: number
+```
+
+**Default**: `33_000_000`
+
+Maximum physical scroll container size in pixels. Browsers cap `scrollHeight` at approximately 33.5 million pixels. When the total virtual size of all items exceeds `maxScrollSize`, the virtualizer automatically applies a scale factor to compress the scroll range so that all items remain reachable.
+
+When scaling is active:
+- `getTotalSize()` returns the capped physical size (use this for your container's CSS height/width)
+- `getVirtualItems()` returns items with physical coordinates (use `item.start` directly for `translateY`/`translateX`)
+- `scrollToIndex()` and `scrollToOffset()` work transparently
+- The `scale` property reflects the current scale factor
+
+Set to `Infinity` to disable scaling entirely.
+
+```tsx
+// Example: 1 million items at 40px each = 40M px (exceeds browser limit)
+const virtualizer = useVirtualizer({
+  count: 1_000_000,
+  estimateSize: () => 40,
+  getScrollElement: () => parentRef.current,
+  // maxScrollSize defaults to 33M — scaling activates automatically
+})
+
+// Everything works as normal — no code changes needed:
+<div style={{ height: virtualizer.getTotalSize() }}> {/* capped at ~33M */}
+  {virtualizer.getVirtualItems().map(item => (
+    <div style={{ transform: `translateY(${item.start}px)` }}> {/* physical */}
+      ...
+    </div>
+  ))}
+</div>
+```
+
 ### `isScrollingResetDelay`
 
 ```tsx
@@ -469,6 +506,8 @@ getTotalSize: () => number
 
 Returns the total size in pixels for the virtualized items. This measurement will incrementally change if you choose to dynamically measure your elements as they are rendered.
 
+When scroll-scaling is active (i.e., the virtual total exceeds `maxScrollSize`), this returns the capped physical size suitable for use as the container's CSS height/width. Use the `scale` property to recover the uncapped virtual total if needed.
+
 ### `measure`
 
 ```tsx
@@ -583,3 +622,15 @@ scrollOffset: number
 ```
 
 This option represents the current scroll position along the scrolling axis. It is measured in pixels from the starting point of the scrollable area.
+
+When scroll-scaling is active, this value is in virtual (unscaled) coordinate space, which may be larger than the physical scroll position reported by the browser.
+
+### `scale`
+
+```tsx
+scale: number
+```
+
+The current scale factor applied by the virtualizer. Returns `1` when the total virtual size is within the `maxScrollSize` limit (no scaling needed). When scaling is active, this value is greater than `1`.
+
+You can use this to recover the real (unscaled) size of an item: `realSize = item.size * virtualizer.scale`.
