@@ -2846,25 +2846,64 @@ test('getVirtualItems should return physical coordinates when scaling is active'
   expect(firstItem.index).toBe(firstMeasurement.index)
   expect(firstItem.key).toBe(firstMeasurement.key)
   expect(firstItem.lane).toBe(firstMeasurement.lane)
+
+  // When scaling is active, items must be new objects (not same reference)
+  expect(firstItem).not.toBe(firstMeasurement)
 })
 
 test('getVirtualItems should return references (not copies) when scale is 1', () => {
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 400,
+    scrollHeight: 500,
+    clientWidth: 400,
+    clientHeight: 400,
+    offsetWidth: 400,
+    offsetHeight: 400,
+    ownerDocument: {
+      defaultView: {
+        requestAnimationFrame: vi.fn(),
+        cancelAnimationFrame: vi.fn(),
+        performance: { now: () => Date.now() },
+        ResizeObserver: vi.fn(() => ({
+          observe: vi.fn(),
+          unobserve: vi.fn(),
+          disconnect: vi.fn(),
+        })),
+      },
+    },
+    scrollTo: vi.fn(),
+  } as unknown as HTMLDivElement
+
   const virtualizer = new Virtualizer({
     count: 10,
     estimateSize: () => 50,
-    getScrollElement: () => null,
+    getScrollElement: () => mockScrollElement,
     scrollToFn: vi.fn(),
-    observeElementRect: vi.fn(),
-    observeElementOffset: vi.fn(),
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 400 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
   })
 
-  // No scaling — items should be same references as measurements
-  const measurements = virtualizer['getMeasurements']()
-  // Without a scroll element, getVirtualItems returns []
-  // so let's test via the measurements directly
+  virtualizer._willUpdate()
+
   expect(virtualizer.scale).toBe(1)
-  // Verify the total size matches (no scaling applied)
-  expect(virtualizer.getTotalSize()).toBe(500)
+  
+  const measurements = virtualizer['getMeasurements']()
+  const items = virtualizer.getVirtualItems()
+
+  expect(items.length).toBeGreaterThan(0)
+  
+  // Verify strict reference equality (===) between returned items and measurements
+  items.forEach((item) => {
+    expect(item).toBe(measurements[item.index])
+  })
 })
 
 test('scroll offset should be upscaled from physical to virtual', () => {
@@ -3009,10 +3048,12 @@ test('resize anchoring should work correctly with scaling active', () => {
   const calledAdjustments = (scrollToFn.mock.calls[0]![1] as any)
     ?.adjustments as number | undefined
   const totalPhysical = calledPhysicalOffset + (calledAdjustments ?? 0)
-  // The adjustment (delta=50 in virtual, 50/scale in physical) should be reflected
+
+  // Adjustment uses the post-resize scale since cache updates before the scroll write.
+  const newScale = virtualizer.scale
+  expect(newScale).not.toBe(scale)
+  const virtualScroll = physicalScroll * scale
+  const expectedPhysical = (virtualScroll + 50) / newScale
   expect(totalPhysical).toBeGreaterThan(physicalScroll)
-  expect(totalPhysical).toBeCloseTo(
-    physicalScroll + 50 / scale,
-    0,
-  )
+  expect(totalPhysical).toBeCloseTo(expectedPhysical, 0)
 })
