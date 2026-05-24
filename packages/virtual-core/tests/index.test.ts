@@ -2172,6 +2172,196 @@ test('scroll-up jank: idle (scrollDirection=null) still applies adjustment', () 
   expect(scrollToFn).toHaveBeenCalled()
 })
 
+// ─── end anchoring / chat-style reverse virtualization ──────────────────────
+
+function createChatVirtualizer({
+  messages,
+  offset,
+  viewportSize = 200,
+  itemSize = 50,
+  followOnAppend = false,
+  threshold = 1,
+}: {
+  messages: Array<{ id: string }>
+  offset: number
+  viewportSize?: number
+  itemSize?: number
+  followOnAppend?: boolean | 'auto' | 'smooth' | 'instant'
+  threshold?: number
+}) {
+  let currentMessages = messages
+  const scrollToFn = vi.fn()
+  const scrollElement = {
+    scrollTop: offset,
+    scrollLeft: 0,
+    scrollHeight: messages.length * itemSize,
+    scrollWidth: 1000,
+    clientHeight: viewportSize,
+    clientWidth: 400,
+    offsetHeight: viewportSize,
+    ownerDocument: {
+      defaultView: {
+        requestAnimationFrame: (_cb: FrameRequestCallback) => {
+          return 1
+        },
+        cancelAnimationFrame: vi.fn(),
+        performance: { now: () => Date.now() },
+        ResizeObserver: vi.fn(function () {
+          return {
+            observe: vi.fn(),
+            unobserve: vi.fn(),
+            disconnect: vi.fn(),
+          }
+        }),
+      },
+    },
+  } as unknown as HTMLDivElement
+
+  const makeOptions = () => {
+    const messagesSnapshot = currentMessages
+
+    return {
+      count: messagesSnapshot.length,
+      estimateSize: () => itemSize,
+      getItemKey: (index: number) => messagesSnapshot[index]!.id,
+      getScrollElement: () => scrollElement,
+      scrollToFn,
+      observeElementRect: (
+        _instance: any,
+        cb: (rect: { width: number; height: number }) => void,
+      ) => {
+        cb({ width: 400, height: viewportSize })
+        return () => {}
+      },
+      observeElementOffset: (
+        _instance: any,
+        cb: (offset: number, isScrolling: boolean) => void,
+      ) => {
+        cb(scrollElement.scrollTop, false)
+        return () => {}
+      },
+      anchorTo: 'end' as const,
+      followOnAppend,
+      scrollEndThreshold: threshold,
+    }
+  }
+
+  const virtualizer = new Virtualizer(makeOptions())
+  virtualizer._willUpdate()
+  virtualizer['getMeasurements']()
+  scrollToFn.mockClear()
+
+  return {
+    virtualizer,
+    scrollElement,
+    scrollToFn,
+    setMessages(nextMessages: Array<{ id: string }>) {
+      currentMessages = nextMessages
+      ;(scrollElement as any).scrollHeight = nextMessages.length * itemSize
+      virtualizer.setOptions(makeOptions())
+      virtualizer._willUpdate()
+    },
+  }
+}
+
+test('anchorTo:end keeps visible content stable when older items are prepended', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 100,
+  })
+
+  setMessages([{ id: 'm--2' }, { id: 'm--1' }, ...messages])
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  const [offset, options] = scrollToFn.mock.calls[0]!
+  expect(offset).toBe(100)
+  expect(options.adjustments).toBe(100)
+})
+
+test('anchorTo:end does not yank a scrolled-up user when items append', () => {
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 100,
+    followOnAppend: true,
+  })
+
+  setMessages([...messages, { id: 'm-8' }])
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+})
+
+test('followOnAppend keeps an end-pinned user at the end when items append', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 50,
+    followOnAppend: true,
+  })
+
+  setMessages([...messages, { id: 'm-5' }])
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  const [offset, options] = scrollToFn.mock.calls[0]!
+  expect(offset).toBe(100)
+  expect(options.behavior).toBe('auto')
+})
+
+test('followOnAppend accepts smooth behavior', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 50,
+    followOnAppend: 'smooth',
+  })
+
+  setMessages([...messages, { id: 'm-5' }])
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![1].behavior).toBe('smooth')
+})
+
+test('anchorTo:end keeps a pinned streaming message pinned as it grows', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 50,
+  })
+
+  virtualizer.resizeItem(4, 120)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  const [offset, options] = scrollToFn.mock.calls[0]!
+  expect(offset).toBe(50)
+  expect(options.adjustments).toBe(70)
+})
+
+test('anchorTo:end does not follow streaming growth when user is away from end', () => {
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 50,
+  })
+
+  virtualizer.resizeItem(7, 120)
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+})
+
+test('isAtEnd and getDistanceFromEnd use virtualized total size', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer } = createChatVirtualizer({
+    messages,
+    offset: 40,
+    threshold: 15,
+  })
+
+  expect(virtualizer.getDistanceFromEnd()).toBe(10)
+  expect(virtualizer.isAtEnd()).toBe(true)
+  expect(virtualizer.isAtEnd(5)).toBe(false)
+})
+
 test('takeSnapshot: returns measured items only, restorable via initialMeasurementsCache', () => {
   const v1 = new Virtualizer({
     count: 20,

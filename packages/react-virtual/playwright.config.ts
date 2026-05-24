@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test'
 
-const PORT = 5173
+const PORT = Number(process.env.VITE_SERVER_PORT ?? 5173)
 const baseURL = `http://localhost:${PORT}`
 
 export default defineConfig({

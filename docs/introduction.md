@@ -8,6 +8,8 @@ TanStack Virtual is a headless UI utility for virtualizing long lists of element
 
 At the heart of TanStack Virtual is the `Virtualizer`. Virtualizers can be oriented on either the vertical (default) or horizontal axes which makes it possible to achieve vertical, horizontal and even grid-like virtualization by combining the two axis configurations together.
 
+For chat, AI streams, logs, and other reverse feeds, see the [Chat guide](chat).
+
 Here is just a quick example of what it looks like to virtualize a long list within a div using TanStack Virtual in React:
 
 ```tsx
