@@ -58,6 +58,10 @@
       ]
     },
     {
+      "label": "Guides",
+      "children": [{ "label": "Chat", "to": "chat" }]
+    },
+    {
       "label": "Core APIs",
       "children": [
         { "label": "Virtualizer", "to": "api/virtualizer" },
@@ -135,6 +139,10 @@
             {
               "to": "framework/react/examples/infinite-scroll",
               "label": "Infinite Scroll"
+            },
+            {
+              "to": "framework/react/examples/chat",
+              "label": "Chat"
             },
             {
               "to": "framework/react/examples/smooth-scroll",

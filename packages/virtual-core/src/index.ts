@@ -33,6 +33,10 @@ type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
 type ScrollBehavior = 'auto' | 'smooth' | 'instant'
 
+type ScrollAnchor = 'start' | 'end'
+
+type FollowOnAppend = boolean | ScrollBehavior
+
 export interface ScrollToOptions {
   align?: ScrollAlignment
   behavior?: ScrollBehavior
@@ -41,6 +45,8 @@ export interface ScrollToOptions {
 type ScrollToOffsetOptions = ScrollToOptions
 
 type ScrollToIndexOptions = ScrollToOptions
+
+type ScrollToEndOptions = Pick<ScrollToOptions, 'behavior'>
 
 export interface Range {
   startIndex: number
@@ -328,6 +334,9 @@ export interface VirtualizerOptions<
   indexAttribute?: string
   initialMeasurementsCache?: Array<VirtualItem>
   lanes?: number
+  anchorTo?: ScrollAnchor
+  followOnAppend?: FollowOnAppend
+  scrollEndThreshold?: number
   isScrollingResetDelay?: number
   useScrollendEvent?: boolean
   enabled?: boolean
@@ -352,6 +361,12 @@ type ScrollState = {
   stableFrames: number
 }
 
+type PendingScrollAnchor = [
+  key: Key | null,
+  offset: number,
+  followOnAppend: ScrollBehavior | null,
+]
+
 export class Virtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
@@ -374,6 +389,7 @@ export class Virtualizer<
   private prevLanes: number | undefined = undefined
   private lanesChangedFlag = false
   private lanesSettling = false
+  private pendingScrollAnchor: PendingScrollAnchor | null = null
   scrollRect: Rect | null = null
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
@@ -498,6 +514,9 @@ export class Virtualizer<
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
       lanes: 1,
+      anchorTo: 'start',
+      followOnAppend: false,
+      scrollEndThreshold: 1,
       isScrollingResetDelay: 150,
       enabled: true,
       isRtl: false,
@@ -511,11 +530,99 @@ export class Virtualizer<
       if (v !== undefined) (merged as any)[key] = v
     }
 
+    const prevOptions = this.options as
+      | Required<VirtualizerOptions<TScrollElement, TItemElement>>
+      | undefined
+    let anchor: [Key, number] | null = null
+    let followOnAppend: ScrollBehavior | null = null
+
+    if (
+      prevOptions !== undefined &&
+      prevOptions.enabled &&
+      merged.enabled &&
+      merged.anchorTo === 'end' &&
+      this.scrollElement !== null
+    ) {
+      const prevCount = prevOptions.count
+      const nextCount = merged.count
+      const measurements = this.getMeasurements()
+      const prevFirstKey =
+        prevCount > 0
+          ? (measurements[0]?.key ?? prevOptions.getItemKey(0))
+          : null
+      const prevLastKey =
+        prevCount > 0
+          ? (measurements[prevCount - 1]?.key ??
+            prevOptions.getItemKey(prevCount - 1))
+          : null
+      const didCountChange = nextCount !== prevCount
+      const didEdgeKeysChange =
+        didCountChange ||
+        (prevCount > 0 &&
+          nextCount > 0 &&
+          (merged.getItemKey(0) !== prevFirstKey ||
+            merged.getItemKey(nextCount - 1) !== prevLastKey))
+
+      if (didEdgeKeysChange) {
+        const item =
+          prevCount > 0
+            ? (this.getVirtualItemForOffset(this.getScrollOffset()) ??
+              measurements[0])
+            : null
+
+        if (item) {
+          anchor = [item.key, this.getScrollOffset() - item.start]
+        }
+
+        const behavior =
+          merged.followOnAppend === true
+            ? 'auto'
+            : merged.followOnAppend || null
+
+        if (
+          behavior &&
+          nextCount > prevCount &&
+          this.isAtEnd(prevOptions.scrollEndThreshold) &&
+          (prevCount === 0 || merged.getItemKey(nextCount - 1) !== prevLastKey)
+        ) {
+          followOnAppend = behavior
+        }
+      }
+    }
+
     this.options = merged
+
+    if (anchor || followOnAppend) {
+      this.pendingScrollAnchor = [
+        anchor?.[0] ?? null,
+        anchor?.[1] ?? 0,
+        followOnAppend,
+      ]
+    }
   }
 
   private notify = (sync: boolean) => {
     this.options.onChange?.(this, sync)
+  }
+
+  private applyScrollAdjustment(delta: number, behavior?: ScrollBehavior) {
+    if (delta === 0) return
+
+    if (process.env.NODE_ENV !== 'production' && this.options.debug) {
+      console.info('correction', delta)
+    }
+
+    if (
+      isIOSWebKit() &&
+      (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
+    ) {
+      this._iosDeferredAdjustment += delta
+    } else {
+      this._scrollToOffset(this.getScrollOffset(), {
+        adjustments: (this.scrollAdjustments += delta),
+        behavior,
+      })
+    }
   }
 
   private maybeNotify = memo(
@@ -685,6 +792,34 @@ export class Virtualizer<
         adjustments: undefined,
         behavior: undefined,
       })
+    }
+
+    const anchor = this.pendingScrollAnchor
+    this.pendingScrollAnchor = null
+
+    if (anchor && this.scrollElement && this.options.enabled) {
+      const [key, offset, followOnAppend] = anchor
+
+      if (key !== null) {
+        const { count, getItemKey } = this.options
+        let index = 0
+        while (index < count && getItemKey(index) !== key) {
+          index++
+        }
+
+        const item = index < count ? this.getMeasurements()[index] : undefined
+        if (item) {
+          const delta = item.start + offset - this.getScrollOffset()
+
+          if (!approxEqual(delta, 0)) {
+            this.applyScrollAdjustment(delta)
+          }
+        }
+      }
+
+      if (followOnAppend) {
+        this.scrollToEnd({ behavior: followOnAppend })
+      }
     }
   }
 
@@ -1284,7 +1419,12 @@ export class Virtualizer<
     const delta = size - itemSize
 
     if (delta !== 0) {
-      if (
+      const wasAtEnd =
+        this.options.anchorTo === 'end' &&
+        this.scrollState?.behavior !== 'smooth' &&
+        this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
+      const prevTotalSize = wasAtEnd ? this.getTotalSize() : 0
+      const shouldAdjustScroll =
         this.scrollState?.behavior !== 'smooth' &&
         (this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
           ? this.shouldAdjustScrollPositionOnItemSizeChange(
@@ -1309,32 +1449,18 @@ export class Virtualizer<
             // behavior can pass shouldAdjustScrollPositionOnItemSizeChange.
             itemStart < this.getScrollOffset() + this.scrollAdjustments &&
             this.scrollDirection !== 'backward')
-      ) {
-        if (process.env.NODE_ENV !== 'production' && this.options.debug) {
-          console.info('correction', delta)
-        }
-        // On iOS WebKit, writing scrollTop while a finger is on screen or
-        // momentum-scroll is running cancels the in-flight scroll. Defer
-        // the adjustment until iOS is fully settled — flushed by either
-        // the scroll callback or the touchend grace-timer.
-        if (
-          isIOSWebKit() &&
-          (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
-        ) {
-          this._iosDeferredAdjustment += delta
-        } else {
-          this._scrollToOffset(this.getScrollOffset(), {
-            adjustments: (this.scrollAdjustments += delta),
-            behavior: undefined,
-          })
-        }
-      }
 
       if (this.pendingMin === null || index < this.pendingMin) {
         this.pendingMin = index
       }
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
+
+      if (wasAtEnd) {
+        this.applyScrollAdjustment(this.getTotalSize() - prevTotalSize)
+      } else if (shouldAdjustScroll) {
+        this.applyScrollAdjustment(delta)
+      }
 
       this.notify(false)
     }
@@ -1396,6 +1522,21 @@ export class Virtualizer<
         ? doc.scrollWidth - this.scrollElement.innerWidth
         : doc.scrollHeight - this.scrollElement.innerHeight
     }
+  }
+
+  private getVirtualDistanceFromEnd = () => {
+    return Math.max(
+      this.getTotalSize() - this.getSize() - this.getScrollOffset(),
+      0,
+    )
+  }
+
+  getDistanceFromEnd = () => {
+    return Math.max(this.getMaxScrollOffset() - this.getScrollOffset(), 0)
+  }
+
+  isAtEnd = (threshold = this.options.scrollEndThreshold) => {
+    return this.getDistanceFromEnd() <= threshold
   }
 
   getOffsetForAlignment = (
@@ -1531,6 +1672,20 @@ export class Virtualizer<
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
 
     this.scheduleScrollReconcile()
+  }
+
+  scrollToEnd = ({ behavior = 'auto' }: ScrollToEndOptions = {}) => {
+    if (this.options.count > 0) {
+      this.scrollToIndex(this.options.count - 1, {
+        align: 'end',
+        behavior,
+      })
+      return
+    }
+
+    this.scrollToOffset(Math.max(this.getTotalSize() - this.getSize(), 0), {
+      behavior,
+    })
   }
 
   getTotalSize = () => {
