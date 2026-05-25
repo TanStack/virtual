@@ -1,18 +1,22 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
-import { extname, resolve } from 'node:path'
+import path, { dirname, resolve } from 'node:path'
 import { glob } from 'tinyglobby'
 // @ts-ignore Could not find a declaration file for module 'markdown-link-extractor'.
 import markdownLinkExtractor from 'markdown-link-extractor'
 
-const errors: Array<{
-  file: string
+type LinkError = {
   link: string
-  resolvedPath: string
   reason: string
-}> = []
+  resolvedPath: string
+  source: string
+}
+
+const docsRoot = resolve('docs')
+const examplesRoot = resolve('examples')
 
 function isRelativeLink(link: string) {
   return (
+    link &&
     !link.startsWith('/') &&
     !link.startsWith('http://') &&
     !link.startsWith('https://') &&
@@ -22,104 +26,219 @@ function isRelativeLink(link: string) {
   )
 }
 
-/** Remove any trailing .md */
-function stripExtension(p: string): string {
-  return p.replace(`${extname(p)}`, '')
+function isInside(root: string, target: string) {
+  const relative = path.relative(root, target)
+  return (
+    relative === '' ||
+    (!relative.startsWith('..') && !path.isAbsolute(relative))
+  )
 }
 
-function relativeLinkExists(link: string, file: string): boolean {
-  // Remove hash if present
-  const linkWithoutHash = link.split('#')[0]
-  // If the link is empty after removing hash, it's not a file
-  if (!linkWithoutHash) return false
+function stripHashAndQuery(link: string) {
+  return link.split(/[?#]/)[0]
+}
 
-  // Strip the file/link extensions
-  const filePath = stripExtension(file)
-  const linkPath = stripExtension(linkWithoutHash)
+function examplePathFromRoute(route: string) {
+  const match = route.match(/^framework\/([^/]+)\/examples\/(.+)$/)
 
-  // Resolve the path relative to the markdown file's directory
-  // Nav up a level to simulate how links are resolved on the web
-  let absPath = resolve(filePath, '..', linkPath)
+  if (!match) {
+    return null
+  }
 
-  // Ensure the resolved path is within /docs
-  const docsRoot = resolve('docs')
-  if (!absPath.startsWith(docsRoot)) {
+  return resolve(examplesRoot, match[1]!, match[2]!)
+}
+
+function fileExistsForMarkdownLink(
+  link: string,
+  markdownFile: string,
+  errors: Array<LinkError>,
+): boolean {
+  const filePart = stripHashAndQuery(link)
+
+  if (!filePart) {
+    return true
+  }
+
+  let absPath = resolve(dirname(resolve(markdownFile)), filePart)
+
+  if (!isInside(docsRoot, absPath)) {
     errors.push({
       link,
-      file,
+      reason: 'navigates outside docs',
       resolvedPath: absPath,
-      reason: 'Path outside /docs',
+      source: markdownFile,
     })
     return false
   }
 
-  // Check if this is an example path
-  const isExample = absPath.includes('/examples/')
+  const docsRelativePath = path
+    .relative(docsRoot, absPath)
+    .replaceAll(path.sep, '/')
+  const examplePath = examplePathFromRoute(docsRelativePath)
 
-  let exists = false
+  if (examplePath) {
+    const exists =
+      existsSync(examplePath) && statSync(examplePath).isDirectory()
 
-  if (isExample) {
-    // Transform /docs/framework/{framework}/examples/ to /examples/{framework}/
-    absPath = absPath.replace(
-      /\/docs\/framework\/([^/]+)\/examples\//,
-      '/examples/$1/',
-    )
-    // For examples, we want to check if the directory exists
-    exists = existsSync(absPath) && statSync(absPath).isDirectory()
-  } else {
-    // For non-examples, we want to check if the .md file exists
-    if (!absPath.endsWith('.md')) {
-      absPath = `${absPath}.md`
+    if (!exists) {
+      errors.push({
+        link,
+        reason: 'example route not found',
+        resolvedPath: examplePath,
+        source: markdownFile,
+      })
     }
-    exists = existsSync(absPath)
+
+    return exists
   }
+
+  if (!path.extname(absPath)) {
+    absPath = `${absPath}.md`
+  }
+
+  const exists = existsSync(absPath)
 
   if (!exists) {
     errors.push({
       link,
-      file,
+      reason: 'not found',
       resolvedPath: absPath,
-      reason: 'Not found',
+      source: markdownFile,
     })
   }
+
   return exists
 }
 
-async function verifyMarkdownLinks() {
-  // Find all markdown files in docs directory
+function getConfigRoutes(value: unknown, routes = new Set<string>()) {
+  if (Array.isArray(value)) {
+    value.forEach((child) => getConfigRoutes(child, routes))
+    return routes
+  }
+
+  if (!value || typeof value !== 'object') {
+    return routes
+  }
+
+  const record = value as Record<string, unknown>
+
+  if (typeof record.to === 'string') {
+    routes.add(record.to)
+  }
+
+  Object.values(record).forEach((child) => getConfigRoutes(child, routes))
+
+  return routes
+}
+
+function fileExistsForConfigRoute(
+  route: string,
+  errors: Array<LinkError>,
+): boolean {
+  const cleanRoute = stripHashAndQuery(route)
+    .replace(/^\.\//, '')
+    .replace(/\.md$/, '')
+
+  if (!cleanRoute || cleanRoute.startsWith('http')) {
+    return true
+  }
+
+  const examplePath = examplePathFromRoute(cleanRoute)
+  const resolvedPath = examplePath ?? resolve(docsRoot, `${cleanRoute}.md`)
+  const exists = examplePath
+    ? existsSync(resolvedPath) && statSync(resolvedPath).isDirectory()
+    : existsSync(resolvedPath)
+
+  if (!exists) {
+    errors.push({
+      link: route,
+      reason: examplePath ? 'example route not found' : 'docs route not found',
+      resolvedPath,
+      source: 'docs/config.json',
+    })
+  }
+
+  return exists
+}
+
+function extractHref(link: unknown) {
+  if (typeof link === 'string') {
+    return link
+  }
+
+  if (
+    link &&
+    typeof link === 'object' &&
+    'href' in link &&
+    typeof link.href === 'string'
+  ) {
+    return link.href
+  }
+
+  return null
+}
+
+async function verifyLinks() {
   const markdownFiles = await glob('docs/**/*.md', {
     ignore: ['**/node_modules/**'],
   })
 
   console.log(`Found ${markdownFiles.length} markdown files\n`)
 
-  // Process each file
+  const errors: Array<LinkError> = []
+
   for (const file of markdownFiles) {
     const content = readFileSync(file, 'utf-8')
-    const links: Array<string> = markdownLinkExtractor(content)
+    const links: Array<unknown> = markdownLinkExtractor(content)
 
-    const relativeLinks = links.filter((link: string) => {
-      return isRelativeLink(link)
+    links.forEach((link) => {
+      const href = extractHref(link)
+
+      if (href && isRelativeLink(href)) {
+        fileExistsForMarkdownLink(href, file, errors)
+      }
     })
-
-    if (relativeLinks.length > 0) {
-      relativeLinks.forEach((link) => {
-        relativeLinkExists(link, file)
-      })
-    }
   }
 
+  const config = JSON.parse(readFileSync('docs/config.json', 'utf-8'))
+  const configRoutes = getConfigRoutes(config)
+
+  configRoutes.forEach((route) => {
+    fileExistsForConfigRoute(route, errors)
+  })
+
+  const expectedExampleRoutes = new Set(
+    (await glob('examples/*/*/package.json')).map((packageJson) => {
+      const [, framework, example] = packageJson.split('/')
+      return `framework/${framework}/examples/${example}`
+    }),
+  )
+
+  expectedExampleRoutes.forEach((route) => {
+    if (!configRoutes.has(route)) {
+      errors.push({
+        link: route,
+        reason: 'example missing from docs config',
+        resolvedPath: resolve('docs/config.json'),
+        source: route.replace(
+          /^framework\/([^/]+)\/examples\/(.+)$/,
+          'examples/$1/$2/package.json',
+        ),
+      })
+    }
+  })
+
   if (errors.length > 0) {
-    console.log(`\n❌ Found ${errors.length} broken links:`)
+    console.log(`\nFound ${errors.length} broken links or routes:`)
     errors.forEach((err) => {
       console.log(
-        `${err.file}\n  link:      ${err.link}\n  resolved:  ${err.resolvedPath}\n  why:       ${err.reason}\n`,
+        `${err.link}\n  in:    ${err.source}\n  path:  ${err.resolvedPath}\n  why:   ${err.reason}\n`,
       )
     })
     process.exit(1)
   } else {
-    console.log('\n✅ No broken links found!')
+    console.log('\nNo broken links or routes found!')
   }
 }
 
-verifyMarkdownLinks().catch(console.error)
+verifyLinks().catch(console.error)
