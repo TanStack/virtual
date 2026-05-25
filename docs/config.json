@@ -10,7 +10,8 @@
       "label": "Getting Started",
       "children": [
         { "label": "Introduction", "to": "introduction" },
-        { "label": "Installation", "to": "installation" }
+        { "label": "Installation", "to": "installation" },
+        { "label": "Text Measurement with Pretext", "to": "pretext" }
       ],
       "frameworks": [
         {
@@ -125,8 +126,16 @@
               "label": "Dynamic"
             },
             {
+              "to": "framework/react/examples/pretext",
+              "label": "Pretext"
+            },
+            {
               "to": "framework/react/examples/padding",
               "label": "Padding"
+            },
+            {
+              "to": "framework/react/examples/scroll-padding",
+              "label": "Scroll Padding"
             },
             {
               "to": "framework/react/examples/sticky",
@@ -156,10 +165,6 @@
             {
               "to": "framework/svelte/examples/fixed",
               "label": "Fixed"
-            },
-            {
-              "to": "framework/svelte/examples/variable",
-              "label": "Variable"
             },
             {
               "to": "framework/svelte/examples/dynamic",

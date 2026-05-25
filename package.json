@@ -29,7 +29,9 @@
     "prettier:write": "pnpm run prettier --write",
     "changeset": "changeset",
     "changeset:version": "changeset version && pnpm install --no-frozen-lockfile && pnpm prettier:write",
-    "changeset:publish": "changeset publish"
+    "changeset:publish": "changeset publish",
+    "verify-links": "node scripts/verify-links.ts",
+    "verify-examples": "node scripts/verify-examples.ts"
   },
   "nx": {
     "includedScripts": [
@@ -44,8 +46,10 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@types/node": "^22.13.6",
     "eslint": "^9.27.0",
+    "fast-glob": "^3.3.3",
     "jsdom": "^25.0.1",
     "knip": "^5.56.0",
+    "markdown-link-extractor": "^4.0.2",
     "nx": "^20.8.2",
     "premove": "^4.0.0",
     "prettier": "^3.5.3",
