@@ -2257,8 +2257,8 @@ function createChatVirtualizer({
     scrollToFn,
     setMessages(nextMessages: Array<{ id: string }>) {
       currentMessages = nextMessages
-      ;(scrollElement as any).scrollHeight = nextMessages.length * itemSize
       virtualizer.setOptions(makeOptions())
+      ;(scrollElement as any).scrollHeight = nextMessages.length * itemSize
       virtualizer._willUpdate()
     },
   }
@@ -2324,11 +2324,12 @@ test('followOnAppend accepts smooth behavior', () => {
 
 test('anchorTo:end keeps a pinned streaming message pinned as it grows', () => {
   const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
-  const { virtualizer, scrollToFn } = createChatVirtualizer({
+  const { virtualizer, scrollElement, scrollToFn } = createChatVirtualizer({
     messages,
     offset: 50,
   })
 
+  ;(scrollElement as any).scrollHeight = 320
   virtualizer.resizeItem(4, 120)
 
   expect(scrollToFn).toHaveBeenCalledTimes(1)
@@ -2349,7 +2350,7 @@ test('anchorTo:end does not follow streaming growth when user is away from end',
   expect(scrollToFn).not.toHaveBeenCalled()
 })
 
-test('isAtEnd and getDistanceFromEnd use virtualized total size', () => {
+test('isAtEnd and getDistanceFromEnd use the scroll element max offset', () => {
   const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
   const { virtualizer } = createChatVirtualizer({
     messages,

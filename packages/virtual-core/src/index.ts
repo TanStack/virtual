@@ -1422,7 +1422,7 @@ export class Virtualizer<
       const wasAtEnd =
         this.options.anchorTo === 'end' &&
         this.scrollState?.behavior !== 'smooth' &&
-        this.isAtEnd()
+        this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
       const prevTotalSize = wasAtEnd ? this.getTotalSize() : 0
       const shouldAdjustScroll =
         this.scrollState?.behavior !== 'smooth' &&
@@ -1524,11 +1524,15 @@ export class Virtualizer<
     }
   }
 
-  getDistanceFromEnd = () => {
+  private getVirtualDistanceFromEnd = () => {
     return Math.max(
       this.getTotalSize() - this.getSize() - this.getScrollOffset(),
       0,
     )
+  }
+
+  getDistanceFromEnd = () => {
+    return Math.max(this.getMaxScrollOffset() - this.getScrollOffset(), 0)
   }
 
   isAtEnd = (threshold = this.options.scrollEndThreshold) => {

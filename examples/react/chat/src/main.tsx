@@ -1,5 +1,5 @@
 import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { createRoot } from 'react-dom/client'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import './index.css'
 
@@ -124,13 +124,15 @@ function App() {
     if (didInitialScroll) return
     virtualizer.scrollToEnd()
     setDidInitialScroll(true)
+  }, [didInitialScroll, virtualizer])
 
+  React.useEffect(() => {
     const id = window.setTimeout(() => {
       setAutoHistoryEnabled(true)
     }, 250)
 
     return () => window.clearTimeout(id)
-  }, [didInitialScroll, virtualizer])
+  }, [])
 
   React.useEffect(() => {
     return () => {
@@ -215,4 +217,4 @@ function App() {
   )
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<App />)
+createRoot(document.getElementById('root')!).render(<App />)

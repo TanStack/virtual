@@ -15,7 +15,7 @@ async function waitForEnd(page: Page) {
     .toBeLessThan(1.01)
 }
 
-async function firstVisibleMessage(page: Page) {
+async function maybeFirstVisibleMessage(page: Page) {
   return page.evaluate(() => {
     const container = document.querySelector('#scroll-container')
     if (!container) throw new Error('Container not found')
@@ -25,11 +25,15 @@ async function firstVisibleMessage(page: Page) {
       container.querySelectorAll<HTMLElement>('[data-message-id]'),
     )
 
-    const item = items.find(
-      (node) => node.getBoundingClientRect().bottom > containerRect.top + 1,
-    )
+    const item = items.find((node) => {
+      const rect = node.getBoundingClientRect()
+      return (
+        rect.bottom > containerRect.top + 1 &&
+        rect.top < containerRect.bottom - 1
+      )
+    })
 
-    if (!item) throw new Error('No visible message found')
+    if (!item) return null
 
     return {
       id: item.dataset.messageId,
@@ -37,6 +41,33 @@ async function firstVisibleMessage(page: Page) {
       scrollTop: container.scrollTop,
     }
   })
+}
+
+async function firstVisibleMessage(page: Page) {
+  const item = await maybeFirstVisibleMessage(page)
+  if (!item) throw new Error('No visible message found')
+  return item
+}
+
+async function getScrollState(page: Page) {
+  return page.evaluate(() => {
+    const container = document.querySelector('#scroll-container')
+    if (!container) throw new Error('Container not found')
+
+    return {
+      scrollTop: container.scrollTop,
+      scrollHeight: container.scrollHeight,
+    }
+  })
+}
+
+async function waitForFirstVisibleAtOffset(page: Page, scrollTop: number) {
+  await expect
+    .poll(async () => {
+      const item = await maybeFirstVisibleMessage(page)
+      return item?.scrollTop
+    })
+    .toBe(scrollTop)
 }
 
 test('chat mode keeps visible messages stable when history is prepended', async ({
@@ -50,12 +81,22 @@ test('chat mode keeps visible messages stable when history is prepended', async 
     if (!container) throw new Error('Container not found')
     container.scrollTop = 350
   })
-  await page.waitForTimeout(100)
+  await waitForFirstVisibleAtOffset(page, 350)
 
   const before = await firstVisibleMessage(page)
 
   await page.click('#prepend')
-  await page.waitForTimeout(100)
+  await expect
+    .poll(async () => {
+      const after = await maybeFirstVisibleMessage(page)
+      return (
+        after !== null &&
+        after.id === before.id &&
+        Math.abs(after.top - before.top) < 1.01 &&
+        after.scrollTop - before.scrollTop > 249
+      )
+    })
+    .toBe(true)
 
   const after = await firstVisibleMessage(page)
 
@@ -75,24 +116,24 @@ test('chat mode does not follow appended messages while reading history', async 
     if (!container) throw new Error('Container not found')
     container.scrollTop = 350
   })
-  await page.waitForTimeout(100)
+  await waitForFirstVisibleAtOffset(page, 350)
 
-  const before = await page.evaluate(() => {
-    const container = document.querySelector('#scroll-container')
-    if (!container) throw new Error('Container not found')
-    return container.scrollTop
-  })
+  const before = await getScrollState(page)
 
   await page.click('#append')
-  await page.waitForTimeout(100)
+  await expect
+    .poll(async () => {
+      const after = await getScrollState(page)
+      return (
+        after.scrollHeight > before.scrollHeight &&
+        Math.abs(after.scrollTop - before.scrollTop) < 1.01
+      )
+    })
+    .toBe(true)
 
-  const after = await page.evaluate(() => {
-    const container = document.querySelector('#scroll-container')
-    if (!container) throw new Error('Container not found')
-    return container.scrollTop
-  })
+  const after = await getScrollState(page)
 
-  expect(Math.abs(after - before)).toBeLessThan(1.01)
+  expect(Math.abs(after.scrollTop - before.scrollTop)).toBeLessThan(1.01)
   await expect(page.locator('[data-testid="message-m-30"]')).not.toBeVisible()
 })
 
