@@ -1,5 +1,11 @@
 # @tanstack/react-virtual
 
+## 3.14.0
+
+### Minor Changes
+
+- Add opt-in direct DOM updates for scroll positioning with `directDomUpdates`, `directDomUpdatesMode`, and `containerRef`. ([#1180](https://github.com/TanStack/virtual/pull/1180))
+
 ## 3.13.26
 
 ### Patch Changes
