@@ -24,13 +24,12 @@ function RowVirtualizerDynamic() {
     getScrollElement: () => parentRef.current,
     estimateSize: () => 45,
     enabled,
+    directDomUpdates: true,
   })
 
   React.useEffect(() => {
     virtualizer.scrollToIndex(count - 1, { align: 'end' })
   }, [])
-
-  const items = virtualizer.getVirtualItems()
 
   return (
     <div>
@@ -78,37 +77,32 @@ function RowVirtualizerDynamic() {
         }}
       >
         <div
+          ref={virtualizer.containerRef}
           style={{
-            height: virtualizer.getTotalSize(),
             width: '100%',
             position: 'relative',
           }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${items[0]?.start ?? 0}px)`,
-            }}
-          >
-            {items.map((virtualRow) => (
-              <div
-                key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                className={
-                  virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'
-                }
-              >
-                <div style={{ padding: '10px 0' }}>
-                  <div>Row {virtualRow.index}</div>
-                  <div>{sentences[virtualRow.index]}</div>
-                </div>
+          {virtualizer.getVirtualItems().map((v) => (
+            <div
+              key={v.key}
+              data-testid={`item-${v.index}`}
+              ref={virtualizer.measureElement}
+              className={v.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+              data-index={v.index}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+              }}
+            >
+              <div style={{ padding: '10px 0' }}>
+                <div>Row {v.index}</div>
+                <div>{sentences[v.index]}</div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
