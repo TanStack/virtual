@@ -365,6 +365,7 @@ type PendingScrollAnchor = [
   key: Key | null,
   offset: number,
   followOnAppend: ScrollBehavior | null,
+  anchorDelta: number,
 ]
 
 export class Virtualizer<
@@ -535,6 +536,7 @@ export class Virtualizer<
       | undefined
     let anchor: [Key, number] | null = null
     let followOnAppend: ScrollBehavior | null = null
+    let edgeKeysChanged = false
 
     if (
       prevOptions !== undefined &&
@@ -564,6 +566,7 @@ export class Virtualizer<
             merged.getItemKey(nextCount - 1) !== prevLastKey))
 
       if (didEdgeKeysChange) {
+        edgeKeysChanged = true
         const item =
           prevCount > 0
             ? (this.getVirtualItemForOffset(this.getScrollOffset()) ??
@@ -592,11 +595,51 @@ export class Virtualizer<
 
     this.options = merged
 
-    if (anchor || followOnAppend) {
+    // When edge keys changed (prepend, trim, reorder, etc.) the key→index
+    // mapping has shifted. Force a full measurement rebuild so the anchor
+    // resolution below reads positions from the new layout, not the stale
+    // memoised cache. Without this, a stable `getItemKey` reference +
+    // unchanged `count` would let getMeasurements() return the old layout.
+    if (edgeKeysChanged) {
+      this.pendingMin = 0
+      this.itemSizeCacheVersion++
+    }
+
+    // Eagerly adjust scrollOffset so the virtualizer computes the correct
+    // visible range during the current render pass — before _willUpdate
+    // syncs the DOM scroll position in a layout effect. Without this,
+    // the virtualizer would render the wrong items for one frame (the
+    // estimate-based positions are stale) and then correct in the next
+    // frame, producing a visible "jump" on prepend with dynamic sizes.
+    let anchorResolved = false
+    let anchorDelta = 0
+    if (anchor && this.scrollOffset !== null) {
+      const [anchorKey, anchorOffset] = anchor
+      const newMeasurements = this.getMeasurements()
+      const { count, getItemKey } = this.options
+      let idx = 0
+      while (idx < count && getItemKey(idx) !== anchorKey) {
+        idx++
+      }
+      if (idx < count) {
+        const anchorItem = newMeasurements[idx]
+        if (anchorItem) {
+          const newOffset = anchorItem.start + anchorOffset
+          if (newOffset !== this.scrollOffset) {
+            anchorDelta = newOffset - this.scrollOffset
+            this.scrollOffset = newOffset
+            anchorResolved = true
+          }
+        }
+      }
+    }
+
+    if (anchorResolved || followOnAppend) {
       this.pendingScrollAnchor = [
-        anchor?.[0] ?? null,
-        anchor?.[1] ?? 0,
+        anchorResolved ? anchor![0] : null,
+        anchorResolved ? anchor![1] : 0,
         followOnAppend,
+        anchorDelta,
       ]
     }
   }
@@ -798,22 +841,30 @@ export class Virtualizer<
     this.pendingScrollAnchor = null
 
     if (anchor && this.scrollElement && this.options.enabled) {
-      const [key, offset, followOnAppend] = anchor
+      const [key, _offset, followOnAppend, anchorDelta] = anchor
 
-      if (key !== null) {
-        const { count, getItemKey } = this.options
-        let index = 0
-        while (index < count && getItemKey(index) !== key) {
-          index++
-        }
-
-        const item = index < count ? this.getMeasurements()[index] : undefined
-        if (item) {
-          const delta = item.start + offset - this.getScrollOffset()
-
-          if (!approxEqual(delta, 0)) {
-            this.applyScrollAdjustment(delta)
+      if (key !== null && !followOnAppend) {
+        // scrollOffset was eagerly adjusted in setOptions so the
+        // virtualizer already computed the correct range during render.
+        // Now sync the browser's actual scroll position to match.
+        // Skip when followOnAppend is set — scrollToEnd will handle it.
+        //
+        // On iOS WebKit, writing scrollTop during touch/momentum cancels
+        // the in-flight scroll. Defer the DOM sync the same way
+        // applyScrollAdjustment does — accumulate the delta and let
+        // _flushIosDeferredIfReady handle it once the scroll settles.
+        if (
+          isIOSWebKit() &&
+          (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
+        ) {
+          if (anchorDelta !== 0) {
+            this._iosDeferredAdjustment += anchorDelta
           }
+        } else {
+          this._scrollToOffset(this.getScrollOffset(), {
+            adjustments: undefined,
+            behavior: undefined,
+          })
         }
       }
 

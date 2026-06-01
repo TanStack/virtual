@@ -43,11 +43,15 @@ function App() {
     count: messages.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 74,
-    getItemKey: (index) => messages[index]!.id,
+    getItemKey: React.useCallback(
+      (index: number) => messages[index]!.id,
+      [messages],
+    ),
     anchorTo: 'end',
     followOnAppend: true,
     scrollEndThreshold: 80,
     overscan: 6,
+    directDomUpdates: true,
   })
 
   const virtualItems = virtualizer.getVirtualItems()
@@ -180,8 +184,8 @@ function App() {
           }}
         >
           <div
+            ref={virtualizer.containerRef}
             style={{
-              height: virtualizer.getTotalSize(),
               position: 'relative',
               width: '100%',
             }}
@@ -199,7 +203,6 @@ function App() {
                     position: 'absolute',
                     top: 0,
                     left: 0,
-                    transform: `translateY(${virtualItem.start}px)`,
                     width: '100%',
                   }}
                 >
