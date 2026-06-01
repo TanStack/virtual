@@ -28,7 +28,9 @@
     "format": "prettier --experimental-cli --ignore-unknown '**/*' --write",
     "changeset": "changeset",
     "changeset:version": "changeset version && pnpm install --no-frozen-lockfile && pnpm format",
-    "changeset:publish": "changeset publish"
+    "changeset:publish": "changeset publish",
+    "verify-links": "node scripts/verify-links.ts",
+    "verify-examples": "node scripts/verify-examples.ts"
   },
   "nx": {
     "includedScripts": [
