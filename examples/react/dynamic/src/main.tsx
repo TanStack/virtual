@@ -38,7 +38,7 @@ function RowVirtualizerDynamic() {
           virtualizer.scrollToIndex(0)
         }}
       >
-        scroll to the top2
+        scroll to the top
       </button>
       <span style={{ padding: '0 4px' }} />
       <button

@@ -40,9 +40,11 @@ export type ReactVirtualizerOptions<
    * or `isScrolling` changes.
    *
    * Requirements when enabled:
-   * - Item elements must be `position: absolute` and must NOT set `top` /
-   *   `left` (or `transform: translate*`) in their style — the virtualizer
-   *   owns the main axis.
+   * - Item elements must be `position: absolute`; in `'transform'` mode they
+   *   must also be anchored with `top: 0` / `left: 0`.
+   * - Item elements must NOT set the main-axis position in their style — the
+   *   virtualizer owns `top` / `left` in `'position'` mode and `transform` in
+   *   `'transform'` mode.
    * - The inner sized container must receive `virtualizer.containerRef` and
    *   must NOT set `height` / `width` in its style.
    * - For multi-lane layouts (grids / masonry), the cross-axis position
@@ -56,12 +58,13 @@ export type ReactVirtualizerOptions<
   directDomUpdates?: boolean
   /**
    * How `directDomUpdates` positions item elements.
-   * - `'position'` (default): writes `top` / `left`. Item elements must be
+   * - `'transform'` (default): writes `transform: translate3d(...)`.
+   *   Promotes items to their own compositor layer — usually smoother on long
+   *   lists, but creates a stacking context and can interfere with
+   *   `position: fixed` descendants. Item elements must still be anchored with
+   *   `position: absolute`, `top: 0`, and `left: 0`.
+   * - `'position'`: writes `top` / `left`. Item elements must be
    *   `position: absolute`.
-   * - `'transform'`: writes `transform: translate3d(...)`. Promotes items
-   *   to their own compositor layer — usually smoother on long lists, but
-   *   creates a stacking context and can interfere with `position: fixed`
-   *   descendants.
    */
   directDomUpdatesMode?: 'position' | 'transform'
 }
@@ -179,21 +182,20 @@ function useVirtualizerBase<
   }
 
   const [instance] = React.useState(() => {
-    const v = new Virtualizer<TScrollElement, TItemElement>(
-      resolvedOptions,
-    ) as ReactVirtualizer<TScrollElement, TItemElement>
-    v.containerRef = (node: HTMLElement | null) => {
-      const state = directRef.current
-      state.container = node
-      state.lastSize = null
-      if (node && state.enabled) {
-        const total = v.getTotalSize()
-        state.lastSize = total
-        const axis = v.options.horizontal ? 'width' : 'height'
-        node.style[axis] = `${total}px`
-      }
-    }
-    return v
+    const v = new Virtualizer<TScrollElement, TItemElement>(resolvedOptions)
+    return Object.assign(v, {
+      containerRef: (node: HTMLElement | null) => {
+        const state = directRef.current
+        state.container = node
+        state.lastSize = null
+        if (node && state.enabled) {
+          const total = v.getTotalSize()
+          state.lastSize = total
+          const axis = v.options.horizontal ? 'width' : 'height'
+          node.style[axis] = `${total}px`
+        }
+      },
+    })
   })
 
   instance.setOptions(resolvedOptions)

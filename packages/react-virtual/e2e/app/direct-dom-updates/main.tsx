@@ -9,7 +9,7 @@ const App = () => {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const params = new URLSearchParams(window.location.search)
-  const mode = (params.get('mode') ?? 'position') as 'position' | 'transform'
+  const mode = (params.get('mode') ?? 'transform') as 'position' | 'transform'
 
   const renderCount = React.useRef(0)
   renderCount.current += 1

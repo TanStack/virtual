@@ -47,17 +47,13 @@ for (const mode of ['position', 'transform'] as const) {
         el.scrollTop = by
       }, ITEM_SIZE)
 
-      // Give onChange a tick.
-      await page.waitForTimeout(50)
-
       const item1 = page.locator('[data-testid="item-1"]')
-      const styleAttr = (await item1.getAttribute('style')) ?? ''
-
-      if (mode === 'position') {
-        expect(styleAttr).toMatch(/top:\s*40px/)
-      } else {
-        expect(styleAttr).toMatch(/translate3d\(0px,\s*40px,\s*0px\)/)
-      }
+      await expect(item1).toHaveAttribute(
+        'style',
+        mode === 'position'
+          ? /top:\s*40px/
+          : /translate3d\(0px,\s*40px,\s*0px\)/,
+      )
 
       const renderAfterSmallScroll = Number(
         await page.locator('[data-testid="render-count"]').textContent(),
