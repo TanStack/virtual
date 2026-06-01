@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.16.1
+
+### Patch Changes
+
+- Eagerly adjust scrollOffset on prepend to prevent one-frame jump with anchorTo: 'end' ([#1176](https://github.com/TanStack/virtual/pull/1176))
+
+  When items are prepended with `anchorTo: 'end'` and dynamic sizes, the virtualizer would compute the wrong visible range for one frame (using stale estimate-based positions) and then correct in the next frame via `_willUpdate`, producing a visible jump. This fix eagerly adjusts `scrollOffset` in `setOptions` during the render pass so `calculateRange`/`getVirtualItems` return the correct items immediately.
+
 ## 3.16.0
 
 ### Minor Changes
