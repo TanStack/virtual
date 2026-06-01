@@ -252,6 +252,21 @@ export const measureElement = <TItemElement extends Element>(
     }
   }
 
+  // When called without a ResizeObserverEntry (sync measurement path),
+  // return the previously measured size if available. This avoids a
+  // synchronous layout read (offsetWidth/offsetHeight) on re-renders.
+  // The ResizeObserver is already observing the element and will deliver
+  // the accurate size asynchronously if it changed.
+  // Users who need synchronous DOM reads can provide a custom measureElement.
+  if (!entry) {
+    const index = instance.indexFromElement(element)
+    const key = instance.options.getItemKey(index)
+    const cachedSize = instance.itemSizeCache.get(key)
+    if (cachedSize !== undefined) {
+      return cachedSize
+    }
+  }
+
   return (element as unknown as HTMLElement)[
     instance.options.horizontal ? 'offsetWidth' : 'offsetHeight'
   ]
@@ -382,7 +397,7 @@ export class Virtualizer<
   // Flat backing store for the lanes===1 fast path: [start_0, size_0, start_1, size_1, ...].
   // null until the first single-lane build; reused (and grown) across rebuilds.
   private _flatMeasurements: Float64Array | null = null
-  private itemSizeCache = new Map<Key, number>()
+  itemSizeCache = new Map<Key, number>()
   private itemSizeCacheVersion = 0
   private laneAssignments = new Map<number, number>() // index → lane cache
   // Earliest index dirtied since last getMeasurements() rebuild, or null.
