@@ -648,7 +648,7 @@ importers:
   examples/react/chat:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -679,7 +679,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -710,7 +710,7 @@ importers:
   examples/react/fixed:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -744,7 +744,7 @@ importers:
         specifier: ^5.80.7
         version: 5.90.5(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -769,7 +769,7 @@ importers:
   examples/react/padding:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -797,7 +797,7 @@ importers:
         specifier: ^0.0.7
         version: 0.0.7
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -831,7 +831,7 @@ importers:
         specifier: ^25.1.1
         version: 25.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -856,7 +856,7 @@ importers:
   examples/react/smooth-scroll:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -884,7 +884,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       lodash:
         specifier: ^4.17.21
@@ -921,7 +921,7 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -946,7 +946,7 @@ importers:
   examples/react/variable:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
@@ -971,7 +971,7 @@ importers:
   examples/react/window:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.13.26
+        specifier: ^3.14.0
         version: link:../../../packages/react-virtual
       react:
         specifier: ^18.3.1
