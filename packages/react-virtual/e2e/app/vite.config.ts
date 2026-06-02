@@ -20,6 +20,10 @@ export default defineConfig({
           __dirname,
           'direct-dom-updates/index.html',
         ),
+        'cached-measurements': path.resolve(
+          __dirname,
+          'cached-measurements/index.html',
+        ),
       },
     },
   },

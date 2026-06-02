@@ -242,6 +242,16 @@ export const measureElement = <TItemElement extends Element>(
   entry: ResizeObserverEntry | undefined,
   instance: Virtualizer<any, TItemElement>,
 ) => {
+  // When useCachedMeasurements is enabled, return the cached size
+  // (or estimateSize as fallback) instead of measuring the DOM.
+  if (instance.options.useCachedMeasurements) {
+    const index = instance.indexFromElement(element)
+    const key = instance.options.getItemKey(index)
+    return (
+      instance.itemSizeCache.get(key) ?? instance.options.estimateSize(index)
+    )
+  }
+
   if (entry?.borderBoxSize) {
     const box = entry.borderBoxSize[0]
     if (box) {
@@ -358,6 +368,7 @@ export interface VirtualizerOptions<
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
   laneAssignmentMode?: LaneAssignmentMode
+  useCachedMeasurements?: boolean
 }
 
 type ScrollState = {
@@ -539,6 +550,7 @@ export class Virtualizer<
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
       laneAssignmentMode: 'estimate',
+      useCachedMeasurements: false,
     } as unknown as Required<VirtualizerOptions<TScrollElement, TItemElement>>
 
     for (const key in opts) {
