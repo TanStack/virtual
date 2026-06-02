@@ -21,7 +21,7 @@ export type ReactVirtualizer<
   TItemElement extends Element,
 > = Virtualizer<TScrollElement, TItemElement> & {
   /**
-   * Ref callback for the inner sized container element. Only meaningful when
+   * Ref callback for the inner size container element. Only meaningful when
    * `directDomUpdates: true` — the virtualizer writes the container's
    * main-axis size (`height` or `width`) directly to skip React re-renders.
    */
@@ -45,7 +45,7 @@ export type ReactVirtualizerOptions<
    * - Item elements must NOT set the main-axis position in their style — the
    *   virtualizer owns `top` / `left` in `'position'` mode and `transform` in
    *   `'transform'` mode.
-   * - The inner sized container must receive `virtualizer.containerRef` and
+   * - The inner size container must receive `virtualizer.containerRef` and
    *   must NOT set `height` / `width` in its style.
    * - For multi-lane layouts (grids / masonry), the cross-axis position
    *   (e.g. `left: ${(item.lane * 100) / lanes}%`) is stable per item and
