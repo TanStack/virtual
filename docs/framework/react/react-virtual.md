@@ -73,3 +73,73 @@ const virtualizer = useVirtualizer({
   useFlushSync: false, // Disable synchronous updates
 })
 ```
+
+### `directDomUpdates`
+
+- **Type**: `boolean`
+- **Default**: `false`
+- **Description**: Skip React re-renders for scroll-only updates. When enabled, the virtualizer writes item positions (`top`/`left` or `transform`) and the container size (`height`/`width`) directly to the DOM, and only re-renders when the visible index range or `isScrolling` changes.
+
+#### Requirements when enabled
+
+- Item elements must be `position: absolute`; in `'transform'` mode they must also be anchored with `top: 0` / `left: 0`.
+- Item elements must **not** set the main-axis position in their style — the virtualizer owns `top` / `left` in `'position'` mode and `transform` in `'transform'` mode.
+- The inner sized container must receive `virtualizer.containerRef` and must **not** set `height` / `width` in its style.
+- For multi-lane layouts (grids / masonry), the cross-axis position (e.g. `left: ${(item.lane * 100) / lanes}%`) is stable per item and must still be set in your JSX — only the main axis is automated.
+
+> ⚠️ This flag is intended to be set once at mount. Toggling it (or `directDomUpdatesMode`) at runtime can leave stale inline styles on items and the container.
+
+#### Example
+
+```tsx
+const virtualizer = useVirtualizer({
+  count: 10000,
+  getScrollElement: () => parentRef.current,
+  estimateSize: () => 50,
+  directDomUpdates: true,
+})
+
+return (
+  <div ref={parentRef} style={{ overflow: 'auto', height: 400 }}>
+    {/* The inner container must use virtualizer.containerRef and not set height */}
+    <div ref={virtualizer.containerRef} style={{ position: 'relative' }}>
+      {virtualizer.getVirtualItems().map((item) => (
+        <div
+          key={item.key}
+          ref={virtualizer.measureElement}
+          data-index={item.index}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            // Do NOT set top/left/transform — the virtualizer handles it
+          }}
+        >
+          Row {item.index}
+        </div>
+      ))}
+    </div>
+  </div>
+)
+```
+
+### `directDomUpdatesMode`
+
+- **Type**: `'position' | 'transform'`
+- **Default**: `'transform'`
+- **Description**: Controls how `directDomUpdates` positions item elements.
+  - `'transform'` (default): writes `transform: translate3d(...)`. Promotes items to their own compositor layer — usually smoother on long lists, but creates a stacking context and can interfere with `position: fixed` descendants. Item elements must be anchored with `position: absolute`, `top: 0`, and `left: 0`.
+  - `'position'`: writes `top` / `left`. Item elements must be `position: absolute`.
+
+#### Example
+
+```tsx
+const virtualizer = useVirtualizer({
+  count: 10000,
+  getScrollElement: () => parentRef.current,
+  estimateSize: () => 50,
+  directDomUpdates: true,
+  directDomUpdatesMode: 'position', // Use top/left instead of transform
+})
+```
