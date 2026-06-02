@@ -84,7 +84,7 @@ const virtualizer = useVirtualizer({
 
 - Item elements must be `position: absolute`; in `'transform'` mode they must also be anchored with `top: 0` / `left: 0`.
 - Item elements must **not** set the main-axis position in their style — the virtualizer owns `top` / `left` in `'position'` mode and `transform` in `'transform'` mode.
-- The inner sized container must receive `virtualizer.containerRef` and must **not** set `height` / `width` in its style.
+- The inner size container must receive `virtualizer.containerRef` and must **not** set `height` / `width` in its style.
 - For multi-lane layouts (grids / masonry), the cross-axis position (e.g. `left: ${(item.lane * 100) / lanes}%`) is stable per item and must still be set in your JSX — only the main axis is automated.
 
 > ⚠️ This flag is intended to be set once at mount. Toggling it (or `directDomUpdatesMode`) at runtime can leave stale inline styles on items and the container.
