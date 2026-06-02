@@ -12,13 +12,13 @@
     "@faker-js/faker": "^8.4.1",
     "@tanstack/react-virtual": "^3.14.2",
     "lodash": "^4.17.21",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.17",
-    "@types/react": "^18.3.23",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.5.2",
     "vite": "^6.4.2"
   }
