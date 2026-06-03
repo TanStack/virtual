@@ -2275,8 +2275,8 @@ test('anchorTo:end keeps visible content stable when older items are prepended',
 
   expect(scrollToFn).toHaveBeenCalledTimes(1)
   const [offset, options] = scrollToFn.mock.calls[0]!
-  expect(offset).toBe(100)
-  expect(options.adjustments).toBe(100)
+  expect(offset).toBe(200)
+  expect(options.adjustments).toBeUndefined()
 })
 
 test('anchorTo:end does not yank a scrolled-up user when items append', () => {

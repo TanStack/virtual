@@ -116,7 +116,7 @@ function estimateMessageHeight(message: Message, viewportWidth: number) {
   )
 }
 
-function useElementWidth(ref: React.RefObject<HTMLElement>) {
+function useElementWidth(ref: React.RefObject<HTMLElement | null>) {
   const [width, setWidth] = React.useState(DEFAULT_VIEWPORT_WIDTH)
 
   React.useLayoutEffect(() => {

@@ -1,5 +1,23 @@
 # @tanstack/virtual-core
 
+## 3.17.0
+
+### Minor Changes
+
+- [#1186](https://github.com/TanStack/virtual/pull/1186) [`fbf3bdb`](https://github.com/TanStack/virtual/commit/fbf3bdbe38a2b1bf22c65a89752b7b9c07a77266) - Add `useCachedMeasurements` option to skip DOM measurement when the list is hidden (e.g. `display: none`). When enabled, the default `measureElement` returns the cached size or `estimateSize` fallback instead of reading the DOM, preventing ResizeObserver from resetting measurements to zero.
+
+### Patch Changes
+
+- [#1183](https://github.com/TanStack/virtual/pull/1183) [`c0b84c8`](https://github.com/TanStack/virtual/commit/c0b84c83f03de1244649f9838a408faf75ed29c9) - Skip synchronous DOM read (offsetWidth/offsetHeight) in default measureElement when a cached size already exists, reducing layout reflow on re-renders
+
+## 3.16.1
+
+### Patch Changes
+
+- Eagerly adjust scrollOffset on prepend to prevent one-frame jump with anchorTo: 'end' ([#1176](https://github.com/TanStack/virtual/pull/1176))
+
+  When items are prepended with `anchorTo: 'end'` and dynamic sizes, the virtualizer would compute the wrong visible range for one frame (using stale estimate-based positions) and then correct in the next frame via `_willUpdate`, producing a visible jump. This fix eagerly adjusts `scrollOffset` in `setOptions` during the render pass so `calculateRange`/`getVirtualItems` return the correct items immediately.
+
 ## 3.16.0
 
 ### Minor Changes

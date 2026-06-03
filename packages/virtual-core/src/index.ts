@@ -242,6 +242,16 @@ export const measureElement = <TItemElement extends Element>(
   entry: ResizeObserverEntry | undefined,
   instance: Virtualizer<any, TItemElement>,
 ) => {
+  // When useCachedMeasurements is enabled, return the cached size
+  // (or estimateSize as fallback) instead of measuring the DOM.
+  if (instance.options.useCachedMeasurements) {
+    const index = instance.indexFromElement(element)
+    const key = instance.options.getItemKey(index)
+    return (
+      instance.itemSizeCache.get(key) ?? instance.options.estimateSize(index)
+    )
+  }
+
   if (entry?.borderBoxSize) {
     const box = entry.borderBoxSize[0]
     if (box) {
@@ -249,6 +259,21 @@ export const measureElement = <TItemElement extends Element>(
         box[instance.options.horizontal ? 'inlineSize' : 'blockSize'],
       )
       return size
+    }
+  }
+
+  // When called without a ResizeObserverEntry (sync measurement path),
+  // return the previously measured size if available. This avoids a
+  // synchronous layout read (offsetWidth/offsetHeight) on re-renders.
+  // The ResizeObserver is already observing the element and will deliver
+  // the accurate size asynchronously if it changed.
+  // Users who need synchronous DOM reads can provide a custom measureElement.
+  if (!entry) {
+    const index = instance.indexFromElement(element)
+    const key = instance.options.getItemKey(index)
+    const cachedSize = instance.itemSizeCache.get(key)
+    if (cachedSize !== undefined) {
+      return cachedSize
     }
   }
 
@@ -347,6 +372,7 @@ export interface VirtualizerOptions<
    *  size exceeds this value, the virtualizer applies a scale factor to compress
    *  the scroll range. Defaults to 33_000_000. Set to Infinity to disable. */
   maxScrollSize?: number
+  useCachedMeasurements?: boolean
 }
 
 type ScrollState = {
@@ -369,6 +395,7 @@ type PendingScrollAnchor = [
   key: Key | null,
   offset: number,
   followOnAppend: ScrollBehavior | null,
+  anchorDelta: number,
 ]
 
 export class Virtualizer<
@@ -385,7 +412,7 @@ export class Virtualizer<
   // Flat backing store for the lanes===1 fast path: [start_0, size_0, start_1, size_1, ...].
   // null until the first single-lane build; reused (and grown) across rebuilds.
   private _flatMeasurements: Float64Array | null = null
-  private itemSizeCache = new Map<Key, number>()
+  itemSizeCache = new Map<Key, number>()
   private itemSizeCacheVersion = 0
   private laneAssignments = new Map<number, number>() // index → lane cache
   // Earliest index dirtied since last getMeasurements() rebuild, or null.
@@ -541,6 +568,7 @@ export class Virtualizer<
       useAnimationFrameWithResizeObserver: false,
       laneAssignmentMode: 'estimate',
       maxScrollSize: 33_000_000,
+      useCachedMeasurements: false,
     } as unknown as Required<VirtualizerOptions<TScrollElement, TItemElement>>
 
     for (const key in opts) {
@@ -553,6 +581,7 @@ export class Virtualizer<
       | undefined
     let anchor: [Key, number] | null = null
     let followOnAppend: ScrollBehavior | null = null
+    let edgeKeysChanged = false
 
     if (
       prevOptions !== undefined &&
@@ -582,6 +611,7 @@ export class Virtualizer<
             merged.getItemKey(nextCount - 1) !== prevLastKey))
 
       if (didEdgeKeysChange) {
+        edgeKeysChanged = true
         const item =
           prevCount > 0
             ? (this.getVirtualItemForOffset(this.getScrollOffset()) ??
@@ -610,11 +640,51 @@ export class Virtualizer<
 
     this.options = merged
 
-    if (anchor || followOnAppend) {
+    // When edge keys changed (prepend, trim, reorder, etc.) the key→index
+    // mapping has shifted. Force a full measurement rebuild so the anchor
+    // resolution below reads positions from the new layout, not the stale
+    // memoised cache. Without this, a stable `getItemKey` reference +
+    // unchanged `count` would let getMeasurements() return the old layout.
+    if (edgeKeysChanged) {
+      this.pendingMin = 0
+      this.itemSizeCacheVersion++
+    }
+
+    // Eagerly adjust scrollOffset so the virtualizer computes the correct
+    // visible range during the current render pass — before _willUpdate
+    // syncs the DOM scroll position in a layout effect. Without this,
+    // the virtualizer would render the wrong items for one frame (the
+    // estimate-based positions are stale) and then correct in the next
+    // frame, producing a visible "jump" on prepend with dynamic sizes.
+    let anchorResolved = false
+    let anchorDelta = 0
+    if (anchor && this.scrollOffset !== null) {
+      const [anchorKey, anchorOffset] = anchor
+      const newMeasurements = this.getMeasurements()
+      const { count, getItemKey } = this.options
+      let idx = 0
+      while (idx < count && getItemKey(idx) !== anchorKey) {
+        idx++
+      }
+      if (idx < count) {
+        const anchorItem = newMeasurements[idx]
+        if (anchorItem) {
+          const newOffset = anchorItem.start + anchorOffset
+          if (newOffset !== this.scrollOffset) {
+            anchorDelta = newOffset - this.scrollOffset
+            this.scrollOffset = newOffset
+            anchorResolved = true
+          }
+        }
+      }
+    }
+
+    if (anchorResolved || followOnAppend) {
       this.pendingScrollAnchor = [
-        anchor?.[0] ?? null,
-        anchor?.[1] ?? 0,
+        anchorResolved ? anchor![0] : null,
+        anchorResolved ? anchor![1] : 0,
         followOnAppend,
+        anchorDelta,
       ]
     }
   }
@@ -824,22 +894,30 @@ export class Virtualizer<
     this.pendingScrollAnchor = null
 
     if (anchor && this.scrollElement && this.options.enabled) {
-      const [key, offset, followOnAppend] = anchor
+      const [key, _offset, followOnAppend, anchorDelta] = anchor
 
-      if (key !== null) {
-        const { count, getItemKey } = this.options
-        let index = 0
-        while (index < count && getItemKey(index) !== key) {
-          index++
-        }
-
-        const item = index < count ? this.getMeasurements()[index] : undefined
-        if (item) {
-          const delta = item.start + offset - this.getScrollOffset()
-
-          if (!approxEqual(delta, 0)) {
-            this.applyScrollAdjustment(delta)
+      if (key !== null && !followOnAppend) {
+        // scrollOffset was eagerly adjusted in setOptions so the
+        // virtualizer already computed the correct range during render.
+        // Now sync the browser's actual scroll position to match.
+        // Skip when followOnAppend is set — scrollToEnd will handle it.
+        //
+        // On iOS WebKit, writing scrollTop during touch/momentum cancels
+        // the in-flight scroll. Defer the DOM sync the same way
+        // applyScrollAdjustment does — accumulate the delta and let
+        // _flushIosDeferredIfReady handle it once the scroll settles.
+        if (
+          isIOSWebKit() &&
+          (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
+        ) {
+          if (anchorDelta !== 0) {
+            this._iosDeferredAdjustment += anchorDelta
           }
+        } else {
+          this._scrollToOffset(this.getScrollOffset(), {
+            adjustments: undefined,
+            behavior: undefined,
+          })
         }
       }
 
