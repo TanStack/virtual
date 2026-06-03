@@ -11,7 +11,7 @@
  * @example
  * ```marko
  * // Row virtualisation
- * <div/$scrollEl style="height: 400px; overflow-y: auto">
+ * <div/scrollEl style="height: 400px; overflow-y: auto">
  *   <virtualizer|{ virtualItems, totalSize }|
  *     count=10000
  *     estimateSize=() => 35

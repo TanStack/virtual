@@ -6,9 +6,8 @@
  * tags wire up internally.
  *
  * Tag-level integration tests (testing the compiled Marko components with DOM
- * mounting and reactive updates) require @marko/testing-library and a full
- * Marko compilation pipeline. Those are not set up here but should be added
- * as e2e tests using @marko/run's test utilities in a future iteration.
+ * mounting and reactive updates) live in tests/tags.test.ts and use
+ * @marko/vite + template.mount() directly.
  */
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import {

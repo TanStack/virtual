@@ -1,6 +1,6 @@
-import { defineConfig } from "vitest/config"
-import marko from "@marko/vite"
-import packageJson from "./package.json"
+import { defineConfig } from 'vitest/config'
+import marko from '@marko/vite'
+import packageJson from './package.json'
 
 // This config is used by `vitest` only.
 // @marko/vite is an app plugin requiring SSR+browser build order — it must
@@ -9,9 +9,9 @@ export default defineConfig({
   plugins: [marko() as any],
   test: {
     name: packageJson.name,
-    dir: "./tests",
+    dir: './tests',
     watch: false,
-    environment: "jsdom",
-    setupFiles: ["./tests/setup.ts"],
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup.ts'],
   },
 })

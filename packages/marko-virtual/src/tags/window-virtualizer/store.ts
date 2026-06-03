@@ -1,4 +1,4 @@
-import type { Virtualizer } from "@tanstack/virtual-core"
+import type { Virtualizer } from '@tanstack/virtual-core'
 
 interface Entry {
   v: Virtualizer<Window, Element>

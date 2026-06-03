@@ -1,4 +1,4 @@
-import { vi } from "vitest"
+import { vi } from 'vitest'
 
 // ---------------------------------------------------------------------------
 // requestAnimationFrame — not available in jsdom.
@@ -6,10 +6,14 @@ import { vi } from "vitest"
 // never flush and items never appear after onMount.
 // ---------------------------------------------------------------------------
 if (!global.requestAnimationFrame) {
-  ;(global as typeof globalThis & { requestAnimationFrame: unknown }).requestAnimationFrame =
-    (cb: FrameRequestCallback) => setTimeout(cb, 16) as unknown as number
-  ;(global as typeof globalThis & { cancelAnimationFrame: unknown }).cancelAnimationFrame =
-    (id: number) => clearTimeout(id as unknown as ReturnType<typeof setTimeout>)
+  ;(
+    global as typeof globalThis & { requestAnimationFrame: unknown }
+  ).requestAnimationFrame = (cb: FrameRequestCallback) =>
+    setTimeout(cb, 16) as unknown as number
+  ;(
+    global as typeof globalThis & { cancelAnimationFrame: unknown }
+  ).cancelAnimationFrame = (id: number) =>
+    clearTimeout(id as unknown as ReturnType<typeof setTimeout>)
 }
 
 // ---------------------------------------------------------------------------
@@ -31,11 +35,11 @@ if (!global.requestAnimationFrame) {
 // Without this, the virtualizer sees a 0-height viewport and renders no items.
 // 400px ÷ 50px default estimateSize = 8 visible + 5 overscan each side ≈ 18.
 // ---------------------------------------------------------------------------
-Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
   configurable: true,
   get: () => 400,
 })
-Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
   configurable: true,
   get: () => 400,
 })

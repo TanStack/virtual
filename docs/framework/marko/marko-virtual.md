@@ -22,7 +22,7 @@ npm install @tanstack/marko-virtual
 <script() { mounted = true }/>
 
 <if=mounted>
-  <div/$scrollEl
+  <div/scrollEl
     style="height: 400px; width: 400px; overflow-y: auto; position: relative;"
   >
     <virtualizer|{ virtualItems, totalSize }|
@@ -56,7 +56,7 @@ npm install @tanstack/marko-virtual
 Same tag, `horizontal=true`:
 
 ```marko
-<div/$scrollEl
+<div/scrollEl
   style="width: 400px; height: 100px; overflow-x: auto; position: relative;"
 >
   <virtualizer|{ virtualItems, totalSize }|
@@ -91,7 +91,7 @@ Compose two `<virtualizer>` tags — one for rows, one for columns — sharing t
 same scroll element:
 
 ```marko
-<div/$scrollEl
+<div/scrollEl
   style="height: 500px; width: 500px; overflow: auto; position: relative;"
 >
   <virtualizer|{ virtualItems: rowItems, totalSize: rowTotal }|
@@ -162,7 +162,7 @@ For items with unknown heights, use `measureElement` as a script-driven ref
 to measure each element after render:
 
 ```marko
-<div/$scrollEl style="height: 400px; overflow-y: auto">
+<div/scrollEl style="height: 400px; overflow-y: auto">
   <virtualizer|{ virtualItems, totalSize, measureElement }|
     count=data.length
     estimateSize=() => 50
@@ -170,7 +170,9 @@ to measure each element after render:
   >
     <div style=`height: ${totalSize}px; position: relative`>
       <for|item| of=virtualItems>
-        <div/$el style=`position: absolute; top: 0; transform: translateY(${item.start}px)`>
+        <div/el
+          data-index=item.index
+          style=`position: absolute; top: 0; width: 100%; transform: translateY(${item.start}px)`>
           <script() {
             // measureElement reads the actual rendered height and updates the virtualizer
             if (el() && measureElement) measureElement(el())
@@ -192,8 +194,8 @@ Both tags expose the same tag variable shape:
 | `virtualItems` | `VirtualItem[]` | The currently visible virtual items |
 | `totalSize` | `number` | Total scrollable size in px — set as the inner container's `height` (or `width` for columns) |
 | `measureElement` | `(el: Element \| null) => void` | Ref callback for dynamic item sizing |
-| `scrollToIndex` | `(index: number, options?: ScrollToIndexOptions) => void` | Imperatively scroll to an item by index |
-| `scrollToOffset` | `(offset: number, options?: ScrollToOffsetOptions) => void` | Imperatively scroll to a pixel offset |
+| `scrollToIndex` | `(index: number, options?: ScrollToOptions) => void` | Imperatively scroll to an item by index |
+| `scrollToOffset` | `(offset: number, options?: ScrollToOptions) => void` | Imperatively scroll to a pixel offset |
 
 ## `<virtualizer>` input reference
 
@@ -214,8 +216,10 @@ Both tags expose the same tag variable shape:
 
 ## `<window-virtualizer>` input reference
 
-Same as `<virtualizer>` except `getScrollElement` and `horizontal` are not
-accepted (window scroll is always vertical, element is always `window`).
+Same as `<virtualizer>` except `getScrollElement`, `horizontal`, and
+`initialOffset` are not accepted. The scroll element is always `window`,
+scrolling is always vertical, and the initial offset is read from
+`window.scrollY` automatically.
 
 ## SSR note
 
@@ -231,7 +235,7 @@ ensure the scroll container exists in the DOM before the virtualizer attaches:
 <script() { mounted = true }/>
 
 <if=mounted>
-  <div/$scrollEl style="height: 400px; overflow-y: auto">
+  <div/scrollEl style="height: 400px; overflow-y: auto">
     <virtualizer|{ virtualItems, totalSize }|
       count=10000
       estimateSize=() => 35
