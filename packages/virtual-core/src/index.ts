@@ -1,6 +1,29 @@
+import { createLazyMeasurementsView } from './lazy-measurements'
 import { approxEqual, debounce, memo, notUndefined } from './utils'
 
-export * from './utils'
+// Browser-aware iOS detection. Programmatic `scrollTo`/`scrollTop` writes
+// during a momentum-scroll cancel the momentum on iOS WebKit, so we defer
+// scroll-position adjustments triggered by mid-scroll resizes until the
+// scroll settles. SSR-safe (returns false when navigator is unavailable).
+let _isIOSResult: boolean | undefined
+const isIOSWebKit = (): boolean => {
+  if (_isIOSResult !== undefined) return _isIOSResult
+  if (typeof navigator === 'undefined') return (_isIOSResult = false)
+  if (/iP(hone|od|ad)/.test(navigator.userAgent)) return (_isIOSResult = true)
+  // iPadOS 13+ reports as MacIntel; touch-points distinguishes it from desktop.
+  const mtp = (navigator as Navigator & { maxTouchPoints?: number })
+    .maxTouchPoints
+  return (_isIOSResult =
+    navigator.platform === 'MacIntel' && mtp !== undefined && mtp > 0)
+}
+
+// Test hook: reset the iOS detection cache. Not exported.
+export const _resetIOSDetectionForTests = () => {
+  _isIOSResult = undefined
+}
+
+export { approxEqual, debounce, memo, notUndefined } from './utils'
+export type { NoInfer, PartialKeys } from './utils'
 
 //
 
@@ -10,6 +33,10 @@ type ScrollAlignment = 'start' | 'center' | 'end' | 'auto'
 
 type ScrollBehavior = 'auto' | 'smooth' | 'instant'
 
+type ScrollAnchor = 'start' | 'end'
+
+type FollowOnAppend = boolean | ScrollBehavior
+
 export interface ScrollToOptions {
   align?: ScrollAlignment
   behavior?: ScrollBehavior
@@ -18,6 +45,8 @@ export interface ScrollToOptions {
 type ScrollToOffsetOptions = ScrollToOptions
 
 type ScrollToIndexOptions = ScrollToOptions
+
+type ScrollToEndOptions = Pick<ScrollToOptions, 'behavior'>
 
 export interface Range {
   startIndex: number
@@ -54,13 +83,12 @@ export const defaultKeyExtractor = (index: number) => index
 export const defaultRangeExtractor = (range: Range) => {
   const start = Math.max(range.startIndex - range.overscan, 0)
   const end = Math.min(range.endIndex + range.overscan, range.count - 1)
+  const len = end - start + 1
 
-  const arr = []
-
-  for (let i = start; i <= end; i++) {
-    arr.push(i)
+  const arr = new Array<number>(len)
+  for (let i = 0; i < len; i++) {
+    arr[i] = start + i
   }
-
   return arr
 }
 
@@ -143,9 +171,13 @@ const supportsScrollend =
 
 type ObserveOffsetCallBack = (offset: number, isScrolling: boolean) => void
 
-export const observeElementOffset = <T extends Element>(
+// Shared core: both element and window variants attach scroll/scrollend
+// listeners with the same lifecycle; they only differ in how to read the
+// current offset from the scroll target.
+const observeOffset = <T extends Element | Window>(
   instance: Virtualizer<T, any>,
   cb: ObserveOffsetCallBack,
+  readOffset: (target: T) => number,
 ) => {
   const element = instance.scrollElement
   if (!element) {
@@ -156,32 +188,27 @@ export const observeElementOffset = <T extends Element>(
     return
   }
 
-  let offset = 0
-  const fallback =
+  const registerScrollendEvent =
     instance.options.useScrollendEvent && supportsScrollend
-      ? () => undefined
-      : debounce(
-          targetWindow,
-          () => {
-            cb(offset, false)
-          },
-          instance.options.isScrollingResetDelay,
-        )
+
+  let offset = 0
+  const fallback = registerScrollendEvent
+    ? null
+    : debounce(
+        targetWindow,
+        () => cb(offset, false),
+        instance.options.isScrollingResetDelay,
+      )
 
   const createHandler = (isScrolling: boolean) => () => {
-    const { horizontal, isRtl } = instance.options
-    offset = horizontal
-      ? element['scrollLeft'] * ((isRtl && -1) || 1)
-      : element['scrollTop']
-    fallback()
+    offset = readOffset(element)
+    fallback?.()
     cb(offset, isScrolling)
   }
   const handler = createHandler(true)
   const endHandler = createHandler(false)
 
   element.addEventListener('scroll', handler, addEventListenerOptions)
-  const registerScrollendEvent =
-    instance.options.useScrollendEvent && supportsScrollend
   if (registerScrollendEvent) {
     element.addEventListener('scrollend', endHandler, addEventListenerOptions)
   }
@@ -192,59 +219,39 @@ export const observeElementOffset = <T extends Element>(
     }
   }
 }
+
+export const observeElementOffset = <T extends Element>(
+  instance: Virtualizer<T, any>,
+  cb: ObserveOffsetCallBack,
+) =>
+  observeOffset(instance, cb, (el) => {
+    const { horizontal, isRtl } = instance.options
+    return horizontal ? el.scrollLeft * ((isRtl && -1) || 1) : el.scrollTop
+  })
 
 export const observeWindowOffset = (
   instance: Virtualizer<Window, any>,
   cb: ObserveOffsetCallBack,
-) => {
-  const element = instance.scrollElement
-  if (!element) {
-    return
-  }
-  const targetWindow = instance.targetWindow
-  if (!targetWindow) {
-    return
-  }
-
-  let offset = 0
-  const fallback =
-    instance.options.useScrollendEvent && supportsScrollend
-      ? () => undefined
-      : debounce(
-          targetWindow,
-          () => {
-            cb(offset, false)
-          },
-          instance.options.isScrollingResetDelay,
-        )
-
-  const createHandler = (isScrolling: boolean) => () => {
-    offset = element[instance.options.horizontal ? 'scrollX' : 'scrollY']
-    fallback()
-    cb(offset, isScrolling)
-  }
-  const handler = createHandler(true)
-  const endHandler = createHandler(false)
-
-  element.addEventListener('scroll', handler, addEventListenerOptions)
-  const registerScrollendEvent =
-    instance.options.useScrollendEvent && supportsScrollend
-  if (registerScrollendEvent) {
-    element.addEventListener('scrollend', endHandler, addEventListenerOptions)
-  }
-  return () => {
-    element.removeEventListener('scroll', handler)
-    if (registerScrollendEvent) {
-      element.removeEventListener('scrollend', endHandler)
-    }
-  }
-}
+) =>
+  observeOffset(instance, cb, (win) =>
+    instance.options.horizontal ? win.scrollX : win.scrollY,
+  )
 
 export const measureElement = <TItemElement extends Element>(
   element: TItemElement,
   entry: ResizeObserverEntry | undefined,
   instance: Virtualizer<any, TItemElement>,
 ) => {
+  // When useCachedMeasurements is enabled, return the cached size
+  // (or estimateSize as fallback) instead of measuring the DOM.
+  if (instance.options.useCachedMeasurements) {
+    const index = instance.indexFromElement(element)
+    const key = instance.options.getItemKey(index)
+    return (
+      instance.itemSizeCache.get(key) ?? instance.options.estimateSize(index)
+    )
+  }
+
   if (entry?.borderBoxSize) {
     const box = entry.borderBoxSize[0]
     if (box) {
@@ -255,42 +262,53 @@ export const measureElement = <TItemElement extends Element>(
     }
   }
 
+  // When called without a ResizeObserverEntry (sync measurement path),
+  // return the previously measured size if available. This avoids a
+  // synchronous layout read (offsetWidth/offsetHeight) on re-renders.
+  // The ResizeObserver is already observing the element and will deliver
+  // the accurate size asynchronously if it changed.
+  // Users who need synchronous DOM reads can provide a custom measureElement.
+  if (!entry) {
+    const index = instance.indexFromElement(element)
+    const key = instance.options.getItemKey(index)
+    const cachedSize = instance.itemSizeCache.get(key)
+    if (cachedSize !== undefined) {
+      return cachedSize
+    }
+  }
+
   return (element as unknown as HTMLElement)[
     instance.options.horizontal ? 'offsetWidth' : 'offsetHeight'
   ]
 }
 
-export const windowScroll = <T extends Window>(
+const scrollWithAdjustments = (
   offset: number,
   {
     adjustments = 0,
     behavior,
   }: { adjustments?: number; behavior?: ScrollBehavior },
-  instance: Virtualizer<T, any>,
+  instance: Virtualizer<any, any>,
 ) => {
-  const toOffset = offset + adjustments
-
   instance.scrollElement?.scrollTo?.({
-    [instance.options.horizontal ? 'left' : 'top']: toOffset,
+    [instance.options.horizontal ? 'left' : 'top']: offset + adjustments,
     behavior,
   })
 }
 
-export const elementScroll = <T extends Element>(
+export const windowScroll: <T extends Window>(
   offset: number,
-  {
-    adjustments = 0,
-    behavior,
-  }: { adjustments?: number; behavior?: ScrollBehavior },
+  options: { adjustments?: number; behavior?: ScrollBehavior },
   instance: Virtualizer<T, any>,
-) => {
-  const toOffset = offset + adjustments
+) => void = scrollWithAdjustments
 
-  instance.scrollElement?.scrollTo?.({
-    [instance.options.horizontal ? 'left' : 'top']: toOffset,
-    behavior,
-  })
-}
+export const elementScroll: <T extends Element>(
+  offset: number,
+  options: { adjustments?: number; behavior?: ScrollBehavior },
+  instance: Virtualizer<T, any>,
+) => void = scrollWithAdjustments
+
+type LaneAssignmentMode = 'estimate' | 'measured'
 
 export interface VirtualizerOptions<
   TScrollElement extends Element | Window,
@@ -341,11 +359,16 @@ export interface VirtualizerOptions<
   indexAttribute?: string
   initialMeasurementsCache?: Array<VirtualItem>
   lanes?: number
+  anchorTo?: ScrollAnchor
+  followOnAppend?: FollowOnAppend
+  scrollEndThreshold?: number
   isScrollingResetDelay?: number
   useScrollendEvent?: boolean
   enabled?: boolean
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
+  laneAssignmentMode?: LaneAssignmentMode
+  useCachedMeasurements?: boolean
 }
 
 type ScrollState = {
@@ -364,6 +387,13 @@ type ScrollState = {
   stableFrames: number
 }
 
+type PendingScrollAnchor = [
+  key: Key | null,
+  offset: number,
+  followOnAppend: ScrollBehavior | null,
+  anchorDelta: number,
+]
+
 export class Virtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
@@ -375,16 +405,44 @@ export class Virtualizer<
   isScrolling = false
   private scrollState: ScrollState | null = null
   measurementsCache: Array<VirtualItem> = []
-  private itemSizeCache = new Map<Key, number>()
+  // Flat backing store for the lanes===1 fast path: [start_0, size_0, start_1, size_1, ...].
+  // null until the first single-lane build; reused (and grown) across rebuilds.
+  private _flatMeasurements: Float64Array | null = null
+  itemSizeCache = new Map<Key, number>()
+  private itemSizeCacheVersion = 0
   private laneAssignments = new Map<number, number>() // index → lane cache
-  private pendingMeasuredCacheIndexes: Array<number> = []
+  // Earliest index dirtied since last getMeasurements() rebuild, or null.
+  private pendingMin: number | null = null
   private prevLanes: number | undefined = undefined
   private lanesChangedFlag = false
   private lanesSettling = false
+  private pendingScrollAnchor: PendingScrollAnchor | null = null
   scrollRect: Rect | null = null
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments = 0
+  // Sum of size-change deltas above-viewport that were skipped during
+  // iOS momentum scroll (writing scrollTop mid-momentum cancels it).
+  // Flushed in a single scrollTo when iOS is fully settled.
+  private _iosDeferredAdjustment = 0
+  // Touch state. iOS WebKit cancels momentum when scrollTop is written, so
+  // we defer adjustments not only during `isScrolling` but also through the
+  // touchstart→touchend window (active drag) and a short tail after
+  // touchend (early-momentum window — iOS only fires touch events once at
+  // the start of momentum, so we use a timer rather than another event).
+  private _iosTouching = false
+  private _iosJustTouchEnded = false
+  private _iosTouchEndTimerId: number | null = null
+  // Subpixel reconciliation. Safari (and Chrome/Firefox under certain DPRs)
+  // round scrollTop/scrollLeft writes to integer pixels. If we wrote 12345.5
+  // but the browser reports back 12346, the next reconcileScroll sees a
+  // "target changed" and re-fires scrollTo — a feedback loop that the
+  // approxEqual(<1.01) tolerance otherwise absorbs as a workaround.
+  // By remembering the intended value of our most-recent self-driven
+  // scrollTo, we can match the browser's rounded read back to the intended
+  // value when the diff is < 1.5 px, distinguishing it from a real user
+  // scroll. The +0.5 over Math.abs lets us also absorb the +1 / -1 cases.
+  private _intendedScrollOffset: number | null = null
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -414,6 +472,20 @@ export class Virtualizer<
 
             if (!node.isConnected) {
               this.observer.unobserve(node)
+              // Find the cache entry pointing to this exact node and remove
+              // it. We can't call getItemKey(index) here because items may
+              // have been removed since this node was rendered — the index
+              // could be stale and out-of-bounds in the user's data array
+              // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
+              // The === comparison naturally handles the React-replaced-
+              // a-node-for-the-same-key case: that entry now points to a
+              // different node, so this loop won't match.
+              for (const [cacheKey, cachedNode] of this.elementsCache) {
+                if (cachedNode === node) {
+                  this.elementsCache.delete(cacheKey)
+                  break
+                }
+              }
               return
             }
 
@@ -448,11 +520,9 @@ export class Virtualizer<
   }
 
   setOptions = (opts: VirtualizerOptions<TScrollElement, TItemElement>) => {
-    Object.entries(opts).forEach(([key, value]) => {
-      if (typeof value === 'undefined') delete (opts as any)[key]
-    })
-
-    this.options = {
+    // Skip `{...defaults, ...opts}` because explicit `undefined` values in
+    // opts would override defaults with `undefined`.
+    const merged = {
       debug: false,
       initialOffset: 0,
       overscan: 1,
@@ -471,17 +541,158 @@ export class Virtualizer<
       indexAttribute: 'data-index',
       initialMeasurementsCache: [],
       lanes: 1,
+      anchorTo: 'start',
+      followOnAppend: false,
+      scrollEndThreshold: 1,
       isScrollingResetDelay: 150,
       enabled: true,
       isRtl: false,
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
-      ...opts,
+      laneAssignmentMode: 'estimate',
+      useCachedMeasurements: false,
+    } as unknown as Required<VirtualizerOptions<TScrollElement, TItemElement>>
+
+    for (const key in opts) {
+      const v = (opts as any)[key]
+      if (v !== undefined) (merged as any)[key] = v
+    }
+
+    const prevOptions = this.options as
+      | Required<VirtualizerOptions<TScrollElement, TItemElement>>
+      | undefined
+    let anchor: [Key, number] | null = null
+    let followOnAppend: ScrollBehavior | null = null
+    let edgeKeysChanged = false
+
+    if (
+      prevOptions !== undefined &&
+      prevOptions.enabled &&
+      merged.enabled &&
+      merged.anchorTo === 'end' &&
+      this.scrollElement !== null
+    ) {
+      const prevCount = prevOptions.count
+      const nextCount = merged.count
+      const measurements = this.getMeasurements()
+      const prevFirstKey =
+        prevCount > 0
+          ? (measurements[0]?.key ?? prevOptions.getItemKey(0))
+          : null
+      const prevLastKey =
+        prevCount > 0
+          ? (measurements[prevCount - 1]?.key ??
+            prevOptions.getItemKey(prevCount - 1))
+          : null
+      const didCountChange = nextCount !== prevCount
+      const didEdgeKeysChange =
+        didCountChange ||
+        (prevCount > 0 &&
+          nextCount > 0 &&
+          (merged.getItemKey(0) !== prevFirstKey ||
+            merged.getItemKey(nextCount - 1) !== prevLastKey))
+
+      if (didEdgeKeysChange) {
+        edgeKeysChanged = true
+        const item =
+          prevCount > 0
+            ? (this.getVirtualItemForOffset(this.getScrollOffset()) ??
+              measurements[0])
+            : null
+
+        if (item) {
+          anchor = [item.key, this.getScrollOffset() - item.start]
+        }
+
+        const behavior =
+          merged.followOnAppend === true
+            ? 'auto'
+            : merged.followOnAppend || null
+
+        if (
+          behavior &&
+          nextCount > prevCount &&
+          this.isAtEnd(prevOptions.scrollEndThreshold) &&
+          (prevCount === 0 || merged.getItemKey(nextCount - 1) !== prevLastKey)
+        ) {
+          followOnAppend = behavior
+        }
+      }
+    }
+
+    this.options = merged
+
+    // When edge keys changed (prepend, trim, reorder, etc.) the key→index
+    // mapping has shifted. Force a full measurement rebuild so the anchor
+    // resolution below reads positions from the new layout, not the stale
+    // memoised cache. Without this, a stable `getItemKey` reference +
+    // unchanged `count` would let getMeasurements() return the old layout.
+    if (edgeKeysChanged) {
+      this.pendingMin = 0
+      this.itemSizeCacheVersion++
+    }
+
+    // Eagerly adjust scrollOffset so the virtualizer computes the correct
+    // visible range during the current render pass — before _willUpdate
+    // syncs the DOM scroll position in a layout effect. Without this,
+    // the virtualizer would render the wrong items for one frame (the
+    // estimate-based positions are stale) and then correct in the next
+    // frame, producing a visible "jump" on prepend with dynamic sizes.
+    let anchorResolved = false
+    let anchorDelta = 0
+    if (anchor && this.scrollOffset !== null) {
+      const [anchorKey, anchorOffset] = anchor
+      const newMeasurements = this.getMeasurements()
+      const { count, getItemKey } = this.options
+      let idx = 0
+      while (idx < count && getItemKey(idx) !== anchorKey) {
+        idx++
+      }
+      if (idx < count) {
+        const anchorItem = newMeasurements[idx]
+        if (anchorItem) {
+          const newOffset = anchorItem.start + anchorOffset
+          if (newOffset !== this.scrollOffset) {
+            anchorDelta = newOffset - this.scrollOffset
+            this.scrollOffset = newOffset
+            anchorResolved = true
+          }
+        }
+      }
+    }
+
+    if (anchorResolved || followOnAppend) {
+      this.pendingScrollAnchor = [
+        anchorResolved ? anchor![0] : null,
+        anchorResolved ? anchor![1] : 0,
+        followOnAppend,
+        anchorDelta,
+      ]
     }
   }
 
   private notify = (sync: boolean) => {
     this.options.onChange?.(this, sync)
+  }
+
+  private applyScrollAdjustment(delta: number, behavior?: ScrollBehavior) {
+    if (delta === 0) return
+
+    if (process.env.NODE_ENV !== 'production' && this.options.debug) {
+      console.info('correction', delta)
+    }
+
+    if (
+      isIOSWebKit() &&
+      (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
+    ) {
+      this._iosDeferredAdjustment += delta
+    } else {
+      this._scrollToOffset(this.getScrollOffset(), {
+        adjustments: (this.scrollAdjustments += delta),
+        behavior,
+      })
+    }
   }
 
   private maybeNotify = memo(
@@ -561,6 +772,21 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset, isScrolling) => {
+          // If this scroll event looks like the browser's read-back of a
+          // value we just wrote, prefer our intended (sub-pixel-accurate)
+          // value over the browser's rounded one. The 1.5 px tolerance is
+          // tight enough to avoid mistaking a real user scroll for a
+          // self-write — by the time the user has moved 1.5 px, the
+          // intended value will already have been consumed by a prior
+          // scroll event and cleared.
+          if (
+            this._intendedScrollOffset !== null &&
+            Math.abs(offset - this._intendedScrollOffset) < 1.5
+          ) {
+            offset = this._intendedScrollOffset
+          }
+          this._intendedScrollOffset = null
+
           this.scrollAdjustments = 0
           this.scrollDirection = isScrolling
             ? this.getScrollOffset() < offset
@@ -570,6 +796,11 @@ export class Virtualizer<
           this.scrollOffset = offset
           this.isScrolling = isScrolling
 
+          // Flush deferred iOS adjustments if we're now fully settled.
+          // "Fully settled" means: not actively scrolling, no finger on
+          // screen, and the post-touchend grace window has expired.
+          this._flushIosDeferredIfReady()
+
           if (this.scrollState) {
             this.scheduleScrollReconcile()
           }
@@ -577,11 +808,125 @@ export class Virtualizer<
         }),
       )
 
+      // Touch event listeners (iOS-aware deferral). We attach unconditionally
+      // — the listeners are passive and cheap; on non-touch devices they
+      // simply never fire. The gating by isIOSWebKit() lives in resizeItem
+      // and _flushIosDeferredIfReady so we only burn the path on iOS.
+      if ('addEventListener' in this.scrollElement) {
+        const scrollEl = this.scrollElement as unknown as EventTarget
+        const onTouchStart = () => {
+          this._iosTouching = true
+          this._iosJustTouchEnded = false
+          if (this._iosTouchEndTimerId !== null && this.targetWindow != null) {
+            this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
+            this._iosTouchEndTimerId = null
+          }
+        }
+        const onTouchEnd = () => {
+          this._iosTouching = false
+          if (!isIOSWebKit() || this.targetWindow == null) {
+            // Non-iOS: nothing more to track. Just clear the touching flag.
+            return
+          }
+          this._iosJustTouchEnded = true
+          // After ~150 ms with no scroll/touch events, momentum is done.
+          this._iosTouchEndTimerId = this.targetWindow.setTimeout(() => {
+            this._iosJustTouchEnded = false
+            this._iosTouchEndTimerId = null
+            // After the grace window, attempt to flush. The scroll event
+            // for momentum decay may have already fired before our timer.
+            this._flushIosDeferredIfReady()
+          }, 150)
+        }
+        scrollEl.addEventListener(
+          'touchstart',
+          onTouchStart,
+          addEventListenerOptions,
+        )
+        scrollEl.addEventListener(
+          'touchend',
+          onTouchEnd,
+          addEventListenerOptions,
+        )
+        this.unsubs.push(() => {
+          scrollEl.removeEventListener('touchstart', onTouchStart)
+          scrollEl.removeEventListener('touchend', onTouchEnd)
+          if (this._iosTouchEndTimerId !== null && this.targetWindow != null) {
+            this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
+            this._iosTouchEndTimerId = null
+          }
+        })
+      }
+
       this._scrollToOffset(this.getScrollOffset(), {
         adjustments: undefined,
         behavior: undefined,
       })
     }
+
+    const anchor = this.pendingScrollAnchor
+    this.pendingScrollAnchor = null
+
+    if (anchor && this.scrollElement && this.options.enabled) {
+      const [key, _offset, followOnAppend, anchorDelta] = anchor
+
+      if (key !== null && !followOnAppend) {
+        // scrollOffset was eagerly adjusted in setOptions so the
+        // virtualizer already computed the correct range during render.
+        // Now sync the browser's actual scroll position to match.
+        // Skip when followOnAppend is set — scrollToEnd will handle it.
+        //
+        // On iOS WebKit, writing scrollTop during touch/momentum cancels
+        // the in-flight scroll. Defer the DOM sync the same way
+        // applyScrollAdjustment does — accumulate the delta and let
+        // _flushIosDeferredIfReady handle it once the scroll settles.
+        if (
+          isIOSWebKit() &&
+          (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
+        ) {
+          if (anchorDelta !== 0) {
+            this._iosDeferredAdjustment += anchorDelta
+          }
+        } else {
+          this._scrollToOffset(this.getScrollOffset(), {
+            adjustments: undefined,
+            behavior: undefined,
+          })
+        }
+      }
+
+      if (followOnAppend) {
+        this.scrollToEnd({ behavior: followOnAppend })
+      }
+    }
+  }
+
+  // Apply any accumulated iOS-deferred scroll adjustment, but only when we're
+  // truly settled — not actively scrolling, not under an active touch, and
+  // past the post-touchend grace window. Called from the scroll callback
+  // and the touchend grace-timer.
+  private _flushIosDeferredIfReady = () => {
+    if (this._iosDeferredAdjustment === 0) return
+    if (this.isScrolling) return
+    if (this._iosTouching) return
+    if (this._iosJustTouchEnded) return
+    // Phase 2b: Safari elastic-overscroll (rubber-band) lets scrollTop go
+    // negative or beyond scrollHeight - clientHeight. Writing scrollTop
+    // while in that zone snaps the page back to the clamped value at the
+    // end of the bounce, often discarding the user's intent. Skip the
+    // flush; the next in-bounds scroll event will retry.
+    const cur = this.getScrollOffset()
+    const max = this.getMaxScrollOffset()
+    if (cur < 0 || cur > max) return
+    const delta = this._iosDeferredAdjustment
+    this._iosDeferredAdjustment = 0
+    // Roll the deferred delta into the running accumulator so any resize
+    // landing between now and the resulting scroll event computes from the
+    // post-flush offset rather than the stale one.
+    this._scrollToOffset(cur, {
+      adjustments: (this.scrollAdjustments += delta),
+      behavior: undefined,
+    })
   }
 
   private rafId: number | null = null
@@ -627,6 +972,18 @@ export class Virtualizer<
     if (!targetChanged && approxEqual(targetOffset, this.getScrollOffset())) {
       this.scrollState.stableFrames++
       if (this.scrollState.stableFrames >= STABLE_FRAMES) {
+        // Final-pass exact landing. The reconcile-stable check uses a 1.01px
+        // tolerance (approxEqual) so we don't fight subpixel browser rounding
+        // during the converging phase. Once we're definitively settled,
+        // commit the exact target so consumers calling scrollToIndex(N)
+        // end up at the EXACT computed position of item N — matching
+        // virtuoso's 0px landing accuracy rather than our prior 0.5-1px.
+        if (this.getScrollOffset() !== targetOffset) {
+          this._scrollToOffset(targetOffset, {
+            adjustments: undefined,
+            behavior: 'auto',
+          })
+        }
         this.scrollState = null
         return
       }
@@ -634,14 +991,26 @@ export class Virtualizer<
       this.scrollState.stableFrames = 0
 
       if (targetChanged) {
+        // When the target moves during smooth scroll (because items came into
+        // view and got measured, shifting positions), the original logic was
+        // to immediately snap to 'auto' — visibly jarring on long
+        // scroll-to-index calls. Now: keep smooth while we're still far
+        // (more than a viewport) from the new target. Only fall back to
+        // 'auto' for the final approach, so the user sees one continuous
+        // motion that smoothly adjusts its endpoint as measurements arrive.
+        const viewport = this.getSize() || 600
+        const distance = Math.abs(targetOffset - this.getScrollOffset())
+        const keepSmooth =
+          this.scrollState.behavior === 'smooth' && distance > viewport
+
         this.scrollState.lastTargetOffset = targetOffset
-        // Switch to 'auto' behavior once measurements cause target to change
-        // We want to jump directly to the correct position, not smoothly animate to it
-        this.scrollState.behavior = 'auto'
+        if (!keepSmooth) {
+          this.scrollState.behavior = 'auto'
+        }
 
         this._scrollToOffset(targetOffset, {
           adjustments: undefined,
-          behavior: 'auto',
+          behavior: keepSmooth ? 'smooth' : 'auto',
         })
       }
     }
@@ -727,8 +1096,17 @@ export class Virtualizer<
       this.options.getItemKey,
       this.options.enabled,
       this.options.lanes,
+      this.options.laneAssignmentMode,
     ],
-    (count, paddingStart, scrollMargin, getItemKey, enabled, lanes) => {
+    (
+      count,
+      paddingStart,
+      scrollMargin,
+      getItemKey,
+      enabled,
+      lanes,
+      laneAssignmentMode,
+    ) => {
       const lanesChanged =
         this.prevLanes !== undefined && this.prevLanes !== lanes
 
@@ -738,7 +1116,7 @@ export class Virtualizer<
       }
 
       this.prevLanes = lanes
-      this.pendingMeasuredCacheIndexes = []
+      this.pendingMin = null
 
       return {
         count,
@@ -747,6 +1125,7 @@ export class Virtualizer<
         getItemKey,
         enabled,
         lanes,
+        laneAssignmentMode,
       }
     },
     {
@@ -755,11 +1134,20 @@ export class Virtualizer<
   )
 
   private getMeasurements = memo(
-    () => [this.getMeasurementOptions(), this.itemSizeCache],
+    () => [this.getMeasurementOptions(), this.itemSizeCacheVersion],
     (
-      { count, paddingStart, scrollMargin, getItemKey, enabled, lanes },
-      itemSizeCache,
+      {
+        count,
+        paddingStart,
+        scrollMargin,
+        getItemKey,
+        enabled,
+        lanes,
+        laneAssignmentMode,
+      },
+      _itemSizeCacheVersion,
     ) => {
+      const itemSizeCache = this.itemSizeCache
       if (!enabled) {
         this.measurementsCache = []
         this.itemSizeCache.clear()
@@ -783,8 +1171,8 @@ export class Virtualizer<
         this.measurementsCache = []
         this.itemSizeCache.clear()
         this.laneAssignments.clear() // Clear lane cache for new lane count
-        // Clear pending indexes to force min = 0
-        this.pendingMeasuredCacheIndexes = []
+        // Force min = 0 on the rebuild
+        this.pendingMin = null
       }
 
       // Don't restore from initialMeasurementsCache during lane changes
@@ -796,17 +1184,60 @@ export class Virtualizer<
         })
       }
 
-      // ✅ During lanes settling, ignore pendingMeasuredCacheIndexes to prevent repositioning
-      const min = this.lanesSettling
-        ? 0
-        : this.pendingMeasuredCacheIndexes.length > 0
-          ? Math.min(...this.pendingMeasuredCacheIndexes)
-          : 0
-      this.pendingMeasuredCacheIndexes = []
+      // During lanes settling, ignore pendingMin to prevent repositioning
+      const min = this.lanesSettling ? 0 : (this.pendingMin ?? 0)
+      this.pendingMin = null
 
       // ✅ End settling period when cache is fully built
       if (this.lanesSettling && this.measurementsCache.length === count) {
         this.lanesSettling = false
+      }
+
+      // ─── Fast path: single-lane lazy materialization ────────────────────
+      // For lanes === 1 (the default and most common case), skip the
+      // per-item VirtualItem object allocation. We write start/size pairs
+      // into a Float64Array and return a Proxy that builds VirtualItem
+      // objects on demand (only the indices a consumer actually reads).
+      //
+      // At n=100k this drops cold-mount cost from ~2.5ms (eager object
+      // allocation) to roughly the cost of a single typed-array fill.
+      if (lanes === 1) {
+        const gap = this.options.gap
+        // Reuse flat backing if large enough; else grow (preserving data
+        // before `min` to mirror the slice-and-rebuild contract).
+        const need = count * 2
+        let flat = this._flatMeasurements
+        if (!flat || flat.length < need) {
+          const next = new Float64Array(need)
+          if (flat && min > 0) next.set(flat.subarray(0, min * 2))
+          flat = next
+          this._flatMeasurements = flat
+        }
+
+        let runningStart: number
+        if (min === 0) {
+          runningStart = paddingStart + scrollMargin
+        } else {
+          // Continue from where we left off
+          const prevIdx = min - 1
+          runningStart = flat[prevIdx * 2]! + flat[prevIdx * 2 + 1]! + gap
+        }
+
+        for (let i = min; i < count; i++) {
+          const key = getItemKey(i)
+          const measuredSize = itemSizeCache.get(key)
+          const size =
+            typeof measuredSize === 'number'
+              ? measuredSize
+              : this.options.estimateSize(i)
+          flat[i * 2] = runningStart
+          flat[i * 2 + 1] = size
+          runningStart += size + gap
+        }
+
+        const view = createLazyMeasurementsView(count, flat, getItemKey)
+        this.measurementsCache = view
+        return view
       }
 
       const measurements = this.measurementsCache.slice(0, min)
@@ -832,6 +1263,9 @@ export class Virtualizer<
         let lane: number
         let start: number
 
+        const shouldCacheLane =
+          laneAssignmentMode === 'estimate' || itemSizeCache.has(key)
+
         if (cachedLane !== undefined && this.options.lanes > 1) {
           // Use cached lane - O(1) lookup for previous item in same lane
           lane = cachedLane
@@ -856,8 +1290,7 @@ export class Virtualizer<
             ? furthestMeasurement.lane
             : i % this.options.lanes
 
-          // Cache the lane assignment
-          if (this.options.lanes > 1) {
+          if (this.options.lanes > 1 && shouldCacheLane) {
             this.laneAssignments.set(i, lane)
           }
         }
@@ -908,6 +1341,13 @@ export class Virtualizer<
               outerSize,
               scrollOffset,
               lanes,
+              // Pass the typed array so binary search + forward-walk can
+              // read start/end directly from Float64Array, skipping the
+              // Proxy traps that materialize a full VirtualItem per probe.
+              flat:
+                lanes === 1 && this._flatMeasurements != null
+                  ? this._flatMeasurements
+                  : null,
             })
           : null)
     },
@@ -1032,30 +1472,73 @@ export class Virtualizer<
   }
 
   resizeItem = (index: number, size: number) => {
-    const item = this.measurementsCache[index]
-    if (!item) return
+    if (index < 0 || index >= this.options.count) return
 
-    const itemSize = this.itemSizeCache.get(item.key) ?? item.size
+    // Fast field reads. For lanes===1 we read raw start/size from the flat
+    // typed array, avoiding a Proxy.get + VirtualItem allocation per call.
+    // For lanes>1 we fall back to the cached VirtualItem array.
+    let cachedSize: number
+    let itemStart: number
+    let key: Key
+    const flat = this._flatMeasurements
+    if (this.options.lanes === 1 && flat !== null) {
+      key = this.options.getItemKey(index)
+      itemStart = flat[index * 2]!
+      cachedSize = flat[index * 2 + 1]!
+    } else {
+      const item = this.measurementsCache[index]
+      if (!item) return
+      key = item.key
+      itemStart = item.start
+      cachedSize = item.size
+    }
+
+    const itemSize = this.itemSizeCache.get(key) ?? cachedSize
     const delta = size - itemSize
 
     if (delta !== 0) {
-      if (
+      const wasAtEnd =
+        this.options.anchorTo === 'end' &&
+        this.scrollState?.behavior !== 'smooth' &&
+        this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
+      const prevTotalSize = wasAtEnd ? this.getTotalSize() : 0
+      const shouldAdjustScroll =
         this.scrollState?.behavior !== 'smooth' &&
         (this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
-          ? this.shouldAdjustScrollPositionOnItemSizeChange(item, delta, this)
-          : item.start < this.getScrollOffset() + this.scrollAdjustments)
-      ) {
-        if (process.env.NODE_ENV !== 'production' && this.options.debug) {
-          console.info('correction', delta)
-        }
-        this._scrollToOffset(this.getScrollOffset(), {
-          adjustments: (this.scrollAdjustments += delta),
-          behavior: undefined,
-        })
-      }
+          ? this.shouldAdjustScrollPositionOnItemSizeChange(
+              // The callback expects a VirtualItem; build one lazily only
+              // when the consumer actually supplied a custom predicate.
+              this.measurementsCache[index] ?? {
+                index,
+                key,
+                start: itemStart,
+                size: cachedSize,
+                end: itemStart + cachedSize,
+                lane: 0,
+              },
+              delta,
+              this,
+            )
+          : // Default: adjust scrollTop only when the resize is an above-
+            // viewport item AND we're not actively scrolling backward.
+            // Adjusting during backward scroll fights the user's scroll
+            // direction and produces the "items jump while scrolling up"
+            // jank reported across many issues. Users who want the old
+            // behavior can pass shouldAdjustScrollPositionOnItemSizeChange.
+            itemStart < this.getScrollOffset() + this.scrollAdjustments &&
+            this.scrollDirection !== 'backward')
 
-      this.pendingMeasuredCacheIndexes.push(item.index)
-      this.itemSizeCache = new Map(this.itemSizeCache.set(item.key, size))
+      if (this.pendingMin === null || index < this.pendingMin) {
+        this.pendingMin = index
+      }
+      this.itemSizeCache.set(key, size)
+      this.itemSizeCacheVersion++
+
+      if (wasAtEnd) {
+        this.applyScrollAdjustment(this.getTotalSize() - prevTotalSize)
+      } else if (shouldAdjustScroll) {
+        this.applyScrollAdjustment(delta)
+      }
 
       this.notify(false)
     }
@@ -1086,16 +1569,20 @@ export class Virtualizer<
     if (measurements.length === 0) {
       return undefined
     }
-    return notUndefined(
-      measurements[
-        findNearestBinarySearch(
-          0,
-          measurements.length - 1,
-          (index: number) => notUndefined(measurements[index]).start,
-          offset,
-        )
-      ],
+    // Same fast-path as calculateRange: read start values directly from the
+    // typed array during binary search to skip the Proxy.get materialization
+    // per probe.
+    const flat = this._flatMeasurements
+    const useFlat = this.options.lanes === 1 && flat != null
+    const idx = findNearestBinarySearch(
+      0,
+      measurements.length - 1,
+      useFlat
+        ? (i: number) => flat[i * 2]!
+        : (i: number) => notUndefined(measurements[i]).start,
+      offset,
     )
+    return notUndefined(measurements[idx])
   }
 
   private getMaxScrollOffset = () => {
@@ -1113,6 +1600,21 @@ export class Virtualizer<
         ? doc.scrollWidth - this.scrollElement.innerWidth
         : doc.scrollHeight - this.scrollElement.innerHeight
     }
+  }
+
+  private getVirtualDistanceFromEnd = () => {
+    return Math.max(
+      this.getTotalSize() - this.getSize() - this.getScrollOffset(),
+      0,
+    )
+  }
+
+  getDistanceFromEnd = () => {
+    return Math.max(this.getMaxScrollOffset() - this.getScrollOffset(), 0)
+  }
+
+  isAtEnd = (threshold = this.options.scrollEndThreshold) => {
+    return this.getDistanceFromEnd() <= threshold
   }
 
   getOffsetForAlignment = (
@@ -1250,6 +1752,20 @@ export class Virtualizer<
     this.scheduleScrollReconcile()
   }
 
+  scrollToEnd = ({ behavior = 'auto' }: ScrollToEndOptions = {}) => {
+    if (this.options.count > 0) {
+      this.scrollToIndex(this.options.count - 1, {
+        align: 'end',
+        behavior,
+      })
+      return
+    }
+
+    this.scrollToOffset(Math.max(this.getTotalSize() - this.getSize(), 0), {
+      behavior,
+    })
+  }
+
   getTotalSize = () => {
     const measurements = this.getMeasurements()
 
@@ -1260,7 +1776,16 @@ export class Virtualizer<
     if (measurements.length === 0) {
       end = this.options.paddingStart
     } else if (this.options.lanes === 1) {
-      end = measurements[measurements.length - 1]?.end ?? 0
+      // Fast path: read last item's end directly from the flat typed array
+      // when available; avoids a Proxy.get + VirtualItem materialization
+      // just to call getTotalSize (which React renders trigger every commit).
+      const lastIdx = measurements.length - 1
+      const flat = this._flatMeasurements
+      if (flat != null) {
+        end = flat[lastIdx * 2]! + flat[lastIdx * 2 + 1]!
+      } else {
+        end = measurements[lastIdx]?.end ?? 0
+      }
     } else {
       const endByLane = Array<number | null>(this.options.lanes).fill(null)
       let endIndex = measurements.length - 1
@@ -1282,6 +1807,39 @@ export class Virtualizer<
     )
   }
 
+  /**
+   * Returns a snapshot of currently-measured items suitable for round-
+   * tripping through state storage (sessionStorage, history, etc.) and
+   * passing back as `initialMeasurementsCache` on remount. Pair with the
+   * current `scrollOffset` to restore exact scroll position after navigation.
+   *
+   * Only items the consumer has actually rendered (and thus measured) appear
+   * in the snapshot; unmeasured items will fall back to `estimateSize` on
+   * restore. Returns an empty array if no items have been measured.
+   */
+  takeSnapshot = (): Array<VirtualItem> => {
+    const snapshot: Array<VirtualItem> = []
+    if (this.itemSizeCache.size === 0) return snapshot
+    // Iterate measurementsCache only for indices whose key is in itemSizeCache
+    // (i.e., have been measured). We build VirtualItem objects with the
+    // current start/size/end so they can be persisted as plain data.
+    const m = this.getMeasurements()
+    for (const item of m) {
+      if (item && this.itemSizeCache.has(item.key)) {
+        // Force materialization (lazy path) and copy plain fields.
+        snapshot.push({
+          index: item.index,
+          key: item.key,
+          start: item.start,
+          size: item.size,
+          end: item.end,
+          lane: item.lane,
+        })
+      }
+    }
+    return snapshot
+  }
+
   private _scrollToOffset = (
     offset: number,
     {
@@ -1292,12 +1850,20 @@ export class Virtualizer<
       behavior: ScrollBehavior | undefined
     },
   ) => {
+    // Record the intended logical scroll target so the next scroll event
+    // can reconcile against subpixel rounding by the browser.
+    this._intendedScrollOffset = offset + (adjustments ?? 0)
     this.options.scrollToFn(offset, { behavior, adjustments }, this)
   }
 
   measure = () => {
-    this.itemSizeCache = new Map()
-    this.laneAssignments = new Map() // Clear lane cache for full re-layout
+    // Reset pendingMin so the next getMeasurements rebuilds from index 0.
+    // Without this, a prior resizeItem() that left pendingMin > 0 would
+    // cause the rebuild to preserve stale items before that index.
+    this.pendingMin = null
+    this.itemSizeCache.clear()
+    this.laneAssignments.clear() // Clear lane cache for full re-layout
+    this.itemSizeCacheVersion++
     this.notify(false)
   }
 }
@@ -1333,14 +1899,24 @@ function calculateRange({
   outerSize,
   scrollOffset,
   lanes,
+  flat,
 }: {
   measurements: Array<VirtualItem>
   outerSize: number
   scrollOffset: number
   lanes: number
+  flat: Float64Array | null
 }) {
   const lastIndex = measurements.length - 1
-  const getOffset = (index: number) => measurements[index]!.start
+  // When the lanes===1 fast-path is active, read start/end directly from the
+  // flat Float64Array instead of going through the lazy-view Proxy. Cuts
+  // ~17 Proxy.get traps per scroll for the binary search alone.
+  const getStart = flat
+    ? (index: number) => flat[index * 2]!
+    : (index: number) => measurements[index]!.start
+  const getEnd = flat
+    ? (index: number) => flat[index * 2]! + flat[index * 2 + 1]!
+    : (index: number) => measurements[index]!.end
 
   // handle case when item count is less than or equal to lanes
   if (measurements.length <= lanes) {
@@ -1350,18 +1926,13 @@ function calculateRange({
     }
   }
 
-  let startIndex = findNearestBinarySearch(
-    0,
-    lastIndex,
-    getOffset,
-    scrollOffset,
-  )
+  let startIndex = findNearestBinarySearch(0, lastIndex, getStart, scrollOffset)
   let endIndex = startIndex
 
   if (lanes === 1) {
     while (
       endIndex < lastIndex &&
-      measurements[endIndex]!.end < scrollOffset + outerSize
+      getEnd(endIndex) < scrollOffset + outerSize
     ) {
       endIndex++
     }

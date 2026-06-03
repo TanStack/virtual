@@ -4,6 +4,8 @@ title: Angular Virtual
 
 The `@tanstack/angular-virtual` adapter is a wrapper around the core virtual logic.
 
+Angular Virtual supports Angular 19 and newer. In practice, the adapter is intended to support Angular LTS releases and newer.
+
 ## `injectVirtualizer`
 
 ```ts
@@ -16,6 +18,18 @@ function injectVirtualizer<TScrollElement, TItemElement = unknown>(
 ```
 
 This function returns an `AngularVirtualizer` instance configured to work with an HTML element as the scrollElement.
+The returned `AngularVirtualizer` mirrors the core `Virtualizer`, but adapter-managed state is exposed through Angular signals. This includes:
+
+- `getTotalSize`
+- `getVirtualItems`
+- `isScrolling`
+- `options`
+- `range`
+- `scrollDirection`
+- `scrollElement`
+- `scrollOffset`
+- `scrollRect`
+- `measurementsCache`
 
 ## `injectWindowVirtualizer`
 

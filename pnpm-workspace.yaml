@@ -9,5 +9,20 @@ packages:
   - 'examples/svelte/*'
   - 'examples/vue/*'
   - 'examples/lit/*'
-
   - 'examples/marko/*'
+  - 'benchmarks'
+
+allowBuilds:
+  # root dependency
+  nx: true
+  unrs-resolver: false # not directly required for build
+  esbuild: true
+
+  # @angular/build
+  '@parcel/watcher': false # optional dep of @angular/build
+  lmdb: false # optional dep of @angular/build
+  msgpackr-extract: false # optional dep of @angular/build
+
+  # @tanstack/vue-store
+  vue-demi: false # only required for vue 2 support
+

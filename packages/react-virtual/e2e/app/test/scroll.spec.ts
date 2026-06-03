@@ -11,11 +11,11 @@ const check = () => {
   const scrollTop = container.scrollTop
 
   const top = itemRect.top + scrollTop - containerRect.top
-  const botttom = top + itemRect.height
+  const bottom = top + itemRect.height
 
   const containerBottom = scrollTop + container.clientHeight
 
-  return Math.abs(botttom - containerBottom)
+  return Math.abs(bottom - containerBottom)
 }
 
 test('scrolls to index 1000', async ({ page }) => {

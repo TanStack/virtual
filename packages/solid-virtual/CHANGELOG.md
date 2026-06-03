@@ -1,5 +1,40 @@
 # @tanstack/solid-virtual
 
+## 3.13.28
+
+### Patch Changes
+
+- Updated dependencies [[`c0b84c8`](https://github.com/TanStack/virtual/commit/c0b84c83f03de1244649f9838a408faf75ed29c9), [`fbf3bdb`](https://github.com/TanStack/virtual/commit/fbf3bdbe38a2b1bf22c65a89752b7b9c07a77266)]:
+  - @tanstack/virtual-core@3.17.0
+
+## 3.13.27
+
+### Patch Changes
+
+- Updated dependencies [[`c746841`](https://github.com/TanStack/virtual/commit/c7468416354c203cd7cc952da5997073394224fb)]:
+  - @tanstack/virtual-core@3.16.1
+
+## 3.13.26
+
+### Patch Changes
+
+- Updated dependencies [[`fc992ab`](https://github.com/TanStack/virtual/commit/fc992ab00a15166311b79bd7580736cf01e8cc1a)]:
+  - @tanstack/virtual-core@3.16.0
+
+## 3.13.25
+
+### Patch Changes
+
+- Updated dependencies [[`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2), [`99355ad`](https://github.com/TanStack/virtual/commit/99355ad1eceee6270efaa26e51f535d8d7c31ac2)]:
+  - @tanstack/virtual-core@3.15.0
+
+## 3.13.24
+
+### Patch Changes
+
+- Updated dependencies [[`97a204d`](https://github.com/TanStack/virtual/commit/97a204dc5526669114458685552b7569b60d2940)]:
+  - @tanstack/virtual-core@3.14.0
+
 ## 3.13.23
 
 ### Patch Changes

@@ -4,7 +4,7 @@ Efficiently virtualize only the visible DOM nodes within massive scrollable elem
 
 # Quick Start
 
-> NOTE: Angular Virtual requires Angular 17.
+> NOTE: Angular Virtual requires Angular 19.
 
 1. Install `@tanstack/angular-virtual`
 

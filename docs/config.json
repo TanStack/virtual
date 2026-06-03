@@ -9,14 +9,9 @@
     {
       "label": "Getting Started",
       "children": [
-        {
-          "label": "Introduction",
-          "to": "introduction"
-        },
-        {
-          "label": "Installation",
-          "to": "installation"
-        }
+        { "label": "Introduction", "to": "introduction" },
+        { "label": "Installation", "to": "installation" },
+        { "label": "Text Measurement with Pretext", "to": "pretext" }
       ],
       "frameworks": [
         {
@@ -74,6 +69,10 @@
           ]
         }
       ]
+    },
+    {
+      "label": "Guides",
+      "children": [{ "label": "Chat", "to": "chat" }]
     },
     {
       "label": "Core APIs",
@@ -149,8 +148,16 @@
               "label": "Dynamic"
             },
             {
+              "to": "framework/react/examples/pretext",
+              "label": "Pretext"
+            },
+            {
               "to": "framework/react/examples/padding",
               "label": "Padding"
+            },
+            {
+              "to": "framework/react/examples/scroll-padding",
+              "label": "Scroll Padding"
             },
             {
               "to": "framework/react/examples/sticky",
@@ -159,6 +166,10 @@
             {
               "to": "framework/react/examples/infinite-scroll",
               "label": "Infinite Scroll"
+            },
+            {
+              "to": "framework/react/examples/chat",
+              "label": "Chat"
             },
             {
               "to": "framework/react/examples/smooth-scroll",
@@ -180,10 +191,6 @@
             {
               "to": "framework/svelte/examples/fixed",
               "label": "Fixed"
-            },
-            {
-              "to": "framework/svelte/examples/variable",
-              "label": "Variable"
             },
             {
               "to": "framework/svelte/examples/dynamic",
