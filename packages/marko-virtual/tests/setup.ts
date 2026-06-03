@@ -21,13 +21,14 @@ if (!global.requestAnimationFrame) {
 // observeElementRect sets one up, but also fires handler() synchronously
 // first (giving us the initial rect). The mock prevents errors on .observe().
 // ---------------------------------------------------------------------------
-;(global as typeof globalThis & { ResizeObserver: unknown }).ResizeObserver = vi
-  .fn()
-  .mockImplementation(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  }))
+;(global as typeof globalThis & { ResizeObserver: unknown }).ResizeObserver =
+  vi.fn(function () {
+    return {
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    }
+  })
 
 // ---------------------------------------------------------------------------
 // offsetHeight / offsetWidth — always 0 in jsdom (no CSS layout engine).
