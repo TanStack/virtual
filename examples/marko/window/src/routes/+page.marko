@@ -19,7 +19,7 @@
     <p>Uses &lt;window-virtualizer&gt; — the entire page scrolls. Scroll down to see rows.</p>
 
     <let/mounted = false/>
-    <script() { mounted = true }/>
+    <lifecycle onMount() { mounted = true }/>
 
     <if=mounted>
       <window-virtualizer|{ virtualItems, totalSize }|

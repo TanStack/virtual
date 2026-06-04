@@ -50,7 +50,7 @@ function mountFixture(Template: any, input: Record<string, unknown> = {}) {
 }
 
 afterEach(() => {
-  // Destroy Marko instances to run onDestroy lifecycle (cleans up store entries)
+  // Destroy Marko instances to run the onDestroy lifecycle (virtual-core cleanup)
   instances.forEach((i) => i.destroy())
   instances.length = 0
   document.body.innerHTML = ''

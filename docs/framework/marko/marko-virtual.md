@@ -19,7 +19,7 @@ npm install @tanstack/marko-virtual
 
 ```marko
 <let/mounted = false/>
-<script() { mounted = true }/>
+<lifecycle onMount() { mounted = true }/>
 
 <if=mounted>
   <div/scrollEl
@@ -158,7 +158,7 @@ Use `<window-virtualizer>` when the entire page scrolls rather than a container:
 
 ## Dynamic / variable item sizes
 
-For items with unknown heights, use `measureElement` as a script-driven ref
+For items with unknown heights, use `measureElement` as an effect-driven ref
 to measure each element after render:
 
 ```marko
@@ -173,7 +173,7 @@ to measure each element after render:
         <div/el
           data-index=item.index
           style=`position: absolute; top: 0; width: 100%; transform: translateY(${item.start}px)`>
-          <script() {
+          <effect() {
             // measureElement reads the actual rendered height and updates the virtualizer
             if (el() && measureElement) measureElement(el())
           }/>
@@ -227,12 +227,12 @@ scrolling is always vertical, and the initial offset is read from
 `<lifecycle>` tag inside them never runs during SSR, so the tag variable
 will be empty (`virtualItems: []`, `totalSize: 0`) on the server.
 
-Wrap the tag in `<if=mounted>` (where `mounted` is set by `<script>`) to
+Wrap the tag in `<if=mounted>` (where `mounted` is set by `<lifecycle onMount>`) to
 ensure the scroll container exists in the DOM before the virtualizer attaches:
 
 ```marko
 <let/mounted = false/>
-<script() { mounted = true }/>
+<lifecycle onMount() { mounted = true }/>
 
 <if=mounted>
   <div/scrollEl style="height: 400px; overflow-y: auto">

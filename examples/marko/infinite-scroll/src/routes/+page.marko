@@ -30,7 +30,7 @@
     <let/offset  = 0/>
     <let/mounted = false/>
 
-    <script() {
+    <lifecycle onMount() {
       mounted = true
       loading = true
       new Promise<void>(r => setTimeout(r, 400)).then(() => {
@@ -50,7 +50,7 @@
           getScrollElement=scrollEl
           overscan=5
         >
-          <script() {
+          <effect() {
             const last = virtualItems[virtualItems.length - 1]
             if (last && last.index >= rows.length - 1 && !loading && hasMore) {
               const off = offset

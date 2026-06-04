@@ -1,11 +1,6 @@
-import {
-  Virtualizer,
-  observeElementRect,
-  observeElementOffset,
-  elementScroll,
-} from "@tanstack/virtual-core"
+import { Virtualizer } from "@tanstack/virtual-core"
 import type { VirtualItem, ScrollToOptions } from "@tanstack/virtual-core"
-import { setInstance, getInstance, deleteInstance } from "./store"
+import { buildOptions } from "./options"
 
 export interface Input {
   count: number
@@ -29,92 +24,55 @@ export interface Input {
   }]>
 }
 
-<let/id    = (Math.random().toString(36).slice(2))/>
-<let/items = ([] as VirtualItem[])/>
-<let/size  = 0/>
+<let/v       = (null as Virtualizer<Element, Element> | null)/>
+<let/cleanup = (null as (() => void) | null)/>
+<let/items   = ([] as VirtualItem[])/>
+<let/size    = 0/>
 
 <lifecycle<{}>
   onMount() {
     const notify = () => {
-      const entry = getInstance(id)
-      if (!entry) return
-      items = entry.v.getVirtualItems()
-      size  = entry.v.getTotalSize()
+      const inst = v
+      if (!inst) return
+      items = inst.getVirtualItems()
+      size  = inst.getTotalSize()
     }
 
-    const v = new Virtualizer<Element, Element>({
-      count:               input.count,
-      estimateSize:        input.estimateSize ?? (() => 50),
-      getScrollElement:    input.getScrollElement,
-      overscan:            input.overscan ?? 5,
-      horizontal:          input.horizontal ?? false,
-      paddingStart:        input.paddingStart,
-      paddingEnd:          input.paddingEnd,
-      scrollPaddingStart:  input.scrollPaddingStart,
-      scrollPaddingEnd:    input.scrollPaddingEnd,
-      gap:                 input.gap,
-      lanes:               input.lanes,
-      initialOffset:       input.initialOffset,
-      observeElementRect,
-      observeElementOffset,
-      scrollToFn: elementScroll,
-      onChange: notify,
-    })
-
-    setInstance(id, { v, cleanup: v._didMount() })
-    v._willUpdate()
+    v = new Virtualizer<Element, Element>(buildOptions(input, notify))
+    cleanup = v!._didMount()
+    v!._willUpdate()
   }
 
   onUpdate() {
-    const entry = getInstance(id)
-    if (!entry) return
-    const { v } = entry
+    const current = v
+    if (!current) return
 
-    // Guard mirrors onMount's notify: bail if the instance was destroyed
-    // between the time onUpdate was called and when onChange fires async.
     const notify = () => {
-      if (!getInstance(id)) return
-      items = v.getVirtualItems()
-      size  = v.getTotalSize()
+      const inst = v
+      if (!inst) return
+      items = inst.getVirtualItems()
+      size  = inst.getTotalSize()
     }
 
-    v.setOptions({
-      ...v.options,
-      count:               input.count,
-      estimateSize:        input.estimateSize ?? (() => 50),
-      getScrollElement:    input.getScrollElement,
-      overscan:            input.overscan ?? 5,
-      horizontal:          input.horizontal ?? false,
-      paddingStart:        input.paddingStart,
-      paddingEnd:          input.paddingEnd,
-      scrollPaddingStart:  input.scrollPaddingStart,
-      scrollPaddingEnd:    input.scrollPaddingEnd,
-      gap:                 input.gap,
-      lanes:               input.lanes,
-      initialOffset:       input.initialOffset,
-      onChange: notify,
-    })
+    current.setOptions({ ...current.options, ...buildOptions(input, notify) })
 
-    v._willUpdate()
+    // _willUpdate() is a no-op when the scroll element is unchanged, so
+    // notify() explicitly afterwards to recompute on count/option changes.
+    current._willUpdate()
     notify()
   }
 
   onDestroy() {
-    const entry = getInstance(id)
-    if (entry) {
-      try {
-        entry.cleanup()
-      } finally {
-        deleteInstance(id)
-      }
-    }
+    cleanup?.()
+    v = null
+    cleanup = null
   }
 />
 
 <${input.content}
   virtualItems=items
   totalSize=size
-  measureElement=getInstance(id)?.v?.measureElement
-  scrollToIndex=(index: number, options?: ScrollToOptions) => getInstance(id)?.v?.scrollToIndex(index, options)
-  scrollToOffset=(offset: number, options?: ScrollToOptions) => getInstance(id)?.v?.scrollToOffset(offset, options)
+  measureElement=v?.measureElement
+  scrollToIndex=(index: number, options?: ScrollToOptions) => v?.scrollToIndex(index, options)
+  scrollToOffset=(offset: number, options?: ScrollToOptions) => v?.scrollToOffset(offset, options)
 />

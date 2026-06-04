@@ -27,9 +27,7 @@
     <p>Fixed sizes — every item's dimensions are hard-coded to the same value and never change.</p>
 
     <let/mounted = false/>
-    <script>
-      mounted = true
-    </script>
+    <lifecycle onMount() { mounted = true }/>
 
     <section>
       <h2>Rows</h2>

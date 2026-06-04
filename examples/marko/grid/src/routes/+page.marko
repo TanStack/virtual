@@ -20,7 +20,7 @@
     <p>A 1000 × 1000 grid — two &lt;virtualizer&gt; tags sharing the same scroll element.</p>
 
     <let/mounted = false/>
-    <script() { mounted = true }/>
+    <lifecycle onMount() { mounted = true }/>
 
     <div/gridScroll class="scroll-grid">
       <if=mounted>
