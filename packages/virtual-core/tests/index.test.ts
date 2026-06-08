@@ -2066,10 +2066,10 @@ test('non-iOS: adjustment is applied immediately during scroll (no regression)',
   expect(v['_iosDeferredAdjustment']).toBe(0)
 })
 
-test('scroll-up jank: backward-scroll skips scroll-position adjustment by default', () => {
-  // Default behavior change: when an above-viewport item resizes while the
-  // user is scrolling BACKWARD, we no longer write to scrollTop. This avoids
-  // the well-known "items jump while scrolling up" jank.
+test('scroll adjustment: backward-scroll adjusts on first measurement (no cache)', () => {
+  // First measurement (item not in itemSizeCache) always adjusts,
+  // even during backward scroll — the estimate→actual delta must
+  // be compensated.
   const scrollToFn = vi.fn()
   let scrollCb: ((o: number, s: boolean) => void) | null = null
   const v = new Virtualizer({
@@ -2087,26 +2087,68 @@ test('scroll-up jank: backward-scroll skips scroll-position adjustment by defaul
     observeElementRect: () => {},
     observeElementOffset: (_inst, cb) => {
       scrollCb = cb
-      // Simulate user starting at scrollTop=200, then scrolling up to 100.
       cb(200, false)
       return () => {}
     },
   })
   v._willUpdate()
   v['getMeasurements']()
-  // Now simulate backward scroll: from 200 to 100 (offset decreases).
+  // Backward scroll: from 200 to 100.
   scrollCb!(100, true)
   expect(v.scrollDirection).toBe('backward')
   scrollToFn.mockClear()
 
-  // Resize an above-viewport item while scrolling backward.
+  // First measurement of item 0 (not in cache) while scrolling backward.
   v.resizeItem(0, 100) // item 0 grows by 50px
 
-  // Default behavior: no scroll-position adjustment fires.
+  // First measurement: adjustment fires even during backward scroll.
+  expect(scrollToFn).toHaveBeenCalled()
+})
+
+test('scroll adjustment: backward-scroll skips re-measurement (has cache)', () => {
+  // Re-measurement (item already in itemSizeCache) skips during
+  // backward scroll to avoid the scrollTop cascade jank.
+  const scrollToFn = vi.fn()
+  let scrollCb: ((o: number, s: boolean) => void) | null = null
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: 200,
+        scrollLeft: 0,
+        scrollHeight: 500,
+        clientHeight: 200,
+        offsetHeight: 200,
+      }) as any,
+    scrollToFn,
+    observeElementRect: () => {},
+    observeElementOffset: (_inst, cb) => {
+      scrollCb = cb
+      cb(200, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+
+  // First measurement while idle — populates the cache.
+  v.resizeItem(0, 80)
+  scrollToFn.mockClear()
+
+  // Now scroll backward.
+  scrollCb!(100, true)
+  expect(v.scrollDirection).toBe('backward')
+  scrollToFn.mockClear()
+
+  // Re-measurement during backward scroll.
+  v.resizeItem(0, 100) // grows again
+
+  // Re-measurement: no adjustment during backward scroll.
   expect(scrollToFn).not.toHaveBeenCalled()
 })
 
-test('scroll-up jank: forward-scroll still applies adjustment (no regression)', () => {
+test('scroll adjustment: forward-scroll applies adjustment', () => {
   const scrollToFn = vi.fn()
   let scrollCb: ((o: number, s: boolean) => void) | null = null
   const v = new Virtualizer({
@@ -2141,7 +2183,7 @@ test('scroll-up jank: forward-scroll still applies adjustment (no regression)', 
   expect(scrollToFn).toHaveBeenCalled()
 })
 
-test('scroll-up jank: idle (scrollDirection=null) still applies adjustment', () => {
+test('scroll adjustment: idle (scrollDirection=null) applies adjustment', () => {
   // When not actively scrolling, adjustment still fires — needed for the
   // mount-time measurement storm where items measure before any scroll.
   const scrollToFn = vi.fn()

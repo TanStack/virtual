@@ -687,11 +687,31 @@ export class Virtualizer<
       (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
     ) {
       this._iosDeferredAdjustment += delta
+      this._applyIosCssOffset()
     } else {
       this._scrollToOffset(this.getScrollOffset(), {
         adjustments: (this.scrollAdjustments += delta),
         behavior,
       })
+    }
+  }
+
+  // Apply CSS compensation for deferred iOS scroll adjustments.
+  // Uses negative marginTop (or marginLeft for horizontal) on the scroll
+  // element's first child (the container) to visually shift items without
+  // writing scrollTop — which would cancel iOS momentum scroll.
+  // Cleared when _flushIosDeferredIfReady writes the real scroll position.
+  private _applyIosCssOffset = () => {
+    if (!this.scrollElement || !(this.scrollElement instanceof Element)) return
+    // TODO: accept a containerElement option so frameworks can pass the
+    // inner container directly instead of relying on firstElementChild.
+    const container = this.scrollElement.firstElementChild as HTMLElement | null
+    if (!container) return
+    const prop = this.options.horizontal ? 'marginLeft' : 'marginTop'
+    if (this._iosDeferredAdjustment === 0) {
+      container.style[prop] = ''
+    } else {
+      container.style[prop] = `${-this._iosDeferredAdjustment}px`
     }
   }
 
@@ -719,7 +739,28 @@ export class Virtualizer<
     },
   )
 
+  // Force-flush any active iOS CSS offset. Unlike _flushIosDeferredIfReady
+  // this skips the settling guards — used before public scroll operations
+  // (scrollToIndex, scrollToEnd, etc.) and cleanup.
+  private _forceFlushIosCssOffset = () => {
+    if (this._iosDeferredAdjustment === 0) return
+    const rawBrowserScroll =
+      (this.scrollOffset ?? 0) - this._iosDeferredAdjustment
+    const delta = this._iosDeferredAdjustment
+    this._iosDeferredAdjustment = 0
+    this._applyIosCssOffset()
+    this._scrollToOffset(rawBrowserScroll, {
+      adjustments: (this.scrollAdjustments += delta),
+      behavior: undefined,
+    })
+  }
+
   private cleanup = () => {
+    // Clear CSS offset before losing the scrollElement reference.
+    if (this._iosDeferredAdjustment !== 0) {
+      this._iosDeferredAdjustment = 0
+      this._applyIosCssOffset()
+    }
     this.unsubs.filter(Boolean).forEach((d) => d!())
     this.unsubs = []
     this.observer.disconnect()
@@ -786,6 +827,14 @@ export class Virtualizer<
             offset = this._intendedScrollOffset
           }
           this._intendedScrollOffset = null
+
+          // Compensate for iOS CSS offset: the browser's scrollTop is
+          // the real position, but items are visually shifted by the
+          // deferred adjustment via CSS marginTop. Add the deferred
+          // amount so range calculations match the visual state.
+          if (this._iosDeferredAdjustment !== 0) {
+            offset += this._iosDeferredAdjustment
+          }
 
           this.scrollAdjustments = 0
           this.scrollDirection = isScrolling
@@ -877,15 +926,18 @@ export class Virtualizer<
         // Skip when followOnAppend is set — scrollToEnd will handle it.
         //
         // On iOS WebKit, writing scrollTop during touch/momentum cancels
-        // the in-flight scroll. Defer the DOM sync the same way
-        // applyScrollAdjustment does — accumulate the delta and let
-        // _flushIosDeferredIfReady handle it once the scroll settles.
+        // the in-flight scroll. Instead of writing scrollTop, apply a
+        // CSS offset (negative marginTop on the container) that
+        // visually compensates for the stale browser scroll position.
+        // The CSS offset is flushed to a real scrollTop write once
+        // momentum settles (_flushIosDeferredIfReady).
         if (
           isIOSWebKit() &&
           (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
         ) {
           if (anchorDelta !== 0) {
             this._iosDeferredAdjustment += anchorDelta
+            this._applyIosCssOffset()
           }
         } else {
           this._scrollToOffset(this.getScrollOffset(), {
@@ -915,11 +967,16 @@ export class Virtualizer<
     // while in that zone snaps the page back to the clamped value at the
     // end of the bounce, often discarding the user's intent. Skip the
     // flush; the next in-bounds scroll event will retry.
-    const cur = this.getScrollOffset()
+    // Use the raw browser scroll position (scrollOffset includes the
+    // CSS offset compensation, so subtract it back out).
+    const cur = (this.scrollOffset ?? 0) - this._iosDeferredAdjustment
     const max = this.getMaxScrollOffset()
     if (cur < 0 || cur > max) return
     const delta = this._iosDeferredAdjustment
     this._iosDeferredAdjustment = 0
+    // Clear the CSS offset (negative marginTop) before writing the
+    // real scroll position.
+    this._applyIosCssOffset()
     // Roll the deferred delta into the running accumulator so any resize
     // landing between now and the resulting scroll event computes from the
     // post-flush offset rather than the stale one.
@@ -1519,14 +1576,15 @@ export class Virtualizer<
               delta,
               this,
             )
-          : // Default: adjust scrollTop only when the resize is an above-
-            // viewport item AND we're not actively scrolling backward.
-            // Adjusting during backward scroll fights the user's scroll
-            // direction and produces the "items jump while scrolling up"
-            // jank reported across many issues. Users who want the old
-            // behavior can pass shouldAdjustScrollPositionOnItemSizeChange.
+          : // Default: adjust when the resize is an above-viewport item.
+            // First measurement (!has(key)): always adjust — the item
+            // has never been sized, so the estimate→actual delta must
+            // be compensated regardless of scroll direction.
+            // Re-measurement (has(key)): skip during backward scroll
+            // to avoid the "items jump while scrolling up" cascade.
             itemStart < this.getScrollOffset() + this.scrollAdjustments &&
-            this.scrollDirection !== 'backward')
+            (!this.itemSizeCache.has(key) ||
+              this.scrollDirection !== 'backward'))
 
       if (this.pendingMin === null || index < this.pendingMin) {
         this.pendingMin = index
@@ -1684,6 +1742,7 @@ export class Virtualizer<
     toOffset: number,
     { align = 'start', behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
+    this._forceFlushIosCssOffset()
     const offset = this.getOffsetForAlignment(toOffset, align)
 
     const now = this.now()
@@ -1708,6 +1767,7 @@ export class Virtualizer<
       behavior = 'auto',
     }: ScrollToIndexOptions = {},
   ) => {
+    this._forceFlushIosCssOffset()
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
     const offsetInfo = this.getOffsetForIndex(index, initialAlign)
@@ -1735,6 +1795,7 @@ export class Virtualizer<
     delta: number,
     { behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
+    this._forceFlushIosCssOffset()
     const offset = this.getScrollOffset() + delta
     const now = this.now()
 

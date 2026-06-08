@@ -11,7 +11,10 @@ const virtualizer = useVirtualizer({
   count: messages.length,
   getScrollElement: () => parentRef.current,
   estimateSize: () => 72,
-  getItemKey: (index) => messages[index]!.id,
+  getItemKey: React.useCallback(
+    (index: number) => messages[index]!.id,
+    [messages],
+  ),
   anchorTo: 'end',
   followOnAppend: true,
   scrollEndThreshold: 80,
@@ -46,8 +49,13 @@ setMessages((current) => [...olderMessages, ...current])
 Stable keys are required for this to work:
 
 ```tsx
-getItemKey: (index) => messages[index]!.id
+getItemKey: React.useCallback(
+  (index: number) => messages[index]!.id,
+  [messages],
+),
 ```
+
+Wrap getItemKey in useCallback so the virtualizer maintains a stable getItemKey reference. Without it, a new function identity can cause memoized measurement options to be recomputed, leading to unnecessary measurement rebuilds/cache invalidation.
 
 Do not use index keys for chat history. After a prepend, every existing message shifts to a new index, so index keys cannot identify the same message across the update.
 
@@ -127,13 +135,22 @@ Use a normal scroll container and normal item order. You do not need `flex-direc
 
 ## Production Checklist
 
-- Use stable message ids with `getItemKey`.
+- Use stable message ids with `getItemKey`, wrapped in `useCallback`.
 - Give the scroll element a fixed height and `overflow: auto`.
+- Set `overflow-anchor: none` on the scroll element. Browsers that support native scroll anchoring (Chrome, Firefox) will otherwise fight the virtualizer's own offset adjustments on prepend, causing jumps. Safari does not support `overflow-anchor`, so this has no effect there.
 - Call `measureElement` for dynamic message heights.
 - Use `anchorTo: 'end'` for prepend stability and streaming bottom growth.
 - Use `followOnAppend` when new output should follow only from the latest position.
 - Use `isAtEnd()` to show "Jump to latest" UI when the user is reading history.
 - Keep network loading state outside the virtualizer; prepend or append data normally.
+
+## iOS Safari
+
+iOS WebKit cancels momentum (inertia) scrolling whenever JavaScript writes to `scrollTop` or calls `scrollTo()`. This is a platform limitation — there is no opt-out. Since prepend anchoring and item-resize compensation both need to adjust the scroll position, a naïve implementation would kill the scroll mid-flick, making the list feel broken on iPhones and iPads.
+
+TanStack Virtual works around this with a **CSS offset**: when a scroll adjustment is needed during an active touch or momentum phase, the virtualizer applies a negative `marginTop` on the container element instead of writing `scrollTop`. This shifts the content visually without touching the scroll position, so momentum continues uninterrupted. Once the scroll fully settles (no touch, no momentum, no elastic overscroll), the virtualizer flushes the accumulated CSS offset into a single `scrollTop` write and clears the margin.
+
+No extra configuration is needed — this is handled automatically on iOS.
 
 ## API Reference
 
