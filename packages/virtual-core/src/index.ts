@@ -1089,24 +1089,21 @@ export class Virtualizer<
   }
 
   private getMeasurementOptions = memo(
+    // getItemKey is intentionally NOT a dep here. It's read fresh from
+    // this.options inside getMeasurements so an inline closure
+    // (`getItemKey: i => data[i].id`) doesn't bust this memo on every render
+    // and force a full O(n) rebuild via the `pendingMin = null` below. This
+    // matches estimateSize/gap, which are likewise read in the body. Genuine
+    // key-set changes are handled by the edgeKeysChanged path in setOptions.
     () => [
       this.options.count,
       this.options.paddingStart,
       this.options.scrollMargin,
-      this.options.getItemKey,
       this.options.enabled,
       this.options.lanes,
       this.options.laneAssignmentMode,
     ],
-    (
-      count,
-      paddingStart,
-      scrollMargin,
-      getItemKey,
-      enabled,
-      lanes,
-      laneAssignmentMode,
-    ) => {
+    (count, paddingStart, scrollMargin, enabled, lanes, laneAssignmentMode) => {
       const lanesChanged =
         this.prevLanes !== undefined && this.prevLanes !== lanes
 
@@ -1122,7 +1119,6 @@ export class Virtualizer<
         count,
         paddingStart,
         scrollMargin,
-        getItemKey,
         enabled,
         lanes,
         laneAssignmentMode,
@@ -1136,18 +1132,12 @@ export class Virtualizer<
   private getMeasurements = memo(
     () => [this.getMeasurementOptions(), this.itemSizeCacheVersion],
     (
-      {
-        count,
-        paddingStart,
-        scrollMargin,
-        getItemKey,
-        enabled,
-        lanes,
-        laneAssignmentMode,
-      },
+      { count, paddingStart, scrollMargin, enabled, lanes, laneAssignmentMode },
       _itemSizeCacheVersion,
     ) => {
       const itemSizeCache = this.itemSizeCache
+      // Read fresh — see getMeasurementOptions on why getItemKey isn't a dep.
+      const getItemKey = this.options.getItemKey
       if (!enabled) {
         this.measurementsCache = []
         this.itemSizeCache.clear()
@@ -1235,7 +1225,13 @@ export class Virtualizer<
           runningStart += size + gap
         }
 
-        const view = createLazyMeasurementsView(count, flat, getItemKey)
+        // The Proxy materializes VirtualItems lazily across the lifetime of
+        // this cached result, so it must read the *current* getItemKey
+        // (this.options is mutated in place by setOptions each render),
+        // not the one captured when this body ran.
+        const view = createLazyMeasurementsView(count, flat, (i) =>
+          this.options.getItemKey(i),
+        )
         this.measurementsCache = view
         return view
       }
