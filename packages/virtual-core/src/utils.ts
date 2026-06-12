@@ -28,9 +28,15 @@ export function memo<TDeps extends ReadonlyArray<any>, TResult>(
 
     const newDeps = getDeps()
 
-    const depsChanged =
-      newDeps.length !== deps.length ||
-      newDeps.some((dep: any, index: number) => deps[index] !== dep)
+    let depsChanged = newDeps.length !== deps.length
+    if (!depsChanged) {
+      for (let i = 0, len = newDeps.length; i < len; i++) {
+        if (newDeps[i] !== deps[i]) {
+          depsChanged = true
+          break
+        }
+      }
+    }
 
     if (!depsChanged) {
       return result!
