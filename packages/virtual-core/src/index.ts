@@ -422,6 +422,11 @@ export class Virtualizer<
   private _lazyItemCache: Array<VirtualItem | undefined> | null = null
   itemSizeCache = new Map<Key, number>()
   private itemSizeCacheVersion = 0
+  // While true, resizeItem records that a notify is owed instead of firing
+  // it — lets the RO callback process N entries with one trailing notify
+  // instead of N (each of which can trigger a rerender / rebuild).
+  private _suppressNotify = false
+  private _notifyPending = false
   // Bumped in setOptions when any measurement-relevant option changes.
   // Replaces a memo-hop that allocated a 6-tuple on every getMeasurements call.
   private measurementOptionsVersion = 0
@@ -479,41 +484,56 @@ export class Virtualizer<
       }
 
       return (_ro = new this.targetWindow.ResizeObserver((entries) => {
-        entries.forEach((entry) => {
-          const run = () => {
-            const node = entry.target as TItemElement
-            const index = this.indexFromElement(node)
+        const processEntry = (entry: ResizeObserverEntry) => {
+          const node = entry.target as TItemElement
+          const index = this.indexFromElement(node)
 
-            if (!node.isConnected) {
-              this.observer.unobserve(node)
-              // Find the cache entry pointing to this exact node and remove
-              // it. We can't call getItemKey(index) here because items may
-              // have been removed since this node was rendered — the index
-              // could be stale and out-of-bounds in the user's data array
-              // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
-              // The === comparison naturally handles the React-replaced-
-              // a-node-for-the-same-key case: that entry now points to a
-              // different node, so this loop won't match.
-              for (const [cacheKey, cachedNode] of this.elementsCache) {
-                if (cachedNode === node) {
-                  this.elementsCache.delete(cacheKey)
-                  break
-                }
+          if (!node.isConnected) {
+            this.observer.unobserve(node)
+            // Find the cache entry pointing to this exact node and remove
+            // it. We can't call getItemKey(index) here because items may
+            // have been removed since this node was rendered — the index
+            // could be stale and out-of-bounds in the user's data array
+            // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
+            // The === comparison naturally handles the React-replaced-
+            // a-node-for-the-same-key case: that entry now points to a
+            // different node, so this loop won't match.
+            for (const [cacheKey, cachedNode] of this.elementsCache) {
+              if (cachedNode === node) {
+                this.elementsCache.delete(cacheKey)
+                break
               }
-              return
             }
-
-            if (this.shouldMeasureDuringScroll(index)) {
-              this.resizeItem(
-                index,
-                this.options.measureElement(node, entry, this),
-              )
-            }
+            return
           }
-          this.options.useAnimationFrameWithResizeObserver
-            ? requestAnimationFrame(run)
-            : run()
-        })
+
+          if (this.shouldMeasureDuringScroll(index)) {
+            this.resizeItem(
+              index,
+              this.options.measureElement(node, entry, this),
+            )
+          }
+        }
+
+        // Batch notify across all entries: resizeItem records that a notify
+        // is owed instead of firing one per entry. With N entries this turns
+        // N onChange calls (and the rebuilds/scroll-writes they trigger)
+        // into one.
+        const runBatch = () => {
+          this._suppressNotify = true
+          for (let i = 0, len = entries.length; i < len; i++) {
+            processEntry(entries[i]!)
+          }
+          this._suppressNotify = false
+          if (this._notifyPending) {
+            this._notifyPending = false
+            this.notify(false)
+          }
+        }
+
+        this.options.useAnimationFrameWithResizeObserver
+          ? requestAnimationFrame(runBatch)
+          : runBatch()
       }))
     }
 
@@ -1557,7 +1577,11 @@ export class Virtualizer<
         this.applyScrollAdjustment(delta)
       }
 
-      this.notify(false)
+      if (this._suppressNotify) {
+        this._notifyPending = true
+      } else {
+        this.notify(false)
+      }
     }
   }
 
