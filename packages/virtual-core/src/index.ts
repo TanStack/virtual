@@ -80,6 +80,10 @@ const getRect = (element: HTMLElement): Rect => {
 
 export const defaultKeyExtractor = (index: number) => index
 
+const NOOP = () => {}
+const ZERO_RECT: Rect = { width: 0, height: 0 }
+const EMPTY_ARR: ReadonlyArray<any> = []
+
 export const defaultRangeExtractor = (range: Range) => {
   const start = Math.max(range.startIndex - range.overscan, 0)
   const end = Math.min(range.endIndex + range.overscan, range.count - 1)
@@ -533,13 +537,13 @@ export class Virtualizer<
       horizontal: false,
       getItemKey: defaultKeyExtractor,
       rangeExtractor: defaultRangeExtractor,
-      onChange: () => {},
+      onChange: NOOP,
       measureElement,
-      initialRect: { width: 0, height: 0 },
+      initialRect: ZERO_RECT,
       scrollMargin: 0,
       gap: 0,
       indexAttribute: 'data-index',
-      initialMeasurementsCache: [],
+      initialMeasurementsCache: EMPTY_ARR,
       lanes: 1,
       anchorTo: 'start',
       followOnAppend: false,
