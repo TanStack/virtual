@@ -416,6 +416,10 @@ export class Virtualizer<
   // Flat backing store for the lanes===1 fast path: [start_0, size_0, start_1, size_1, ...].
   // null until the first single-lane build; reused (and grown) across rebuilds.
   private _flatMeasurements: Float64Array | null = null
+  // Materialized-VirtualItem cache backing the lazy Proxy view. Persisted
+  // across rebuilds so items at indices < pendingMin keep referential
+  // identity (lets row-level React.memo bail out).
+  private _lazyItemCache: Array<VirtualItem | undefined> | null = null
   itemSizeCache = new Map<Key, number>()
   private itemSizeCacheVersion = 0
   // Bumped in setOptions when any measurement-relevant option changes.
@@ -1136,6 +1140,7 @@ export class Virtualizer<
       const itemSizeCache = this.itemSizeCache
       if (!enabled) {
         this.measurementsCache = []
+        this._lazyItemCache = null
         this.itemSizeCache.clear()
         this.laneAssignments.clear()
         return []
@@ -1155,6 +1160,7 @@ export class Virtualizer<
         this.lanesChangedFlag = false // Reset immediately
         this.lanesSettling = true // Start settling period
         this.measurementsCache = []
+        this._lazyItemCache = null
         this.itemSizeCache.clear()
         this.laneAssignments.clear() // Clear lane cache for new lane count
         // Force min = 0 on the rebuild
@@ -1221,11 +1227,27 @@ export class Virtualizer<
           runningStart += size + gap
         }
 
+        // Reuse the materialized-item cache so VirtualItems at indices < min
+        // keep referential identity across rebuilds. Invalidate the dirtied
+        // tail in place. Length is allowed to exceed count — the Proxy
+        // bounds-checks against `count`, and a later grow re-uses the slack.
+        let lazyCache = this._lazyItemCache
+        if (!lazyCache || lazyCache.length < count) {
+          const next: Array<VirtualItem | undefined> = new Array(count)
+          if (lazyCache && min > 0) {
+            for (let i = 0; i < min; i++) next[i] = lazyCache[i]
+          }
+          lazyCache = next
+          this._lazyItemCache = lazyCache
+        } else {
+          lazyCache.fill(undefined, min)
+        }
+
         // The Proxy materializes VirtualItems lazily across the lifetime of
         // this cached result, so it must read the *current* getItemKey
         // (this.options is mutated in place by setOptions each render),
         // not the one captured when this body ran.
-        const view = createLazyMeasurementsView(count, flat, (i) =>
+        const view = createLazyMeasurementsView(count, flat, lazyCache, (i) =>
           this.options.getItemKey(i),
         )
         this.measurementsCache = view

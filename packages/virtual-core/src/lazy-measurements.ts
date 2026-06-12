@@ -10,9 +10,9 @@ type Key = number | string | bigint
 export function createLazyMeasurementsView(
   count: number,
   flat: Float64Array,
+  cache: Array<VirtualItem | undefined>,
   getItemKey: (i: number) => Key,
 ): Array<VirtualItem> {
-  const cache: Array<VirtualItem | undefined> = new Array(count)
   return new Proxy(cache as any, {
     get(target, prop, receiver) {
       if (typeof prop === 'string') {
