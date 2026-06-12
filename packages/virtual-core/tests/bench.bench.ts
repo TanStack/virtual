@@ -200,6 +200,29 @@ describe('Layer 2: setOptions() — simulating React render storm', () => {
   })
 })
 
+// ─── Scroll loop: per-scroll-frame cost (calculateRange + memo machinery) ─────
+
+describe('Scroll loop: 10k scroll events on warm virtualizer', () => {
+  for (const n of [1000, 100000]) {
+    bench(`n=${n}, 10k scrolls`, () => {
+      const v = makeVirt(n)
+      v.scrollRect = { width: 800, height: 600 }
+      for (let i = 0; i < 10_000; i++) {
+        v.scrollOffset = i * 5
+        ;(v as any).calculateRange()
+      }
+    })
+    bench(`n=${n}, 10k scrolls + getVirtualItems`, () => {
+      const v = makeVirt(n)
+      v.scrollRect = { width: 800, height: 600 }
+      for (let i = 0; i < 10_000; i++) {
+        v.scrollOffset = i * 5
+        v.getVirtualItems()
+      }
+    })
+  }
+})
+
 // ─── Layer 6: defaultRangeExtractor ──────────────────────────────────────────
 
 describe('Layer 6: defaultRangeExtractor', () => {
