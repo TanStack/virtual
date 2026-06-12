@@ -72,22 +72,24 @@ export type ReactVirtualizerOptions<
 function useVirtualizerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
->({
-  useFlushSync = true,
-  directDomUpdates = false,
-  directDomUpdatesMode = 'transform',
-  ...options
-}: ReactVirtualizerOptions<TScrollElement, TItemElement>): ReactVirtualizer<
-  TScrollElement,
-  TItemElement
-> {
+>(
+  rawOptions: ReactVirtualizerOptions<TScrollElement, TItemElement>,
+): ReactVirtualizer<TScrollElement, TItemElement> {
+  const {
+    useFlushSync = true,
+    directDomUpdates = false,
+    directDomUpdatesMode = 'transform',
+  } = rawOptions
   const rerender = React.useReducer((x: number) => x + 1, 0)[1]
 
-  // Mutable across renders so the onChange closure captured by setOptions
-  // always reads the latest values without us having to re-create it.
-  const directRef = React.useRef({
+  // Mutable across renders so the onChange closure (created once, in the
+  // useState initializer below) always reads the latest values without us
+  // having to re-create it.
+  const latestRef = React.useRef({
     enabled: directDomUpdates,
     mode: directDomUpdatesMode,
+    useFlushSync,
+    userOnChange: rawOptions.onChange,
     container: null as HTMLElement | null,
     lastSize: null as number | null,
     // Keyed by the element itself so a remounted node (same key, new DOM
@@ -100,8 +102,11 @@ function useVirtualizerBase<
       isScrolling: boolean
     } | null,
   })
-  directRef.current.enabled = directDomUpdates
-  directRef.current.mode = directDomUpdatesMode
+  const latest = latestRef.current
+  latest.enabled = directDomUpdates
+  latest.mode = directDomUpdatesMode
+  latest.useFlushSync = useFlushSync
+  latest.userOnChange = rawOptions.onChange
 
   // Writes container size + item positions to the DOM. Idempotent — guarded
   // by lastSize / lastPositions. Called from onChange (covers scroll-driven
@@ -110,7 +115,7 @@ function useVirtualizerBase<
   const applyDirectStyles = (
     instance: Virtualizer<TScrollElement, TItemElement>,
   ) => {
-    const state = directRef.current
+    const state = latestRef.current
     if (!state.enabled) return
 
     const totalSize = instance.getTotalSize()
@@ -141,51 +146,61 @@ function useVirtualizerBase<
     }
   }
 
-  const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
-    ...options,
-    onChange: (instance, sync) => {
-      const state = directRef.current
-      let shouldRerender = true
+  // Created once and captured by the Virtualizer; reads everything it needs
+  // through latestRef so we never need to allocate a fresh closure or a
+  // {...options, onChange} spread per render.
+  const [stableOnChange] = React.useState(
+    () =>
+      (instance: Virtualizer<TScrollElement, TItemElement>, sync: boolean) => {
+        const state = latestRef.current
+        let shouldRerender = true
 
-      if (state.enabled) {
-        applyDirectStyles(instance)
+        if (state.enabled) {
+          applyDirectStyles(instance)
 
-        // Only re-render on range / isScrolling changes
-        const range = instance.range
-        const prev = state.prevRange
-        shouldRerender =
-          !prev ||
-          prev.isScrolling !== instance.isScrolling ||
-          prev.startIndex !== range?.startIndex ||
-          prev.endIndex !== range?.endIndex
+          // Only re-render on range / isScrolling changes
+          const range = instance.range
+          const prev = state.prevRange
+          shouldRerender =
+            !prev ||
+            prev.isScrolling !== instance.isScrolling ||
+            prev.startIndex !== range?.startIndex ||
+            prev.endIndex !== range?.endIndex
+          if (shouldRerender) {
+            state.prevRange = range
+              ? {
+                  startIndex: range.startIndex,
+                  endIndex: range.endIndex,
+                  isScrolling: instance.isScrolling,
+                }
+              : null
+          }
+        }
+
         if (shouldRerender) {
-          state.prevRange = range
-            ? {
-                startIndex: range.startIndex,
-                endIndex: range.endIndex,
-                isScrolling: instance.isScrolling,
-              }
-            : null
+          if (state.useFlushSync && sync) {
+            flushSync(rerender)
+          } else {
+            rerender()
+          }
         }
-      }
 
-      if (shouldRerender) {
-        if (useFlushSync && sync) {
-          flushSync(rerender)
-        } else {
-          rerender()
-        }
-      }
-
-      options.onChange?.(instance, sync)
-    },
-  }
+        state.userOnChange?.(instance, sync)
+      },
+  )
 
   const [instance] = React.useState(() => {
-    const v = new Virtualizer<TScrollElement, TItemElement>(resolvedOptions)
+    // Shallow-copy once so we can overwrite onChange without mutating the
+    // caller's object; subsequent renders mutate this object in place.
+    const initialOptions = {
+      ...rawOptions,
+      onChange: stableOnChange,
+    } as VirtualizerOptions<TScrollElement, TItemElement>
+    const v = new Virtualizer<TScrollElement, TItemElement>(initialOptions)
     return Object.assign(v, {
+      _adapterOptions: initialOptions,
       containerRef: (node: HTMLElement | null) => {
-        const state = directRef.current
+        const state = latestRef.current
         state.container = node
         state.lastSize = null
         if (node && state.enabled) {
@@ -198,7 +213,19 @@ function useVirtualizerBase<
     })
   })
 
-  instance.setOptions(resolvedOptions)
+  // Reuse the persisted options object: copy fresh fields onto it instead of
+  // allocating a {...spread} per render. setOptions reads keys via for-in,
+  // so passing the same (mutated) object is equivalent.
+  const adapterOptions = (
+    instance as unknown as {
+      _adapterOptions: VirtualizerOptions<TScrollElement, TItemElement>
+    }
+  )._adapterOptions
+  for (const key in rawOptions) {
+    ;(adapterOptions as any)[key] = (rawOptions as any)[key]
+  }
+  adapterOptions.onChange = stableOnChange
+  instance.setOptions(adapterOptions)
 
   useIsomorphicLayoutEffect(() => {
     return instance._didMount()
@@ -235,6 +262,11 @@ export function useVirtualizer<
   })
 }
 
+const getWindowScrollElement = () =>
+  typeof document !== 'undefined' ? window : null
+const getWindowInitialOffset = () =>
+  typeof document !== 'undefined' ? window.scrollY : 0
+
 export function useWindowVirtualizer<TItemElement extends Element>(
   options: PartialKeys<
     ReactVirtualizerOptions<Window, TItemElement>,
@@ -245,11 +277,11 @@ export function useWindowVirtualizer<TItemElement extends Element>(
   >,
 ): ReactVirtualizer<Window, TItemElement> {
   return useVirtualizerBase<Window, TItemElement>({
-    getScrollElement: () => (typeof document !== 'undefined' ? window : null),
+    getScrollElement: getWindowScrollElement,
     observeElementRect: observeWindowRect,
     observeElementOffset: observeWindowOffset,
     scrollToFn: windowScroll,
-    initialOffset: () => (typeof document !== 'undefined' ? window.scrollY : 0),
+    initialOffset: getWindowInitialOffset,
     ...options,
   })
 }
