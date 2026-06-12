@@ -418,10 +418,12 @@ export class Virtualizer<
   private _flatMeasurements: Float64Array | null = null
   itemSizeCache = new Map<Key, number>()
   private itemSizeCacheVersion = 0
+  // Bumped in setOptions when any measurement-relevant option changes.
+  // Replaces a memo-hop that allocated a 6-tuple on every getMeasurements call.
+  private measurementOptionsVersion = 0
   private laneAssignments = new Map<number, number>() // index → lane cache
   // Earliest index dirtied since last getMeasurements() rebuild, or null.
   private pendingMin: number | null = null
-  private prevLanes: number | undefined = undefined
   private lanesChangedFlag = false
   private lanesSettling = false
   private pendingScrollAnchor: PendingScrollAnchor | null = null
@@ -629,6 +631,26 @@ export class Virtualizer<
     }
 
     this.options = merged
+
+    // Detect changes to the options that affect measurement layout. This used
+    // to be a memo() hop (getMeasurementOptions) that allocated a deps-tuple
+    // on every getMeasurements() call; comparing here costs nothing extra
+    // since prevOptions is already in hand.
+    if (
+      prevOptions === undefined ||
+      prevOptions.count !== merged.count ||
+      prevOptions.paddingStart !== merged.paddingStart ||
+      prevOptions.scrollMargin !== merged.scrollMargin ||
+      prevOptions.enabled !== merged.enabled ||
+      prevOptions.lanes !== merged.lanes ||
+      prevOptions.laneAssignmentMode !== merged.laneAssignmentMode
+    ) {
+      this.measurementOptionsVersion++
+      this.pendingMin = null
+      if (prevOptions !== undefined && prevOptions.lanes !== merged.lanes) {
+        this.lanesChangedFlag = true
+      }
+    }
 
     // When edge keys changed (prepend, trim, reorder, etc.) the key→index
     // mapping has shifted. Force a full measurement rebuild so the anchor
@@ -1096,56 +1118,22 @@ export class Virtualizer<
       : undefined
   }
 
-  private getMeasurementOptions = memo(
-    // getItemKey is intentionally NOT a dep here. It's read fresh from
-    // this.options inside getMeasurements so an inline closure
-    // (`getItemKey: i => data[i].id`) doesn't bust this memo on every render
-    // and force a full O(n) rebuild via the `pendingMin = null` below. This
-    // matches estimateSize/gap, which are likewise read in the body. Genuine
-    // key-set changes are handled by the edgeKeysChanged path in setOptions.
-    () => [
-      this.options.count,
-      this.options.paddingStart,
-      this.options.scrollMargin,
-      this.options.enabled,
-      this.options.lanes,
-      this.options.laneAssignmentMode,
-    ],
-    (count, paddingStart, scrollMargin, enabled, lanes, laneAssignmentMode) => {
-      const lanesChanged =
-        this.prevLanes !== undefined && this.prevLanes !== lanes
-
-      if (lanesChanged) {
-        // Set flag for getMeasurements to handle
-        this.lanesChangedFlag = true
-      }
-
-      this.prevLanes = lanes
-      this.pendingMin = null
-
-      return {
+  private getMeasurements = memo(
+    () => [this.measurementOptionsVersion, this.itemSizeCacheVersion],
+    () => {
+      // Options are read fresh from this.options; setOptions bumps
+      // measurementOptionsVersion when any layout-affecting field changes.
+      // getItemKey is intentionally NOT version-tracked — see setOptions.
+      const {
         count,
         paddingStart,
         scrollMargin,
         enabled,
         lanes,
         laneAssignmentMode,
-      }
-    },
-    {
-      key: false,
-    },
-  )
-
-  private getMeasurements = memo(
-    () => [this.getMeasurementOptions(), this.itemSizeCacheVersion],
-    (
-      { count, paddingStart, scrollMargin, enabled, lanes, laneAssignmentMode },
-      _itemSizeCacheVersion,
-    ) => {
+        getItemKey,
+      } = this.options
       const itemSizeCache = this.itemSizeCache
-      // Read fresh — see getMeasurementOptions on why getItemKey isn't a dep.
-      const getItemKey = this.options.getItemKey
       if (!enabled) {
         this.measurementsCache = []
         this.itemSizeCache.clear()
