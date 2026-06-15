@@ -8,7 +8,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.14.2",
+    "@tanstack/react-virtual": "^3.14.3",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

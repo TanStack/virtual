@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.17.1
+
+### Patch Changes
+
+- [#1199](https://github.com/TanStack/virtual/pull/1199) [`ef69ea3`](https://github.com/TanStack/virtual/commit/ef69ea31738caa2819142e922efa03d3c408e25c) - Fix "items jump while scrolling up": the default scroll-adjustment predicate now compensates scrollTop on the first measurement of an above-viewport item even while scrolling backward (the estimate→actual delta must be absorbed), and only skips compensation for re-measurements during backward scroll to avoid the cascading jank
+
 ## 3.17.0
 
 ### Minor Changes
