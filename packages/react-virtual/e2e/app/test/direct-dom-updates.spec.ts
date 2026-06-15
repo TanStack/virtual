@@ -89,5 +89,41 @@ for (const mode of ['position', 'transform'] as const) {
         expect(style).toMatch(/translate3d\(0px,\s*20000px,\s*0px\)/)
       }
     })
+
+    test('without containerRef the virtualizer makes no direct DOM writes but still skips re-renders', async ({
+      page,
+    }) => {
+      await page.goto(`/direct-dom-updates/?mode=${mode}&noContainer=1`)
+
+      // Container size is NOT written by the virtualizer when containerRef is omitted.
+      const inner = page.locator('#inner')
+      const innerStyle = (await inner.getAttribute('style')) ?? ''
+      expect(innerStyle).not.toMatch(/height:\s*\d/)
+
+      // Item positions are NOT written by the virtualizer either.
+      const first = page.locator('[data-testid="item-0"]')
+      await expect(first).toBeVisible()
+      const firstStyle = (await first.getAttribute('style')) ?? ''
+      if (mode === 'position') {
+        expect(firstStyle).not.toMatch(/top:\s*\d/)
+      } else {
+        expect(firstStyle).not.toMatch(/transform:/)
+      }
+
+      // Re-render skipping still applies: scrolling by one item (absorbed by
+      // overscan) must not trigger React re-renders.
+      const initialRenders = Number(
+        await page.locator('[data-testid="render-count"]').textContent(),
+      )
+      await page.locator('#scroll-container').evaluate((el, by) => {
+        el.scrollTop = by
+      }, ITEM_SIZE)
+      // Give onChange a chance to fire.
+      await page.waitForTimeout(50)
+      const afterRenders = Number(
+        await page.locator('[data-testid="render-count"]').textContent(),
+      )
+      expect(afterRenders - initialRenders).toBeLessThanOrEqual(2)
+    })
   })
 }
