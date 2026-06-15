@@ -1519,14 +1519,15 @@ export class Virtualizer<
               delta,
               this,
             )
-          : // Default: adjust scrollTop only when the resize is an above-
-            // viewport item AND we're not actively scrolling backward.
-            // Adjusting during backward scroll fights the user's scroll
-            // direction and produces the "items jump while scrolling up"
-            // jank reported across many issues. Users who want the old
-            // behavior can pass shouldAdjustScrollPositionOnItemSizeChange.
+          : // Default: adjust when the resize is an above-viewport item.
+            // First measurement (!has(key)): always adjust — the item
+            // has never been sized, so the estimate→actual delta must
+            // be compensated regardless of scroll direction.
+            // Re-measurement (has(key)): skip during backward scroll
+            // to avoid the "items jump while scrolling up" cascade.
             itemStart < this.getScrollOffset() + this.scrollAdjustments &&
-            this.scrollDirection !== 'backward')
+            (!this.itemSizeCache.has(key) ||
+              this.scrollDirection !== 'backward'))
 
       if (this.pendingMin === null || index < this.pendingMin) {
         this.pendingMin = index
