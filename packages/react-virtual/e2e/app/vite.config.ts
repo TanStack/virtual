@@ -9,6 +9,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         scroll: path.resolve(__dirname, 'scroll/index.html'),
+        'scroll-anchor': path.resolve(__dirname, 'scroll-anchor/index.html'),
         chat: path.resolve(__dirname, 'chat/index.html'),
         'measure-element': path.resolve(
           __dirname,
