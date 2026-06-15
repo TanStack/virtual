@@ -10,6 +10,10 @@ const App = () => {
 
   const params = new URLSearchParams(window.location.search)
   const mode = (params.get('mode') ?? 'transform') as 'position' | 'transform'
+  // When set, the consumer omits `containerRef`. The virtualizer must then make
+  // no direct DOM writes at all (neither item positions nor container size),
+  // leaving the consumer to own them — while still skipping re-renders.
+  const noContainer = params.get('noContainer') === '1'
 
   const renderCount = React.useRef(0)
   renderCount.current += 1
@@ -40,7 +44,7 @@ const App = () => {
         style={{ height: 400, overflow: 'auto' }}
       >
         <div
-          ref={rowVirtualizer.containerRef}
+          ref={noContainer ? undefined : rowVirtualizer.containerRef}
           id="inner"
           style={{ position: 'relative', width: '100%' }}
         >
