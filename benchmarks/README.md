@@ -1,8 +1,22 @@
 # Virtualization benchmarks
 
-Reproducible browser benchmarks comparing **@tanstack/react-virtual**, **virtua**, **react-virtuoso**, and **react-window** v2.
+Reproducible browser benchmarks comparing **@tanstack/react-virtual**, **virtua**, **react-virtuoso**, **react-window** v2, and **react-aria-components** `Virtualizer`.
 
 Same data, same scenarios, same harness — driven by Playwright against a real browser running a real Vite-built React app for each library.
+
+### Library matrix
+
+| id | What it measures |
+| --- | --- |
+| `tanstack` | Headless `@tanstack/react-virtual` + plain DOM rows |
+| `tanstack-rac` | TanStack virtual + `role="listbox"` / `role="option"` (no RAC collection) |
+| `rac-listbox` | React Aria `ListBox` only — collection overhead, all items in DOM |
+| `rac` | React Aria `Virtualizer` + `ListBox` — full integrated stack |
+| `virtua`, `virtuoso`, `window` | Existing third-party baselines |
+
+`rac-listbox` skips `mount-fixed-100k` (100k DOM nodes is intentionally out of scope).
+
+**RAC accuracy scenarios:** React Aria's virtualizer does not expose `scrollToIndex`. The harness uses layout-derived `scrollTop` + native scroll events. If the target row is not mounted after scroll settles, `landingErrorPx` is `-1` (item missing from DOM). `rac-listbox` (non-virtualized) reports accurate landings because every row stays in the DOM.
 
 ## Running
 
@@ -177,6 +191,7 @@ Add an entry to `SCENARIOS` in `src/scenarios/types.ts`. The runner discovers it
 1. Create `src/pages/MyLibPage.tsx` that registers a `HarnessHandle` (see existing pages for the contract).
 2. Wire it into `src/main.tsx`'s switch.
 3. Add the library name to `ALL_LIBS` in `runner/run.mjs`.
+4. If a library cannot run certain scenarios, add exclusions to `LIB_SCENARIO_EXCLUSIONS` in `runner/run.mjs` and `scenarios/types.ts`.
 
 ## Known limitations
 

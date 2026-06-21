@@ -1,7 +1,21 @@
 // Shared scenario definitions used by every library page + the Playwright runner.
 // JSON-serializable so the runner can pass them as JS args via page.evaluate().
 
-export type LibraryName = 'tanstack' | 'virtua' | 'virtuoso' | 'window'
+export type LibraryName =
+  | 'tanstack'
+  | 'tanstack-rac'
+  | 'virtua'
+  | 'virtuoso'
+  | 'window'
+  | 'rac'
+  | 'rac-listbox'
+
+/** Scenarios skipped for specific libraries (e.g. non-virtualized RAC at 100k). */
+export const LIB_SCENARIO_EXCLUSIONS: Partial<
+  Record<LibraryName, ReadonlyArray<string>>
+> = {
+  'rac-listbox': ['mount-fixed-100k'],
+}
 
 export interface ScenarioInput {
   /** Stable id used for table keys and result filenames. */
