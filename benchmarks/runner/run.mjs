@@ -10,10 +10,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import url from 'node:url'
-
-const LIB_SCENARIO_EXCLUSIONS = {
-  'rac-listbox': ['mount-fixed-100k'],
-}
+import { LIB_SCENARIO_EXCLUSIONS } from '../src/scenarios/libScenarioExclusions.mjs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const BENCH_DIR = path.resolve(__dirname, '..')

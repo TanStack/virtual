@@ -18,7 +18,7 @@ export function findRacScrollContainer(
 export function scrollRacToIndex(
   container: HTMLElement,
   layout: ListLayout<unknown> | null,
-  items: Item[],
+  items: Array<Item>,
   index: number,
   itemSize: number,
   align: 'start' | 'end' = 'start',
@@ -62,7 +62,7 @@ export function createRacVirtualHarness({
   hostRef: { current: HTMLDivElement | null }
   scrollerRef: { current: HTMLElement | null }
   layoutRef: { current: ListLayout<unknown> | null }
-  items: Item[]
+  items: Array<Item>
   scenario: ScenarioInput
 }): Omit<HarnessHandle, 'getScrollContainer'> & {
   getScrollContainer: () => HTMLElement | null

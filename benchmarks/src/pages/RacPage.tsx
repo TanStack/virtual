@@ -4,7 +4,6 @@ import {
   ListBoxItem,
   ListLayout,
   Virtualizer,
-  type ListLayoutOptions,
 } from 'react-aria-components'
 import {
   markFirstPaint,
@@ -18,6 +17,7 @@ import {
   createRacVirtualHarness,
 } from '../lib/racBench'
 import { makeDataset } from '../lib/dataset'
+import type { ListLayoutOptions } from 'react-aria-components'
 import type { ScenarioInput } from '../scenarios/types'
 
 interface Props {

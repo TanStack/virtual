@@ -35,10 +35,8 @@ export function RacListboxPage({ scenario }: Props) {
         const host = hostRef.current
         if (!host) return
         const align = opts?.align ?? 'start'
-        const itemEl = host.querySelector(
-          `[data-index="${index}"]`,
-        ) as HTMLElement | null
-        if (itemEl) {
+        const itemEl = host.querySelector(`[data-index="${index}"]`)
+        if (itemEl instanceof HTMLElement) {
           itemEl.scrollIntoView({
             block: align === 'end' ? 'end' : 'start',
             inline: 'nearest',
@@ -55,7 +53,8 @@ export function RacListboxPage({ scenario }: Props) {
         host.scrollTop = Math.max(0, Math.min(top, max))
       },
       getTotalSize: () => hostRef.current?.scrollHeight ?? 0,
-      isFullyMeasured: () => !scenario.dynamic,
+      // Non-virtualized list: all rows are in the DOM once mounted.
+      isFullyMeasured: () => hostRef.current !== null,
     })
     markMountEnd()
     markFirstPaint()

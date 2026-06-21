@@ -191,7 +191,7 @@ Add an entry to `SCENARIOS` in `src/scenarios/types.ts`. The runner discovers it
 1. Create `src/pages/MyLibPage.tsx` that registers a `HarnessHandle` (see existing pages for the contract).
 2. Wire it into `src/main.tsx`'s switch.
 3. Add the library name to `ALL_LIBS` in `runner/run.mjs`.
-4. If a library cannot run certain scenarios, add exclusions to `LIB_SCENARIO_EXCLUSIONS` in `runner/run.mjs` and `scenarios/types.ts`.
+4. If a library cannot run certain scenarios, add exclusions to `LIB_SCENARIO_EXCLUSIONS` in `src/scenarios/libScenarioExclusions.mjs` (also re-exported from `scenarios/types.ts`).
 
 ## Known limitations
 
