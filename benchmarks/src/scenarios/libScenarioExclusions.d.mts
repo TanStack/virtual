@@ -1,3 +1,5 @@
+import type { LibraryName } from './types.ts'
+
 export declare const LIB_SCENARIO_EXCLUSIONS: Partial<
-  Record<string, ReadonlyArray<string>>
+  Record<LibraryName, ReadonlyArray<string>>
 >
