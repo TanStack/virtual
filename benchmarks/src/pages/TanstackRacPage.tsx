@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   markFirstPaint,
@@ -30,6 +30,7 @@ export function TanstackRacPage({ scenario }: Props) {
   )
 
   const parentRef = useRef<HTMLDivElement>(null)
+  const measuredIndexesRef = useRef<Set<number>>(new Set())
 
   const virtualizer = useVirtualizer({
     count: items.length,
@@ -37,6 +38,19 @@ export function TanstackRacPage({ scenario }: Props) {
     estimateSize: () => scenario.itemSize,
     overscan: 5,
   })
+
+  const measureElement = useCallback(
+    (element: HTMLDivElement | null) => {
+      if (element) {
+        const index = Number(element.dataset.index)
+        if (Number.isFinite(index)) {
+          measuredIndexesRef.current.add(index)
+        }
+      }
+      virtualizer.measureElement(element)
+    },
+    [virtualizer],
+  )
 
   useEffect(() => {
     registerHarness({
@@ -46,10 +60,11 @@ export function TanstackRacPage({ scenario }: Props) {
       getTotalSize: () => virtualizer.getTotalSize(),
       isFullyMeasured: () => {
         if (!scenario.dynamic) return true
-        const sized = (virtualizer.measurementsCache ?? []).filter(
-          (m) => m.size !== scenario.itemSize,
-        ).length
-        return sized > 0
+        const virtualItems = virtualizer.getVirtualItems()
+        return (
+          virtualItems.length > 0 &&
+          virtualItems.every((vi) => measuredIndexesRef.current.has(vi.index))
+        )
       },
     })
     markMountEnd()
@@ -72,20 +87,21 @@ export function TanstackRacPage({ scenario }: Props) {
         }}
       >
         {virtualizer.getVirtualItems().map((vi) => {
-          const item = items[vi.index]!
+          const item = items[vi.index]
+          if (item == null) return null
           return (
             <div
               key={vi.key}
               role="option"
               data-index={vi.index}
-              ref={scenario.dynamic ? virtualizer.measureElement : undefined}
+              ref={scenario.dynamic ? measureElement : undefined}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
                 transform: `translateY(${vi.start}px)`,
-                minHeight: scenario.dynamic ? undefined : scenario.itemSize,
+                height: scenario.dynamic ? undefined : scenario.itemSize,
               }}
             >
               <ItemRow

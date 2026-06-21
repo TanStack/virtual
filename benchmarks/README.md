@@ -4,7 +4,7 @@ Reproducible browser benchmarks comparing **@tanstack/react-virtual**, **virtua*
 
 Same data, same scenarios, same harness — driven by Playwright against a real browser running a real Vite-built React app for each library.
 
-### Library matrix
+## Library matrix
 
 | id | What it measures |
 | --- | --- |
