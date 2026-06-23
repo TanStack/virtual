@@ -779,6 +779,13 @@ export class Virtualizer<
           // self-write — by the time the user has moved 1.5 px, the
           // intended value will already have been consumed by a prior
           // scroll event and cleared.
+          if (offset === this.scrollOffset && isScrolling === true) {
+            // this prevents continous rerenders
+            isScrolling = false;
+            this.isScrolling = false;
+            this.scrollOffset = offset
+            this.maybeNotify();
+          }
           if (
             this._intendedScrollOffset !== null &&
             Math.abs(offset - this._intendedScrollOffset) < 1.5
@@ -804,7 +811,6 @@ export class Virtualizer<
           if (this.scrollState) {
             this.scheduleScrollReconcile()
           }
-          this.maybeNotify()
         }),
       )
 
