@@ -204,11 +204,15 @@ describe('Layer 2: setOptions() — simulating React render storm', () => {
 
 describe('Scroll loop: 10k scroll events on warm virtualizer', () => {
   for (const n of [1000, 100000]) {
+    // Wrap offsets at the real max scroll so every iteration exercises a
+    // representative range (not the degenerate end-of-list state once
+    // i*5 exceeds totalSize - viewport).
+    const maxOffset = n * 30 - 600
     bench(`n=${n}, 10k scrolls`, () => {
       const v = makeVirt(n)
       v.scrollRect = { width: 800, height: 600 }
       for (let i = 0; i < 10_000; i++) {
-        v.scrollOffset = i * 5
+        v.scrollOffset = (i * 5) % maxOffset
         ;(v as any).calculateRange()
       }
     })
@@ -216,7 +220,7 @@ describe('Scroll loop: 10k scroll events on warm virtualizer', () => {
       const v = makeVirt(n)
       v.scrollRect = { width: 800, height: 600 }
       for (let i = 0; i < 10_000; i++) {
-        v.scrollOffset = i * 5
+        v.scrollOffset = (i * 5) % maxOffset
         v.getVirtualItems()
       }
     })
