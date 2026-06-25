@@ -811,6 +811,7 @@ export class Virtualizer<
           if (this.scrollState) {
             this.scheduleScrollReconcile()
           }
+          this.maybeNotify()
         }),
       )
 
