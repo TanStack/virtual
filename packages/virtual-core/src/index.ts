@@ -779,7 +779,11 @@ export class Virtualizer<
           // which forces a render that triggers another such event: an
           // infinite re-render loop. Ignore it. (Self-writes are handled by
           // the `_intendedScrollOffset` reconciliation just below.)
-          if (isScrolling && offset === this.scrollOffset) {
+          if (
+            isScrolling &&
+            this._intendedScrollOffset === null &&
+            offset === this.scrollOffset
+          ) {
             return
           }
           
