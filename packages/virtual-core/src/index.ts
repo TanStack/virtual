@@ -772,6 +772,21 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset, isScrolling) => {
+          // A scroll event that reports movement but lands on the offset we
+          // already hold — and isn't a self-write read-back — is a spurious
+          // no-op re-emit that Safari/Firefox fire after a re-render's layout
+          // (Chrome doesn't). Treating it as scrolling re-arms `isScrolling`,
+          // which forces a render that triggers another such event: an
+          // infinite re-render loop. Ignore it. (Self-writes are handled by
+          // the `_intendedScrollOffset` reconciliation just below.)
+          if (
+            isScrolling &&
+            this._intendedScrollOffset === null &&
+            offset === this.scrollOffset
+          ) {
+            return
+          }
+          
           // If this scroll event looks like the browser's read-back of a
           // value we just wrote, prefer our intended (sub-pixel-accurate)
           // value over the browser's rounded one. The 1.5 px tolerance is
