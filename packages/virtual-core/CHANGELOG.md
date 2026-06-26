@@ -1,5 +1,15 @@
 # @tanstack/virtual-core
 
+## 3.17.2
+
+### Patch Changes
+
+- [#1208](https://github.com/TanStack/virtual/pull/1208) [`b04f9ee`](https://github.com/TanStack/virtual/commit/b04f9ee48f0812e89156c1dac1fa58277cc32464) - Skip redundant scroll events at unchanged offset
+
+- [#1209](https://github.com/TanStack/virtual/pull/1209) [`37be284`](https://github.com/TanStack/virtual/commit/37be28427ba52399ce8884e0006933e83f2645e9) - Sync `scrollOffset` in `applyScrollAdjustment` so end-anchored streaming resize isn't lost to browser clamp
+
+  With `anchorTo: 'end'` and a dynamically growing last item (token streaming), `resizeItem` writes the scroll adjustment to `scrollTop` before the consumer has grown the sizer, so the browser clamps the write and no scroll event fires. `scrollOffset` stayed stale, the next tick's `wasAtEnd` check failed, and the viewport drifted away from the end. This fix carries the intended target in `scrollOffset` (zeroing `scrollAdjustments`) the same way the prepend path in `setOptions` does, so the next `getVirtualDistanceFromEnd()` reads the post-adjustment position.
+
 ## 3.17.1
 
 ### Patch Changes
