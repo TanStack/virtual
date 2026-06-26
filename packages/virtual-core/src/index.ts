@@ -786,7 +786,7 @@ export class Virtualizer<
           ) {
             return
           }
-          
+
           // If this scroll event looks like the browser's read-back of a
           // value we just wrote, prefer our intended (sub-pixel-accurate)
           // value over the browser's rounded one. The 1.5 px tolerance is
