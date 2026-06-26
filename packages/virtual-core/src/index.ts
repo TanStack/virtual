@@ -692,6 +692,19 @@ export class Virtualizer<
         adjustments: (this.scrollAdjustments += delta),
         behavior,
       })
+      // Eagerly carry the intended target in `scrollOffset` so callers that
+      // read it before the next scroll event — notably the next `resizeItem`
+      // tick's `getVirtualDistanceFromEnd()` / `wasAtEnd` check — see the
+      // post-adjustment position even when the DOM `scrollTop` write was
+      // clamped because the consumer hasn't grown the sizer yet (`notify()`
+      // runs after this in `resizeItem`). Same idea as the eager
+      // `scrollOffset` adjustment for prepend in `setOptions` (#1176). The
+      // adjustment is now baked into `scrollOffset`, so zero
+      // `scrollAdjustments` to keep their sum invariant.
+      if (this.scrollOffset !== null) {
+        this.scrollOffset += this.scrollAdjustments
+        this.scrollAdjustments = 0
+      }
     }
   }
 

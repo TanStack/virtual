@@ -2380,6 +2380,33 @@ test('anchorTo:end keeps a pinned streaming message pinned as it grows', () => {
   expect(options.adjustments).toBe(70)
 })
 
+test('anchorTo:end stays pinned across consecutive resizes when the scrollTop write is clamped', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 50,
+  })
+
+  // First growth tick. The DOM `scrollTop` write may be clamped because the
+  // consumer hasn't grown the sizer yet (`notify()` runs after the
+  // adjustment in `resizeItem`), so no scroll event fires — `scrollToFn`
+  // here is a no-op mock, mirroring that.
+  virtualizer.resizeItem(4, 120)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(70)
+  scrollToFn.mockClear()
+
+  // Second growth tick with no scroll event in between. Before the fix,
+  // `getVirtualDistanceFromEnd()` would compute against the stale
+  // `scrollOffset` (50) and a grown `getTotalSize()` (320), conclude we had
+  // drifted 70 px from the end (> `scrollEndThreshold: 1`), and skip the
+  // adjustment — drifting forever from tick 2 onward.
+  virtualizer.resizeItem(4, 200)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(120)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(80)
+})
+
 test('anchorTo:end does not follow streaming growth when user is away from end', () => {
   const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
   const { virtualizer, scrollToFn } = createChatVirtualizer({
