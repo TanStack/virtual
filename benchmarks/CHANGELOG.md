@@ -1,5 +1,12 @@
 # @tanstack/virtual-benchmarks
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/react-virtual@3.14.4
+
 ## 0.0.6
 
 ### Patch Changes

@@ -692,6 +692,19 @@ export class Virtualizer<
         adjustments: (this.scrollAdjustments += delta),
         behavior,
       })
+      // Eagerly carry the intended target in `scrollOffset` so callers that
+      // read it before the next scroll event — notably the next `resizeItem`
+      // tick's `getVirtualDistanceFromEnd()` / `wasAtEnd` check — see the
+      // post-adjustment position even when the DOM `scrollTop` write was
+      // clamped because the consumer hasn't grown the sizer yet (`notify()`
+      // runs after this in `resizeItem`). Same idea as the eager
+      // `scrollOffset` adjustment for prepend in `setOptions` (#1176). The
+      // adjustment is now baked into `scrollOffset`, so zero
+      // `scrollAdjustments` to keep their sum invariant.
+      if (this.scrollOffset !== null) {
+        this.scrollOffset += this.scrollAdjustments
+        this.scrollAdjustments = 0
+      }
     }
   }
 
@@ -772,6 +785,21 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset, isScrolling) => {
+          // A scroll event that reports movement but lands on the offset we
+          // already hold — and isn't a self-write read-back — is a spurious
+          // no-op re-emit that Safari/Firefox fire after a re-render's layout
+          // (Chrome doesn't). Treating it as scrolling re-arms `isScrolling`,
+          // which forces a render that triggers another such event: an
+          // infinite re-render loop. Ignore it. (Self-writes are handled by
+          // the `_intendedScrollOffset` reconciliation just below.)
+          if (
+            isScrolling &&
+            this._intendedScrollOffset === null &&
+            offset === this.scrollOffset
+          ) {
+            return
+          }
+
           // If this scroll event looks like the browser's read-back of a
           // value we just wrote, prefer our intended (sub-pixel-accurate)
           // value over the browser's rounded one. The 1.5 px tolerance is
