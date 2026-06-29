@@ -368,6 +368,10 @@ export interface VirtualizerOptions<
   isRtl?: boolean
   useAnimationFrameWithResizeObserver?: boolean
   laneAssignmentMode?: LaneAssignmentMode
+  /** Maximum physical scroll container size in pixels. When the virtual total
+   *  size exceeds this value, the virtualizer applies a scale factor to compress
+   *  the scroll range. Defaults to 33_000_000. Set to Infinity to disable. */
+  maxScrollSize?: number
   useCachedMeasurements?: boolean
 }
 
@@ -421,6 +425,19 @@ export class Virtualizer<
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
   private scrollAdjustments = 0
+
+  private getScale = (): number => {
+    const virtualTotal = this.getTotalVirtualSize()
+    const max = this.options.maxScrollSize
+    // Invalid values disable scaling to keep math stable.
+    if (!Number.isFinite(max) || max <= 0) return 1
+    return virtualTotal > max ? virtualTotal / max : 1
+  }
+
+  /** Current scale factor. Returns 1 when no scaling is active. */
+  get scale(): number {
+    return this.getScale()
+  }
   // Sum of size-change deltas above-viewport that were skipped during
   // iOS momentum scroll (writing scrollTop mid-momentum cancels it).
   // Flushed in a single scrollTo when iOS is fully settled.
@@ -550,6 +567,7 @@ export class Virtualizer<
       useScrollendEvent: false,
       useAnimationFrameWithResizeObserver: false,
       laneAssignmentMode: 'estimate',
+      maxScrollSize: 33_000_000,
       useCachedMeasurements: false,
     } as unknown as Required<VirtualizerOptions<TScrollElement, TItemElement>>
 
@@ -807,6 +825,8 @@ export class Virtualizer<
           // self-write — by the time the user has moved 1.5 px, the
           // intended value will already have been consumed by a prior
           // scroll event and cleared.
+          // Note: both offset and _intendedScrollOffset are in physical
+          // space at this point, so the comparison is correct.
           if (
             this._intendedScrollOffset !== null &&
             Math.abs(offset - this._intendedScrollOffset) < 1.5
@@ -815,13 +835,19 @@ export class Virtualizer<
           }
           this._intendedScrollOffset = null
 
+          // Convert physical scroll offset to virtual coordinate space.
+          // All internal state (scrollOffset, scrollDirection, etc.) operates
+          // in virtual space.
+          const scale = this.getScale()
+          const virtualOffset = offset * scale
+
           this.scrollAdjustments = 0
           this.scrollDirection = isScrolling
-            ? this.getScrollOffset() < offset
+            ? this.getScrollOffset() < virtualOffset
               ? 'forward'
               : 'backward'
             : null
-          this.scrollOffset = offset
+          this.scrollOffset = virtualOffset
           this.isScrolling = isScrolling
 
           // Flush deferred iOS adjustments if we're now fully settled.
@@ -991,13 +1017,22 @@ export class Virtualizer<
       : this.scrollState.lastTargetOffset
 
     // Require one stable frame where target matches scroll offset.
-    // approxEqual() already tolerates minor fluctuations, so one frame is sufficient
-    // to confirm scroll has reached its target without premature cleanup.
+    // The tolerance accounts for subpixel browser rounding, so one frame is
+    // sufficient to confirm scroll has reached its target.
     const STABLE_FRAMES = 1
 
     const targetChanged = targetOffset !== this.scrollState.lastTargetOffset
 
-    if (!targetChanged && approxEqual(targetOffset, this.getScrollOffset())) {
+    // When scroll-scaling is active, a 1px physical browser rounding error
+    // maps to `scale` px in virtual space. Scale the tolerance accordingly
+    // so the reconcile loop can settle.
+    const scale = this.getScale()
+    const tolerance = scale > 1 ? scale * 1.5 : 1.01
+
+    if (
+      !targetChanged &&
+      Math.abs(targetOffset - this.getScrollOffset()) < tolerance
+    ) {
       this.scrollState.stableFrames++
       if (this.scrollState.stableFrames >= STABLE_FRAMES) {
         // Final-pass exact landing. The reconcile-stable check uses a 1.01px
@@ -1577,12 +1612,26 @@ export class Virtualizer<
     () => [this.getVirtualIndexes(), this.getMeasurements()],
     (indexes, measurements) => {
       const virtualItems: Array<VirtualItem> = []
+      const scale = this.getScale()
 
       for (let k = 0, len = indexes.length; k < len; k++) {
         const i = indexes[k]!
         const measurement = measurements[i]!
 
-        virtualItems.push(measurement)
+        if (scale === 1) {
+          // No scaling — push reference directly (zero overhead, same as before)
+          virtualItems.push(measurement)
+        } else {
+          // Scaling active — create physical copy for consumer positioning
+          virtualItems.push({
+            key: measurement.key,
+            index: measurement.index,
+            start: measurement.start / scale,
+            end: measurement.end / scale,
+            size: measurement.size / scale,
+            lane: measurement.lane,
+          })
+        }
       }
 
       return virtualItems
@@ -1617,18 +1666,21 @@ export class Virtualizer<
   private getMaxScrollOffset = () => {
     if (!this.scrollElement) return 0
 
+    let physicalMax: number
     if ('scrollHeight' in this.scrollElement) {
       // Element
-      return this.options.horizontal
+      physicalMax = this.options.horizontal
         ? this.scrollElement.scrollWidth - this.scrollElement.clientWidth
         : this.scrollElement.scrollHeight - this.scrollElement.clientHeight
     } else {
       // Window
       const doc = this.scrollElement.document.documentElement
-      return this.options.horizontal
+      physicalMax = this.options.horizontal
         ? doc.scrollWidth - this.scrollElement.innerWidth
         : doc.scrollHeight - this.scrollElement.innerHeight
     }
+    // Upscale physical DOM value to virtual coordinate space
+    return physicalMax * this.getScale()
   }
 
   private getVirtualDistanceFromEnd = () => {
@@ -1790,12 +1842,15 @@ export class Virtualizer<
       return
     }
 
-    this.scrollToOffset(Math.max(this.getTotalSize() - this.getSize(), 0), {
-      behavior,
-    })
+    this.scrollToOffset(
+      Math.max(this.getTotalVirtualSize() - this.getSize(), 0),
+      {
+        behavior,
+      },
+    )
   }
 
-  getTotalSize = () => {
+  private getTotalVirtualSize = () => {
     const measurements = this.getMeasurements()
 
     let end: number
@@ -1834,6 +1889,10 @@ export class Virtualizer<
       end - this.options.scrollMargin + this.options.paddingEnd,
       0,
     )
+  }
+
+  getTotalSize = () => {
+    return this.getTotalVirtualSize() / this.getScale()
   }
 
   /**
@@ -1879,10 +1938,19 @@ export class Virtualizer<
       behavior: ScrollBehavior | undefined
     },
   ) => {
-    // Record the intended logical scroll target so the next scroll event
+    // Convert virtual coordinates to physical for the DOM write.
+    const scale = this.getScale()
+    const physicalOffset = offset / scale
+    const physicalAdj = adjustments != null ? adjustments / scale : undefined
+    // Record the intended physical scroll target so the next scroll event
     // can reconcile against subpixel rounding by the browser.
-    this._intendedScrollOffset = offset + (adjustments ?? 0)
-    this.options.scrollToFn(offset, { behavior, adjustments }, this)
+    // _intendedScrollOffset is physical (compared against physical scrollTop readback).
+    this._intendedScrollOffset = physicalOffset + (physicalAdj ?? 0)
+    this.options.scrollToFn(
+      physicalOffset,
+      { behavior, adjustments: physicalAdj },
+      this,
+    )
   }
 
   measure = () => {
