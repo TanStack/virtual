@@ -1369,22 +1369,22 @@ export class Virtualizer<
       this.options.lanes,
     ],
     (measurements, outerSize, scrollOffset, lanes) => {
-      return (this.range =
-        measurements.length > 0 && outerSize > 0
-          ? calculateRange({
-              measurements,
-              outerSize,
-              scrollOffset,
-              lanes,
-              // Pass the typed array so binary search + forward-walk can
-              // read start/end directly from Float64Array, skipping the
-              // Proxy traps that materialize a full VirtualItem per probe.
-              flat:
-                lanes === 1 && this._flatMeasurements != null
-                  ? this._flatMeasurements
-                  : null,
-            })
-          : null)
+      if (measurements.length === 0 || outerSize === 0) {
+        this.range = null
+        return null
+      }
+      this.range = calculateRangeImpl(
+        measurements,
+        outerSize,
+        scrollOffset,
+        lanes,
+        // Pass the typed array so binary search + forward-walk can read
+        // start/end directly from Float64Array, skipping the Proxy traps.
+        lanes === 1 && this._flatMeasurements != null
+          ? this._flatMeasurements
+          : null,
+      )
+      return this.range
     },
     {
       key: process.env.NODE_ENV !== 'production' && 'calculateRange',
@@ -1930,45 +1930,71 @@ const findNearestBinarySearch = (
   }
 }
 
-function calculateRange({
-  measurements,
-  outerSize,
-  scrollOffset,
-  lanes,
-  flat,
-}: {
-  measurements: Array<VirtualItem>
-  outerSize: number
-  scrollOffset: number
-  lanes: number
-  flat: Float64Array | null
-}) {
+// Monomorphic Float64Array variant — reads start values directly at stride
+// 2 instead of through a getter closure. JITs the inner load to a typed-
+// array bounds-check + load with no indirect call.
+function findNearestBinarySearchFlat(
+  flat: Float64Array,
+  high: number,
+  value: number,
+) {
+  let low = 0
+  while (low <= high) {
+    const middle = ((low + high) / 2) | 0
+    const currentValue = flat[middle * 2]!
+
+    if (currentValue < value) {
+      low = middle + 1
+    } else if (currentValue > value) {
+      high = middle - 1
+    } else {
+      return middle
+    }
+  }
+  return low > 0 ? low - 1 : 0
+}
+
+function calculateRangeImpl(
+  measurements: Array<VirtualItem>,
+  outerSize: number,
+  scrollOffset: number,
+  lanes: number,
+  flat: Float64Array | null,
+) {
   const lastIndex = measurements.length - 1
-  // When the lanes===1 fast-path is active, read start/end directly from the
-  // flat Float64Array instead of going through the lazy-view Proxy. Cuts
-  // ~17 Proxy.get traps per scroll for the binary search alone.
-  const getStart = flat
-    ? (index: number) => flat[index * 2]!
-    : (index: number) => measurements[index]!.start
-  const getEnd = flat
-    ? (index: number) => flat[index * 2]! + flat[index * 2 + 1]!
-    : (index: number) => measurements[index]!.end
 
   // handle case when item count is less than or equal to lanes
   if (measurements.length <= lanes) {
-    return {
-      startIndex: 0,
-      endIndex: lastIndex,
-    }
+    return { startIndex: 0, endIndex: lastIndex }
   }
 
+  if (lanes === 1 && flat !== null) {
+    // Hot single-lane path: typed-array reads, no closures, no Proxy traps.
+    const startIndex = findNearestBinarySearchFlat(
+      flat,
+      lastIndex,
+      scrollOffset,
+    )
+    let endIndex = startIndex
+    const limit = scrollOffset + outerSize
+    while (
+      endIndex < lastIndex &&
+      flat[endIndex * 2]! + flat[endIndex * 2 + 1]! < limit
+    ) {
+      endIndex++
+    }
+    return { startIndex, endIndex }
+  }
+
+  // Fallback (lanes > 1 or no flat array): closure-based reads.
+  const getStart = (index: number) => measurements[index]!.start
   let startIndex = findNearestBinarySearch(0, lastIndex, getStart, scrollOffset)
   let endIndex = startIndex
 
   if (lanes === 1) {
     while (
       endIndex < lastIndex &&
-      getEnd(endIndex) < scrollOffset + outerSize
+      measurements[endIndex]!.end < scrollOffset + outerSize
     ) {
       endIndex++
     }
