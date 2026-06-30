@@ -45,9 +45,7 @@ export function RacListboxPage({ scenario }: Props) {
         }
         const top =
           align === 'end'
-            ? index * scenario.itemSize +
-              scenario.itemSize -
-              host.clientHeight
+            ? index * scenario.itemSize + scenario.itemSize - host.clientHeight
             : index * scenario.itemSize
         const max = Math.max(0, host.scrollHeight - host.clientHeight)
         host.scrollTop = Math.max(0, Math.min(top, max))

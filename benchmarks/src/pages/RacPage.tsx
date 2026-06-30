@@ -12,10 +12,7 @@ import {
   registerHarness,
 } from '../lib/harness'
 import { ItemRow } from '../lib/itemRow'
-import {
-  cacheRacScroller,
-  createRacVirtualHarness,
-} from '../lib/racBench'
+import { cacheRacScroller, createRacVirtualHarness } from '../lib/racBench'
 import { makeDataset } from '../lib/dataset'
 import type { ListLayoutOptions } from 'react-aria-components'
 import type { ScenarioInput } from '../scenarios/types'

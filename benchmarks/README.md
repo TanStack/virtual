@@ -6,13 +6,13 @@ Same data, same scenarios, same harness — driven by Playwright against a real 
 
 ## Library matrix
 
-| id | What it measures |
-| --- | --- |
-| `tanstack` | Headless `@tanstack/react-virtual` + plain DOM rows |
-| `tanstack-rac` | TanStack virtual + `role="listbox"` / `role="option"` (no RAC collection) |
-| `rac-listbox` | React Aria `ListBox` only — collection overhead, all items in DOM |
-| `rac` | React Aria `Virtualizer` + `ListBox` — full integrated stack |
-| `virtua`, `virtuoso`, `window` | Existing third-party baselines |
+| id                             | What it measures                                                          |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `tanstack`                     | Headless `@tanstack/react-virtual` + plain DOM rows                       |
+| `tanstack-rac`                 | TanStack virtual + `role="listbox"` / `role="option"` (no RAC collection) |
+| `rac-listbox`                  | React Aria `ListBox` only — collection overhead, all items in DOM         |
+| `rac`                          | React Aria `Virtualizer` + `ListBox` — full integrated stack              |
+| `virtua`, `virtuoso`, `window` | Existing third-party baselines                                            |
 
 `rac-listbox` skips `mount-fixed-100k` (100k DOM nodes is intentionally out of scope).
 
@@ -161,13 +161,13 @@ Run with `--libs tanstack,tanstack-rac,rac,rac-listbox` on 2026-06-21. See
 
 ### Mount time — `React.render` → commit (lower is better, ms)
 
-| Scenario            | tanstack | tanstack-rac |     rac | rac-listbox |
-| ------------------- | -------: | -----------: | ------: | ----------: |
-| `mount-fixed-1k`    |      3.7 |      **1.0** |     9.6 |         7.8 |
-| `mount-fixed-10k`   |  **2.4** |          1.5 |    20.0 |        25.5 |
-| `mount-fixed-100k`  |  **5.8** |          4.2 |   175.2 |           — |
-| `mount-dynamic-1k`  |      1.8 |      **1.4** |     7.3 |         8.1 |
-| `mount-dynamic-10k` |  **4.9** |          5.2 |    26.2 |        26.3 |
+| Scenario            | tanstack | tanstack-rac |   rac | rac-listbox |
+| ------------------- | -------: | -----------: | ----: | ----------: |
+| `mount-fixed-1k`    |      3.7 |      **1.0** |   9.6 |         7.8 |
+| `mount-fixed-10k`   |  **2.4** |          1.5 |  20.0 |        25.5 |
+| `mount-fixed-100k`  |  **5.8** |          4.2 | 175.2 |           — |
+| `mount-dynamic-1k`  |      1.8 |      **1.4** |   7.3 |         8.1 |
+| `mount-dynamic-10k` |  **4.9** |          5.2 |  26.2 |        26.3 |
 
 > **What we see:** `tanstack-rac` (TanStack virtual + WAI-ARIA roles only) mounts
 > as fast as headless TanStack. The full RAC stack (`rac`) pays 10–30× more at
@@ -187,11 +187,11 @@ Run with `--libs tanstack,tanstack-rac,rac,rac-listbox` on 2026-06-21. See
 
 ### Memory after mount (lower is better, MB)
 
-| Scenario            | tanstack | tanstack-rac |   rac | rac-listbox |
-| ------------------- | -------: | -----------: | ----: | ----------: |
-| `mount-fixed-10k`   |  **3.3** |          6.3 |  13.9 |       534.0 |
-| `mount-fixed-100k`  |  **9.9** |         12.9 |  99.7 |           — |
-| `mount-dynamic-10k` |  **4.8** |          7.7 |  15.4 |       535.3 |
+| Scenario            | tanstack | tanstack-rac |  rac | rac-listbox |
+| ------------------- | -------: | -----------: | ---: | ----------: |
+| `mount-fixed-10k`   |  **3.3** |          6.3 | 13.9 |       534.0 |
+| `mount-fixed-100k`  |  **9.9** |         12.9 | 99.7 |           — |
+| `mount-dynamic-10k` |  **4.8** |          7.7 | 15.4 |       535.3 |
 
 > **What we see:** `rac-listbox` at 10k uses ~80× more heap than virtualized
 > libraries because all 10k React nodes stay mounted. RAC virtualized is ~2×
@@ -199,12 +199,12 @@ Run with `--libs tanstack,tanstack-rac,rac,rac-listbox` on 2026-06-21. See
 
 ### scrollToIndex landing accuracy — px offset from target (lower is better)
 
-| Scenario                                  | tanstack | tanstack-rac | rac  | rac-listbox |
-| ----------------------------------------- | -------: | -----------: | ---: | ----------: |
-| `jump-to-middle-accuracy-dynamic-10k`     |        0 |            0 |   −1 |           0 |
-| `jump-to-last-accuracy-dynamic-10k`       |        0 |            0 |   −1 |           0 |
-| `jump-while-measuring-accuracy-dynamic-10k` |      0 |            0 |   −1 |           0 |
-| `jump-wide-variance-accuracy-10k`         |        0 |            0 |   −1 |           0 |
+| Scenario                                    | tanstack | tanstack-rac | rac | rac-listbox |
+| ------------------------------------------- | -------: | -----------: | --: | ----------: |
+| `jump-to-middle-accuracy-dynamic-10k`       |        0 |            0 |  −1 |           0 |
+| `jump-to-last-accuracy-dynamic-10k`         |        0 |            0 |  −1 |           0 |
+| `jump-while-measuring-accuracy-dynamic-10k` |        0 |            0 |  −1 |           0 |
+| `jump-wide-variance-accuracy-10k`           |        0 |            0 |  −1 |           0 |
 
 > **What we see:** `−1` means the target row was not in the DOM after scroll
 > settled — RAC has no public `scrollToIndex`, so the harness uses layout-derived

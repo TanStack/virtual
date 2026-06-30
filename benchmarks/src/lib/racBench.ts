@@ -35,7 +35,9 @@ export function scrollRacToIndex(
       if (layoutInfo) {
         scrollTop =
           align === 'end'
-            ? layoutInfo.rect.y + layoutInfo.rect.height - container.clientHeight
+            ? layoutInfo.rect.y +
+              layoutInfo.rect.height -
+              container.clientHeight
             : layoutInfo.rect.y
       }
     } else if (align === 'end') {
