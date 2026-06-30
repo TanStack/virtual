@@ -1,4 +1,5 @@
 cleanupUnusedCatalogs: true
+minimumReleaseAge: 1440
 linkWorkspacePackages: true
 preferWorkspacePackages: true
 
@@ -25,4 +26,3 @@ allowBuilds:
 
   # @tanstack/vue-store
   vue-demi: false # only required for vue 2 support
-
