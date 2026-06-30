@@ -43,7 +43,7 @@ importers:
         version: 4.0.2
       nx:
         specifier: 22.1.3
-        version: 22.1.3
+        version: 22.1.3(debug@4.4.3)
       premove:
         specifier: ^4.0.0
         version: 4.0.0
@@ -142,7 +142,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -194,7 +194,7 @@ importers:
         specifier: ^19.0.0
         version: 19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@19.2.20(@angular/animations@19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -249,7 +249,7 @@ importers:
         specifier: 5.80.7
         version: 5.80.7(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -301,7 +301,7 @@ importers:
         specifier: ^19.0.0
         version: 19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@19.2.20(@angular/animations@19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -353,7 +353,7 @@ importers:
         specifier: ^19.0.0
         version: 19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@19.2.20(@angular/animations@19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -408,7 +408,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -466,7 +466,7 @@ importers:
         specifier: 8.21.3
         version: 8.21.3(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -518,7 +518,7 @@ importers:
         specifier: ^19.0.0
         version: 19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@19.2.20(@angular/animations@19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -570,7 +570,7 @@ importers:
         specifier: ^19.0.0
         version: 19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@19.2.20(@angular/animations@19.2.20(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@19.2.20(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.20(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^5.0.6
+        specifier: ^5.0.7
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -601,10 +601,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.13.31
+        specifier: ^3.13.32
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.17.2
+        specifier: ^3.17.3
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.3.0
@@ -626,10 +626,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.13.31
+        specifier: ^3.13.32
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.17.2
+        specifier: ^3.17.3
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.3.0
@@ -648,7 +648,7 @@ importers:
   examples/react/chat:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -679,7 +679,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -710,7 +710,7 @@ importers:
   examples/react/fixed:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -744,7 +744,7 @@ importers:
         specifier: ^5.80.7
         version: 5.90.5(react@19.2.7)
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -769,7 +769,7 @@ importers:
   examples/react/padding:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -797,7 +797,7 @@ importers:
         specifier: ^0.0.7
         version: 0.0.7
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -831,7 +831,7 @@ importers:
         specifier: ^25.1.1
         version: 25.1.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -856,7 +856,7 @@ importers:
   examples/react/smooth-scroll:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -884,7 +884,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       lodash:
         specifier: ^4.17.21
@@ -921,7 +921,7 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -946,7 +946,7 @@ importers:
   examples/react/variable:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -971,7 +971,7 @@ importers:
   examples/react/window:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.4
+        specifier: ^3.14.5
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1005,7 +1005,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1033,7 +1033,7 @@ importers:
   examples/svelte/fixed:
     dependencies:
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1064,7 +1064,7 @@ importers:
         specifier: ^5.80.7
         version: 5.90.2(svelte@4.2.20)
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1095,7 +1095,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1126,7 +1126,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/svelte-virtual
       lodash:
         specifier: ^4.17.21
@@ -1163,7 +1163,7 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(svelte@4.2.20)
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1194,7 +1194,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1219,7 +1219,7 @@ importers:
   examples/vue/fixed:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1247,7 +1247,7 @@ importers:
         specifier: ^5.80.7
         version: 5.90.5(vue@3.5.22(typescript@5.6.3))
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1272,7 +1272,7 @@ importers:
   examples/vue/padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1297,7 +1297,7 @@ importers:
   examples/vue/scroll-padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       '@vueuse/core':
         specifier: ^12.8.2
@@ -1325,7 +1325,7 @@ importers:
   examples/vue/smooth-scroll:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1353,7 +1353,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       lodash:
         specifier: ^4.17.21
@@ -1390,7 +1390,7 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(vue@3.5.22(typescript@5.6.3))
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1415,7 +1415,7 @@ importers:
   examples/vue/variable:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.30
+        specifier: ^3.13.31
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -5065,9 +5065,6 @@ packages:
     resolution: {integrity: sha512-zDMqXh8Vs1CdRYZQ2M633m/SFgcjlu8RB8b/1h82i+6vpArF507NSYIWJHGlJaTWoS+imcnctmEz43txhbVkOw==}
     engines: {node: '>=20'}
 
-  csstype@3.1.3:
-    resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
-
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
@@ -7818,6 +7815,7 @@ packages:
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
     engines: {node: ^18 || >=20}
+    deprecated: unmaintained
     hasBin: true
     peerDependencies:
       typescript: ^5.0.0
@@ -7945,6 +7943,7 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   validate-npm-package-license@3.0.4:
@@ -8391,7 +8390,7 @@ snapshots:
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.1902.24(chokidar@4.0.3)
-      '@angular-devkit/build-webpack': 0.1902.24(chokidar@4.0.3)(webpack-dev-server@5.2.2(webpack@5.105.0))(webpack@5.105.0(esbuild@0.25.4))
+      '@angular-devkit/build-webpack': 0.1902.24(chokidar@4.0.3)(webpack-dev-server@5.2.2(webpack@5.105.0(esbuild@0.25.4)))(webpack@5.105.0(esbuild@0.25.4))
       '@angular-devkit/core': 19.2.24(chokidar@4.0.3)
       '@angular/build': 19.2.24(@angular/compiler-cli@19.2.20(@angular/compiler@19.2.20)(typescript@5.6.3))(@angular/compiler@19.2.20)(@types/node@24.9.2)(chokidar@4.0.3)(jiti@2.6.1)(less@4.2.2)(postcss@8.5.2)(terser@5.39.0)(typescript@5.6.3)(yaml@2.8.1)
       '@angular/compiler-cli': 19.2.20(@angular/compiler@19.2.20)(typescript@5.6.3)
@@ -8442,8 +8441,8 @@ snapshots:
       tslib: 2.8.1
       typescript: 5.6.3
       webpack: 5.105.0(esbuild@0.25.4)
-      webpack-dev-middleware: 7.4.2(webpack@5.105.0)
-      webpack-dev-server: 5.2.2(webpack@5.105.0)
+      webpack-dev-middleware: 7.4.2(webpack@5.105.0(esbuild@0.25.4))
+      webpack-dev-server: 5.2.2(webpack@5.105.0(esbuild@0.25.4))
       webpack-merge: 6.0.1
       webpack-subresource-integrity: 5.1.0(webpack@5.105.0(esbuild@0.25.4))
     optionalDependencies:
@@ -8471,12 +8470,12 @@ snapshots:
       - webpack-cli
       - yaml
 
-  '@angular-devkit/build-webpack@0.1902.24(chokidar@4.0.3)(webpack-dev-server@5.2.2(webpack@5.105.0))(webpack@5.105.0(esbuild@0.25.4))':
+  '@angular-devkit/build-webpack@0.1902.24(chokidar@4.0.3)(webpack-dev-server@5.2.2(webpack@5.105.0(esbuild@0.25.4)))(webpack@5.105.0(esbuild@0.25.4))':
     dependencies:
       '@angular-devkit/architect': 0.1902.24(chokidar@4.0.3)
       rxjs: 7.8.1
       webpack: 5.105.0(esbuild@0.25.4)
-      webpack-dev-server: 5.2.2(webpack@5.105.0)
+      webpack-dev-server: 5.2.2(webpack@5.105.0(esbuild@0.25.4))
     transitivePeerDependencies:
       - chokidar
 
@@ -8716,7 +8715,7 @@ snapshots:
 
   '@babel/core@7.28.5':
     dependencies:
-      '@babel/code-frame': 7.27.1
+      '@babel/code-frame': 7.29.0
       '@babel/generator': 7.28.5
       '@babel/helper-compilation-targets': 7.27.2
       '@babel/helper-module-transforms': 7.28.3(@babel/core@7.28.5)
@@ -8762,7 +8761,7 @@ snapshots:
     dependencies:
       '@babel/compat-data': 7.28.5
       '@babel/helper-validator-option': 7.27.1
-      browserslist: 4.27.0
+      browserslist: 4.28.2
       lru-cache: 5.1.1
       semver: 6.3.1
 
@@ -9404,13 +9403,13 @@ snapshots:
 
   '@babel/template@7.27.2':
     dependencies:
-      '@babel/code-frame': 7.27.1
+      '@babel/code-frame': 7.29.0
       '@babel/parser': 7.28.5
       '@babel/types': 7.28.5
 
   '@babel/traverse@7.28.5':
     dependencies:
-      '@babel/code-frame': 7.27.1
+      '@babel/code-frame': 7.29.0
       '@babel/generator': 7.28.5
       '@babel/helper-globals': 7.28.0
       '@babel/parser': 7.28.5
@@ -11783,7 +11782,7 @@ snapshots:
 
   axe-core@4.11.0: {}
 
-  axios@1.13.1:
+  axios@1.13.1(debug@4.4.3):
     dependencies:
       follow-redirects: 1.15.11(debug@4.4.3)
       form-data: 4.0.4
@@ -12236,8 +12235,6 @@ snapshots:
       '@asamuzakjp/css-color': 4.0.5
       '@csstools/css-syntax-patches-for-csstree': 1.0.15
       css-tree: 3.1.0
-
-  csstype@3.1.3: {}
 
   csstype@3.2.3: {}
 
@@ -13936,13 +13933,13 @@ snapshots:
     dependencies:
       boolbase: 1.0.0
 
-  nx@22.1.3:
+  nx@22.1.3(debug@4.4.3):
     dependencies:
       '@napi-rs/wasm-runtime': 0.2.4
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.2
       '@zkochan/js-yaml': 0.0.7
-      axios: 1.13.1
+      axios: 1.13.1(debug@4.4.3)
       chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
@@ -14858,7 +14855,7 @@ snapshots:
 
   solid-js@1.9.10:
     dependencies:
-      csstype: 3.1.3
+      csstype: 3.2.3
       seroval: 1.3.2
       seroval-plugins: 1.3.3(seroval@1.3.2)
 
@@ -15077,7 +15074,7 @@ snapshots:
 
   term-size@2.2.1: {}
 
-  terser-webpack-plugin@5.4.0(esbuild@0.25.4)(webpack@5.105.0):
+  terser-webpack-plugin@5.4.0(esbuild@0.25.4)(webpack@5.105.0(esbuild@0.25.4)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
@@ -15461,7 +15458,7 @@ snapshots:
 
   webidl-conversions@8.0.0: {}
 
-  webpack-dev-middleware@7.4.2(webpack@5.105.0):
+  webpack-dev-middleware@7.4.2(webpack@5.105.0(esbuild@0.25.4)):
     dependencies:
       colorette: 2.0.20
       memfs: 4.50.0
@@ -15472,7 +15469,7 @@ snapshots:
     optionalDependencies:
       webpack: 5.105.0(esbuild@0.25.4)
 
-  webpack-dev-server@5.2.2(webpack@5.105.0):
+  webpack-dev-server@5.2.2(webpack@5.105.0(esbuild@0.25.4)):
     dependencies:
       '@types/bonjour': 3.5.13
       '@types/connect-history-api-fallback': 1.5.4
@@ -15500,7 +15497,7 @@ snapshots:
       serve-index: 1.9.1
       sockjs: 0.3.24
       spdy: 4.0.2
-      webpack-dev-middleware: 7.4.2(webpack@5.105.0)
+      webpack-dev-middleware: 7.4.2(webpack@5.105.0(esbuild@0.25.4))
       ws: 8.18.3
     optionalDependencies:
       webpack: 5.105.0(esbuild@0.25.4)
@@ -15547,7 +15544,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.0
-      terser-webpack-plugin: 5.4.0(esbuild@0.25.4)(webpack@5.105.0)
+      terser-webpack-plugin: 5.4.0(esbuild@0.25.4)(webpack@5.105.0(esbuild@0.25.4))
       watchpack: 2.5.1
       webpack-sources: 3.3.3
     transitivePeerDependencies:

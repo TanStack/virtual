@@ -1,5 +1,15 @@
 # @tanstack/virtual-core
 
+## 3.17.3
+
+### Patch Changes
+
+- [#1206](https://github.com/TanStack/virtual/pull/1206) [`767ead4`](https://github.com/TanStack/virtual/commit/767ead46e4fab761fd6e15bcf281486042723152) - Cut per-scroll-frame allocations on the default `lanes === 1` path. Range computation previously allocated an options object and two closures on every scroll event; it now does the same work allocation-free, reducing GC pressure during continuous scroll.
+
+- [#1212](https://github.com/TanStack/virtual/pull/1212) [`bc8643b`](https://github.com/TanStack/virtual/commit/bc8643b7579e10e512654f58269de13d98b48781) - Don't latch a scroll direction from the read-back of the virtualizer's own adjustment write
+
+  `applyScrollAdjustment` folds the pending adjustment into `scrollOffset` eagerly, so the browser's scroll event for that write arrives at exactly the held offset. The scroll-direction computation treated that equality as `'backward'`, which made the default `shouldAdjustScrollPositionOnItemSizeChange` skip above-viewport re-measure compensation for the rest of the `isScrollingResetDelay` window — so during multi-frame reflows (e.g. a side pane's width animation re-wrapping rows while scrolled up) most frames went uncompensated and the viewport drifted. An event at the held offset carries no direction information, so the direction now stays unchanged in that case; real gestures always move the offset and still latch normally.
+
 ## 3.17.2
 
 ### Patch Changes
