@@ -816,10 +816,17 @@ export class Virtualizer<
           this._intendedScrollOffset = null
 
           this.scrollAdjustments = 0
+          // If the offset hasn't moved, this is the echo of our own
+          // adjustment write — `applyScrollAdjustment` already folded it
+          // into `scrollOffset`. There's no direction to infer, so leave
+          // it alone; a real gesture always moves the offset.
+          const prevOffset = this.getScrollOffset()
           this.scrollDirection = isScrolling
-            ? this.getScrollOffset() < offset
-              ? 'forward'
-              : 'backward'
+            ? prevOffset === offset
+              ? this.scrollDirection
+              : prevOffset < offset
+                ? 'forward'
+                : 'backward'
             : null
           this.scrollOffset = offset
           this.isScrolling = isScrolling

@@ -2214,6 +2214,203 @@ test('scroll-up jank: idle (scrollDirection=null) still applies adjustment', () 
   expect(scrollToFn).toHaveBeenCalled()
 })
 
+// ─── scroll direction vs. self-write read-backs ─────────────────────────────
+//
+// `applyScrollAdjustment` folds the pending adjustment into `scrollOffset`
+// eagerly, so the browser's scroll event for our own `scrollTop` write
+// arrives at exactly the offset we already hold (directly, or snapped there
+// by the `_intendedScrollOffset` sub-pixel reconciliation). That equality
+// carries no directional information — it must not be classified as a
+// `'backward'` gesture, or the default
+// `shouldAdjustScrollPositionOnItemSizeChange` skips above-viewport
+// compensation for the whole `isScrollingResetDelay` window (see the
+// multi-frame reflow test below).
+
+function createAdjustmentVirtualizer({
+  count = 30,
+  offset,
+}: {
+  count?: number
+  offset: number
+}) {
+  const scrollToFn = vi.fn()
+  let scrollCb: ((o: number, s: boolean) => void) | null = null
+  const v = new Virtualizer({
+    count,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: offset,
+        scrollLeft: 0,
+        scrollHeight: count * 50,
+        clientHeight: 200,
+        offsetHeight: 200,
+      }) as any,
+    scrollToFn,
+    observeElementRect: (_inst: any, cb: any) => {
+      cb({ width: 400, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_inst: any, cb: any) => {
+      scrollCb = cb
+      cb(offset, false)
+      return () => {}
+    },
+  })
+  v._didMount()
+  v._willUpdate()
+  v['getMeasurements']()
+  scrollToFn.mockClear()
+  return {
+    v,
+    scrollToFn,
+    emitScroll: (o: number, isScrolling: boolean) => scrollCb!(o, isScrolling),
+  }
+}
+
+test('self-write read-back of a positive adjustment does not latch a scroll direction', () => {
+  const { v, scrollToFn, emitScroll } = createAdjustmentVirtualizer({
+    offset: 600,
+  })
+
+  v['applyScrollAdjustment'](40)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  // The adjustment is already folded into `scrollOffset`.
+  expect(v.scrollOffset).toBe(640)
+
+  // Browser read-back of our own write: a scroll event at exactly the
+  // offset we already hold.
+  emitScroll(640, true)
+
+  // The event traversed the listener (not swallowed by a no-op guard)...
+  expect(v.isScrolling).toBe(true)
+  // ...but an echo of our own write carries no direction information.
+  expect(v.scrollDirection).toBeNull()
+})
+
+test('self-write read-back of a negative adjustment does not latch a scroll direction', () => {
+  const { v, emitScroll } = createAdjustmentVirtualizer({ offset: 600 })
+
+  v['applyScrollAdjustment'](-40)
+  expect(v.scrollOffset).toBe(560)
+
+  emitScroll(560, true)
+
+  expect(v.isScrolling).toBe(true)
+  expect(v.scrollDirection).toBeNull()
+})
+
+test('self-write read-back rounded by the browser still does not latch a direction', () => {
+  const { v, emitScroll } = createAdjustmentVirtualizer({ offset: 600 })
+
+  v['applyScrollAdjustment'](40.5)
+  expect(v.scrollOffset).toBe(640.5)
+
+  // The browser rounds the write to an integer; the `_intendedScrollOffset`
+  // reconciliation snaps the read-back to the held value.
+  emitScroll(640, true)
+
+  expect(v.isScrolling).toBe(true)
+  expect(v.scrollDirection).toBeNull()
+  expect(v.scrollOffset).toBe(640.5)
+})
+
+test('real scroll gestures still latch forward/backward and reset to null', () => {
+  const { v, emitScroll } = createAdjustmentVirtualizer({ offset: 600 })
+
+  emitScroll(650, true)
+  expect(v.scrollDirection).toBe('forward')
+  emitScroll(700, true)
+  expect(v.scrollDirection).toBe('forward')
+
+  emitScroll(620, true)
+  expect(v.scrollDirection).toBe('backward')
+  emitScroll(540, true)
+  expect(v.scrollDirection).toBe('backward')
+
+  // Debounced reset emission after the gesture ends.
+  emitScroll(540, false)
+  expect(v.scrollDirection).toBeNull()
+  expect(v.isScrolling).toBe(false)
+})
+
+test('adjustment read-back during a real backward gesture preserves the direction', () => {
+  const { v, emitScroll } = createAdjustmentVirtualizer({ offset: 600 })
+
+  // Real backward gesture: the user is scrolling up.
+  emitScroll(500, true)
+  expect(v.scrollDirection).toBe('backward')
+
+  // A compensation write lands mid-gesture; its read-back arrives at
+  // exactly the held offset. The user is still scrolling up, so the
+  // direction must survive, not be erased.
+  v['applyScrollAdjustment'](30)
+  expect(v.scrollOffset).toBe(530)
+  emitScroll(530, true)
+
+  expect(v.isScrolling).toBe(true)
+  expect(v.scrollDirection).toBe('backward')
+
+  // After the reset emission, a fresh adjustment read-back must yield
+  // null — not a stale 'backward' from before the reset.
+  emitScroll(530, false)
+  expect(v.scrollDirection).toBeNull()
+
+  v['applyScrollAdjustment'](30)
+  expect(v.scrollOffset).toBe(560)
+  emitScroll(560, true)
+  expect(v.isScrolling).toBe(true)
+  expect(v.scrollDirection).toBeNull()
+})
+
+test('multi-frame reflow: above-viewport re-measure compensation is never skipped by self-write read-backs', () => {
+  // The end-to-end shape of the bug, with the DEFAULT
+  // shouldAdjustScrollPositionOnItemSizeChange: a side pane opens and its
+  // width animation re-wraps rows for several frames while the user sits
+  // scrolled up. Each frame re-measures above-viewport rows; the browser
+  // echoes the compensation write back as a scroll event before the next
+  // frame's ResizeObserver callbacks (scroll fires before RO in the
+  // rendering steps). If that echo latches 'backward', every later frame's
+  // re-measure is skipped until the isScrollingResetDelay reset and the
+  // viewport drifts.
+  const { v, scrollToFn, emitScroll } = createAdjustmentVirtualizer({
+    offset: 600,
+  })
+
+  // Pre-measure the rows we'll re-wrap so they're in itemSizeCache — the
+  // backward-skip leg of the default predicate only applies to re-measures.
+  for (let i = 0; i < 5; i++) {
+    v.resizeItem(i, 55)
+    v['getMeasurements']()
+  }
+  // 5 first measurements × +5 each were compensated and folded.
+  expect(v.scrollOffset).toBe(625)
+  // Settle: the browser caught up and the scrolling window expired.
+  emitScroll(625, false)
+  expect(v.isScrolling).toBe(false)
+  expect(v.scrollDirection).toBeNull()
+  scrollToFn.mockClear()
+
+  // The reflow: 5 frames, each re-measures one above-viewport row +20px,
+  // then the browser delivers the scroll event for the compensation write
+  // the way it would between frames.
+  for (let i = 0; i < 5; i++) {
+    const before = v.scrollOffset!
+    v.resizeItem(i, 75)
+    v['getMeasurements']()
+    if (v.scrollOffset! !== before) {
+      // A compensation write happened — deliver its read-back.
+      emitScroll(v.scrollOffset!, true)
+    }
+  }
+
+  // Every frame's above-viewport delta must have been compensated:
+  // 625 + 5 × 20 = 725. If the first frame's read-back latched 'backward',
+  // frames 2-5 were skipped and the offset is stuck at 645.
+  expect(scrollToFn).toHaveBeenCalledTimes(5)
+  expect(v.scrollOffset).toBe(725)
+})
+
 // ─── end anchoring / chat-style reverse virtualization ──────────────────────
 
 function createChatVirtualizer({
