@@ -6,6 +6,9 @@
     "url": "git+https://github.com/TanStack/virtual.git"
   },
   "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "pnpm": ">=11.9.0"
+  },
   "type": "module",
   "scripts": {
     "clean": "pnpm --filter \"./packages/**\" run clean",
