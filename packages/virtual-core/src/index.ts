@@ -1935,7 +1935,11 @@ function calculateRangeImpl(
 
   if (lanes === 1 && flat !== null) {
     // Hot single-lane path: typed-array reads, no closures, no Proxy traps.
-    const startIndex = findNearestBinarySearchFlat(flat, lastIndex, scrollOffset)
+    const startIndex = findNearestBinarySearchFlat(
+      flat,
+      lastIndex,
+      scrollOffset,
+    )
     let endIndex = startIndex
     const limit = scrollOffset + outerSize
     while (
