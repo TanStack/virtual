@@ -5,9 +5,9 @@
     "type": "git",
     "url": "git+https://github.com/TanStack/virtual.git"
   },
-  "packageManager": "pnpm@11.1.0",
+  "packageManager": "pnpm@11.9.0",
   "engines": {
-    "pnpm": ">=11.0.0"
+    "pnpm": ">=11.9.0"
   },
   "type": "module",
   "scripts": {
@@ -31,7 +31,9 @@
     "format": "prettier --experimental-cli --ignore-unknown '**/*' --write",
     "changeset": "changeset",
     "changeset:version": "changeset version && pnpm install --no-frozen-lockfile && pnpm format",
-    "changeset:publish": "changeset publish"
+    "changeset:publish": "changeset publish",
+    "verify-links": "node scripts/verify-links.ts",
+    "verify-examples": "node scripts/verify-examples.ts"
   },
   "nx": {
     "includedScripts": [
@@ -41,9 +43,9 @@
     ]
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.30.0",
     "@playwright/test": "^1.53.1",
-    "@svitejs/changesets-changelog-github-compact": "^1.2.0",
     "@tanstack/eslint-config": "0.3.4",
     "@tanstack/vite-config": "0.4.3",
     "@testing-library/jest-dom": "^6.6.3",

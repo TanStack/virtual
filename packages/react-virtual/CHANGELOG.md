@@ -1,5 +1,48 @@
 # @tanstack/react-virtual
 
+## 3.14.4
+
+### Patch Changes
+
+- Updated dependencies [[`b04f9ee`](https://github.com/TanStack/virtual/commit/b04f9ee48f0812e89156c1dac1fa58277cc32464), [`37be284`](https://github.com/TanStack/virtual/commit/37be28427ba52399ce8884e0006933e83f2645e9)]:
+  - @tanstack/virtual-core@3.17.2
+
+## 3.14.3
+
+### Patch Changes
+
+- [#1201](https://github.com/TanStack/virtual/pull/1201) [`2ba5eb6`](https://github.com/TanStack/virtual/commit/2ba5eb60f108f4ba9b2bd9570bbd41f9ce618438) - Make `directDomUpdates` a no-op for direct DOM writes when `containerRef` is omitted. Previously the virtualizer still wrote item positions while never sizing the container (a broken half-state). Now omitting `containerRef` skips all direct writes while still skipping re-renders, letting consumers own the DOM updates themselves (e.g. in `onChange`).
+
+- Updated dependencies [[`ef69ea3`](https://github.com/TanStack/virtual/commit/ef69ea31738caa2819142e922efa03d3c408e25c)]:
+  - @tanstack/virtual-core@3.17.1
+
+## 3.14.2
+
+### Patch Changes
+
+- Updated dependencies [[`c0b84c8`](https://github.com/TanStack/virtual/commit/c0b84c83f03de1244649f9838a408faf75ed29c9), [`fbf3bdb`](https://github.com/TanStack/virtual/commit/fbf3bdbe38a2b1bf22c65a89752b7b9c07a77266)]:
+  - @tanstack/virtual-core@3.17.0
+
+## 3.14.1
+
+### Patch Changes
+
+- Updated dependencies [[`c746841`](https://github.com/TanStack/virtual/commit/c7468416354c203cd7cc952da5997073394224fb)]:
+  - @tanstack/virtual-core@3.16.1
+
+## 3.14.0
+
+### Minor Changes
+
+- Add opt-in direct DOM updates for scroll positioning with `directDomUpdates`, `directDomUpdatesMode`, and `containerRef`. ([#1180](https://github.com/TanStack/virtual/pull/1180))
+
+## 3.13.26
+
+### Patch Changes
+
+- Updated dependencies [[`fc992ab`](https://github.com/TanStack/virtual/commit/fc992ab00a15166311b79bd7580736cf01e8cc1a)]:
+  - @tanstack/virtual-core@3.16.0
+
 ## 3.13.25
 
 ### Patch Changes

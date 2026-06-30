@@ -1,5 +1,49 @@
 # @tanstack/virtual-core
 
+## 3.17.2
+
+### Patch Changes
+
+- [#1208](https://github.com/TanStack/virtual/pull/1208) [`b04f9ee`](https://github.com/TanStack/virtual/commit/b04f9ee48f0812e89156c1dac1fa58277cc32464) - Skip redundant scroll events at unchanged offset
+
+- [#1209](https://github.com/TanStack/virtual/pull/1209) [`37be284`](https://github.com/TanStack/virtual/commit/37be28427ba52399ce8884e0006933e83f2645e9) - Sync `scrollOffset` in `applyScrollAdjustment` so end-anchored streaming resize isn't lost to browser clamp
+
+  With `anchorTo: 'end'` and a dynamically growing last item (token streaming), `resizeItem` writes the scroll adjustment to `scrollTop` before the consumer has grown the sizer, so the browser clamps the write and no scroll event fires. `scrollOffset` stayed stale, the next tick's `wasAtEnd` check failed, and the viewport drifted away from the end. This fix carries the intended target in `scrollOffset` (zeroing `scrollAdjustments`) the same way the prepend path in `setOptions` does, so the next `getVirtualDistanceFromEnd()` reads the post-adjustment position.
+
+## 3.17.1
+
+### Patch Changes
+
+- [#1199](https://github.com/TanStack/virtual/pull/1199) [`ef69ea3`](https://github.com/TanStack/virtual/commit/ef69ea31738caa2819142e922efa03d3c408e25c) - Fix "items jump while scrolling up": the default scroll-adjustment predicate now compensates scrollTop on the first measurement of an above-viewport item even while scrolling backward (the estimate→actual delta must be absorbed), and only skips compensation for re-measurements during backward scroll to avoid the cascading jank
+
+## 3.17.0
+
+### Minor Changes
+
+- [#1186](https://github.com/TanStack/virtual/pull/1186) [`fbf3bdb`](https://github.com/TanStack/virtual/commit/fbf3bdbe38a2b1bf22c65a89752b7b9c07a77266) - Add `useCachedMeasurements` option to skip DOM measurement when the list is hidden (e.g. `display: none`). When enabled, the default `measureElement` returns the cached size or `estimateSize` fallback instead of reading the DOM, preventing ResizeObserver from resetting measurements to zero.
+
+### Patch Changes
+
+- [#1183](https://github.com/TanStack/virtual/pull/1183) [`c0b84c8`](https://github.com/TanStack/virtual/commit/c0b84c83f03de1244649f9838a408faf75ed29c9) - Skip synchronous DOM read (offsetWidth/offsetHeight) in default measureElement when a cached size already exists, reducing layout reflow on re-renders
+
+## 3.16.1
+
+### Patch Changes
+
+- Eagerly adjust scrollOffset on prepend to prevent one-frame jump with anchorTo: 'end' ([#1176](https://github.com/TanStack/virtual/pull/1176))
+
+  When items are prepended with `anchorTo: 'end'` and dynamic sizes, the virtualizer would compute the wrong visible range for one frame (using stale estimate-based positions) and then correct in the next frame via `_willUpdate`, producing a visible jump. This fix eagerly adjusts `scrollOffset` in `setOptions` during the render pass so `calculateRange`/`getVirtualItems` return the correct items immediately.
+
+## 3.16.0
+
+### Minor Changes
+
+- Add end-anchored virtualization support for chat, logs, and reverse feeds. ([#1173](https://github.com/TanStack/virtual/pull/1173))
+
+  New `anchorTo: 'end'` mode keeps the current visible item stable when older items are prepended, while preserving the existing start-anchored behavior by default. It also keeps an end-pinned viewport pinned when the last item grows during streaming output.
+
+  Add `followOnAppend` so new items scroll into view only when the viewport was already at the end, plus `scrollEndThreshold`, `scrollToEnd()`, `getDistanceFromEnd()`, and `isAtEnd()` helpers for chat-style integrations.
+
 ## 3.15.0
 
 ### Minor Changes

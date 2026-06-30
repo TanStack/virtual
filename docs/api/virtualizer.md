@@ -245,6 +245,44 @@ Controls when lane assignments are cached in a masonry layout.
 - `'estimate'` (default): lane assignments are cached immediately based on `estimateSize`. This keeps items from jumping between lanes, but assignments may be suboptimal when the estimate is inaccurate.
 - `'measured'`: lane caching is deferred until items are measured via `measureElement`, so assignments reflect actual measured sizes. After the initial measurement, lanes are cached and remain stable.
 
+### `anchorTo`
+
+```tsx
+anchorTo?: 'start' | 'end'
+```
+
+**Default:** `'start'`
+
+Controls which side of the scrollable content should be treated as the stable anchor when list data changes. The default `'start'` preserves TanStack Virtual's existing top/left anchored behavior.
+
+Set `anchorTo: 'end'` for chat, logs, and reverse/inverted feeds. In end-anchored mode, the virtualizer keeps the current visible item stable when older items are prepended, and keeps an end-pinned viewport pinned when the last item grows during streaming output. See the [Chat guide](../chat) for the full pattern.
+
+For prepend stability, use a stable `getItemKey` based on each item's persistent id. Index keys cannot distinguish prepends from appends after items shift.
+
+### `followOnAppend`
+
+```tsx
+followOnAppend?: boolean | 'auto' | 'smooth' | 'instant'
+```
+
+**Default:** `false`
+
+When used with `anchorTo: 'end'`, controls whether the virtualizer scrolls to the end after new items are appended. The follow only happens if the viewport was already at the end before the append; users who have scrolled up to read history are not pulled down.
+
+Passing `true` is equivalent to `'auto'`. Passing a scroll behavior uses that behavior for the follow.
+
+This option does not follow prepends. It only follows appended output, and only when the viewport was already within `scrollEndThreshold` of the end before the append.
+
+### `scrollEndThreshold`
+
+```tsx
+scrollEndThreshold?: number
+```
+
+**Default:** `1`
+
+The pixel threshold used by `isAtEnd()` and `followOnAppend` to decide whether the viewport is close enough to the end to count as pinned.
+
 ### `isScrollingResetDelay`
 
 ```tsx
@@ -307,6 +345,22 @@ When enabled, defers ResizeObserver measurement processing to the next animation
 - **Defeats optimization:** The browser has already computed the measurements synchronously; deferring them provides no performance benefit for reading values
 
 Only enable this option if you have a specific reason and have measured that it improves your use case.
+
+### `useCachedMeasurements`
+
+```tsx
+useCachedMeasurements?: boolean
+```
+
+**Default:** `false`
+
+When enabled, the default `measureElement` implementation skips DOM measurement and returns the previously cached size for each item (falling back to `estimateSize` if no cached size exists).
+
+This is useful when the virtualized list is temporarily hidden (e.g. via `display: none` on a parent element). Without this option, the ResizeObserver fires with size `0` for all items when hidden, resetting all measurements. When the list becomes visible again, items may need to be re-measured, which can cause layout shifts.
+
+**Usage:** Toggle this option to `true` before hiding the list and back to `false` when showing it. The ResizeObserver remains attached, so real measurements resume automatically when the flag is turned off and elements become visible again.
+
+> ⚠️ This option only affects the default `measureElement`. If you provide a custom `measureElement`, you are responsible for handling this case yourself.
 
 ## Virtualizer Instance
 
@@ -388,6 +442,40 @@ scrollBy: (
 ```
 
 Scrolls the virtualizer by the specified number of pixels relative to the current scroll position.
+
+### `scrollToEnd`
+
+```tsx
+scrollToEnd: (
+  options?: {
+    behavior?: 'auto' | 'smooth' | 'instant'
+  }
+) => void
+```
+
+Scrolls the virtualizer to the end of the content. For vertical lists this is the bottom; for horizontal lists this is the right edge.
+
+This is useful for "Jump to latest" controls in chat and log views.
+
+### `getDistanceFromEnd`
+
+```tsx
+getDistanceFromEnd: () => number
+```
+
+Returns the current pixel distance from the end of the virtualized content.
+
+For a vertical list, this is the distance from the bottom.
+
+### `isAtEnd`
+
+```tsx
+isAtEnd: (threshold?: number) => boolean
+```
+
+Returns whether the viewport is within `threshold` pixels of the end. If no threshold is provided, `scrollEndThreshold` is used.
+
+Use this to decide whether to show "Jump to latest" UI or whether incoming output should be treated as pinned.
 
 ### `getTotalSize`
 
