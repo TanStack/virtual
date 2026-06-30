@@ -35,10 +35,7 @@
         {
           "label": "solid",
           "children": [
-            {
-              "label": "Solid Virtual",
-              "to": "framework/solid/solid-virtual"
-            }
+            { "label": "Solid Virtual", "to": "framework/solid/solid-virtual" }
           ]
         },
         {
@@ -77,14 +74,8 @@
     {
       "label": "Core APIs",
       "children": [
-        {
-          "label": "Virtualizer",
-          "to": "api/virtualizer"
-        },
-        {
-          "label": "VirtualItem",
-          "to": "api/virtual-item"
-        }
+        { "label": "Virtualizer", "to": "api/virtualizer" },
+        { "label": "VirtualItem", "to": "api/virtual-item" }
       ]
     },
     {
