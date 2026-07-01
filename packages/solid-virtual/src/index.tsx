@@ -15,7 +15,7 @@ import {
   onCleanup,
   onMount,
 } from 'solid-js'
-import { createStore, reconcile } from 'solid-js/store'
+import { createStore } from 'solid-js/store'
 import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
@@ -71,11 +71,7 @@ function createVirtualizerBase<
           sync: boolean,
         ) => {
           instance._willUpdate()
-          setVirtualItems(
-            reconcile(instance.getVirtualItems(), {
-              key: 'index',
-            }),
-          )
+          setVirtualItems([...instance.getVirtualItems()])
           setTotalSize(instance.getTotalSize())
           options.onChange?.(instance, sync)
         },
