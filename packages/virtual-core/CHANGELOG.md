@@ -1,5 +1,31 @@
 # @tanstack/virtual-core
 
+## 3.17.3
+
+### Patch Changes
+
+- [#1206](https://github.com/TanStack/virtual/pull/1206) [`767ead4`](https://github.com/TanStack/virtual/commit/767ead46e4fab761fd6e15bcf281486042723152) - Cut per-scroll-frame allocations on the default `lanes === 1` path. Range computation previously allocated an options object and two closures on every scroll event; it now does the same work allocation-free, reducing GC pressure during continuous scroll.
+
+- [#1212](https://github.com/TanStack/virtual/pull/1212) [`bc8643b`](https://github.com/TanStack/virtual/commit/bc8643b7579e10e512654f58269de13d98b48781) - Don't latch a scroll direction from the read-back of the virtualizer's own adjustment write
+
+  `applyScrollAdjustment` folds the pending adjustment into `scrollOffset` eagerly, so the browser's scroll event for that write arrives at exactly the held offset. The scroll-direction computation treated that equality as `'backward'`, which made the default `shouldAdjustScrollPositionOnItemSizeChange` skip above-viewport re-measure compensation for the rest of the `isScrollingResetDelay` window — so during multi-frame reflows (e.g. a side pane's width animation re-wrapping rows while scrolled up) most frames went uncompensated and the viewport drifted. An event at the held offset carries no direction information, so the direction now stays unchanged in that case; real gestures always move the offset and still latch normally.
+
+## 3.17.2
+
+### Patch Changes
+
+- [#1208](https://github.com/TanStack/virtual/pull/1208) [`b04f9ee`](https://github.com/TanStack/virtual/commit/b04f9ee48f0812e89156c1dac1fa58277cc32464) - Skip redundant scroll events at unchanged offset
+
+- [#1209](https://github.com/TanStack/virtual/pull/1209) [`37be284`](https://github.com/TanStack/virtual/commit/37be28427ba52399ce8884e0006933e83f2645e9) - Sync `scrollOffset` in `applyScrollAdjustment` so end-anchored streaming resize isn't lost to browser clamp
+
+  With `anchorTo: 'end'` and a dynamically growing last item (token streaming), `resizeItem` writes the scroll adjustment to `scrollTop` before the consumer has grown the sizer, so the browser clamps the write and no scroll event fires. `scrollOffset` stayed stale, the next tick's `wasAtEnd` check failed, and the viewport drifted away from the end. This fix carries the intended target in `scrollOffset` (zeroing `scrollAdjustments`) the same way the prepend path in `setOptions` does, so the next `getVirtualDistanceFromEnd()` reads the post-adjustment position.
+
+## 3.17.1
+
+### Patch Changes
+
+- [#1199](https://github.com/TanStack/virtual/pull/1199) [`ef69ea3`](https://github.com/TanStack/virtual/commit/ef69ea31738caa2819142e922efa03d3c408e25c) - Fix "items jump while scrolling up": the default scroll-adjustment predicate now compensates scrollTop on the first measurement of an above-viewport item even while scrolling backward (the estimate→actual delta must be absorbed), and only skips compensation for re-measurements during backward scroll to avoid the cascading jank
+
 ## 3.17.0
 
 ### Minor Changes

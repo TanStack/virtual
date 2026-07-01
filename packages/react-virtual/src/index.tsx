@@ -111,10 +111,10 @@ function useVirtualizerBase<
     instance: Virtualizer<TScrollElement, TItemElement>,
   ) => {
     const state = directRef.current
-    if (!state.enabled) return
+    if (!state.enabled || !state.container) return
 
     const totalSize = instance.getTotalSize()
-    if (state.container && totalSize !== state.lastSize) {
+    if (totalSize !== state.lastSize) {
       state.lastSize = totalSize
       const sizeAxis = instance.options.horizontal ? 'width' : 'height'
       state.container.style[sizeAxis] = `${totalSize}px`

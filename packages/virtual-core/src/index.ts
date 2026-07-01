@@ -692,6 +692,19 @@ export class Virtualizer<
         adjustments: (this.scrollAdjustments += delta),
         behavior,
       })
+      // Eagerly carry the intended target in `scrollOffset` so callers that
+      // read it before the next scroll event — notably the next `resizeItem`
+      // tick's `getVirtualDistanceFromEnd()` / `wasAtEnd` check — see the
+      // post-adjustment position even when the DOM `scrollTop` write was
+      // clamped because the consumer hasn't grown the sizer yet (`notify()`
+      // runs after this in `resizeItem`). Same idea as the eager
+      // `scrollOffset` adjustment for prepend in `setOptions` (#1176). The
+      // adjustment is now baked into `scrollOffset`, so zero
+      // `scrollAdjustments` to keep their sum invariant.
+      if (this.scrollOffset !== null) {
+        this.scrollOffset += this.scrollAdjustments
+        this.scrollAdjustments = 0
+      }
     }
   }
 
@@ -772,6 +785,21 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset, isScrolling) => {
+          // A scroll event that reports movement but lands on the offset we
+          // already hold — and isn't a self-write read-back — is a spurious
+          // no-op re-emit that Safari/Firefox fire after a re-render's layout
+          // (Chrome doesn't). Treating it as scrolling re-arms `isScrolling`,
+          // which forces a render that triggers another such event: an
+          // infinite re-render loop. Ignore it. (Self-writes are handled by
+          // the `_intendedScrollOffset` reconciliation just below.)
+          if (
+            isScrolling &&
+            this._intendedScrollOffset === null &&
+            offset === this.scrollOffset
+          ) {
+            return
+          }
+
           // If this scroll event looks like the browser's read-back of a
           // value we just wrote, prefer our intended (sub-pixel-accurate)
           // value over the browser's rounded one. The 1.5 px tolerance is
@@ -788,10 +816,17 @@ export class Virtualizer<
           this._intendedScrollOffset = null
 
           this.scrollAdjustments = 0
+          // If the offset hasn't moved, this is the echo of our own
+          // adjustment write — `applyScrollAdjustment` already folded it
+          // into `scrollOffset`. There's no direction to infer, so leave
+          // it alone; a real gesture always moves the offset.
+          const prevOffset = this.getScrollOffset()
           this.scrollDirection = isScrolling
-            ? this.getScrollOffset() < offset
-              ? 'forward'
-              : 'backward'
+            ? prevOffset === offset
+              ? this.scrollDirection
+              : prevOffset < offset
+                ? 'forward'
+                : 'backward'
             : null
           this.scrollOffset = offset
           this.isScrolling = isScrolling
@@ -1334,22 +1369,22 @@ export class Virtualizer<
       this.options.lanes,
     ],
     (measurements, outerSize, scrollOffset, lanes) => {
-      return (this.range =
-        measurements.length > 0 && outerSize > 0
-          ? calculateRange({
-              measurements,
-              outerSize,
-              scrollOffset,
-              lanes,
-              // Pass the typed array so binary search + forward-walk can
-              // read start/end directly from Float64Array, skipping the
-              // Proxy traps that materialize a full VirtualItem per probe.
-              flat:
-                lanes === 1 && this._flatMeasurements != null
-                  ? this._flatMeasurements
-                  : null,
-            })
-          : null)
+      if (measurements.length === 0 || outerSize === 0) {
+        this.range = null
+        return null
+      }
+      this.range = calculateRangeImpl(
+        measurements,
+        outerSize,
+        scrollOffset,
+        lanes,
+        // Pass the typed array so binary search + forward-walk can read
+        // start/end directly from Float64Array, skipping the Proxy traps.
+        lanes === 1 && this._flatMeasurements != null
+          ? this._flatMeasurements
+          : null,
+      )
+      return this.range
     },
     {
       key: process.env.NODE_ENV !== 'production' && 'calculateRange',
@@ -1519,14 +1554,15 @@ export class Virtualizer<
               delta,
               this,
             )
-          : // Default: adjust scrollTop only when the resize is an above-
-            // viewport item AND we're not actively scrolling backward.
-            // Adjusting during backward scroll fights the user's scroll
-            // direction and produces the "items jump while scrolling up"
-            // jank reported across many issues. Users who want the old
-            // behavior can pass shouldAdjustScrollPositionOnItemSizeChange.
+          : // Default: adjust when the resize is an above-viewport item.
+            // First measurement (!has(key)): always adjust — the item
+            // has never been sized, so the estimate→actual delta must
+            // be compensated regardless of scroll direction.
+            // Re-measurement (has(key)): skip during backward scroll
+            // to avoid the "items jump while scrolling up" cascade.
             itemStart < this.getScrollOffset() + this.scrollAdjustments &&
-            this.scrollDirection !== 'backward')
+            (!this.itemSizeCache.has(key) ||
+              this.scrollDirection !== 'backward'))
 
       if (this.pendingMin === null || index < this.pendingMin) {
         this.pendingMin = index
@@ -1894,45 +1930,71 @@ const findNearestBinarySearch = (
   }
 }
 
-function calculateRange({
-  measurements,
-  outerSize,
-  scrollOffset,
-  lanes,
-  flat,
-}: {
-  measurements: Array<VirtualItem>
-  outerSize: number
-  scrollOffset: number
-  lanes: number
-  flat: Float64Array | null
-}) {
+// Monomorphic Float64Array variant — reads start values directly at stride
+// 2 instead of through a getter closure. JITs the inner load to a typed-
+// array bounds-check + load with no indirect call.
+function findNearestBinarySearchFlat(
+  flat: Float64Array,
+  high: number,
+  value: number,
+) {
+  let low = 0
+  while (low <= high) {
+    const middle = ((low + high) / 2) | 0
+    const currentValue = flat[middle * 2]!
+
+    if (currentValue < value) {
+      low = middle + 1
+    } else if (currentValue > value) {
+      high = middle - 1
+    } else {
+      return middle
+    }
+  }
+  return low > 0 ? low - 1 : 0
+}
+
+function calculateRangeImpl(
+  measurements: Array<VirtualItem>,
+  outerSize: number,
+  scrollOffset: number,
+  lanes: number,
+  flat: Float64Array | null,
+) {
   const lastIndex = measurements.length - 1
-  // When the lanes===1 fast-path is active, read start/end directly from the
-  // flat Float64Array instead of going through the lazy-view Proxy. Cuts
-  // ~17 Proxy.get traps per scroll for the binary search alone.
-  const getStart = flat
-    ? (index: number) => flat[index * 2]!
-    : (index: number) => measurements[index]!.start
-  const getEnd = flat
-    ? (index: number) => flat[index * 2]! + flat[index * 2 + 1]!
-    : (index: number) => measurements[index]!.end
 
   // handle case when item count is less than or equal to lanes
   if (measurements.length <= lanes) {
-    return {
-      startIndex: 0,
-      endIndex: lastIndex,
-    }
+    return { startIndex: 0, endIndex: lastIndex }
   }
 
+  if (lanes === 1 && flat !== null) {
+    // Hot single-lane path: typed-array reads, no closures, no Proxy traps.
+    const startIndex = findNearestBinarySearchFlat(
+      flat,
+      lastIndex,
+      scrollOffset,
+    )
+    let endIndex = startIndex
+    const limit = scrollOffset + outerSize
+    while (
+      endIndex < lastIndex &&
+      flat[endIndex * 2]! + flat[endIndex * 2 + 1]! < limit
+    ) {
+      endIndex++
+    }
+    return { startIndex, endIndex }
+  }
+
+  // Fallback (lanes > 1 or no flat array): closure-based reads.
+  const getStart = (index: number) => measurements[index]!.start
   let startIndex = findNearestBinarySearch(0, lastIndex, getStart, scrollOffset)
   let endIndex = startIndex
 
   if (lanes === 1) {
     while (
       endIndex < lastIndex &&
-      getEnd(endIndex) < scrollOffset + outerSize
+      measurements[endIndex]!.end < scrollOffset + outerSize
     ) {
       endIndex++
     }

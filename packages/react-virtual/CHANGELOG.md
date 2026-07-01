@@ -1,5 +1,28 @@
 # @tanstack/react-virtual
 
+## 3.14.5
+
+### Patch Changes
+
+- Updated dependencies [[`767ead4`](https://github.com/TanStack/virtual/commit/767ead46e4fab761fd6e15bcf281486042723152), [`bc8643b`](https://github.com/TanStack/virtual/commit/bc8643b7579e10e512654f58269de13d98b48781)]:
+  - @tanstack/virtual-core@3.17.3
+
+## 3.14.4
+
+### Patch Changes
+
+- Updated dependencies [[`b04f9ee`](https://github.com/TanStack/virtual/commit/b04f9ee48f0812e89156c1dac1fa58277cc32464), [`37be284`](https://github.com/TanStack/virtual/commit/37be28427ba52399ce8884e0006933e83f2645e9)]:
+  - @tanstack/virtual-core@3.17.2
+
+## 3.14.3
+
+### Patch Changes
+
+- [#1201](https://github.com/TanStack/virtual/pull/1201) [`2ba5eb6`](https://github.com/TanStack/virtual/commit/2ba5eb60f108f4ba9b2bd9570bbd41f9ce618438) - Make `directDomUpdates` a no-op for direct DOM writes when `containerRef` is omitted. Previously the virtualizer still wrote item positions while never sizing the container (a broken half-state). Now omitting `containerRef` skips all direct writes while still skipping re-renders, letting consumers own the DOM updates themselves (e.g. in `onChange`).
+
+- Updated dependencies [[`ef69ea3`](https://github.com/TanStack/virtual/commit/ef69ea31738caa2819142e922efa03d3c408e25c)]:
+  - @tanstack/virtual-core@3.17.1
+
 ## 3.14.2
 
 ### Patch Changes
