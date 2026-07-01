@@ -71,7 +71,7 @@ function createVirtualizerBase<
           sync: boolean,
         ) => {
           instance._willUpdate()
-          setVirtualItems([...instance.getVirtualItems()])
+          setVirtualItems(instance.getVirtualItems())
           setTotalSize(instance.getTotalSize())
           options.onChange?.(instance, sync)
         },
