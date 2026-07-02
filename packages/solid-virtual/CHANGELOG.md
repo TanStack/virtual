@@ -1,5 +1,11 @@
 # @tanstack/solid-virtual
 
+## 3.13.32
+
+### Patch Changes
+
+- [#1203](https://github.com/TanStack/virtual/pull/1203) [`95ef53b`](https://github.com/TanStack/virtual/commit/95ef53b7fdfe79b0fc190a83ef63a15fa40e50bc) - Preserve measured item sizes when reactive virtualizer options change.
+
 ## 3.13.31
 
 ### Patch Changes
