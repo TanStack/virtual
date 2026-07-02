@@ -66,5 +66,8 @@
   "peerDependencies": {
     "@angular/core": ">=19.0.0"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "bugs": {
+    "url": "https://github.com/TanStack/virtual/issues"
+  }
 }
