@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+static type Person = {
+  id: number
+  firstName: string
+  lastName: string
+  age: number
+  visits: number
+  progress: number
+  status: 'relationship' | 'complicated' | 'single'
+  createdAt: Date
+}
+
+static // Deterministic stand-in for the React example's faker data (server and client must
+static // agree, and the e2e assertions need stable data). mulberry32-seeded picks.
+static function makeData(count: number): Person[] {
+  const firstNames = ['Ava', 'Ben', 'Cleo', 'Dan', 'Elif', 'Finn', 'Gia', 'Hank', 'Ines', 'Jon', 'Kaya', 'Liam', 'Mona', 'Nico', 'Odessa', 'Pia', 'Quentin', 'Rosa', 'Sam', 'Tess']
+  const lastNames = ['Adler', 'Brooks', 'Chen', 'Diaz', 'Egan', 'Fox', 'Gupta', 'Hale', 'Ito', 'Jones', 'Khan', 'Lund', 'Mori', 'Ngo', 'Ochoa', 'Park', 'Quinn', 'Ruiz', 'Silva', 'Tran']
+  const statuses: Person['status'][] = ['relationship', 'complicated', 'single']
+  let t = 7
+  const rand = () => {
+    t += 0x6d2b79f5
+    let r = Math.imul(t ^ (t >>> 15), 1 | t)
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
+  }
+  return Array.from({ length: count }, (_, index) => ({
+    id: index + 1,
+    firstName: firstNames[Math.floor(rand() * firstNames.length)]!,
+    lastName: lastNames[Math.floor(rand() * lastNames.length)]!,
+    age: Math.floor(rand() * 40),
+    visits: Math.floor(rand() * 1000),
+    progress: Math.floor(rand() * 100),
+    status: statuses[Math.floor(rand() * statuses.length)]!,
+    createdAt: new Date(1600000000000 + Math.floor(rand() * 200000000000)),
+  }))
+}
+
+static const DATA = makeData(50_000)
+
+static type ColumnKey = keyof Person
+static const COLUMNS: Array<{ key: ColumnKey; label: string; width?: number }> = [
+  { key: 'id', label: 'ID', width: 60 },
+  { key: 'firstName', label: 'First Name' },
+  { key: 'lastName', label: 'Last Name' },
+  { key: 'age', label: 'Age', width: 50 },
+  { key: 'visits', label: 'Visits', width: 50 },
+  { key: 'status', label: 'Status' },
+  { key: 'progress', label: 'Profile Progress', width: 80 },
+  { key: 'createdAt', label: 'Created At' },
+]
+
+static function compareBy(key: ColumnKey, direction: 1 | -1) {
+  return (a: Person, b: Person) => {
+    const left = a[key]
+    const right = b[key]
+    if (left < right) return -1 * direction
+    if (left > right) return 1 * direction
+    return 0
+  }
+}
+
+static const ROW_HEIGHT = 34
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Table — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; font-size: 14px; line-height: 1.5; max-width: 720px; }
+      /* overflow-anchor: none — the browser's native scroll anchoring reacts to the mass
+         text mutation a sort causes and nudges scrollTop (platform-dependent, ~5px seen on
+         macOS). The virtualizer manages scroll positioning itself; the heuristic only
+         second-guesses it on windowed content. */
+      .container { height: 500px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 6px; overflow-anchor: none; }
+      table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+      thead { position: sticky; top: 0; z-index: 1; background: #f3f4f6; }
+      th { text-align: left; padding: 8px 10px; font-size: 13px; border-bottom: 1px solid #d1d5db; cursor: pointer; user-select: none; white-space: nowrap; }
+      th:hover { background: #e5e7eb; }
+      td { padding: 6px 10px; font-size: 13px; border-bottom: 1px solid #f1f1f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Table</h1>
+    <p>
+      50,000 rows of semantic table markup, one vertical virtualizer. Click any header to
+      sort (hand-rolled — no table library exists for Marko yet; this inline sort is the
+      hole @tanstack/marko-table would fill). Note that sorting changes WHICH data sits at
+      each visible position — the rendered window itself does not move. Positioning: a tr
+      inside a tbody cannot be absolutely positioned, so each row subtracts its natural
+      in-flow offset: translateY(item.start - loopIndex * rowHeight).
+    </p>
+
+    <let/sortKey = (null as ColumnKey | null)/>
+    <let/sortDir = (1 as 1 | -1)/>
+
+    // Sorting reorders the DATA the indexes map to; the virtualizer only ever sees
+    // "50,000 rows of 34px" and does not notice.
+    <const/rows = (sortKey ? [...DATA].sort(compareBy(sortKey, sortDir)) : DATA)/>
+
+    <virtualizer/v
+      count=rows.length
+      estimateSize=() => ROW_HEIGHT
+      getScrollElement=() => scrollEl()
+      overscan=20
+    />
+
+    <div/scrollEl class="container" data-testid="container">
+      // The sticky thead only sticks within its containing block — the table. An
+      // auto-height table ends after the ~50 rendered rows, so the header would ride away
+      // after ~1700px. The table is therefore sized to the full scroll range — BUT a table
+      // with an explicit height stretches its in-flow rows to fill it, which would destroy
+      // the 34px rows. The filler row at the end of the tbody absorbs ALL the extra height
+      // instead: real rows keep their 34px, the header stays pinned at any depth.
+      <table style=`height: ${v.totalSize}px`>
+          <thead>
+            <tr>
+              <for|column| of=COLUMNS>
+                <th
+                  data-col=column.key
+                  style=(column.width ? `width: ${column.width}px` : null)
+                  onClick() {
+                    if (sortKey === column.key) {
+                      sortDir = (sortDir === 1 ? -1 : 1)
+                    } else {
+                      sortKey = column.key
+                      sortDir = 1
+                    }
+                  }
+                >
+                  ${column.label}${sortKey === column.key ? (sortDir === 1 ? ' \u{1F53C}' : ' \u{1F53D}') : ''}
+                </th>
+              </for>
+            </tr>
+          </thead>
+          <tbody>
+            <for|item, loopIndex| of=v.virtualItems>
+              <const/person = (rows[item.index]!)/>
+              <tr
+                data-index=item.index
+                data-id=person.id
+                style=`height: ${item.size}px; transform: translateY(${item.start - loopIndex * item.size}px)`
+              >
+                <td>${person.id}</td>
+                <td>${person.firstName}</td>
+                <td>${person.lastName}</td>
+                <td>${person.age}</td>
+                <td>${person.visits}</td>
+                <td>${person.status}</td>
+                <td>${person.progress}</td>
+                <td>${person.createdAt.toLocaleString()}</td>
+              </tr>
+            </for>
+            <tr aria-hidden="true">
+              <td colspan=COLUMNS.length style="padding: 0; border: 0"/>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+  </body>
+</html>

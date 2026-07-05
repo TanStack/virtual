@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+import { defaultRangeExtractor } from "@tanstack/marko-virtual"
+
+static // Deterministic stand-in for the React example's faker names: a fixed base list
+static // spanning the alphabet, expanded with numeric suffixes to ~1000 rows. Server and
+static // client must derive identical data, and the e2e assertions stay stable.
+static const BASE_NAMES = [
+  'Aaron', 'Abby', 'Bella', 'Boris', 'Carla', 'Colin', 'Daria', 'Dev',
+  'Elena', 'Emil', 'Farah', 'Felix', 'Gita', 'Glen', 'Hana', 'Hugo',
+  'Iris', 'Ivan', 'Jade', 'Jonas', 'Kai', 'Kira', 'Lena', 'Louis',
+  'Mara', 'Milo', 'Nadia', 'Nils', 'Omar', 'Opal', 'Priya', 'Pablo',
+  'Quinn', 'Rhea', 'Ravi', 'Sana', 'Sven', 'Tara', 'Tom', 'Uma',
+  'Vera', 'Wim', 'Xena', 'Yara', 'Zoe',
+]
+
+static const NAMES = BASE_NAMES.flatMap((name) =>
+  Array.from({ length: 22 }, (_, i) => `${name} ${String(i + 1).padStart(2, '0')}`),
+).sort()
+
+static // rows = [letter, ...its names, letter, ...its names, ...]
+static const ROWS: string[] = []
+static const STICKY_INDEXES: number[] = []
+static {
+  let currentLetter = ''
+  for (const name of NAMES) {
+    const letter = name[0]!
+    if (letter !== currentLetter) {
+      currentLetter = letter
+      STICKY_INDEXES.push(ROWS.length)
+      ROWS.push(letter)
+    }
+    ROWS.push(name)
+  }
+}
+
+static const isSticky = (index: number) => STICKY_INDEXES.includes(index)
+
+static // The header that should be pinned for a given window start: the LAST group
+static // header at or above it. Pure — computed both inside the rangeExtractor (to force
+static // that row into the rendered set) and in the template from v.range (to style it).
+static const activeStickyFor = (startIndex: number) =>
+  [...STICKY_INDEXES].reverse().find((index) => startIndex >= index) ?? 0
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sticky — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
+      .list { height: 300px; width: 400px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 6px; }
+      .row { display: flex; align-items: center; padding: 0 12px; font-size: 14px; }
+      .group-header { background: #fff; border-bottom: 1px solid #ddd; font-weight: 700; z-index: 1; }
+    </style>
+  </head>
+  <body>
+    <h1>Sticky</h1>
+    <p>
+      A contact-list: 1000 names grouped by first letter. rangeExtractor forces the current
+      group's header row into the rendered window even after its natural position scrolls
+      away, and the header the window is inside is derived from the returned range — that
+      one row is position: sticky while every other row is absolutely positioned.
+    </p>
+
+    <virtualizer/v
+      count=ROWS.length
+      estimateSize=() => 50
+      getScrollElement=(): Element | null => scrollEl() ?? null
+      rangeExtractor=(range) => {
+        const next = new Set([
+          activeStickyFor(range.startIndex),
+          ...defaultRangeExtractor(range),
+        ])
+        return [...next].sort((a, b) => a - b)
+      }
+    />
+
+    // Which header is pinned right now — an ordinary reactive derivation from the
+    // range the tag returns (null before the live instance exists -> first header).
+    // Same pure function the rangeExtractor uses; no state smuggled out of callbacks.
+    <const/activeStickyIndex = (v.range ? activeStickyFor(v.range.startIndex) : 0)/>
+
+    <div/scrollEl class="list" data-testid="list">
+      <div style=`height: ${v.totalSize}px; width: 100%; position: relative`>
+        <for|item| of=v.virtualItems by=(item) => String(item.key)>
+          <div
+            data-index=item.index
+            data-sticky=(isSticky(item.index) ? 'true' : null)
+            data-active-sticky=(item.index === activeStickyIndex ? 'true' : null)
+            class=`row ${isSticky(item.index) ? 'group-header' : ''}`
+            style=`${item.index === activeStickyIndex
+              ? 'position: sticky;'
+              : `position: absolute; transform: translateY(${item.start}px);`} top: 0; left: 0; width: 100%; height: ${item.size}px`
+          >
+            ${ROWS[item.index]}
+          </div>
+        </for>
+      </div>
+    </div>
+  </body>
+</html>

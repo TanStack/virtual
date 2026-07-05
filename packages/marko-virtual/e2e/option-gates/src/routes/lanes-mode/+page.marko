@@ -1,0 +1,36 @@
+// GATE: laneAssignmentMode 'measured' — a 3-lane masonry with strongly varying REAL
+// heights (measured via measureElement). In 'measured' mode lane assignment follows the
+// measured sizes; the observable is a working multi-lane layout: all three lanes
+// populated, and items within one lane not overlapping.
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: laneAssignmentMode</title></head>
+  <body>
+    <div/scrollEl data-testid="scroller" style="height: 500px; overflow-y: auto">
+      <virtualizer/v
+        count=1000
+        estimateSize=() => 60
+        overscan=5
+        lanes=3
+        laneAssignmentMode="measured"
+        getScrollElement=() => scrollEl()
+      />
+      <div style=`height: ${v.totalSize}px; position: relative`>
+        <for|item| of=v.virtualItems by=(item) => String(item.key)>
+          <div/itemEl
+            data-index=item.index
+            data-lane=item.lane
+            style=`position: absolute; top: 0; left: ${item.lane * 33.33}%; width: 33%; height: ${30 + ((item.index * 37) % 90)}px; transform: translateY(${item.start}px); border: 1px solid #ccc`
+          >
+            <script() {
+              const _key = item.key
+              const node = itemEl()
+              if (node && v.measureElement) v.measureElement(node)
+            }/>
+            #${item.index} L${item.lane}
+          </div>
+        </for>
+      </div>
+    </div>
+  </body>
+</html>

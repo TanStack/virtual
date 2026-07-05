@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+static type Message = {
+  id: string
+  author: 'user' | 'assistant'
+  text: string
+}
+
+static const REPLIES = [
+  'I can break that into the smallest next step and keep the current viewport pinned while this answer grows.',
+  'Older messages are loaded above the viewport. The visible row keeps the same screen position after the prepend.',
+  'When the thread is not at the bottom, new output waits below without pulling the reader away from history.',
+]
+
+static function makeMessage(index: number): Message {
+  return {
+    id: `message-${index}`,
+    author: index % 4 === 0 ? 'user' : 'assistant',
+    text:
+      index % 4 === 0
+        ? `Can you check item ${index}?`
+        : `Message ${index}: ${REPLIES[Math.abs(index) % REPLIES.length]}`,
+  }
+}
+
+static const HISTORY_LIMIT = -90
+static const AT_END_PX = 80
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Chat Virtualisation — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
+      .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
+      .toolbar-group { display: flex; gap: 8px; }
+      .toolbar button { padding: 6px 12px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; }
+      .toolbar button:hover { background: #f3f4f6; }
+      .status { font-size: 13px; color: #6b7280; }
+      /* overflow-anchor: none — the virtualizer owns scroll compensation on prepend;
+         leaving the browser's native scroll anchoring on can double-compensate for a
+         frame when content is inserted above the viewport. */
+      .messages { height: 480px; overflow-y: auto; overflow-anchor: none; border: 1px solid #e5e7eb; border-radius: 6px; background: #fafafa; }
+      .message-row { padding: 6px 12px; }
+      .bubble { max-width: 75%; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.5; }
+      .bubble-user { margin-left: auto; background: #2563eb; color: #fff; }
+      .bubble-assistant { margin-right: auto; background: #fff; border: 1px solid #e5e7eb; }
+      .meta { font-size: 11px; opacity: 0.7; margin-bottom: 2px; text-transform: capitalize; }
+    </style>
+  </head>
+  <body>
+    <h1>Chat Virtualisation</h1>
+    <p>
+      A bottom-anchored message list. anchorTo="end" + followOnAppend keep the view pinned to the
+      newest message while it is at the bottom; scrolling up near the top loads older history
+      without moving the message you are reading; getItemKey keeps measurements attached to
+      messages (not indexes) across prepends.
+    </p>
+
+    <let/messages       = (Array.from({ length: 45 }, (_, index) => makeMessage(index)) as Message[])/>
+    <let/loadingHistory = false/>
+    <let/atEnd          = true/>
+
+    // Non-reactive bookkeeping (never rendered): index counters, one-shot guards, the
+    // stream timer. Held in a <const> object and mutated — no signal writes needed.
+    <const/state = ({
+      firstIndex: 0,
+      nextIndex: 45,
+      pinnedInitially: false,
+      autoHistoryArmed: false,
+      autoHistoryEnabled: false,
+      streamAbort: null as AbortController | null,
+    })/>
+
+    <const/prependHistory = () => {
+      if (loadingHistory || state.firstIndex <= HISTORY_LIMIT) return
+      loadingHistory = true
+      setTimeout(() => {
+        const start = state.firstIndex - 12
+        state.firstIndex = start
+        messages = [
+          ...Array.from({ length: 12 }, (_, offset) => makeMessage(start + offset)),
+          ...messages,
+        ]
+        loadingHistory = false
+      }, 180)
+    }/>
+
+    <virtualizer/v
+      count=messages.length
+      // Bubble heights are width-dependent (they wrap): measured means run ~89px at
+      // typical widths (~79 at 1280px, ~106 at 560px). 88 keeps the prepend
+      // anchor-correction small at common widths; exact per-row heights are the
+      // pretext approach (see the Chat + Pretext example).
+      estimateSize=() => 88
+      getScrollElement=(): Element | null => scrollEl() ?? null
+      getItemKey=(index: number) => messages[index]!.id
+      anchorTo="end"
+      followOnAppend=true
+      scrollEndThreshold=AT_END_PX
+      overscan=6
+    />
+
+    // Pin to the newest message once the live virtualizer exists. A <script> re-runs
+    // whenever v updates; v.range is non-null exactly from the first client notify, so
+    // this fires once, deterministically, regardless of effect ordering — then arms the
+    // near-top auto-history after the initial settle (mirrors the React example's delay).
+    <script() {
+      if (!state.pinnedInitially && v.range) {
+        v.scrollToEnd()
+        atEnd = true
+        state.pinnedInitially = true
+      }
+      if (!state.autoHistoryArmed) {
+        state.autoHistoryArmed = true
+        setTimeout(() => { state.autoHistoryEnabled = true }, 250)
+      }
+    }/>
+
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button data-testid="load-older" onClick() { prependHistory() }>Load older</button>
+        <button data-testid="add-message" onClick() {
+          const next = state.nextIndex
+          state.nextIndex += 1
+          messages = [...messages, makeMessage(next)]
+        }>Add message</button>
+        <button data-testid="stream-reply" onClick() {
+          if (state.streamAbort !== null) return
+          const id = `stream-${Date.now()}`
+          messages = [...messages, { id, author: 'assistant', text: '' }]
+          const abort = new AbortController()
+          state.streamAbort = abort
+          // A real streamed reply: one POST whose response body arrives in chunks
+          // (fetch + ReadableStream — how LLM APIs stream). Each decoded chunk is
+          // appended to the message; the virtualizer re-measures the growing row
+          // and followOnAppend keeps the view pinned while it is at the bottom.
+          ;(async () => {
+            try {
+              const response = await fetch('/api/reply', {
+                method: 'POST',
+                body: 'demo prompt',
+                signal: abort.signal,
+              })
+              if (!response.ok || !response.body) {
+                throw new Error(`reply failed: ${response.status}`)
+              }
+              const reader = response.body.getReader()
+              const decoder = new TextDecoder()
+              for (;;) {
+                const { done, value } = await reader.read()
+                if (done) break
+                const chunk = decoder.decode(value, { stream: true })
+                messages = messages.map((message) =>
+                  message.id === id
+                    ? { ...message, text: message.text + chunk }
+                    : message,
+                )
+              }
+            } catch (error) {
+              if (!abort.signal.aborted) throw error
+            } finally {
+              state.streamAbort = null
+            }
+          })()
+        }>Stream reply</button>
+        <button data-testid="latest" onClick() { v.scrollToEnd() }>Latest</button>
+      </div>
+      <div class="status" data-testid="status">
+        ${loadingHistory ? 'Loading history' : atEnd ? 'At latest' : 'Reading history'}
+      </div>
+    </div>
+
+    // The scroll handler computes at-end-ness from the element directly rather than via
+    // v.isAtEnd(): this listener is attached at hydrate, BEFORE the virtualizer's own
+    // scroll listener (attached in onMount), so during the same scroll event core's
+    // offset is still the previous one — v.isAtEnd() here would be one event stale.
+    // The element is the race-free source; the arithmetic is identical to core's.
+    // (v.isAtEnd() is fine anywhere outside a competing scroll handler.)
+    <div/scrollEl
+      class="messages"
+      onScroll(_event, el) {
+        if (!el) return
+        atEnd = el.scrollHeight - el.scrollTop - el.clientHeight <= AT_END_PX
+        if (!state.autoHistoryEnabled || atEnd) return
+        // Load AHEAD: trigger while there is still ~1.5 viewport heights of runway, so
+        // history lands above the viewport (compensation invisible) and the fetch
+        // latency hides inside travel time instead of at a hard stop at the top.
+        if (el.scrollTop < el.clientHeight * 1.5) prependHistory()
+      }
+    >
+      <div style=`height: ${v.totalSize}px; width: 100%; position: relative`>
+        <for|item| of=v.virtualItems by=(item) => String(item.key)>
+          <div/rowEl
+            data-index=item.index
+            data-key=String(item.key)
+            class="message-row"
+            style=`position: absolute; top: 0; left: 0; width: 100%; transform: translateY(${item.start}px)`
+          >
+            <script() {
+              const _key = item.key
+              const node: HTMLDivElement | undefined = rowEl()
+              if (node && v.measureElement) v.measureElement(node)
+            }/>
+            <const/message = (messages[item.index]!)/>
+            <div class=`bubble bubble-${message.author}`>
+              <div class="meta">${message.author}</div>
+              ${message.text || '...'}
+            </div>
+          </div>
+        </for>
+      </div>
+    </div>
+
+    <lifecycle onDestroy() {
+      state.streamAbort?.abort()
+    }/>
+  </body>
+</html>

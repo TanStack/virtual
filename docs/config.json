@@ -9,9 +9,18 @@
     {
       "label": "Getting Started",
       "children": [
-        { "label": "Introduction", "to": "introduction" },
-        { "label": "Installation", "to": "installation" },
-        { "label": "Text Measurement with Pretext", "to": "pretext" }
+        {
+          "label": "Introduction",
+          "to": "introduction"
+        },
+        {
+          "label": "Installation",
+          "to": "installation"
+        },
+        {
+          "label": "Text Measurement with Pretext",
+          "to": "pretext"
+        }
       ],
       "frameworks": [
         {
@@ -35,7 +44,10 @@
         {
           "label": "solid",
           "children": [
-            { "label": "Solid Virtual", "to": "framework/solid/solid-virtual" }
+            {
+              "label": "Solid Virtual",
+              "to": "framework/solid/solid-virtual"
+            }
           ]
         },
         {
@@ -69,13 +81,24 @@
     },
     {
       "label": "Guides",
-      "children": [{ "label": "Chat", "to": "chat" }]
+      "children": [
+        {
+          "label": "Chat",
+          "to": "chat"
+        }
+      ]
     },
     {
       "label": "Core APIs",
       "children": [
-        { "label": "Virtualizer", "to": "api/virtualizer" },
-        { "label": "VirtualItem", "to": "api/virtual-item" }
+        {
+          "label": "Virtualizer",
+          "to": "api/virtualizer"
+        },
+        {
+          "label": "VirtualItem",
+          "to": "api/virtual-item"
+        }
       ]
     },
     {
@@ -283,16 +306,64 @@
               "label": "Grid"
             },
             {
+              "to": "framework/marko/examples/pretext",
+              "label": "Pretext"
+            },
+            {
+              "to": "framework/marko/examples/padding",
+              "label": "Padding"
+            },
+            {
+              "to": "framework/marko/examples/scroll-padding",
+              "label": "Scroll Padding"
+            },
+            {
+              "to": "framework/marko/examples/sticky",
+              "label": "Sticky"
+            },
+            {
               "to": "framework/marko/examples/infinite-scroll",
               "label": "Infinite Scroll"
+            },
+            {
+              "to": "framework/marko/examples/chat",
+              "label": "Chat"
+            },
+            {
+              "to": "framework/marko/examples/chat-pretext",
+              "label": "Chat + Pretext"
             },
             {
               "to": "framework/marko/examples/smooth-scroll",
               "label": "Smooth Scroll"
             },
             {
+              "to": "framework/marko/examples/table",
+              "label": "Table"
+            },
+            {
               "to": "framework/marko/examples/window",
               "label": "Window"
+            },
+            {
+              "to": "framework/marko/examples/ssr",
+              "label": "SSR: No Fetch, Rows Render on Client"
+            },
+            {
+              "to": "framework/marko/examples/ssr-fetch",
+              "label": "SSR: Fetch on Server, Rows Render on Client"
+            },
+            {
+              "to": "framework/marko/examples/ssr-slice",
+              "label": "SSR: Fetch on Server, Rows Render on Server"
+            },
+            {
+              "to": "framework/marko/examples/ssr-restore",
+              "label": "SSR: Fetch on Server, Rows Render on Server at Offset"
+            },
+            {
+              "to": "framework/marko/examples/window-ssr-slice",
+              "label": "SSR Window: Fetch on Server, Rows Render on Server"
             }
           ]
         }

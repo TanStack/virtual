@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+import { clearCache, layout, prepare } from "@chenglou/pretext"
+
+static type Message = {
+  id: string
+  author: 'user' | 'assistant'
+  text: string
+}
+
+static const REPLIES = [
+  'I can break that into the smallest next step and keep the current viewport pinned while this answer grows.',
+  'Older messages are loaded above the viewport. The visible row keeps the same screen position after the prepend.',
+  'When the thread is not at the bottom, new output waits below without pulling the reader away from history.',
+]
+
+static function makeMessage(index: number): Message {
+  return {
+    id: `message-${index}`,
+    author: index % 4 === 0 ? 'user' : 'assistant',
+    text:
+      index % 4 === 0
+        ? `Can you check item ${index}?`
+        : `Message ${index}: ${REPLIES[Math.abs(index) % REPLIES.length]}`,
+  }
+}
+
+static const HISTORY_LIMIT = -90
+static const AT_END_PX = 80
+
+// ---- Height model: mirrors the CSS below exactly. Every constant corresponds to a
+// declared style; if you change one, change the other. A NAMED font (Arial) with
+// EXPLICIT line-heights is deliberate: Pretext measures via canvas, and pinned
+// metrics are what keep the calculation identical to the rendering.
+static const BODY_FONT = '14px Arial'
+static const BODY_LINE_HEIGHT = 21   // .bubble-text line-height
+static const META_BLOCK = 18         // .meta line-height 16 + margin-bottom 2
+static const ROW_Y_PADDING = 12      // .message-row padding 6 top + 6 bottom
+static const ROW_X_PADDING = 24      // .message-row padding 12 left + 12 right
+static const BUBBLE_Y_PADDING = 20   // .bubble padding 10 top + 10 bottom
+static const BUBBLE_X_PADDING = 24   // .bubble padding 12 left + 12 right
+static const ASSISTANT_BORDER = 2    // .bubble-assistant 1px border, top + bottom
+static const BUBBLE_MAX_FRACTION = 0.75 // .bubble max-width
+static const PLACEHOLDER = '...'     // rendered while a message's text is empty
+static const DEFAULT_VIEWPORT_WIDTH = 760
+
+static const preparedCache = new Map<string, ReturnType<typeof prepare>>()
+
+static function getPrepared(text: string) {
+  const body = text || PLACEHOLDER
+  const cached = preparedCache.get(body)
+  if (cached) return cached
+  const prepared = prepare(body, BODY_FONT, { letterSpacing: 0, whiteSpace: 'normal' })
+  preparedCache.set(body, prepared)
+  return prepared
+}
+
+static function fallbackTextHeight(text: string, width: number) {
+  const averageCharacterWidth = 7
+  const charactersPerLine = Math.max(1, Math.floor(width / averageCharacterWidth))
+  const lineCount = Math.max(1, Math.ceil((text || PLACEHOLDER).length / charactersPerLine))
+  return lineCount * BODY_LINE_HEIGHT
+}
+
+// The bubble is shrink-to-fit up to max-width 75%: short texts sit on one line in a
+// narrower bubble, long texts wrap at the cap. Line count at the cap width equals the
+// rendered line count either way, so laying out at the cap is exact.
+static function messageHeight(message: Message, viewportWidth: number) {
+  const border = message.author === 'assistant' ? ASSISTANT_BORDER : 0
+  const maxBubbleWidth = BUBBLE_MAX_FRACTION * Math.max(1, viewportWidth - ROW_X_PADDING)
+  const textWidth = Math.max(1, maxBubbleWidth - BUBBLE_X_PADDING - border)
+  const textHeight =
+    typeof Intl !== 'undefined' && 'Segmenter' in Intl
+      ? layout(getPrepared(message.text), textWidth, BODY_LINE_HEIGHT).height
+      : fallbackTextHeight(message.text, textWidth)
+  const bodyHeight = Math.max(BODY_LINE_HEIGHT, textHeight)
+  return Math.ceil(ROW_Y_PADDING + border + BUBBLE_Y_PADDING + META_BLOCK + bodyHeight)
+}
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Chat + Pretext — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
+      .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
+      .toolbar-group { display: flex; gap: 8px; }
+      .toolbar button { padding: 6px 12px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; }
+      .toolbar button:hover { background: #f3f4f6; }
+      .status { font-size: 13px; color: #6b7280; }
+      /* overflow-anchor: none — the virtualizer owns scroll compensation on prepend;
+         leaving the browser's native scroll anchoring on can double-compensate for a
+         frame when content is inserted above the viewport. */
+      .messages { height: 480px; overflow-y: auto; overflow-anchor: none; border: 1px solid #e5e7eb; border-radius: 6px; background: #fafafa; }
+      /* Height-model coupling: the constants at the top of this file mirror the values
+         below. Fonts are named and line-heights explicit so canvas measurement and
+         rendering agree. */
+      .message-row { padding: 6px 12px; }
+      .bubble { max-width: 75%; padding: 10px 12px; border-radius: 10px; }
+      .bubble-user { margin-left: auto; background: #2563eb; color: #fff; }
+      .bubble-assistant { margin-right: auto; background: #fff; border: 1px solid #e5e7eb; }
+      .meta { font: 11px Arial; line-height: 16px; opacity: 0.7; margin-bottom: 2px; text-transform: capitalize; }
+      .bubble-text { font: 14px Arial; line-height: 21px; letter-spacing: 0; overflow-wrap: break-word; }
+    </style>
+  </head>
+  <body>
+    <h1>Chat + Pretext</h1>
+    <p>
+      The Chat example with CALCULATED row heights instead of a flat estimate. Bubble
+      heights depend on text length and viewport width; a fixed estimateSize is wrong at
+      some width, and every wrong guess becomes a visible scroll correction when history
+      rows measure. Here @chenglou/pretext computes each bubble's true height from the
+      text before the row renders, so estimateSize is exact at any width: prepends land
+      with zero correction, and jumps land exactly. The streamed reply pushes its growing
+      height through v.resizeItem per chunk — the proactive alternative to waiting for
+      DOM re-measurement. Resize the window: one v.measure() recalculates everything at
+      the new width.
+    </p>
+
+    <let/messages       = (Array.from({ length: 45 }, (_, index) => makeMessage(index)) as Message[])/>
+    <let/loadingHistory = false/>
+    <let/atEnd          = true/>
+
+    // Non-reactive bookkeeping (never rendered): index counters, one-shot guards, the
+    // stream abort, and the width holder read by the STABLE estimateSize closure (no
+    // need to hand the virtualizer a new function per width).
+    <const/state = ({
+      firstIndex: 0,
+      nextIndex: 45,
+      pinnedInitially: false,
+      autoHistoryArmed: false,
+      autoHistoryEnabled: false,
+      streamAbort: null as AbortController | null,
+      width: DEFAULT_VIEWPORT_WIDTH,
+    })/>
+
+    <const/prependHistory = () => {
+      if (loadingHistory || state.firstIndex <= HISTORY_LIMIT) return
+      loadingHistory = true
+      setTimeout(() => {
+        const start = state.firstIndex - 12
+        state.firstIndex = start
+        messages = [
+          ...Array.from({ length: 12 }, (_, offset) => makeMessage(start + offset)),
+          ...messages,
+        ]
+        loadingHistory = false
+      }, 180)
+    }/>
+
+    <virtualizer/v
+      count=messages.length
+      estimateSize=(index: number) => messageHeight(messages[index]!, state.width)
+      getScrollElement=(): Element | null => scrollEl() ?? null
+      getItemKey=(index: number) => messages[index]!.id
+      anchorTo="end"
+      followOnAppend=true
+      scrollEndThreshold=AT_END_PX
+      overscan=6
+    />
+
+    // Pin to the newest message once the live virtualizer exists (v.range is non-null
+    // exactly from the first client notify), then arm the near-top auto-history after
+    // the initial settle. Same pattern as the Chat example.
+    <script() {
+      if (!state.pinnedInitially && v.range) {
+        v.scrollToEnd()
+        atEnd = true
+        state.pinnedInitially = true
+      }
+      if (!state.autoHistoryArmed) {
+        state.autoHistoryArmed = true
+        setTimeout(() => { state.autoHistoryEnabled = true }, 250)
+      }
+    }/>
+
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button data-testid="load-older" onClick() { prependHistory() }>Load older</button>
+        <button data-testid="add-message" onClick() {
+          const next = state.nextIndex
+          state.nextIndex += 1
+          messages = [...messages, makeMessage(next)]
+        }>Add message</button>
+        <button data-testid="stream-reply" onClick() {
+          if (state.streamAbort !== null) return
+          const id = `stream-${Date.now()}`
+          messages = [...messages, { id, author: 'assistant', text: '' }]
+          const abort = new AbortController()
+          state.streamAbort = abort
+          // A real streamed reply (one POST, chunked body). Each decoded chunk is
+          // appended to the message AND its new calculated height is pushed through
+          // v.resizeItem — the virtualizer learns the growth proactively instead of
+          // re-measuring the DOM after the fact. followOnAppend keeps the view pinned
+          // while it is at the bottom.
+          ;(async () => {
+            try {
+              const response = await fetch('/api/reply', {
+                method: 'POST',
+                body: 'demo prompt',
+                signal: abort.signal,
+              })
+              if (!response.ok || !response.body) {
+                throw new Error(`reply failed: ${response.status}`)
+              }
+              const reader = response.body.getReader()
+              const decoder = new TextDecoder()
+              for (;;) {
+                const { done, value } = await reader.read()
+                if (done) break
+                const chunk = decoder.decode(value, { stream: true })
+                let grown: Message | null = null
+                messages = messages.map((message) => {
+                  if (message.id !== id) return message
+                  grown = { ...message, text: message.text + chunk }
+                  return grown
+                })
+                if (grown) {
+                  const index = messages.findIndex((message) => message.id === id)
+                  if (index !== -1) v.resizeItem(index, messageHeight(grown, state.width))
+                }
+              }
+            } catch (error) {
+              if (!abort.signal.aborted) throw error
+            } finally {
+              state.streamAbort = null
+            }
+          })()
+        }>Stream reply</button>
+        <button data-testid="latest" onClick() { v.scrollToEnd() }>Latest</button>
+      </div>
+      <div class="status" data-testid="status">
+        ${loadingHistory ? 'Loading history' : atEnd ? 'At latest' : 'Reading history'}
+      </div>
+    </div>
+
+    // Same race-free at-end arithmetic as the Chat example: this listener runs before
+    // core's own scroll listener, so it reads the element rather than v.isAtEnd().
+    <div/scrollEl
+      class="messages"
+      onScroll(_event, el) {
+        if (!el) return
+        atEnd = el.scrollHeight - el.scrollTop - el.clientHeight <= AT_END_PX
+        if (!state.autoHistoryEnabled || atEnd) return
+        // Load AHEAD: trigger while there is still ~1.5 viewport heights of runway, so
+        // history lands above the viewport (compensation invisible) and the fetch
+        // latency hides inside travel time instead of at a hard stop at the top.
+        if (el.scrollTop < el.clientHeight * 1.5) prependHistory()
+      }
+    >
+      <div style=`height: ${v.totalSize}px; width: 100%; position: relative`>
+        // No measureElement and no per-row measure script: the calculated height IS
+        // the row height (set explicitly below), so there is nothing to correct.
+        <for|item| of=v.virtualItems by=(item) => String(item.key)>
+          <const/message = (messages[item.index]!)/>
+          <div
+            data-index=item.index
+            data-key=String(item.key)
+            class="message-row"
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+          >
+            <div class=`bubble bubble-${message.author}`>
+              <div class="meta">${message.author}</div>
+              <div class="bubble-text">${message.text || PLACEHOLDER}</div>
+            </div>
+          </div>
+        </for>
+      </div>
+    </div>
+
+    <const/lifecycleState = ({ cleanup: null as (() => void) | null })/>
+    <lifecycle
+      onMount() {
+        const node = scrollEl()
+        if (!node) return
+        const updateWidth = () => {
+          const next = Math.max(1, Math.round(node.clientWidth))
+          if (next !== state.width) {
+            state.width = next
+            v.measure() // drop all cached sizes; heights recompute at the new width
+          }
+        }
+        updateWidth()
+        const observer = new ResizeObserver(updateWidth)
+        observer.observe(node)
+        // Recalculate once the real font's metrics are in: canvas measurement against a
+        // fallback font would drift from the final rendering.
+        let cancelled = false
+        document.fonts.ready.then(() => {
+          if (cancelled) return
+          preparedCache.clear()
+          clearCache()
+          v.measure()
+        })
+        lifecycleState.cleanup = () => {
+          cancelled = true
+          observer.disconnect()
+        }
+      }
+      onDestroy() {
+        lifecycleState.cleanup?.()
+        state.streamAbort?.abort()
+      }
+    />
+  </body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+static // Deterministic pseudo-random sizes (mulberry32): the React example uses Math.random(),
+static // which is fine client-only, but our examples are server-rendered — server and client
+static // must derive the SAME sizes, and the e2e assertions stay stable.
+static function seededSizes(count: number, base: number, spread: number, seed: number): number[] {
+  let t = seed
+  return Array.from({ length: count }, () => {
+    t += 0x6d2b79f5
+    let r = Math.imul(t ^ (t >>> 15), 1 | t)
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
+    const unit = ((r ^ (r >>> 14)) >>> 0) / 4294967296
+    return base + Math.round(unit * spread)
+  })
+}
+
+static const ROWS = seededSizes(10000, 25, 100, 1)
+static const COLUMNS = seededSizes(10000, 75, 100, 2)
+static const HALF_WAY = Math.floor(ROWS.length / 2)
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Padding — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      h3 { font-size: 16px; margin: 16px 0 8px; }
+      p { color: #555; margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
+      .buttons { display: flex; gap: 8px; margin: 8px 0; }
+      button { padding: 6px 12px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; }
+      button:hover { background: #f3f4f6; }
+      .list { border: 1px solid #e5e7eb; border-radius: 6px; overflow: auto; }
+      /* Center item content and use a strong stripe (mirrors the React example's
+         CSS) so each measured band is legible against the blank padding areas. */
+      .item-even, .item-odd { display: flex; align-items: center; justify-content: center; }
+      .item-even { background: #e6e4dc; }
+      .item-odd { background: #fff; }
+      .cell { border: 1px dashed #d6d3c8; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+    </style>
+  </head>
+  <body>
+    <h1>Padding</h1>
+    <p>
+      paddingStart / paddingEnd add blank, scrollable breathing room before the first and
+      after the last item — it is part of totalSize and scrolls like content. Rows and
+      Columns use 100px each; the Grid uses 200px on both axes. Sizes are dynamic
+      (estimated, then measured on render). The Grid runs TWO virtualizers over the SAME
+      cell elements — indexAttribute (data-row-index / data-column-index) tells each
+      instance which attribute carries its index so their measurements don't collide.
+    </p>
+
+    <virtualizer/vRow
+      count=ROWS.length
+      estimateSize=() => 50
+      getScrollElement=(): Element | null => rowsEl() ?? null
+      paddingStart=100
+      paddingEnd=100
+    />
+    <virtualizer/vCol
+      horizontal=true
+      count=COLUMNS.length
+      estimateSize=() => 50
+      getScrollElement=(): Element | null => colsEl() ?? null
+      paddingStart=100
+      paddingEnd=100
+    />
+    <h3>Rows</h3>
+    <div/rowsEl class="list" data-testid="rows-list" style="height: 200px; width: 400px">
+      <div style=`height: ${vRow.totalSize}px; width: 100%; position: relative`>
+        <for|item| of=vRow.virtualItems by=(item) => String(item.key)>
+          <div/rowItemEl
+            data-index=item.index
+            class=(item.index % 2 ? 'item-odd' : 'item-even')
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: ${ROWS[item.index]}px; transform: translateY(${item.start}px)`
+          >
+            <script() {
+              const _key = item.key
+              const node = rowItemEl()
+              if (node && vRow.measureElement) vRow.measureElement(node)
+            }/>
+            Row ${item.index}
+          </div>
+        </for>
+      </div>
+    </div>
+
+    <h3>Columns</h3>
+    <div/colsEl class="list" data-testid="cols-list" style="width: 400px; height: 100px">
+      <div style=`width: ${vCol.totalSize}px; height: 100%; position: relative`>
+        <for|item| of=vCol.virtualItems by=(item) => String(item.key)>
+          <div/colItemEl
+            data-index=item.index
+            class=(item.index % 2 ? 'item-odd' : 'item-even')
+            style=`position: absolute; top: 0; left: 0; height: 100%; width: ${COLUMNS[item.index]}px; transform: translateX(${item.start}px)`
+          >
+            <script() {
+              const _key = item.key
+              const node = colItemEl()
+              if (node && vCol.measureElement) vCol.measureElement(node)
+            }/>
+            Column ${item.index}
+          </div>
+        </for>
+      </div>
+    </div>
+
+    <h3>Grid</h3>
+    <let/show = true/>
+    <div class="buttons">
+      <button data-testid="toggle" onClick() { show = !show }>Toggle</button>
+    </div>
+    // The grid virtualizers live INSIDE the conditional, next to their scroll element.
+    // A virtualizer's lifetime must match its scroll element's: the tag builds its live
+    // instance in onMount and cannot detect the element being replaced later without an
+    // input change (Marko's compile-time reactivity does not track through the
+    // getScrollElement thunk into this scope). Unmounting the container while leaving
+    // the tag mounted would strand the instance on a dead element.
+    <if=show>
+      <virtualizer/vGridRow
+        count=ROWS.length
+        estimateSize=() => 50
+        getScrollElement=(): Element | null => gridEl() ?? null
+        paddingStart=200
+        paddingEnd=200
+        indexAttribute="data-row-index"
+      />
+      <virtualizer/vGridCol
+        horizontal=true
+        count=COLUMNS.length
+        estimateSize=() => 50
+        getScrollElement=(): Element | null => gridEl() ?? null
+        paddingStart=200
+        paddingEnd=200
+        indexAttribute="data-column-index"
+      />
+      <div class="buttons">
+        <button data-testid="scroll-half" onClick() { vGridRow.scrollToIndex(HALF_WAY) }>
+          Scroll to index ${HALF_WAY}
+        </button>
+        <button data-testid="scroll-last" onClick() { vGridRow.scrollToIndex(ROWS.length - 1) }>
+          Scroll to index ${ROWS.length - 1}
+        </button>
+      </div>
+      <div/gridEl class="list" data-testid="grid-list" style="height: 400px; width: 500px">
+        <div style=`height: ${vGridRow.totalSize}px; width: ${vGridCol.totalSize}px; position: relative`>
+          <for|row| of=vGridRow.virtualItems by=(row) => String(row.key)>
+            <for|col| of=vGridCol.virtualItems by=(col) => String(col.key)>
+              <div/cellEl
+                data-row-index=row.index
+                data-column-index=col.index
+                class="cell"
+                style=`position: absolute; top: 0; left: 0; width: ${COLUMNS[col.index]}px; height: ${ROWS[row.index]}px; transform: translateX(${col.start}px) translateY(${row.start}px)`
+              >
+                <script() {
+                  // Both instances measure this SAME element; indexAttribute keeps
+                  // their index lookups (and so their caches) apart.
+                  const _rowKey = row.key
+                  const _colKey = col.key
+                  const node = cellEl()
+                  if (node && vGridRow.measureElement) vGridRow.measureElement(node)
+                  if (node && vGridCol.measureElement) vGridCol.measureElement(node)
+                }/>
+                Cell ${row.index}, ${col.index}
+              </div>
+            </for>
+          </for>
+        </div>
+      </div>
+    </if>
+  </body>
+</html>

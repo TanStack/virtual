@@ -1,0 +1,29 @@
+// GATE: enabled — the pause switch. With enabled=false the virtualizer stops
+// observing: scrolling the container must NOT re-window; flipping back to true must.
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: enabled</title></head>
+  <body>
+    <let/on=true/>
+    <button data-testid="toggle" onClick() { on = !on }>toggle (${on})</button>
+    <div/scrollEl data-testid="scroller" style="height: 400px; overflow-y: auto">
+      <virtualizer/v
+        count=10000
+        estimateSize=() => 35
+        overscan=5
+        getScrollElement=() => scrollEl()
+        enabled=on
+      />
+      <div style=`height: ${v.totalSize}px; position: relative`>
+        <for|item| of=v.virtualItems>
+          <div
+            data-index=item.index
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+          >
+            Row ${item.index}
+          </div>
+        </for>
+      </div>
+    </div>
+  </body>
+</html>

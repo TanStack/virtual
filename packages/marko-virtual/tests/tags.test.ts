@@ -28,12 +28,14 @@ import { waitFor } from '@testing-library/dom'
 import VirtualizerFixture from './fixtures/virtualizer-fixture.marko'
 import WindowVirtualizerFixture from './fixtures/window-virtualizer-fixture.marko'
 import CountUpdateFixture from './fixtures/count-update-fixture.marko'
+import SurfaceFixture from './fixtures/surface-fixture.marko'
 
 // Cast to any — @marko/vite compiles .marko files as ES modules whose default
 // export is the template object with mount(input, container): Instance.
 const Virtualizer = VirtualizerFixture as any
 const WindowVirtualizer = WindowVirtualizerFixture as any
 const CountUpdate = CountUpdateFixture as any
+const Surface = SurfaceFixture as any
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -274,5 +276,137 @@ describe('<window-virtualizer>', () => {
           ?.getAttribute('data-index'),
       ).toBe('0'),
     )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Expanded return surface (range + methods) — surface-fixture.marko
+// ---------------------------------------------------------------------------
+
+describe('<virtualizer> expanded return surface', () => {
+  test('range is populated after mount and matches the rendered window', async () => {
+    const el = mountFixture(Surface, { count: 100 })
+    await waitFor(() => {
+      const start = el.querySelector("[data-testid='range-start']")?.textContent
+      const end = el.querySelector("[data-testid='range-end']")?.textContent
+      expect(start).toBe('0')
+      expect(Number(end)).toBeGreaterThan(0)
+    })
+    // range excludes overscan; rendered items include it, so items >= range span
+    const end = Number(
+      el.querySelector("[data-testid='range-end']")?.textContent,
+    )
+    const items = el.querySelectorAll("[data-testid='virtual-item']")
+    expect(items.length).toBeGreaterThanOrEqual(end + 1)
+  })
+
+  test('getItemKey flows through to the live items', async () => {
+    const el = mountFixture(Surface, { count: 100 })
+    await waitFor(() =>
+      expect(
+        el.querySelector("[data-testid='first-key']")?.textContent,
+      ).toBe('key-0'),
+    )
+  })
+
+  test('isAtEnd() is false at the top of a long list', async () => {
+    const el = mountFixture(Surface, { count: 100 })
+    await waitFor(() =>
+      expect(el.querySelector("[data-testid='at-end']")?.textContent).toBe(
+        'false',
+      ),
+    )
+  })
+
+  test('resizeItem() resizes one row and the DOM reflects it', async () => {
+    const el = mountFixture(Surface, { count: 100 })
+    await waitFor(() =>
+      expect(
+        el.querySelectorAll("[data-testid='virtual-item']").length,
+      ).toBeGreaterThan(0),
+    )
+    ;(
+      el.querySelector("[data-testid='do-resize']") as HTMLButtonElement
+    ).click()
+    await waitFor(() => {
+      const first = el
+        .querySelectorAll("[data-testid='virtual-item']")
+        .item(0)
+      expect(first?.getAttribute('data-size')).toBe('150')
+    })
+  })
+
+  test('measure() after resizeItem() drops the cache back to estimates', async () => {
+    const el = mountFixture(Surface, { count: 100 })
+    await waitFor(() =>
+      expect(
+        el.querySelectorAll("[data-testid='virtual-item']").length,
+      ).toBeGreaterThan(0),
+    )
+    ;(
+      el.querySelector("[data-testid='do-resize']") as HTMLButtonElement
+    ).click()
+    await waitFor(() =>
+      expect(
+        el
+          .querySelectorAll("[data-testid='virtual-item']")
+          .item(0)
+          ?.getAttribute('data-size'),
+      ).toBe('150'),
+    )
+    ;(
+      el.querySelector("[data-testid='do-measure']") as HTMLButtonElement
+    ).click()
+    await waitFor(() =>
+      expect(
+        el
+          .querySelectorAll("[data-testid='virtual-item']")
+          .item(0)
+          ?.getAttribute('data-size'),
+      ).toBe('50'),
+    )
+  })
+
+  test('scrollToEnd() does not throw (scroll effects are e2e territory)', async () => {
+    const el = mountFixture(Surface, { count: 100 })
+    await waitFor(() =>
+      expect(
+        el.querySelectorAll("[data-testid='virtual-item']").length,
+      ).toBeGreaterThan(0),
+    )
+    expect(() =>
+      (
+        el.querySelector("[data-testid='do-scroll-end']") as HTMLButtonElement
+      ).click(),
+    ).not.toThrow()
+  })
+
+  test('rangeExtractor forces an extra index into the rendered window', async () => {
+    const el = mountFixture(Surface, {
+      count: 100,
+      rangeExtractor: (r: {
+        startIndex: number
+        endIndex: number
+        overscan: number
+        count: number
+      }) => {
+        const next = new Set([99]) // force the LAST index in while at the top
+        for (
+          let i = Math.max(0, r.startIndex - r.overscan);
+          i <= Math.min(r.count - 1, r.endIndex + r.overscan);
+          i++
+        ) {
+          next.add(i)
+        }
+        return [...next].sort((a, b) => a - b)
+      },
+    })
+    await waitFor(() => {
+      const indexes = [
+        ...el.querySelectorAll("[data-testid='virtual-item']"),
+      ].map((n) => n.getAttribute('data-index'))
+      expect(indexes).toContain('99')
+      expect(indexes).toContain('0')
+    })
   })
 })

@@ -26,80 +26,68 @@
       <code>estimateSize</code> using a deterministic formula so no DOM measurement is needed.
     </p>
 
-    <let/mounted = false/>
-    <lifecycle onMount() { mounted = true }/>
-
     <section>
       <h2>Rows</h2>
       <div/rowScroll class="scroll-row">
-        <if=mounted>
-          <virtualizer|{ virtualItems, totalSize }|
-            count=10000
-            estimateSize=(i) => 25 + ((i * 17 + 31) % 100)
-            getScrollElement=rowScroll
-          >
-            <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-              <for|item| of=virtualItems>
-                <div
-                  class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                  style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
-                >
-                  Row ${item.index} — ${item.size}px
-                </div>
-              </for>
+        <virtualizer/rowV
+          count=10000
+          estimateSize=(i) => 25 + ((i * 17 + 31) % 100)
+          getScrollElement=() => rowScroll()
+        />
+        <div style=`height: ${rowV.totalSize}px; width: 100%; position: relative`>
+          <for|item| of=rowV.virtualItems>
+            <div
+              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+              style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+            >
+              Row ${item.index} — ${item.size}px
             </div>
-          </virtualizer>
-        </if>
+          </for>
+        </div>
       </div>
     </section>
 
     <section>
       <h2>Columns</h2>
       <div/colScroll class="scroll-col">
-        <if=mounted>
-          <virtualizer|{ virtualItems, totalSize }|
-            count=10000
-            estimateSize=(i) => 75 + ((i * 13 + 43) % 100)
-            horizontal=true
-            getScrollElement=colScroll
-          >
-            <div style=`width: ${totalSize}px; height: 100%; position: relative`>
-              <for|item| of=virtualItems>
-                <div
-                  class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                  style=`position: absolute; top: 0; left: 0; height: 100%; width: ${item.size}px; transform: translateX(${item.start}px)`
-                >
-                  Col ${item.index}
-                </div>
-              </for>
+        <virtualizer/colV
+          count=10000
+          estimateSize=(i) => 75 + ((i * 13 + 43) % 100)
+          horizontal=true
+          getScrollElement=() => colScroll()
+        />
+        <div style=`width: ${colV.totalSize}px; height: 100%; position: relative`>
+          <for|item| of=colV.virtualItems>
+            <div
+              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+              style=`position: absolute; top: 0; left: 0; height: 100%; width: ${item.size}px; transform: translateX(${item.start}px)`
+            >
+              Col ${item.index}
             </div>
-          </virtualizer>
-        </if>
+          </for>
+        </div>
       </div>
     </section>
 
     <section>
       <h2>Masonry (vertical, 4 lanes)</h2>
       <div/masonryScroll class="scroll-masonry">
-        <if=mounted>
-          <virtualizer|{ virtualItems, totalSize }|
-            count=10000
-            estimateSize=(i) => 25 + ((i * 17 + 31) % 100)
-            lanes=4
-            getScrollElement=masonryScroll
-          >
-            <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-              <for|item| of=virtualItems>
-                <div
-                  class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                  style=`position: absolute; top: 0; left: ${item.lane * 25}%; width: 25%; height: ${item.size}px; transform: translateY(${item.start}px); box-sizing: border-box`
-                >
-                  ${item.index}
-                </div>
-              </for>
+        <virtualizer/masonryV
+          count=10000
+          estimateSize=(i) => 25 + ((i * 17 + 31) % 100)
+          lanes=4
+          getScrollElement=() => masonryScroll()
+        />
+        <div style=`height: ${masonryV.totalSize}px; width: 100%; position: relative`>
+          <for|item| of=masonryV.virtualItems>
+            <div
+              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+              style=`position: absolute; top: 0; left: ${item.lane * 25}%; width: 25%; height: ${item.size}px; transform: translateY(${item.start}px); box-sizing: border-box`
+            >
+              ${item.index}
             </div>
-          </virtualizer>
-        </if>
+          </for>
+        </div>
       </div>
     </section>
   </body>
