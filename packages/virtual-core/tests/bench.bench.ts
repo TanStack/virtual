@@ -268,6 +268,29 @@ describe('Multi-lane cold mount: getMeasurements with variable sizes', () => {
   }
 })
 
+// Uniform sizes: the common same-height grid. The old backward scan settled
+// quickly here (balanced lanes → shallow walk), so this isolates the flat
+// constant-factor win from dropping the per-placement Map allocations + sort,
+// independent of scan depth. Guards against regressing the most common case.
+describe('Multi-lane cold mount: getMeasurements with uniform sizes', () => {
+  for (const lanes of [2, 4, 8]) {
+    for (const n of [10000, 100000]) {
+      bench(`lanes=${lanes} n=${n}`, () => {
+        const v = new Virtualizer({
+          count: n,
+          lanes,
+          estimateSize: () => 50,
+          getScrollElement: () => null,
+          scrollToFn: () => {},
+          observeElementRect: () => {},
+          observeElementOffset: () => {},
+        })
+        ;(v as any).getMeasurements()
+      })
+    }
+  }
+})
+
 // Worst case: 'measure' mode keeps items uncached across rebuilds, so every
 // rebuild re-runs getFurthestMeasurement for the whole (unmeasured) list.
 describe('Multi-lane rebuild storm: measure mode, 50× getMeasurements', () => {

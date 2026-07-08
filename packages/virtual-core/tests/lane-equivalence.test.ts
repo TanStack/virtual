@@ -224,6 +224,51 @@ describe('multi-lane placement equivalence with the original backward scan', () 
       }
     })
   }
+
+  // Uniform sizes make every lane's ends equal at each row, so every
+  // shortest-lane pick is an `end` tie resolved purely by the last-item-index
+  // tie-break — the common same-height-grid case, and the hardest exercise of
+  // that tie-break. Split out because the randomized suite above rarely yields
+  // all-equal rows.
+  it('matches reference for uniform sizes (every placement is an end-tie)', () => {
+    for (const lanes of [2, 3, 4, 5, 8]) {
+      for (const gap of [0, 4, 10]) {
+        const count = 500
+        const sizeOf = () => 42
+
+        const expected = new ReferenceVirtualizer({
+          count,
+          lanes,
+          gap,
+          paddingStart: 0,
+          scrollMargin: 0,
+          laneAssignmentMode: 'estimate',
+          estimateSize: sizeOf,
+        }).build()
+
+        const v = new Virtualizer({
+          count,
+          lanes,
+          gap,
+          estimateSize: sizeOf,
+          getScrollElement: () => null,
+          scrollToFn: vi.fn(),
+          observeElementRect: vi.fn(),
+          observeElementOffset: vi.fn(),
+        })
+        const actual = (v as any).getMeasurements() as Array<any>
+
+        for (let i = 0; i < count; i++) {
+          const a = actual[i]
+          const e = expected[i]!
+          expect(
+            { lane: a.lane, start: a.start, size: a.size, end: a.end },
+            `lanes=${lanes} gap=${gap} item ${i}`,
+          ).toEqual({ lane: e.lane, start: e.start, size: e.size, end: e.end })
+        }
+      }
+    }
+  })
 })
 
 // `measured` mode with interleaved resizeItem() calls, covering the paths the
