@@ -321,7 +321,12 @@ describe('multi-lane placement equivalence under measured-mode rebuilds', () => 
             expect(
               { lane: a.lane, start: a.start, size: a.size, end: a.end },
               `${label}: item ${i}`,
-            ).toEqual({ lane: e.lane, start: e.start, size: e.size, end: e.end })
+            ).toEqual({
+              lane: e.lane,
+              start: e.start,
+              size: e.size,
+              end: e.end,
+            })
           }
         }
 
