@@ -1271,6 +1271,50 @@ test('lazy fast path: respects paddingStart + scrollMargin + gap', () => {
   expect(m[1]!.size).toBe(40)
 })
 
+test('changing gap invalidates cached measurements', () => {
+  const baseOptions = {
+    count: 5,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  }
+  const v = new Virtualizer({ ...baseOptions, gap: 0 })
+  let m = v['getMeasurements']()
+  expect(m[1]!.start).toBe(50)
+  expect(v.getTotalSize()).toBe(250)
+
+  v.setOptions({ ...baseOptions, gap: 40 })
+  m = v['getMeasurements']()
+  // start(i) = i * (size + gap); previously stale starts survived a gap-only
+  // change because gap was missing from the measurement memo dependencies
+  expect(m[1]!.start).toBe(90)
+  expect(m[2]!.start).toBe(180)
+  expect(v.getTotalSize()).toBe(410)
+})
+
+test('changing gap invalidates cached measurements (multi-lane)', () => {
+  const baseOptions = {
+    count: 4,
+    lanes: 2,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  }
+  const v = new Virtualizer({ ...baseOptions, gap: 0 })
+  let m = v['getMeasurements']()
+  expect(m[2]!.start).toBe(50)
+
+  v.setOptions({ ...baseOptions, gap: 40 })
+  m = v['getMeasurements']()
+  // second row in each lane starts at prevInLane.end + gap
+  expect(m[2]!.start).toBe(90)
+  expect(m[3]!.start).toBe(90)
+})
+
 test('lazy fast path: VirtualItem fields are correct', () => {
   const v = new Virtualizer({
     count: 3,

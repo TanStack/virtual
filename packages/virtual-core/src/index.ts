@@ -1091,6 +1091,7 @@ export class Virtualizer<
       this.options.enabled,
       this.options.lanes,
       this.options.laneAssignmentMode,
+      this.options.gap,
     ],
     (
       count,
@@ -1100,6 +1101,7 @@ export class Virtualizer<
       enabled,
       lanes,
       laneAssignmentMode,
+      gap,
     ) => {
       const lanesChanged =
         this.prevLanes !== undefined && this.prevLanes !== lanes
@@ -1120,6 +1122,7 @@ export class Virtualizer<
         enabled,
         lanes,
         laneAssignmentMode,
+        gap,
       }
     },
     {
@@ -1138,6 +1141,7 @@ export class Virtualizer<
         enabled,
         lanes,
         laneAssignmentMode,
+        gap,
       },
       _itemSizeCacheVersion,
     ) => {
@@ -1196,7 +1200,6 @@ export class Virtualizer<
       // At n=100k this drops cold-mount cost from ~2.5ms (eager object
       // allocation) to roughly the cost of a single typed-array fill.
       if (lanes === 1) {
-        const gap = this.options.gap
         // Reuse flat backing if large enough; else grow (preserving data
         // before `min` to mirror the slice-and-rebuild contract).
         const need = count * 2
@@ -1276,7 +1279,7 @@ export class Virtualizer<
           const prevInLane =
             prevIndex !== undefined ? measurements[prevIndex] : undefined
           start = prevInLane
-            ? prevInLane.end + this.options.gap
+            ? prevInLane.end + gap
             : paddingStart + scrollMargin
         } else if (filledLanes === lanes) {
           // No cache, every lane seeded: place in the shortest lane.
@@ -1295,7 +1298,7 @@ export class Virtualizer<
             }
           }
           lane = bestLane
-          start = bestEnd + this.options.gap
+          start = bestEnd + gap
 
           if (shouldCacheLane) {
             this.laneAssignments.set(i, lane)
