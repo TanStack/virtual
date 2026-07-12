@@ -1,5 +1,4 @@
 ---
-'@tanstack/react-virtual': patch
 '@tanstack/virtual-core': patch
 ---
 
