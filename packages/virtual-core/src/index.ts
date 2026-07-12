@@ -741,6 +741,19 @@ export class Virtualizer<
       this.rafId = null
     }
     this.scrollState = null
+    // The iOS gesture/deferral state is scoped to the current scroll
+    // element: the touch listeners that maintain it were just removed, and
+    // an in-flight touch keeps targeting the old element (implicit touch
+    // capture), so the new element never reports it. Carrying the state
+    // over would replay a stale deferred delta on the new element's first
+    // flush, and a cleanup that lands mid-touch or inside the post-touchend
+    // grace window would strand _iosTouching / _iosJustTouchEnded as true
+    // (the listener unsub clears the grace timer, and with it the only
+    // pending reset of the flag), deferring every adjustment on the new
+    // element until its next touch cycle.
+    this._iosDeferredAdjustment = 0
+    this._iosTouching = false
+    this._iosJustTouchEnded = false
     this.scrollElement = null
     this.targetWindow = null
   }
