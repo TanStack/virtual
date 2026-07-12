@@ -1082,47 +1082,6 @@ export class Virtualizer<
     return this.scrollOffset
   }
 
-  private getFurthestMeasurement = (
-    measurements: Array<VirtualItem>,
-    index: number,
-  ) => {
-    const furthestMeasurementsFound = new Map<number, true>()
-    const furthestMeasurements = new Map<number, VirtualItem>()
-    for (let m = index - 1; m >= 0; m--) {
-      const measurement = measurements[m]!
-
-      if (furthestMeasurementsFound.has(measurement.lane)) {
-        continue
-      }
-
-      const previousFurthestMeasurement = furthestMeasurements.get(
-        measurement.lane,
-      )
-      if (
-        previousFurthestMeasurement == null ||
-        measurement.end > previousFurthestMeasurement.end
-      ) {
-        furthestMeasurements.set(measurement.lane, measurement)
-      } else if (measurement.end < previousFurthestMeasurement.end) {
-        furthestMeasurementsFound.set(measurement.lane, true)
-      }
-
-      if (furthestMeasurementsFound.size === this.options.lanes) {
-        break
-      }
-    }
-
-    return furthestMeasurements.size === this.options.lanes
-      ? Array.from(furthestMeasurements.values()).sort((a, b) => {
-          if (a.end === b.end) {
-            return a.index - b.index
-          }
-
-          return a.end - b.end
-        })[0]
-      : undefined
-  }
-
   private getMeasurementOptions = memo(
     () => [
       this.options.count,
@@ -1284,12 +1243,21 @@ export class Virtualizer<
       const laneLastIndex: Array<number | undefined> = new Array(lanes).fill(
         undefined,
       )
+      // Running end position of each lane's last item, so the shortest lane
+      // can be found with an O(lanes) argmin instead of the old backward walk
+      // through `measurements` (getFurthestMeasurement). `filledLanes` tracks
+      // how many lanes have at least one item, mirroring the previous
+      // "all lanes seen → shortest lane, else i % lanes" branch.
+      const laneEnds = new Float64Array(lanes)
+      let filledLanes = 0
 
       // Initialize from existing measurements (before min)
       for (let m = 0; m < min; m++) {
         const item = measurements[m]
         if (item) {
+          if (laneLastIndex[item.lane] === undefined) filledLanes++
           laneLastIndex[item.lane] = m
+          laneEnds[item.lane] = item.end
         }
       }
 
@@ -1313,22 +1281,35 @@ export class Virtualizer<
           start = prevInLane
             ? prevInLane.end + gap
             : paddingStart + scrollMargin
+        } else if (filledLanes === lanes) {
+          // No cache, every lane seeded: place in the shortest lane.
+          // Read the running per-lane ends (O(lanes) argmin) instead of the
+          // old backward scan. Tie-break on the lane's last-item index to
+          // preserve the previous sort-by-(end, index) placement exactly.
+          let bestLane = 0
+          let bestEnd = laneEnds[0]!
+          let bestIdx = laneLastIndex[0]!
+          for (let l = 1; l < lanes; l++) {
+            const e = laneEnds[l]!
+            if (e < bestEnd || (e === bestEnd && laneLastIndex[l]! < bestIdx)) {
+              bestLane = l
+              bestEnd = e
+              bestIdx = laneLastIndex[l]!
+            }
+          }
+          lane = bestLane
+          start = bestEnd + gap
+
+          if (shouldCacheLane) {
+            this.laneAssignments.set(i, lane)
+          }
         } else {
-          // No cache - use original logic (find shortest lane)
-          const furthestMeasurement =
-            this.options.lanes === 1
-              ? measurements[i - 1]
-              : this.getFurthestMeasurement(measurements, i)
+          // No cache and not every lane seeded yet — seed lanes in order,
+          // matching the previous `i % lanes` fallback for the first row.
+          lane = i % this.options.lanes
+          start = paddingStart + scrollMargin
 
-          start = furthestMeasurement
-            ? furthestMeasurement.end + gap
-            : paddingStart + scrollMargin
-
-          lane = furthestMeasurement
-            ? furthestMeasurement.lane
-            : i % this.options.lanes
-
-          if (this.options.lanes > 1 && shouldCacheLane) {
+          if (shouldCacheLane) {
             this.laneAssignments.set(i, lane)
           }
         }
@@ -1350,8 +1331,10 @@ export class Virtualizer<
           lane,
         }
 
-        // ✅ Performance: Update lane's last item index
+        // ✅ Performance: Update lane's last item index + running end
+        if (laneLastIndex[lane] === undefined) filledLanes++
         laneLastIndex[lane] = i
+        laneEnds[lane] = end
       }
 
       this.measurementsCache = measurements
