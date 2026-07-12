@@ -711,6 +711,75 @@ test('resizeItem on unknown index is a no-op', () => {
   expect(virtualizer['itemSizeCache'].size).toBe(0)
 })
 
+
+test('resizeItem should reject 0-size when previous measured size exists', () => {
+  const virtualizer = new Virtualizer({
+    count: 5,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  // Seed a measurement with a real non-zero size
+  virtualizer.resizeItem(2, 130)
+  expect(virtualizer['getMeasurements']()[2]!.size).toBe(130)
+
+  // Attempt to overwrite with 0 (simulating display:none RO callback)
+  // Should be rejected since we have a previous measurement
+  virtualizer.resizeItem(2, 0)
+  expect(virtualizer['getMeasurements']()[2]!.size).toBe(130)
+
+  // A subsequent resize to a new non-zero value should still work
+  virtualizer.resizeItem(2, 80)
+  expect(virtualizer['getMeasurements']()[2]!.size).toBe(80)
+})
+
+test('resizeItem should accept first-time 0-size measurement', () => {
+  const virtualizer = new Virtualizer({
+    count: 1,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  // First-time measurement of a genuinely 0-height item should be accepted
+  virtualizer.resizeItem(0, 0)
+  expect(virtualizer['getMeasurements']()[0]!.size).toBe(0)
+})
+
+test('resizeItem: 0-size followed by non-zero update should still work', () => {
+  const virtualizer = new Virtualizer({
+    count: 3,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+
+  virtualizer['getMeasurements']()
+
+  // First measurement: 0 (accepted, no prior cache)
+  virtualizer.resizeItem(1, 0)
+  expect(virtualizer['getMeasurements']()[1]!.size).toBe(0)
+
+  // Later the item gets content and grows to 200 — should work
+  virtualizer.resizeItem(1, 200)
+  expect(virtualizer['getMeasurements']()[1]!.size).toBe(200)
+
+  // Now that we have a non-zero cache, a 0 should be rejected
+  virtualizer.resizeItem(1, 0)
+  expect(virtualizer['getMeasurements']()[1]!.size).toBe(200)
+})
+
 test('resizeItem out-of-order should produce correct positions regardless of measurement order', () => {
   const N = 10
   const virtualizer = new Virtualizer({

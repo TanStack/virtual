@@ -1515,6 +1515,12 @@ export class Virtualizer<
     }
 
     const itemSize = this.itemSizeCache.get(key) ?? cachedSize
+
+    // Prevent 0-size measurements from overwriting a previously cached size.
+    // This avoids infinite re-renders when elements are temporarily hidden
+    // (e.g., display:none), causing ResizeObserver to deliver 0 size.
+    if (size === 0 && this.itemSizeCache.has(key)) return
+
     const delta = size - itemSize
 
     if (delta !== 0) {
