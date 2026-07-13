@@ -104,7 +104,7 @@ static const ROW_HEIGHT = 34
     <virtualizer/v
       count=rows.length
       estimateSize=() => ROW_HEIGHT
-      getScrollElement=() => scrollEl()
+      getScrollElement=(): Element | null => scrollEl() ?? null
       overscan=20
     />
 

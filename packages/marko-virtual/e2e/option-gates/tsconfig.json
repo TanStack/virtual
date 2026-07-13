@@ -19,6 +19,7 @@
     "src",
     "e2e",
     "playwright.config.ts",
-    "vite.config.ts"
+    "vite.config.ts",
+    "../../src/tags/**/*"
   ]
 }

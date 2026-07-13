@@ -311,9 +311,11 @@ pnpm -r --workspace-concurrency=1 --filter "./examples/marko/*" run test:e2e
 _Note:_ This has to be run sequentially as they all start the same port.
 
 _Note:_ All suites run against **dev servers**; production builds are not exercised by
-any test. After bumping `marko` (or other build-path dependencies), sanity-check a
-production build manually: `pnpm --filter <example> build` then `preview`, and click
-through the chat example's Stream reply.
+any test. After bumping `marko` (or other build-path dependencies) or changing the
+package's build/packaging config, sanity-check production builds manually:
+`pnpm --filter <example> build` then `preview` — and check **both** kinds of example:
+`fixed` (render-only — rows must appear; this is the case production tree-shaking can
+silently break) and `chat` (interactive — click through Stream reply).
 
 ### Running all unit tests
 To run all the unit tests specifically for `marko-virtual/tests` use the command
