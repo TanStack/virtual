@@ -52,5 +52,8 @@
   "files": [
     "dist",
     "src"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/TanStack/virtual/issues"
+  }
 }
