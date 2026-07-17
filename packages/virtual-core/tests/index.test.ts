@@ -3155,3 +3155,111 @@ test('observeWindowOffset: reads scrollX when horizontal', () => {
   listeners.get('scroll')!({} as Event)
   expect(cb).toHaveBeenCalledWith(75, true)
 })
+
+// ─── #1229: negative tracked scrollOffset must not survive compensation ─────
+// anchorTo: 'end' + element scrolling + items measuring smaller than their
+// estimates + content shorter than the viewport. The end-anchor compensation
+// applies a negative delta; the DOM clamps the scrollTop write to 0 and an
+// unscrollable element never fires a scroll event, so an unclamped tracked
+// offset would stay negative forever — phantom getDistanceFromEnd(), wedged
+// _flushIosDeferredIfReady.
+
+const makeUnscrollableElement = () => {
+  // Content fits the viewport: the browser clamps scrollHeight to
+  // clientHeight, so maxScrollOffset = 0 and no scroll event can fire.
+  const el = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 400,
+    scrollHeight: 600,
+    clientWidth: 400,
+    clientHeight: 600,
+    scrollTo: ({ top }: { top: number }) => {
+      el.scrollTop = Math.max(0, Math.min(top, 0))
+    },
+  }
+  return el as unknown as HTMLDivElement
+}
+
+const unscrollableOptions = (
+  scrollElement: HTMLDivElement,
+  offsetCbRef: {
+    current: ((offset: number, isScrolling: boolean) => void) | null
+  },
+) => ({
+  count: 5,
+  // Estimates larger than the real measured sizes
+  estimateSize: () => 100,
+  anchorTo: 'end' as const,
+  getScrollElement: () => scrollElement,
+  scrollToFn: (
+    offset: number,
+    {
+      adjustments = 0,
+      behavior,
+    }: { adjustments?: number; behavior?: ScrollBehavior },
+    instance: Virtualizer<HTMLDivElement, any>,
+  ) => {
+    instance.scrollElement?.scrollTo?.({ top: offset + adjustments, behavior })
+  },
+  observeElementRect: (
+    _instance: unknown,
+    cb: (rect: { width: number; height: number }) => void,
+  ) => {
+    cb({ width: 400, height: 600 })
+    return () => {}
+  },
+  observeElementOffset: (
+    _instance: unknown,
+    cb: (offset: number, isScrolling: boolean) => void,
+  ) => {
+    offsetCbRef.current = cb
+    cb(0, false)
+    return () => {}
+  },
+})
+
+test('anchorTo end: shrink compensation clamps tracked scrollOffset at 0 when content fits the viewport (#1229)', () => {
+  const scrollElement = makeUnscrollableElement()
+  const offsetCbRef = { current: null as any }
+  const virtualizer = new Virtualizer(
+    unscrollableOptions(scrollElement, offsetCbRef),
+  )
+
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+
+  // Real sizes come in smaller than the estimates (98 vs 100)
+  for (let i = 0; i < 5; i++) {
+    virtualizer.resizeItem(i, 98)
+  }
+
+  // The element is trivially at its end: 490px of content in a 600px
+  // viewport, pinned at scrollTop 0.
+  expect(scrollElement.scrollTop).toBe(0)
+  expect(virtualizer.scrollOffset).toBe(0)
+  expect(virtualizer.getDistanceFromEnd()).toBe(0)
+  expect(virtualizer.isAtEnd()).toBe(true)
+})
+
+test('anchorTo end: setOptions re-anchor clamps tracked scrollOffset at 0 (#1229)', () => {
+  const scrollElement = makeUnscrollableElement()
+  const offsetCbRef = { current: null as any }
+  const options = unscrollableOptions(scrollElement, offsetCbRef)
+  const virtualizer = new Virtualizer(options)
+
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+
+  // Simulate a transiently negative offset reported by a real scroll event
+  // (elastic overscroll) landing right before an options update.
+  offsetCbRef.current!(-10, false)
+  expect(virtualizer.scrollOffset).toBe(-10)
+
+  // Trim the last item: edge keys change, triggering the end-anchor
+  // re-resolution in setOptions. The anchor item (index 0) still starts at
+  // 0, so the unclamped offset would be written back as -10.
+  virtualizer.setOptions({ ...options, count: 4 })
+
+  expect(virtualizer.scrollOffset).toBe(0)
+})

@@ -651,7 +651,11 @@ export class Virtualizer<
       if (idx < count) {
         const anchorItem = newMeasurements[idx]
         if (anchorItem) {
-          const newOffset = anchorItem.start + anchorOffset
+          // Clamp to the reachable range's lower bound — anchorOffset may
+          // have been derived from a transiently negative scrollOffset
+          // (rubber-band), and a negative tracked offset never self-heals
+          // when the element cannot scroll (#1229).
+          const newOffset = Math.max(0, anchorItem.start + anchorOffset)
           if (newOffset !== this.scrollOffset) {
             anchorDelta = newOffset - this.scrollOffset
             this.scrollOffset = newOffset
@@ -703,6 +707,13 @@ export class Virtualizer<
       // `scrollAdjustments` to keep their sum invariant.
       if (this.scrollOffset !== null) {
         this.scrollOffset += this.scrollAdjustments
+        // Clamp only the lower bound: a negative offset is unreachable, and
+        // on an unscrollable element (content fits the viewport) no scroll
+        // event ever fires to correct it, permanently skewing
+        // getDistanceFromEnd() and wedging _flushIosDeferredIfReady (#1229).
+        // Upper-bound overflow stays untouched — it is transiently
+        // legitimate mid-prepend while the consumer's sizer catches up.
+        if (this.scrollOffset < 0) this.scrollOffset = 0
         this.scrollAdjustments = 0
       }
     }
