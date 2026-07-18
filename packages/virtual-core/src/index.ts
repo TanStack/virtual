@@ -369,6 +369,11 @@ export interface VirtualizerOptions<
   useAnimationFrameWithResizeObserver?: boolean
   laneAssignmentMode?: LaneAssignmentMode
   useCachedMeasurements?: boolean
+  shouldAdjustScrollPositionOnItemSizeChange?: (
+    item: VirtualItem,
+    delta: number,
+    instance: Virtualizer<TScrollElement, TItemElement>,
+  ) => boolean
 }
 
 type ScrollState = {
@@ -1547,10 +1552,21 @@ export class Virtualizer<
         this.scrollState?.behavior !== 'smooth' &&
         this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
       const prevTotalSize = wasAtEnd ? this.getTotalSize() : 0
+      // The predicate can be supplied via options (#1227) or, for
+      // back-compat, by assigning it directly on the instance.
+      const shouldAdjustScrollPositionOnItemSizeChange:
+        | ((
+            item: VirtualItem,
+            delta: number,
+            instance: Virtualizer<TScrollElement, TItemElement>,
+          ) => boolean)
+        | undefined =
+        this.options.shouldAdjustScrollPositionOnItemSizeChange ??
+        this.shouldAdjustScrollPositionOnItemSizeChange
       const shouldAdjustScroll =
         this.scrollState?.behavior !== 'smooth' &&
-        (this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
-          ? this.shouldAdjustScrollPositionOnItemSizeChange(
+        (shouldAdjustScrollPositionOnItemSizeChange !== undefined
+          ? shouldAdjustScrollPositionOnItemSizeChange(
               // The callback expects a VirtualItem; build one lazily only
               // when the consumer actually supplied a custom predicate.
               this.measurementsCache[index] ?? {

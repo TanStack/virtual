@@ -1,4 +1,5 @@
 import { expect, test, vi } from 'vitest'
+import type { VirtualItem } from '../src/index'
 import {
   Virtualizer,
   _resetIOSDetectionForTests,
@@ -2581,6 +2582,118 @@ test('multi-frame reflow: above-viewport re-measure compensation is never skippe
   // frames 2-5 were skipped and the offset is stuck at 645.
   expect(scrollToFn).toHaveBeenCalledTimes(5)
   expect(v.scrollOffset).toBe(725)
+})
+
+// ─── shouldAdjustScrollPositionOnItemSizeChange option wiring (#1227) ───────
+
+function createPredicateVirtualizer({
+  count = 30,
+  offset,
+  shouldAdjustScrollPositionOnItemSizeChange,
+}: {
+  count?: number
+  offset: number
+  shouldAdjustScrollPositionOnItemSizeChange?: (
+    item: VirtualItem,
+    delta: number,
+    instance: Virtualizer<HTMLDivElement, HTMLDivElement>,
+  ) => boolean
+}) {
+  const scrollToFn = vi.fn()
+  let scrollCb: ((o: number, s: boolean) => void) | null = null
+  const v = new Virtualizer<HTMLDivElement, HTMLDivElement>({
+    count,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: offset,
+        scrollLeft: 0,
+        scrollHeight: count * 50,
+        clientHeight: 200,
+        offsetHeight: 200,
+      }) as any,
+    scrollToFn,
+    observeElementRect: (_inst: any, cb: any) => {
+      cb({ width: 400, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_inst: any, cb: any) => {
+      scrollCb = cb
+      cb(offset, false)
+      return () => {}
+    },
+    shouldAdjustScrollPositionOnItemSizeChange,
+  })
+  v._didMount()
+  v._willUpdate()
+  v['getMeasurements']()
+  scrollToFn.mockClear()
+  return {
+    v,
+    scrollToFn,
+    emitScroll: (o: number, isScrolling: boolean) => scrollCb!(o, isScrolling),
+  }
+}
+
+test('shouldAdjustScrollPositionOnItemSizeChange passed via options overrides the default backward-scroll skip', () => {
+  // #1227: the option is documented as the escape hatch to restore pre-3.14
+  // behavior (always compensate above-viewport resizes), but resizeItem read
+  // it from an instance field that setOptions never assigned, so passing it
+  // in options silently did nothing.
+  const { v, scrollToFn, emitScroll } = createPredicateVirtualizer({
+    offset: 600,
+    shouldAdjustScrollPositionOnItemSizeChange: (item, _delta, instance) =>
+      item.start < instance.getScrollOffset(),
+  })
+
+  // Measure an above-viewport row so the next resize is a re-measure —
+  // the leg the default predicate skips during backward scroll.
+  v.resizeItem(0, 55)
+  v['getMeasurements']()
+  expect(v.scrollOffset).toBe(605)
+  emitScroll(605, false)
+  scrollToFn.mockClear()
+
+  // Real backward gesture: the user is scrolling up.
+  emitScroll(500, true)
+  expect(v.scrollDirection).toBe('backward')
+
+  // Above-viewport re-measure during backward scroll. The default skips
+  // compensation here; the user-supplied predicate must win instead.
+  v.resizeItem(0, 75)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(v.scrollOffset).toBe(520)
+})
+
+test('shouldAdjustScrollPositionOnItemSizeChange receives the resized item, delta and instance', () => {
+  const calls: Array<{ index: number; size: number; delta: number }> = []
+  const { v } = createPredicateVirtualizer({
+    offset: 600,
+    shouldAdjustScrollPositionOnItemSizeChange: (item, delta, instance) => {
+      expect(instance).toBe(v)
+      calls.push({ index: item.index, size: item.size, delta })
+      return false
+    },
+  })
+
+  v.resizeItem(2, 90)
+
+  expect(calls).toEqual([{ index: 2, size: 50, delta: 40 }])
+})
+
+test('shouldAdjustScrollPositionOnItemSizeChange returning false suppresses the default compensation', () => {
+  const { v, scrollToFn } = createPredicateVirtualizer({
+    offset: 600,
+    shouldAdjustScrollPositionOnItemSizeChange: () => false,
+  })
+
+  // First measurement of an above-viewport row: the default predicate would
+  // always compensate here; the user predicate must be authoritative.
+  v.resizeItem(0, 80)
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+  expect(v.scrollOffset).toBe(600)
 })
 
 // ─── end anchoring / chat-style reverse virtualization ──────────────────────
