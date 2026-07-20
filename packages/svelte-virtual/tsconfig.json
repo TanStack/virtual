@@ -4,7 +4,6 @@
     "src/**/*.js",
     "src/**/*.ts",
     "src/**/*.svelte",
-    "eslint.config.js",
     "svelte.config.js",
     "vite.config.ts"
   ]

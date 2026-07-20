@@ -110,6 +110,10 @@
               "label": "Infinite Scroll"
             },
             {
+              "to": "framework/angular/examples/chat",
+              "label": "Chat"
+            },
+            {
               "to": "framework/angular/examples/smooth-scroll",
               "label": "Smooth Scroll"
             },
