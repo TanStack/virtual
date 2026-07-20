@@ -2,17 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "moduleResolution": "Bundler",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "noEmit": false,
     "declaration": true,
     "outDir": "dist",
     "rootDir": "src",
     "tsBuildInfoFile": "./dist/tsconfig.tags.tsbuildinfo"
   },
-  "include": [
-    "src/tags/**/*.marko",
-    "src/tags/**/*.ts"
-  ]
+  "include": ["src/tags/**/*.marko", "src/tags/**/*.ts"]
 }

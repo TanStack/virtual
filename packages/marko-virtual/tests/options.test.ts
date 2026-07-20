@@ -8,7 +8,11 @@
 // initialOffset override on the window tag) is Tier-1 forwarding-tested here; the
 // behaviorally-observable subset has real-browser gates (see the session record).
 import { describe, expect, test } from 'vitest'
-import { Virtualizer, observeWindowRect, windowScroll } from '@tanstack/virtual-core'
+import {
+  Virtualizer,
+  observeWindowRect,
+  windowScroll,
+} from '@tanstack/virtual-core'
 import { buildOptions } from '../src/tags/virtualizer/options'
 import { buildOptions as buildWindowOptions } from '../src/tags/window-virtualizer/options'
 
@@ -53,9 +57,7 @@ describe('buildOptions — input to virtual-core option mapping', () => {
   test('maps every optional prop through when provided', () => {
     const getItemKey = (i: number) => `k${i}`
     const rangeExtractor = () => [0]
-    const cache = [
-      { index: 0, start: 0, size: 32, end: 32, key: 0, lane: 0 },
-    ]
+    const cache = [{ index: 0, start: 0, size: 32, end: 32, key: 0, lane: 0 }]
     const opts = buildOptions(
       {
         count: 500,
@@ -239,22 +241,28 @@ describe('buildOptions (window) — input to virtual-core option mapping', () =>
   })
 
   test('initialOffset override wins over the window.scrollY default', () => {
-    expect(buildWindowOptions({ count: 10, initialOffset: 4800 }, noop).initialOffset).toBe(4800)
+    expect(
+      buildWindowOptions({ count: 10, initialOffset: 4800 }, noop)
+        .initialOffset,
+    ).toBe(4800)
     const thunk = () => 1234
-    expect(buildWindowOptions({ count: 10, initialOffset: thunk }, noop).initialOffset).toBe(thunk)
+    expect(
+      buildWindowOptions({ count: 10, initialOffset: thunk }, noop)
+        .initialOffset,
+    ).toBe(thunk)
   })
 
   test('horizontal forwards; undefined when omitted (core defaults false)', () => {
-    expect(buildWindowOptions({ count: 10, horizontal: true }, noop).horizontal).toBe(true)
+    expect(
+      buildWindowOptions({ count: 10, horizontal: true }, noop).horizontal,
+    ).toBe(true)
     expect(buildWindowOptions({ count: 10 }, noop).horizontal).toBeUndefined()
   })
 
   test('maps every optional prop through when provided', () => {
     const getItemKey = (i: number) => `k${i}`
     const rangeExtractor = () => [0]
-    const cache = [
-      { index: 0, start: 0, size: 32, end: 32, key: 0, lane: 0 },
-    ]
+    const cache = [{ index: 0, start: 0, size: 32, end: 32, key: 0, lane: 0 }]
     const opts = buildWindowOptions(
       {
         count: 500,

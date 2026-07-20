@@ -22,7 +22,9 @@ test.afterEach(() => {
   expect(consoleErrors).toEqual([])
 })
 
-test('rows: initial window renders and deep scroll re-windows', async ({ page }) => {
+test('rows: initial window renders and deep scroll re-windows', async ({
+  page,
+}) => {
   await page.goto('/')
   await expect(
     page.locator('.scroll-row-container .item', { hasText: /^Row 0$/ }),

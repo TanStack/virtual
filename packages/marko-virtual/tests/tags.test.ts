@@ -303,9 +303,9 @@ describe('<virtualizer> expanded return surface', () => {
   test('getItemKey flows through to the live items', async () => {
     const el = mountFixture(Surface, { count: 100 })
     await waitFor(() =>
-      expect(
-        el.querySelector("[data-testid='first-key']")?.textContent,
-      ).toBe('key-0'),
+      expect(el.querySelector("[data-testid='first-key']")?.textContent).toBe(
+        'key-0',
+      ),
     )
   })
 
@@ -329,9 +329,7 @@ describe('<virtualizer> expanded return surface', () => {
       el.querySelector("[data-testid='do-resize']") as HTMLButtonElement
     ).click()
     await waitFor(() => {
-      const first = el
-        .querySelectorAll("[data-testid='virtual-item']")
-        .item(0)
+      const first = el.querySelectorAll("[data-testid='virtual-item']").item(0)
       expect(first?.getAttribute('data-size')).toBe('150')
     })
   })

@@ -53,7 +53,9 @@ test('on mount the scroll position is restored to the offset and the painted row
 }) => {
   await page.goto('/')
   // The jump-target row is VISIBLE (not just present): scroll restore worked.
-  await expect(page.locator('.email', { hasText: 'person101@example.com' })).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person101@example.com' }),
+  ).toBeVisible()
   const scrollTop = await page
     .locator('.scroll-container')
     .evaluate((el) => el.scrollTop)
@@ -64,12 +66,18 @@ test('the restored list is live: scrolling up re-windows to earlier rows', async
   page,
 }) => {
   await page.goto('/')
-  await expect(page.locator('.email', { hasText: 'person101@example.com' })).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person101@example.com' }),
+  ).toBeVisible()
   await page.locator('.scroll-container').evaluate((el) => {
     el.scrollTop = 0
   })
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toBeVisible()
-  await expect(page.locator('.email', { hasText: 'person101@example.com' })).toHaveCount(0)
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person101@example.com' }),
+  ).toHaveCount(0)
 })
 
 test('with JavaScript disabled the offset rows exist in the DOM (positioned deep, unrestored)', async ({

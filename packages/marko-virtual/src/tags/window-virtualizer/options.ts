@@ -4,7 +4,11 @@ import {
   observeWindowRect,
   windowScroll,
 } from '@tanstack/virtual-core'
-import type { Range, VirtualItem, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  Range,
+  VirtualItem,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 
 // The subset of tag input that maps onto virtual-core options. Kept here
 // (rather than imported from index.marko) so this helper has no dependency
@@ -123,7 +127,8 @@ export function buildOptions(
     isRtl: input.isRtl,
     isScrollingResetDelay: input.isScrollingResetDelay,
     useScrollendEvent: input.useScrollendEvent,
-    useAnimationFrameWithResizeObserver: input.useAnimationFrameWithResizeObserver,
+    useAnimationFrameWithResizeObserver:
+      input.useAnimationFrameWithResizeObserver,
     laneAssignmentMode: input.laneAssignmentMode,
     useCachedMeasurements: input.useCachedMeasurements,
     debug: input.debug,
@@ -144,9 +149,7 @@ export function buildOptions(
 // the server and window on the client, but neither is measured before getVirtualItems()).
 // `range` is the visible window ({ startIndex, endIndex }) the probe computed — plain data,
 // null when there is no slice.
-export function renderSlice(
-  input: WindowVirtualizerInput,
-): {
+export function renderSlice(input: WindowVirtualizerInput): {
   items: VirtualItem[]
   size: number
   range: { startIndex: number; endIndex: number } | null

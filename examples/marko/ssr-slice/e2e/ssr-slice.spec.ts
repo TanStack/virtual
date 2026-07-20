@@ -77,20 +77,28 @@ test('client resumes over the server slice and the list is live (scroll re-windo
 }) => {
   await page.goto('/')
   // The server rows are (still) there post-resume.
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toBeVisible()
 
   // Liveness: scroll deep; the window advances.
   await page.locator('.scroll-container').evaluate((el) => {
     el.scrollTop = 700 * 48
   })
-  await expect(page.locator('.email', { hasText: 'person701@example.com' })).toBeVisible()
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toHaveCount(0)
+  await expect(
+    page.locator('.email', { hasText: 'person701@example.com' }),
+  ).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toHaveCount(0)
 
   // And back to the top: the original slice re-renders (round trip).
   await page.locator('.scroll-container').evaluate((el) => {
     el.scrollTop = 0
   })
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toBeVisible()
 })
 
 test('the awaited slice STREAMS: placeholder flushes first, server-painted rows arrive in a later chunk', async () => {

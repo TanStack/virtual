@@ -64,7 +64,11 @@ describe('renderSlice — element virtualizer', () => {
       initialOffset: 4800, // window starts around index 100, far from 0
       rangeExtractor: (r) => {
         const next = new Set([0]) // the pinned index
-        for (let i = r.startIndex - r.overscan; i <= r.endIndex + r.overscan; i++) {
+        for (
+          let i = r.startIndex - r.overscan;
+          i <= r.endIndex + r.overscan;
+          i++
+        ) {
           if (i >= 0 && i < r.count) next.add(i)
         }
         return [...next].sort((a, b) => a - b)

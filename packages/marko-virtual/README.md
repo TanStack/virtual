@@ -194,56 +194,56 @@ For items with unknown heights, drive `measureElement` from a per-row `<script>`
 
 Both tags expose the same shape. Capture it with `<virtualizer/v .../>` and read `v.property`:
 
-| Property | Type | Description |
-|---|---|---|
-| `virtualItems` | `VirtualItem[]` | The currently visible virtual items (`index`, `start`, `size`, `key`, `lane`) |
-| `totalSize` | `number` | Total scrollable size in px — set as the inner container's `height` (or `width` for columns). Margin-free: `scrollMargin` is already subtracted |
-| `range` | `{ startIndex: number; endIndex: number } \| null` | The visible index window (excludes overscan). `null` until there is a window |
-| `measureElement` | `(el: Element \| null) => void` | Ref callback for dynamic item sizing |
-| `scrollToIndex` | `(index: number, options?: ScrollToOptions) => void` | Scroll to an item by index. Default `align: 'auto'` scrolls the minimum |
-| `scrollToOffset` | `(offset: number, options?: ScrollToOptions) => void` | Scroll to a pixel offset |
-| `measure` | `() => void` | Drop all measured sizes and re-measure everything (after a width/font change) |
-| `resizeItem` | `(index: number, size: number) => void` | Set one item's size directly, without a DOM measure |
-| `scrollToEnd` | `(options?: { behavior?: ScrollBehavior }) => void` | Scroll to the very end of the list |
-| `isAtEnd` | `(threshold?: number) => boolean` | Whether the scroll position is at (or within `threshold` px of) the end. `false` before mount |
-| `getDistanceFromEnd` | `() => number` | Pixels between the current scroll position and the end. `Infinity` before mount |
+| Property             | Type                                                  | Description                                                                                                                                     |
+| -------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `virtualItems`       | `VirtualItem[]`                                       | The currently visible virtual items (`index`, `start`, `size`, `key`, `lane`)                                                                   |
+| `totalSize`          | `number`                                              | Total scrollable size in px — set as the inner container's `height` (or `width` for columns). Margin-free: `scrollMargin` is already subtracted |
+| `range`              | `{ startIndex: number; endIndex: number } \| null`    | The visible index window (excludes overscan). `null` until there is a window                                                                    |
+| `measureElement`     | `(el: Element \| null) => void`                       | Ref callback for dynamic item sizing                                                                                                            |
+| `scrollToIndex`      | `(index: number, options?: ScrollToOptions) => void`  | Scroll to an item by index. Default `align: 'auto'` scrolls the minimum                                                                         |
+| `scrollToOffset`     | `(offset: number, options?: ScrollToOptions) => void` | Scroll to a pixel offset                                                                                                                        |
+| `measure`            | `() => void`                                          | Drop all measured sizes and re-measure everything (after a width/font change)                                                                   |
+| `resizeItem`         | `(index: number, size: number) => void`               | Set one item's size directly, without a DOM measure                                                                                             |
+| `scrollToEnd`        | `(options?: { behavior?: ScrollBehavior }) => void`   | Scroll to the very end of the list                                                                                                              |
+| `isAtEnd`            | `(threshold?: number) => boolean`                     | Whether the scroll position is at (or within `threshold` px of) the end. `false` before mount                                                   |
+| `getDistanceFromEnd` | `() => number`                                        | Pixels between the current scroll position and the end. `Infinity` before mount                                                                 |
 
 > Inside your **own** `onScroll` handler, compute end-proximity from the element (`el.scrollHeight - el.scrollTop - el.clientHeight`) rather than calling `v.isAtEnd()` — your handler runs before the virtualizer's listener during the same event, so the virtualizer's numbers are one event stale there. Everywhere else they are current.
 
 ## `<virtualizer>` input reference
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `count` | `number` | required | Number of items |
-| `getScrollElement` | `() => Element \| null` | required | Returns the scroll container |
-| `estimateSize` | `(index: number) => number` | `() => 50` | Estimated item size in px |
-| `overscan` | `number` | `5` | Items to render beyond the visible area |
-| `horizontal` | `boolean` | `false` | Virtualise horizontally (columns) |
-| `paddingStart` | `number` | — | Padding before first item |
-| `paddingEnd` | `number` | — | Padding after last item |
-| `scrollPaddingStart` | `number` | — | Scroll padding for `scrollToIndex` |
-| `scrollPaddingEnd` | `number` | — | Scroll padding for `scrollToIndex` |
-| `gap` | `number` | — | Gap between items in px |
-| `lanes` | `number` | `1` | Lanes for masonry layouts |
-| `initialOffset` | `number \| (() => number)` | — | Scroll offset (px) for the server slice — server-render at a scroll position (deep link / restore) |
-| `initialRect` | `{ width: number; height: number }` | — | Viewport hint for a server-rendered slice (SSR). When set, the server paints the initial visible rows; omit for client-only fill |
-| `getItemKey` | `(index: number) => number \| string \| bigint` | the index | Stable per-item identity so cached measurements survive reorder |
-| `rangeExtractor` | `(range: Range) => number[]` | `defaultRangeExtractor` | Hook over the visible range: force extra indexes (e.g. a pinned sticky header) into the rendered window. Compose with `defaultRangeExtractor` from `@tanstack/virtual-core` |
-| `indexAttribute` | `string` | `'data-index'` | DOM attribute carrying the item index for `measureElement`. Give two instances measuring the same element (a grid cell) distinct attributes |
-| `initialMeasurementsCache` | `VirtualItem[]` | — | Pre-measured items (plain data) to seed the measurement cache |
-| `anchorTo` | `'start' \| 'end'` | `'start'` | Anchor the window to the list end (a chat pinned to newest). Client-behavioral: it does not position the server slice — use `initialOffset` for that |
-| `followOnAppend` | `boolean \| ScrollBehavior` | `false` | With `anchorTo="end"`: stay pinned to the end as items append |
-| `scrollEndThreshold` | `number` | `1` | How close (px) to the end still counts as "at the end" |
-| `scrollMargin` | `number` | `0` | The list's offset (px) from the top of its scroll area, when other content sits above it in the same scroller. `item.start` values then INCLUDE this margin — subtract it when positioning items relative to the list (see the window example) |
-| `enabled` | `boolean` | `true` | Disable switch. `false` is not a freeze: the virtualizer unobserves, clears its measurements, and renders an empty window until re-enabled |
-| `isRtl` | `boolean` | `false` | Right-to-left horizontal lists |
-| `isScrollingResetDelay` | `number` | `150` | ms after the last scroll event before "user is scrolling" ends |
-| `useScrollendEvent` | `boolean` | `false` | Use the native `scrollend` event instead of the `isScrollingResetDelay` timer |
-| `useAnimationFrameWithResizeObserver` | `boolean` | `false` | Batch ResizeObserver measurements into animation frames (avoids "ResizeObserver loop" console errors under heavy resize load) |
-| `laneAssignmentMode` | `'estimate' \| 'measured'` | `'estimate'` | Masonry/multi-lane: assign items to lanes by estimated or measured sizes |
-| `useCachedMeasurements` | `boolean` | `false` | Make the default measurer return the cached (or estimated) size instead of reading the DOM — freezes item sizes when they are already known |
-| `debug` | `boolean` | `false` | Verbose engine logging |
-| `measureElement` | `(element, entry, instance) => number` | border-box measurer | Replace HOW an item's size is read from its element (e.g. include margins, or measure a child) |
+| Prop                                  | Type                                            | Default                 | Description                                                                                                                                                                                                                                    |
+| ------------------------------------- | ----------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `count`                               | `number`                                        | required                | Number of items                                                                                                                                                                                                                                |
+| `getScrollElement`                    | `() => Element \| null`                         | required                | Returns the scroll container                                                                                                                                                                                                                   |
+| `estimateSize`                        | `(index: number) => number`                     | `() => 50`              | Estimated item size in px                                                                                                                                                                                                                      |
+| `overscan`                            | `number`                                        | `5`                     | Items to render beyond the visible area                                                                                                                                                                                                        |
+| `horizontal`                          | `boolean`                                       | `false`                 | Virtualise horizontally (columns)                                                                                                                                                                                                              |
+| `paddingStart`                        | `number`                                        | —                       | Padding before first item                                                                                                                                                                                                                      |
+| `paddingEnd`                          | `number`                                        | —                       | Padding after last item                                                                                                                                                                                                                        |
+| `scrollPaddingStart`                  | `number`                                        | —                       | Scroll padding for `scrollToIndex`                                                                                                                                                                                                             |
+| `scrollPaddingEnd`                    | `number`                                        | —                       | Scroll padding for `scrollToIndex`                                                                                                                                                                                                             |
+| `gap`                                 | `number`                                        | —                       | Gap between items in px                                                                                                                                                                                                                        |
+| `lanes`                               | `number`                                        | `1`                     | Lanes for masonry layouts                                                                                                                                                                                                                      |
+| `initialOffset`                       | `number \| (() => number)`                      | —                       | Scroll offset (px) for the server slice — server-render at a scroll position (deep link / restore)                                                                                                                                             |
+| `initialRect`                         | `{ width: number; height: number }`             | —                       | Viewport hint for a server-rendered slice (SSR). When set, the server paints the initial visible rows; omit for client-only fill                                                                                                               |
+| `getItemKey`                          | `(index: number) => number \| string \| bigint` | the index               | Stable per-item identity so cached measurements survive reorder                                                                                                                                                                                |
+| `rangeExtractor`                      | `(range: Range) => number[]`                    | `defaultRangeExtractor` | Hook over the visible range: force extra indexes (e.g. a pinned sticky header) into the rendered window. Compose with `defaultRangeExtractor` from `@tanstack/virtual-core`                                                                    |
+| `indexAttribute`                      | `string`                                        | `'data-index'`          | DOM attribute carrying the item index for `measureElement`. Give two instances measuring the same element (a grid cell) distinct attributes                                                                                                    |
+| `initialMeasurementsCache`            | `VirtualItem[]`                                 | —                       | Pre-measured items (plain data) to seed the measurement cache                                                                                                                                                                                  |
+| `anchorTo`                            | `'start' \| 'end'`                              | `'start'`               | Anchor the window to the list end (a chat pinned to newest). Client-behavioral: it does not position the server slice — use `initialOffset` for that                                                                                           |
+| `followOnAppend`                      | `boolean \| ScrollBehavior`                     | `false`                 | With `anchorTo="end"`: stay pinned to the end as items append                                                                                                                                                                                  |
+| `scrollEndThreshold`                  | `number`                                        | `1`                     | How close (px) to the end still counts as "at the end"                                                                                                                                                                                         |
+| `scrollMargin`                        | `number`                                        | `0`                     | The list's offset (px) from the top of its scroll area, when other content sits above it in the same scroller. `item.start` values then INCLUDE this margin — subtract it when positioning items relative to the list (see the window example) |
+| `enabled`                             | `boolean`                                       | `true`                  | Disable switch. `false` is not a freeze: the virtualizer unobserves, clears its measurements, and renders an empty window until re-enabled                                                                                                     |
+| `isRtl`                               | `boolean`                                       | `false`                 | Right-to-left horizontal lists                                                                                                                                                                                                                 |
+| `isScrollingResetDelay`               | `number`                                        | `150`                   | ms after the last scroll event before "user is scrolling" ends                                                                                                                                                                                 |
+| `useScrollendEvent`                   | `boolean`                                       | `false`                 | Use the native `scrollend` event instead of the `isScrollingResetDelay` timer                                                                                                                                                                  |
+| `useAnimationFrameWithResizeObserver` | `boolean`                                       | `false`                 | Batch ResizeObserver measurements into animation frames (avoids "ResizeObserver loop" console errors under heavy resize load)                                                                                                                  |
+| `laneAssignmentMode`                  | `'estimate' \| 'measured'`                      | `'estimate'`            | Masonry/multi-lane: assign items to lanes by estimated or measured sizes                                                                                                                                                                       |
+| `useCachedMeasurements`               | `boolean`                                       | `false`                 | Make the default measurer return the cached (or estimated) size instead of reading the DOM — freezes item sizes when they are already known                                                                                                    |
+| `debug`                               | `boolean`                                       | `false`                 | Verbose engine logging                                                                                                                                                                                                                         |
+| `measureElement`                      | `(element, entry, instance) => number`          | border-box measurer     | Replace HOW an item's size is read from its element (e.g. include margins, or measure a child)                                                                                                                                                 |
 
 ## `<window-virtualizer>` input reference
 
@@ -262,27 +262,27 @@ All examples use `@marko/run`. Run any with:
 pnpm --filter tanstack-marko-virtual-example-<name> dev
 ```
 
-| Example | Description |
-| --- | --- |
-| `fixed` | Fixed-size rows, columns, and grid |
-| `variable` | Variable sizes via `estimateSize` |
-| `dynamic` | Unknown sizes measured via `measureElement` |
-| `grid` | Two virtualizers sharing one scroll element |
-| `pretext` | Calculated text heights via `@chenglou/pretext` (no estimate error) |
-| `padding` | `paddingStart` / `paddingEnd` |
-| `scroll-padding` | `scrollPaddingStart` with `scrollToIndex` |
-| `sticky` | Sticky group headers via `rangeExtractor` |
-| `infinite-scroll` | Lazy data loading with a fixed total count |
-| `chat` | End-anchored messaging (`anchorTo="end"`, `followOnAppend`), history prepends, a real server-streamed reply |
-| `chat-pretext` | Chat rebuilt on calculated heights: zero-correction prepends, streamed reply growing via `resizeItem` |
-| `smooth-scroll` | `scrollToIndex` with smooth behavior |
-| `table` | Virtualized table rows |
-| `window` | Full-page scrolling with `scrollMargin` measured on mount |
-| `ssr` | SSR: no fetch, rows render on client |
-| `ssr-fetch` | SSR: fetch on server, rows render on client |
-| `ssr-slice` | SSR: fetch on server, rows render on server (`initialRect`) |
-| `ssr-restore` | SSR: server slice at an offset + measurement-cache restore |
-| `window-ssr-slice` | SSR window: rows render on server |
+| Example            | Description                                                                                                 |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `fixed`            | Fixed-size rows, columns, and grid                                                                          |
+| `variable`         | Variable sizes via `estimateSize`                                                                           |
+| `dynamic`          | Unknown sizes measured via `measureElement`                                                                 |
+| `grid`             | Two virtualizers sharing one scroll element                                                                 |
+| `pretext`          | Calculated text heights via `@chenglou/pretext` (no estimate error)                                         |
+| `padding`          | `paddingStart` / `paddingEnd`                                                                               |
+| `scroll-padding`   | `scrollPaddingStart` with `scrollToIndex`                                                                   |
+| `sticky`           | Sticky group headers via `rangeExtractor`                                                                   |
+| `infinite-scroll`  | Lazy data loading with a fixed total count                                                                  |
+| `chat`             | End-anchored messaging (`anchorTo="end"`, `followOnAppend`), history prepends, a real server-streamed reply |
+| `chat-pretext`     | Chat rebuilt on calculated heights: zero-correction prepends, streamed reply growing via `resizeItem`       |
+| `smooth-scroll`    | `scrollToIndex` with smooth behavior                                                                        |
+| `table`            | Virtualized table rows                                                                                      |
+| `window`           | Full-page scrolling with `scrollMargin` measured on mount                                                   |
+| `ssr`              | SSR: no fetch, rows render on client                                                                        |
+| `ssr-fetch`        | SSR: fetch on server, rows render on client                                                                 |
+| `ssr-slice`        | SSR: fetch on server, rows render on server (`initialRect`)                                                 |
+| `ssr-restore`      | SSR: server slice at an offset + measurement-cache restore                                                  |
+| `window-ssr-slice` | SSR window: rows render on server                                                                           |
 
 ## TypeScript
 
@@ -303,11 +303,13 @@ pnpm types:generate
 The script (`scripts/generate-d-marko.mjs`) verifies the sources type-check, deletes the old `.d.marko` (mtc prefers them as input when present), emits fresh ones via `tsconfig.emit.json`, copies them back beside the sources, and re-verifies. Review the diff and commit. Two notes: `TS6059` rootDir warnings during the emit step are a known benign artifact of the cross-package `virtual-core` paths mapping (the script accounts for them), and generation relies on the tags' **named** return interfaces — mtc's emitter truncates wide anonymous inline types, so keep returns cast to the exported handle types.
 
 ### Running all e2e Tests
+
 To run all the e2e tests under each of `examples/marko/<example-name>/e2e` use the command
 
 ```bash
 pnpm -r --workspace-concurrency=1 --filter "./examples/marko/*" run test:e2e
 ```
+
 _Note:_ This has to be run sequentially as they all start the same port.
 
 _Note:_ All suites run against **dev servers**; production builds are not exercised by
@@ -318,10 +320,11 @@ package's build/packaging config, sanity-check production builds manually:
 silently break) and `chat` (interactive — click through Stream reply).
 
 ### Running all unit tests
+
 To run all the unit tests specifically for `marko-virtual/tests` use the command
 
 ```bash
-pnpm --filter @tanstack/marko-virtual exec vitest run --reporter=verbose 
+pnpm --filter @tanstack/marko-virtual exec vitest run --reporter=verbose
 ```
 
 ### Pre-requisite before running tests

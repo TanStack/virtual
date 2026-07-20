@@ -27,7 +27,9 @@ async function headerBottom(page: import('@playwright/test').Page) {
   return box!.y + box!.height
 }
 
-test('rows start below the sticky header, not underneath it', async ({ page }) => {
+test('rows start below the sticky header, not underneath it', async ({
+  page,
+}) => {
   await page.goto('/')
   const row0 = page.locator('[data-index="0"]')
   await expect(row0).toBeVisible()
@@ -49,7 +51,9 @@ test('scrollToIndex(40) downward aligns to the viewport END (align auto semantic
   // upward case — next test.)
   const scroller = await page.locator('.list').boundingBox()
   const box = await row.boundingBox()
-  expect(Math.abs(box!.y + box!.height - (scroller!.y + scroller!.height))).toBeLessThanOrEqual(2)
+  expect(
+    Math.abs(box!.y + box!.height - (scroller!.y + scroller!.height)),
+  ).toBeLessThanOrEqual(2)
 })
 
 test('then scrollToIndex(20) scrolls BACK and aligns row 20 below the header', async ({

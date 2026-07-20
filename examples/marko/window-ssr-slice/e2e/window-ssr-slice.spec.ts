@@ -63,14 +63,22 @@ test('client resumes and the window virtualizer is live: page scroll re-windows'
   page,
 }) => {
   await page.goto('/')
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toBeVisible()
 
   // Scroll the WINDOW (not a container) deep into the list.
   await page.evaluate(() => window.scrollTo(0, 600 * 48))
-  await expect(page.locator('.email', { hasText: 'person601@example.com' })).toBeVisible()
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toHaveCount(0)
+  await expect(
+    page.locator('.email', { hasText: 'person601@example.com' }),
+  ).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toHaveCount(0)
 
   // Round trip to the top: the original slice re-renders.
   await page.evaluate(() => window.scrollTo(0, 0))
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toBeVisible()
 })

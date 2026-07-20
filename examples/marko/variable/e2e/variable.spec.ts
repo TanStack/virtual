@@ -25,7 +25,9 @@ test.afterEach(() => {
 
 const rowSize = (i: number) => 25 + ((i * 17 + 31) % 100)
 
-test('row heights follow the estimateSize formula exactly', async ({ page }) => {
+test('row heights follow the estimateSize formula exactly', async ({
+  page,
+}) => {
   await page.goto('/')
   const row0 = page.locator('.scroll-row .item', {
     hasText: new RegExp(`^Row 0 — ${rowSize(0)}px$`),

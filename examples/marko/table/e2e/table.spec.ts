@@ -44,9 +44,9 @@ test('deep scroll re-windows and compensation keeps rows visually contiguous', a
 }) => {
   await page.goto('/')
   await expect(page.locator('tbody tr[data-index="0"]')).toBeVisible()
-  await page
-    .locator('[data-testid="container"]')
-    .evaluate((el) => { el.scrollTop = 34 * 25000 })
+  await page.locator('[data-testid="container"]').evaluate((el) => {
+    el.scrollTop = 34 * 25000
+  })
   await expect(page.locator('tbody tr[data-index="0"]')).toHaveCount(0)
   const rows = page.locator('tbody tr')
   await expect(rows.first()).toBeVisible()
@@ -58,7 +58,9 @@ test('deep scroll re-windows and compensation keeps rows visually contiguous', a
   // the sticky header is still pinned at the container top 850,000px deep
   const header = page.locator('thead th[data-col="id"]')
   await expect(header).toBeVisible()
-  const container = await page.locator('[data-testid="container"]').boundingBox()
+  const container = await page
+    .locator('[data-testid="container"]')
+    .boundingBox()
   const headBox = await header.boundingBox()
   expect(Math.abs(headBox!.y - container!.y)).toBeLessThanOrEqual(2)
 })
@@ -71,10 +73,7 @@ test('clicking Age sorts ascending, again descending, indicator shown', async ({
   await page.locator('th[data-col="age"]').click()
   // ascending: first row holds the minimum age (deterministic data -> 0 exists in 50k)
   const firstAge = () =>
-    page
-      .locator('tbody tr[data-index="0"] td')
-      .nth(3)
-      .textContent()
+    page.locator('tbody tr[data-index="0"] td').nth(3).textContent()
   await expect.poll(firstAge).toBe('0')
   await expect(page.locator('th[data-col="age"]')).toContainText('\u{1F53C}')
   await page.locator('th[data-col="age"]').click()
@@ -82,13 +81,15 @@ test('clicking Age sorts ascending, again descending, indicator shown', async ({
   await expect(page.locator('th[data-col="age"]')).toContainText('\u{1F53D}')
 })
 
-test('index vs data: sorting swaps data under a stationary window', async ({ page }) => {
+test('index vs data: sorting swaps data under a stationary window', async ({
+  page,
+}) => {
   await page.goto('/')
   await expect(page.locator('tbody tr[data-index="0"]')).toBeVisible()
   // scroll mid-list
-  await page
-    .locator('[data-testid="container"]')
-    .evaluate((el) => { el.scrollTop = 34 * 1000 })
+  await page.locator('[data-testid="container"]').evaluate((el) => {
+    el.scrollTop = 34 * 1000
+  })
   const rows = page.locator('tbody tr')
   await expect
     .poll(async () => Number(await rows.first().getAttribute('data-index')))
@@ -106,7 +107,9 @@ test('index vs data: sorting swaps data under a stationary window', async ({ pag
   // position:sticky header inside a deeply-scrolled huge container (its LAYOUT
   // position is at the table top) and would yank scrollTop — an artifact of the
   // test driver, not the page (verified: native click leaves scrollTop untouched).
-  await page.locator('th[data-col="lastName"]').evaluate((el) => (el as HTMLElement).click())
+  await page
+    .locator('th[data-col="lastName"]')
+    .evaluate((el) => (el as HTMLElement).click())
   // "did not move" = stayed within a fraction of one row (sub-row platform variance —
   // e.g. macOS scroll-anchoring residue — must not fail the lesson; the airtight proof
   // is the identical index list below)

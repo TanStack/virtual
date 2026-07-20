@@ -54,7 +54,9 @@ test('rows render on the client from the serialized data — no client re-fetch 
 }) => {
   await page.goto('/')
   // Mount fills the container with the SERVER-fetched people.
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toBeVisible()
   expect(await page.locator('.item').count()).toBeGreaterThan(5)
 
   // No client re-fetch: fetchPeople logs "fetchPeople ran" when it executes; that
@@ -66,6 +68,10 @@ test('rows render on the client from the serialized data — no client re-fetch 
   await page.locator('.scroll-container').evaluate((el) => {
     el.scrollTop = 500 * 48
   })
-  await expect(page.locator('.email', { hasText: 'person501@example.com' })).toBeVisible()
-  await expect(page.locator('.email', { hasText: 'person1@example.com' })).toHaveCount(0)
+  await expect(
+    page.locator('.email', { hasText: 'person501@example.com' }),
+  ).toBeVisible()
+  await expect(
+    page.locator('.email', { hasText: 'person1@example.com' }),
+  ).toHaveCount(0)
 })

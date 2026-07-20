@@ -43,7 +43,9 @@ async function waitForPin(page: Page) {
     .toBeLessThanOrEqual(AT_END_PX)
 }
 
-test('loads pinned to the newest message with status At latest', async ({ page }) => {
+test('loads pinned to the newest message with status At latest', async ({
+  page,
+}) => {
   await page.goto('/')
   await waitForPin(page)
   await expect(page.locator('[data-key="message-44"]')).toBeVisible()
@@ -70,7 +72,9 @@ test('does NOT follow appends while reading history', async ({ page }) => {
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = Math.floor(el.scrollHeight / 2)
   })
-  await expect(page.locator('[data-testid="status"]')).toHaveText('Reading history')
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    'Reading history',
+  )
   const before = await page.locator('.messages').evaluate((el) => el.scrollTop)
   await page.locator('[data-testid="add-message"]').click()
   // give any (incorrect) follow a chance to happen, then assert it did not
@@ -91,13 +95,17 @@ test('prepending history keeps the visible message anchored in place', async ({
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = Math.floor(el.scrollHeight / 2)
   })
-  await expect(page.locator('[data-testid="status"]')).toHaveText('Reading history')
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    'Reading history',
+  )
 
   // pick whatever message is currently visible near the viewport top and record it
   const anchorKey = await page.evaluate(() => {
     const el = document.querySelector('.messages')!
     const top = el.getBoundingClientRect().top
-    const rows = Array.from(document.querySelectorAll<HTMLElement>('.message-row'))
+    const rows = Array.from(
+      document.querySelectorAll<HTMLElement>('.message-row'),
+    )
     const visible = rows.find((row) => {
       const box = row.getBoundingClientRect()
       return box.top >= top && box.top < top + 200
@@ -114,7 +122,9 @@ test('prepending history keeps the visible message anchored in place', async ({
     .evaluate((el) => el.scrollHeight)
 
   await page.locator('[data-testid="load-older"]').click()
-  await expect(page.locator('[data-testid="status"]')).toHaveText('Loading history')
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    'Loading history',
+  )
   // The prepended rows are far above the render window here, so they are
   // (correctly) virtualized away — DOM attachment is the wrong signal. The prepend
   // landing is observable as total content growth.
@@ -159,7 +169,9 @@ test('Latest returns to the bottom and status flips back to At latest', async ({
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = 0
   })
-  await expect(page.locator('[data-testid="status"]')).toHaveText(/Reading history|Loading history/)
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    /Reading history|Loading history/,
+  )
   await page.locator('[data-testid="latest"]').click()
   await waitForPin(page)
   await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
@@ -172,7 +184,8 @@ test('a reply streamed from the server grows progressively and stays pinned', as
   await page.goto('/')
   await waitForPin(page)
   const replyResponse = page.waitForResponse(
-    (response) => response.url().endsWith('/api/reply') && response.status() === 200,
+    (response) =>
+      response.url().endsWith('/api/reply') && response.status() === 200,
   )
   await page.locator('[data-testid="stream-reply"]').click()
   await replyResponse // the reply really comes over the network
@@ -183,7 +196,9 @@ test('a reply streamed from the server grows progressively and stays pinned', as
   const early = (await streamed.textContent()) ?? ''
   expect(early).not.toContain('drifting off the bottom')
   // ... and the rest arrives afterwards, growing the same row
-  await expect(streamed).toContainText('drifting off the bottom', { timeout: 5000 })
+  await expect(streamed).toContainText('drifting off the bottom', {
+    timeout: 5000,
+  })
   await waitForPin(page)
   await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
 })

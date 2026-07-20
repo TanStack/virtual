@@ -47,7 +47,9 @@ test('deep inside a group, its header stays pinned though scrolled past', async 
   await pinned(page)
   // row 0 is header 'A'; 22 'Aaron NN' + 22 'Abby NN' follow. Scroll ~15 rows in:
   // well past the header's natural 0px position, still inside group A.
-  await page.locator('[data-testid="list"]').evaluate((el) => { el.scrollTop = 750 })
+  await page.locator('[data-testid="list"]').evaluate((el) => {
+    el.scrollTop = 750
+  })
   const active = await pinned(page)
   await expect(active).toHaveText('A')
   const list = await page.locator('[data-testid="list"]').boundingBox()
@@ -61,12 +63,16 @@ test('deep inside a group, its header stays pinned though scrolled past', async 
   await expect(firstName).toContainText(/^A/)
 })
 
-test('crossing into the next group hands the pin to its header', async ({ page }) => {
+test('crossing into the next group hands the pin to its header', async ({
+  page,
+}) => {
   await page.goto('/')
   await pinned(page)
   // group A spans header(1) + Aaron(22) + Abby(22) = 45 rows * 50px = 2250px.
   // Scroll past that boundary into group B.
-  await page.locator('[data-testid="list"]').evaluate((el) => { el.scrollTop = 2400 })
+  await page.locator('[data-testid="list"]').evaluate((el) => {
+    el.scrollTop = 2400
+  })
   const active = await pinned(page)
   await expect(active).toHaveText('B')
   // exactly one active pin; the A header is no longer force-rendered
@@ -76,10 +82,14 @@ test('crossing into the next group hands the pin to its header', async ({ page }
 test('scrolling far and back returns the pin to A', async ({ page }) => {
   await page.goto('/')
   await pinned(page)
-  await page.locator('[data-testid="list"]').evaluate((el) => { el.scrollTop = 20000 })
+  await page.locator('[data-testid="list"]').evaluate((el) => {
+    el.scrollTop = 20000
+  })
   const far = await pinned(page)
   await expect(far).not.toHaveText('A')
-  await page.locator('[data-testid="list"]').evaluate((el) => { el.scrollTop = 0 })
+  await page.locator('[data-testid="list"]').evaluate((el) => {
+    el.scrollTop = 0
+  })
   const back = await pinned(page)
   await expect(back).toHaveText('A')
 })

@@ -24,7 +24,10 @@ test.afterEach(() => {
   expect(consoleErrors).toEqual([])
 })
 
-async function renderedIndexes(page: Page, attr = 'data-index'): Promise<number[]> {
+async function renderedIndexes(
+  page: Page,
+  attr = 'data-index',
+): Promise<number[]> {
   return page.$$eval(
     `[${attr}]`,
     (els, a) =>
@@ -45,10 +48,15 @@ test('scrollMargin: visibility is computed relative to the list, not the scrolle
   // exactly below it (item.start includes the margin; the transform subtracts it).
   const header = await page.locator('[data-testid="header"]').boundingBox()
   const row0 = await page.locator('[data-index="0"]').boundingBox()
-  expect(Math.abs(row0!.y - (header!.y + header!.height))).toBeLessThanOrEqual(1)
+  expect(Math.abs(row0!.y - (header!.y + header!.height))).toBeLessThanOrEqual(
+    1,
+  )
 
   // item.start for row 0 INCLUDES the margin.
-  await expect(page.locator('[data-index="0"]')).toHaveAttribute('data-start', '300')
+  await expect(page.locator('[data-index="0"]')).toHaveAttribute(
+    'data-start',
+    '300',
+  )
 
   // Scroll so the list itself is 700px in (header 300 + 20 rows x 35): the window
   // must be anchored around index 20, and index 0 must have left the DOM. Without
@@ -57,9 +65,7 @@ test('scrollMargin: visibility is computed relative to the list, not the scrolle
   await page.locator('[data-testid="scroller"]').evaluate((el) => {
     el.scrollTop = 300 + 20 * 35
   })
-  await page.waitForFunction(
-    () => !document.querySelector('[data-index="0"]'),
-  )
+  await page.waitForFunction(() => !document.querySelector('[data-index="0"]'))
   const idx = await renderedIndexes(page)
   expect(idx[0]!).toBeGreaterThanOrEqual(20 - 5) // minus overscan
   expect(idx[0]!).toBeLessThanOrEqual(20)
@@ -145,8 +151,14 @@ test('custom measureElement: item sizes come from the custom measurer (+10)', as
   await page.waitForSelector('[data-index="0"]')
   // Rows render 30px tall; the custom measurer reports offsetHeight + 10 = 40.
   // Estimate is 50, so 40 is unambiguously the custom measurer's number.
-  await expect(page.locator('[data-index="0"]')).toHaveAttribute('data-size', '40')
-  await expect(page.locator('[data-index="5"]')).toHaveAttribute('data-size', '40')
+  await expect(page.locator('[data-index="0"]')).toHaveAttribute(
+    'data-size',
+    '40',
+  )
+  await expect(page.locator('[data-index="5"]')).toHaveAttribute(
+    'data-size',
+    '40',
+  )
 })
 
 test('useCachedMeasurements freezes sizes: frozen list keeps the estimate, control learns the DOM', async ({
@@ -234,9 +246,9 @@ test('debug=true emits core timing logs (a console.info with the memo key)', asy
   })
   await page.waitForFunction(() => !document.querySelector('[data-index="0"]'))
   // Core's memo() prints console.info('%c⏱ ... ms', <css>, key) in dev when debug is on.
-  expect(
-    infos.some((t) => t.includes('⏱') || t.includes('maybeNotify')),
-  ).toBe(true)
+  expect(infos.some((t) => t.includes('⏱') || t.includes('maybeNotify'))).toBe(
+    true,
+  )
 })
 
 test('window-virtualizer horizontal: the page scrolls sideways and the column window follows', async ({
@@ -288,14 +300,18 @@ test('window example (fixed): measured scrollMargin positions rows after the hea
   // Target index 500: window scroll = listOffset + 500*35 - we read the wrapper's
   // document offset from the page itself.
   const listTop = await page.evaluate(() => {
-    const el = document.querySelector('div[style*="position: relative"]') as HTMLElement
+    const el = document.querySelector(
+      'div[style*="position: relative"]',
+    ) as HTMLElement
     return el.getBoundingClientRect().top + window.scrollY
   })
   await page.evaluate((y) => window.scrollTo(0, y), listTop + 500 * 35)
   await page.waitForFunction(
     () => !document.body.textContent!.match(/Row 0(?!\d)/),
   )
-  const texts = await page.$$eval('.item', (els) => els.map((el) => el.textContent!.trim()))
+  const texts = await page.$$eval('.item', (els) =>
+    els.map((el) => el.textContent!.trim()),
+  )
   const indexes = texts
     .map((t) => Number(t.replace('Row', '').trim()))
     .sort((a, b) => a - b)

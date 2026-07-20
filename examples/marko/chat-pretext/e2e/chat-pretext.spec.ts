@@ -43,7 +43,9 @@ async function waitForPin(page: Page) {
     .toBeLessThanOrEqual(AT_END_PX)
 }
 
-test('loads pinned to the newest message with status At latest', async ({ page }) => {
+test('loads pinned to the newest message with status At latest', async ({
+  page,
+}) => {
   await page.goto('/')
   await waitForPin(page)
   await expect(page.locator('[data-key="message-44"]')).toBeVisible()
@@ -68,7 +70,9 @@ test('does NOT follow appends while reading history', async ({ page }) => {
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = Math.floor(el.scrollHeight / 2)
   })
-  await expect(page.locator('[data-testid="status"]')).toHaveText('Reading history')
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    'Reading history',
+  )
   const before = await page.locator('.messages').evaluate((el) => el.scrollTop)
   await page.locator('[data-testid="add-message"]').click()
   await page.waitForTimeout(400)
@@ -88,13 +92,17 @@ test('prepending history keeps the visible message anchored in place', async ({
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = Math.floor(el.scrollHeight / 2)
   })
-  await expect(page.locator('[data-testid="status"]')).toHaveText('Reading history')
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    'Reading history',
+  )
 
   // pick whatever message is currently visible near the viewport top and record it
   const anchorKey = await page.evaluate(() => {
     const el = document.querySelector('.messages')!
     const top = el.getBoundingClientRect().top
-    const rows = Array.from(document.querySelectorAll<HTMLElement>('.message-row'))
+    const rows = Array.from(
+      document.querySelectorAll<HTMLElement>('.message-row'),
+    )
     const visible = rows.find((row) => {
       const box = row.getBoundingClientRect()
       return box.top >= top && box.top < top + 200
@@ -111,7 +119,9 @@ test('prepending history keeps the visible message anchored in place', async ({
     .evaluate((el) => el.scrollHeight)
 
   await page.locator('[data-testid="load-older"]').click()
-  await expect(page.locator('[data-testid="status"]')).toHaveText('Loading history')
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    'Loading history',
+  )
   // The prepended rows are far above the render window here, so they are
   // (correctly) virtualized away — DOM attachment is the wrong signal. The prepend
   // landing is observable as total content growth.
@@ -155,7 +165,9 @@ test('Latest returns to the bottom and status flips back to At latest', async ({
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = 0
   })
-  await expect(page.locator('[data-testid="status"]')).toHaveText(/Reading history|Loading history/)
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    /Reading history|Loading history/,
+  )
   await page.locator('[data-testid="latest"]').click()
   await waitForPin(page)
   await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
@@ -168,7 +180,8 @@ test('a reply streamed from the server grows progressively and stays pinned', as
   await page.goto('/')
   await waitForPin(page)
   const replyResponse = page.waitForResponse(
-    (response) => response.url().endsWith('/api/reply') && response.status() === 200,
+    (response) =>
+      response.url().endsWith('/api/reply') && response.status() === 200,
   )
   await page.locator('[data-testid="stream-reply"]').click()
   await replyResponse
@@ -177,14 +190,18 @@ test('a reply streamed from the server grows progressively and stays pinned', as
   await expect(streamed).toContainText('Thinking through the failure mode.')
   const early = (await streamed.textContent()) ?? ''
   expect(early).not.toContain('drifting off the bottom')
-  await expect(streamed).toContainText('drifting off the bottom', { timeout: 5000 })
+  await expect(streamed).toContainText('drifting off the bottom', {
+    timeout: 5000,
+  })
   await waitForPin(page)
   await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
 })
 
 // ---- The two assertions this example exists for ----
 
-test('prepending history causes NO measurement-correction kick', async ({ page }) => {
+test('prepending history causes NO measurement-correction kick', async ({
+  page,
+}) => {
   await page.goto('/')
   await waitForPin(page)
   // Park just OUTSIDE the load-ahead auto-trigger zone (~720px = 1.5 viewport
@@ -205,7 +222,9 @@ test('prepending history causes NO measurement-correction kick', async ({ page }
     const el = document.querySelector('.messages') as HTMLElement
     const samples: number[] = []
     const id = setInterval(() => samples.push(el.scrollTop), 8)
-    ;(document.querySelector('[data-testid="load-older"]') as HTMLElement).click()
+    ;(
+      document.querySelector('[data-testid="load-older"]') as HTMLElement
+    ).click()
     await new Promise((resolve) => setTimeout(resolve, 1200))
     clearInterval(id)
     const positive: number[] = []
@@ -238,9 +257,15 @@ test('the streamed reply grows through v.resizeItem and calculated height matche
   // full reply: it must have GROWN — that growth is delivered by v.resizeItem per
   // chunk, since this example has no measureElement to observe the DOM.
   await expect(streamed).toContainText('Thinking through the failure mode.')
-  const earlyHeight = await streamed.evaluate((el) => parseFloat((el as HTMLElement).style.height))
-  await expect(streamed).toContainText('drifting off the bottom', { timeout: 5000 })
-  const finalHeight = await streamed.evaluate((el) => parseFloat((el as HTMLElement).style.height))
+  const earlyHeight = await streamed.evaluate((el) =>
+    parseFloat((el as HTMLElement).style.height),
+  )
+  await expect(streamed).toContainText('drifting off the bottom', {
+    timeout: 5000,
+  })
+  const finalHeight = await streamed.evaluate((el) =>
+    parseFloat((el as HTMLElement).style.height),
+  )
   expect(finalHeight).toBeGreaterThan(earlyHeight)
   // Calculated height is REAL height: the bubble's rendered box must fit the row
   // exactly (content height == calculated row height, within a pixel).

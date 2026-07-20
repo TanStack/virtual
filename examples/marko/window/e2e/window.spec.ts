@@ -39,7 +39,9 @@ test('rows are positioned after the heading (measured scrollMargin applied)', as
   expect(Math.abs(row0!.y - wrapper!.y)).toBeLessThanOrEqual(1)
 })
 
-test('wrapper height is the margin-free totalSize (10000 x 35)', async ({ page }) => {
+test('wrapper height is the margin-free totalSize (10000 x 35)', async ({
+  page,
+}) => {
   await page.goto('/')
   await expect(page.locator('.item', { hasText: /^Row 0$/ })).toBeVisible()
   const wrapperHeight = await page
@@ -57,7 +59,9 @@ test('deep window scroll re-windows relative to the LIST, not the page top', asy
   await page.goto('/')
   await expect(page.locator('.item', { hasText: /^Row 0$/ })).toBeVisible()
   const listTop = await page.evaluate(() => {
-    const el = document.querySelector('div[style*="position: relative"]') as HTMLElement
+    const el = document.querySelector(
+      'div[style*="position: relative"]',
+    ) as HTMLElement
     return el.getBoundingClientRect().top + window.scrollY
   })
   await page.evaluate((y) => window.scrollTo(0, y), listTop + 500 * 35)

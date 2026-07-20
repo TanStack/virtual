@@ -9,9 +9,9 @@ export interface Person {
 // This runs only on the server during SSR. The resolved rows are serialized into the page
 // and resume on the client — there is no client-side re-fetch.
 export async function fetchPeople(): Promise<Person[]> {
-  console.log("fetchPeople ran")
+  console.log('fetchPeople ran')
   await new Promise((resolve) => setTimeout(resolve, 40))
-  const roles = ["Engineer", "Designer", "PM", "Analyst", "Support"]
+  const roles = ['Engineer', 'Designer', 'PM', 'Analyst', 'Support']
   return Array.from({ length: 1000 }, (_, i) => ({
     id: i + 1,
     name: `Person ${i + 1}`,

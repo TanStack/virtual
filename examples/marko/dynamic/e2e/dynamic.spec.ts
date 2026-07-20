@@ -51,7 +51,11 @@ test('measured positions stay contiguous: each row starts where the previous end
     els
       .map((el) => {
         const r = (el as HTMLElement).getBoundingClientRect()
-        return { index: Number(el.getAttribute('data-index')), top: r.top, bottom: r.bottom }
+        return {
+          index: Number(el.getAttribute('data-index')),
+          top: r.top,
+          bottom: r.bottom,
+        }
       })
       .sort((a, b) => a.index - b.index),
   )
