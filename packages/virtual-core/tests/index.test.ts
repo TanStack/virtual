@@ -3423,9 +3423,8 @@ test('anchorTo end: setOptions re-anchor clamps tracked scrollOffset at 0 (#1229
 // ENTIRELY above the fold should shift scrollTop on re-measure.
 function makeAdjustmentVirtualizer(scrollTop: number) {
   const scrollToFn = vi.fn(elementScroll)
-  let scrollCallback:
-    | ((offset: number, isScrolling: boolean) => void)
-    | null = null
+  let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
+    null
   const el = {
     scrollTop,
     scrollLeft: 0,
