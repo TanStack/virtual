@@ -1,5 +1,16 @@
 # @tanstack/angular-virtual
 
+## 6.0.0
+
+### Major Changes
+
+- [#1228](https://github.com/TanStack/virtual/pull/1228) [`ba5c47a`](https://github.com/TanStack/virtual/commit/ba5c47a93f597f8370bc9e0119d505551c962a09) - require angular 20 and up following their lts
+
+### Patch Changes
+
+- Updated dependencies [[`1e3b908`](https://github.com/TanStack/virtual/commit/1e3b908705e04e45be2615f2277580cb09f5cdef), [`7dcfc07`](https://github.com/TanStack/virtual/commit/7dcfc07b877479697124157d3124c09537b87a75)]:
+  - @tanstack/virtual-core@3.17.5
+
 ## 5.0.8
 
 ### Patch Changes
