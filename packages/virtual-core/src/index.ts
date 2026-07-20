@@ -977,6 +977,14 @@ export class Virtualizer<
     const cur = this.getScrollOffset()
     const max = this.getMaxScrollOffset()
     if (cur < 0 || cur > max) return
+    // At the end clamp the browser already absorbed a shrink above the
+    // viewport (it clamped scrollTop onto the new bottom), so replaying our
+    // deferred negative delta would lift the view off the bottom — drop it.
+    // Positive deltas still replay: growth above doesn't clamp. (#1233)
+    if (this._iosDeferredAdjustment < 0 && cur >= max - 1) {
+      this._iosDeferredAdjustment = 0
+      return
+    }
     const delta = this._iosDeferredAdjustment
     this._iosDeferredAdjustment = 0
     // Roll the deferred delta into the running accumulator so any resize
@@ -1730,6 +1738,14 @@ export class Virtualizer<
     toOffset: number,
     { align = 'start', behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
+    // An absolute scroll command derives its target from current
+    // measurements, so any iOS-deferred compensation still pending is stale by
+    // definition — the command already accounts for the measurements the delta
+    // was compensating for. Drop it so _flushIosDeferredIfReady doesn't replay
+    // it onto the just-established position (relative commands like scrollBy
+    // intentionally keep the deferral, since they build on the current offset).
+    this._iosDeferredAdjustment = 0
+
     const offset = this.getOffsetForAlignment(toOffset, align)
 
     const now = this.now()
@@ -1754,6 +1770,10 @@ export class Virtualizer<
       behavior = 'auto',
     }: ScrollToIndexOptions = {},
   ) => {
+    // See scrollToOffset: an absolute target invalidates any pending
+    // iOS-deferred compensation.
+    this._iosDeferredAdjustment = 0
+
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
     const offsetInfo = this.getOffsetForIndex(index, initialAlign)
