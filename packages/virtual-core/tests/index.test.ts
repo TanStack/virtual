@@ -1643,6 +1643,103 @@ test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-ba
   })
 })
 
+test('iOS deferral: a negative delta at the end clamp is dropped, not replayed', () => {
+  // Regression (#1233 manifestation B): with anchorTo: 'end' and the reader
+  // pinned at the bottom, a row above the viewport re-measuring *smaller*
+  // during isScrolling shrinks maxScrollOffset; the browser clamps scrollTop
+  // onto the new bottom, which is already the correct end-anchored position.
+  // The library also deferred a negative compensation for that same shrink —
+  // replaying it on the settled, already-correct position lifts the view off
+  // the bottom. The flush must drop the negative delta at the end clamp.
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      anchorTo: 'end',
+      getScrollElement: () =>
+        ({
+          scrollTop: 300, // pinned at the bottom: scrollHeight - clientHeight
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(300, true) // at the bottom, scrolling
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    // A row above the viewport re-measures smaller while at the end.
+    v.resizeItem(0, 30) // 50 → 30: total shrinks by 20
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(-20)
+
+    // Settle. The browser already clamped scrollTop onto the new bottom
+    // (cur === max), so the deferred negative delta is stale and must not
+    // replay.
+    scrollCallback!(300, false)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn).not.toHaveBeenCalled()
+  })
+})
+
+test('iOS deferral: a positive delta at the end clamp still replays (growth above does not clamp)', () => {
+  // Complement to manifestation B: content GROWING above the viewport does
+  // not clamp (the browser cannot shrink to fit growth), and the consumer's
+  // DOM sizer may not have grown yet, so a positive deferred delta must still
+  // flush — the end-clamp drop is negative-only.
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      anchorTo: 'end',
+      getScrollElement: () =>
+        ({
+          scrollTop: 300,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(300, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    // A row above the viewport re-measures larger while at the end.
+    v.resizeItem(0, 70) // 50 → 70: total grows by 20
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(20)
+
+    // Settle. Growth doesn't clamp, so the positive delta must replay.
+    scrollCallback!(300, false)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+  })
+})
+
 // ─── Phase 1: touch event distinction ────────────────────────────────────────
 
 // Mock EventTarget that records listeners so tests can dispatch events

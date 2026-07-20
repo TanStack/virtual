@@ -977,6 +977,14 @@ export class Virtualizer<
     const cur = this.getScrollOffset()
     const max = this.getMaxScrollOffset()
     if (cur < 0 || cur > max) return
+    // At the end clamp the browser already absorbed a shrink above the
+    // viewport (it clamped scrollTop onto the new bottom), so replaying our
+    // deferred negative delta would lift the view off the bottom — drop it.
+    // Positive deltas still replay: growth above doesn't clamp. (#1233)
+    if (this._iosDeferredAdjustment < 0 && cur >= max - 1) {
+      this._iosDeferredAdjustment = 0
+      return
+    }
     const delta = this._iosDeferredAdjustment
     this._iosDeferredAdjustment = 0
     // Roll the deferred delta into the running accumulator so any resize
