@@ -572,6 +572,18 @@ shouldAdjustScrollPositionOnItemSizeChange: undefined | ((item: VirtualItem, del
 
 Provides fine-grained control over the scroll-position adjustment that fires when an above-viewport item's measured size differs from its estimated size. By default the virtualizer applies this correction only when the user is **not** scrolling backward, which avoids the well-known "items jump while scrolling up" jank. Supply this callback only if you want to override that default — for example, to apply corrections during backward scroll, or to skip them in additional scenarios.
 
+This is a virtualizer instance property, not a `VirtualizerOptions` option. Assign it directly on the virtualizer instance after creating the virtualizer:
+
+```tsx
+virtualizer.shouldAdjustScrollPositionOnItemSizeChange = (
+  item,
+  delta,
+  instance,
+) => {
+  return item.start < instance.getScrollOffset() + instance.scrollAdjustments
+}
+```
+
 The callback receives the resized `item`, the size `delta`, and the `instance`; return `true` to apply the scroll adjustment, `false` to skip it.
 
 On iOS WebKit, scroll-position writes are deferred regardless of this callback while a finger is on screen, during momentum-scroll, and during elastic-overscroll bounce. The cumulative delta is flushed in a single write once the scroll settles, preserving iOS's native momentum physics.
