@@ -3415,3 +3415,82 @@ test('anchorTo end: setOptions re-anchor clamps tracked scrollOffset at 0 (#1229
 
   expect(virtualizer.scrollOffset).toBe(0)
 })
+
+// ─── #1218: viewport-spanning item growth must not drift the viewport ─────────
+// A streaming chat message whose top is scrolled above the fold but whose
+// bottom extends below it grows at its bottom. That growth happens *below* the
+// anchor point (the fold), so scrollTop must stay put. Only an item that is
+// ENTIRELY above the fold should shift scrollTop on re-measure.
+function makeAdjustmentVirtualizer(scrollTop: number) {
+  const scrollToFn = vi.fn(elementScroll)
+  let scrollCallback:
+    | ((offset: number, isScrolling: boolean) => void)
+    | null = null
+  const el = {
+    scrollTop,
+    scrollLeft: 0,
+    scrollHeight: 100000,
+    clientHeight: 200,
+    offsetHeight: 200,
+    scrollTo: vi.fn(({ top }: { top: number }) => {
+      el.scrollTop = top
+    }),
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }
+  const v = new Virtualizer<any, any>({
+    count: 50,
+    estimateSize: () => 50,
+    getScrollElement: () => el as any,
+    scrollToFn,
+    observeElementRect: (_i, cb) => {
+      cb({ width: 300, height: 200 })
+    },
+    observeElementOffset: (_i, cb) => {
+      scrollCallback = cb
+      cb(scrollTop, false) // settled, not scrolling
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+  return { v, scrollToFn }
+}
+
+test('#1218: re-measuring a viewport-spanning item does not drift scroll', () => {
+  // Viewport 175..375, items 50px by estimate. Item 3: start=150, end=200 —
+  // spans the fold at 175.
+  const { v, scrollToFn } = makeAdjustmentVirtualizer(175)
+  v.resizeItem(3, 60) // seed the size cache (item still spans the fold)
+  scrollToFn.mockClear()
+
+  const before = v.scrollOffset
+  v.resizeItem(3, 160) // stream: grow at the bottom by 100 (below the fold)
+
+  expect(v.scrollOffset).toBe(before)
+  expect(scrollToFn).not.toHaveBeenCalled()
+})
+
+test('#1218: re-measuring an entirely-above item still anchors (no regression)', () => {
+  // Item 1: start=50, end=100 — fully above the fold at 175.
+  const { v } = makeAdjustmentVirtualizer(175)
+  v.resizeItem(1, 60)
+  const before = v.scrollOffset!
+
+  v.resizeItem(1, 160) // grows by 100 entirely above the fold
+
+  // scrollTop shifts by the delta so content below the fold stays put.
+  expect(v.scrollOffset).toBe(before + 100)
+})
+
+test('#1218: first measurement of a spanning item still compensates', () => {
+  // First measurement (estimate→actual) always compensates an above-fold top,
+  // regardless of spanning — the estimated block sat above the fold. Item 3
+  // starts at 150 (above fold 175) and has never been measured.
+  const { v } = makeAdjustmentVirtualizer(175)
+  const before = v.scrollOffset!
+
+  v.resizeItem(3, 120) // first measure: 50 -> 120, delta +70
+
+  expect(v.scrollOffset).toBe(before + 70)
+})

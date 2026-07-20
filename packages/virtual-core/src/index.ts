@@ -1555,6 +1555,25 @@ export class Virtualizer<
         this.scrollState?.behavior !== 'smooth' &&
         this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
       const prevTotalSize = wasAtEnd ? this.getTotalSize() : 0
+      // Default anchoring predicate (used unless the consumer supplies a
+      // custom shouldAdjustScrollPositionOnItemSizeChange).
+      const scrollOffsetWithAdj =
+        this.getScrollOffset() + this.scrollAdjustments
+      const isFirstMeasure = !this.itemSizeCache.has(key)
+      const defaultShouldAdjust = isFirstMeasure
+        ? // First measurement: compensate any item whose top sits above the
+          // fold — the estimate→actual delta must be corrected regardless of
+          // scroll direction, since the whole estimated block was above it.
+          itemStart < scrollOffsetWithAdj
+        : // Re-measurement: only compensate an item that is ENTIRELY above the
+          // fold. An item that merely *spans* the fold (top above, bottom
+          // below — e.g. a streaming chat message growing at its bottom)
+          // changes size *below* the anchor point, so shifting scrollTop by the
+          // delta would drag the viewport downward on every growth (#1218).
+          // Also skip during backward scroll to avoid the "items jump while
+          // scrolling up" cascade.
+          itemStart + itemSize <= scrollOffsetWithAdj &&
+          this.scrollDirection !== 'backward'
       const shouldAdjustScroll =
         this.scrollState?.behavior !== 'smooth' &&
         (this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
@@ -1572,15 +1591,7 @@ export class Virtualizer<
               delta,
               this,
             )
-          : // Default: adjust when the resize is an above-viewport item.
-            // First measurement (!has(key)): always adjust — the item
-            // has never been sized, so the estimate→actual delta must
-            // be compensated regardless of scroll direction.
-            // Re-measurement (has(key)): skip during backward scroll
-            // to avoid the "items jump while scrolling up" cascade.
-            itemStart < this.getScrollOffset() + this.scrollAdjustments &&
-            (!this.itemSizeCache.has(key) ||
-              this.scrollDirection !== 'backward'))
+          : defaultShouldAdjust)
 
       if (this.pendingMin === null || index < this.pendingMin) {
         this.pendingMin = index
