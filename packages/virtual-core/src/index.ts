@@ -1730,6 +1730,14 @@ export class Virtualizer<
     toOffset: number,
     { align = 'start', behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
+    // An absolute scroll command derives its target from current
+    // measurements, so any iOS-deferred compensation still pending is stale by
+    // definition — the command already accounts for the measurements the delta
+    // was compensating for. Drop it so _flushIosDeferredIfReady doesn't replay
+    // it onto the just-established position (relative commands like scrollBy
+    // intentionally keep the deferral, since they build on the current offset).
+    this._iosDeferredAdjustment = 0
+
     const offset = this.getOffsetForAlignment(toOffset, align)
 
     const now = this.now()
@@ -1754,6 +1762,10 @@ export class Virtualizer<
       behavior = 'auto',
     }: ScrollToIndexOptions = {},
   ) => {
+    // See scrollToOffset: an absolute target invalidates any pending
+    // iOS-deferred compensation.
+    this._iosDeferredAdjustment = 0
+
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
     const offsetInfo = this.getOffsetForIndex(index, initialAlign)

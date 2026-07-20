@@ -1534,6 +1534,61 @@ test('iOS deferral: multiple resizes during scroll accumulate and flush as one',
   })
 })
 
+test('iOS deferral: an absolute scroll command invalidates a pending deferred adjustment', () => {
+  // Regression (#1233 manifestation A): scrollToOffset/scrollToIndex derive
+  // their target from CURRENT measurements, so any deferred compensation still
+  // pending is stale — replaying it on the next flush shifts the list off the
+  // just-established target by the accumulated delta. The absolute commands
+  // must drop the deferral.
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({
+          scrollTop: 200,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(200, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    // Accumulate a deferred adjustment during scroll.
+    v.resizeItem(0, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+
+    // An absolute command should clear the stale deferral.
+    v.scrollToOffset(300)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+
+    // scrollToIndex clears it too (still scrolling, so the resize defers).
+    v.resizeItem(1, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+    v.scrollToIndex(5)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+    scrollToFn.mockClear()
+
+    // Settling must not replay any (now dropped) delta.
+    scrollCallback!(300, false)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
 test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-back resizes stay consistent', () => {
   // Regression: the deferred flush used to write `adjustments: delta`
   // directly without updating `this.scrollAdjustments`. If a second resize
