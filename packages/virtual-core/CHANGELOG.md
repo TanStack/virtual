@@ -1,5 +1,15 @@
 # @tanstack/virtual-core
 
+## 3.17.5
+
+### Patch Changes
+
+- [#1230](https://github.com/TanStack/virtual/pull/1230) [`1e3b908`](https://github.com/TanStack/virtual/commit/1e3b908705e04e45be2615f2277580cb09f5cdef) - Clamp the tracked `scrollOffset` at 0 when applying end-anchor measurement compensation and when re-anchoring in `setOptions`. Previously, with `anchorTo: 'end'` and content shorter than the viewport, items measuring smaller than their estimates drove the tracked offset negative with no scroll event to ever correct it — `getDistanceFromEnd()` reported a permanent phantom distance and iOS deferred measurement corrections stayed wedged forever.
+
+- [#1235](https://github.com/TanStack/virtual/pull/1235) [`7dcfc07`](https://github.com/TanStack/virtual/commit/7dcfc07b877479697124157d3124c09537b87a75) - Stop iOS-deferred scroll adjustments from replaying stale deltas after the position is already correct ([#1233](https://github.com/TanStack/virtual/issues/1233)). On iOS WebKit the end-anchored virtualizer defers scroll compensation while the scroller is live and replays it once settled, but two cases replayed a delta whose premise no longer held:
+  - Absolute scroll commands (`scrollToOffset` / `scrollToIndex` / `scrollToEnd`) derive their target from current measurements, so a pending deferred delta is already stale — it now invalidates the deferral instead of letting it replay and shift the list off the just-established position. Relative commands (`scrollBy`) keep the deferral.
+  - At the end clamp with `anchorTo: 'end'`, a row above the viewport re-measuring smaller lets the browser clamp `scrollTop` onto the new bottom (already the correct position); the flush now drops the stale negative compensation instead of replaying it and lifting the view off the bottom. Positive deltas still replay, since content growth above does not clamp.
+
 ## 3.17.4
 
 ### Patch Changes
