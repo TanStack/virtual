@@ -118,6 +118,15 @@ static const AT_END_PX = 80
         state.autoHistoryArmed = true
         setTimeout(() => { state.autoHistoryEnabled = true }, 250)
       }
+      // Keep the status accurate after MEASUREMENT-driven size changes. A row
+      // measuring to a different height than its estimate changes scrollHeight
+      // WITHOUT moving scrollTop, so no scroll event fires and the onScroll
+      // handler alone would leave `atEnd` stale (either direction). This <script>
+      // re-runs on every v update, i.e. after measurements, so recompute here too.
+      const statusEl = scrollEl()
+      if (statusEl) {
+        atEnd = statusEl.scrollHeight - statusEl.scrollTop - statusEl.clientHeight <= AT_END_PX
+      }
     }/>
 
     <div class="toolbar">

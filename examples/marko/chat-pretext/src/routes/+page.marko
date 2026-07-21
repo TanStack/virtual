@@ -175,6 +175,14 @@ static function messageHeight(message: Message, viewportWidth: number) {
         state.autoHistoryArmed = true
         setTimeout(() => { state.autoHistoryEnabled = true }, 250)
       }
+      // Keep the status accurate after size changes that don't fire a scroll event
+      // (a followOnAppend/resizeItem-driven scrollHeight change with scrollTop
+      // unchanged). onScroll alone would leave `atEnd` stale; this <script> re-runs
+      // on every v update, so recompute the at-end status here too.
+      const statusEl = scrollEl()
+      if (statusEl) {
+        atEnd = statusEl.scrollHeight - statusEl.scrollTop - statusEl.clientHeight <= AT_END_PX
+      }
     }/>
 
     <div class="toolbar">

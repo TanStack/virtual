@@ -1,3 +1,4 @@
+import { mulberry32 } from "../rng"
 <!DOCTYPE html>
 static type Person = {
   id: number
@@ -16,13 +17,7 @@ static function makeData(count: number): Person[] {
   const firstNames = ['Ava', 'Ben', 'Cleo', 'Dan', 'Elif', 'Finn', 'Gia', 'Hank', 'Ines', 'Jon', 'Kaya', 'Liam', 'Mona', 'Nico', 'Odessa', 'Pia', 'Quentin', 'Rosa', 'Sam', 'Tess']
   const lastNames = ['Adler', 'Brooks', 'Chen', 'Diaz', 'Egan', 'Fox', 'Gupta', 'Hale', 'Ito', 'Jones', 'Khan', 'Lund', 'Mori', 'Ngo', 'Ochoa', 'Park', 'Quinn', 'Ruiz', 'Silva', 'Tran']
   const statuses: Person['status'][] = ['relationship', 'complicated', 'single']
-  let t = 7
-  const rand = () => {
-    t += 0x6d2b79f5
-    let r = Math.imul(t ^ (t >>> 15), 1 | t)
-    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
-  }
+  const rand = mulberry32(7)
   return Array.from({ length: count }, (_, index) => ({
     id: index + 1,
     firstName: firstNames[Math.floor(rand() * firstNames.length)]!,
