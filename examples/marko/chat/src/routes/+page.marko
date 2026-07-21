@@ -170,7 +170,17 @@ static const AT_END_PX = 80
                 )
               }
             } catch (error) {
-              if (!abort.signal.aborted) throw error
+              // Surface a genuine failure in the message instead of letting it
+              // escape as an unhandled rejection: this IIFE is fire-and-forget and
+              // the e2e asserts zero page errors, so a rethrow would fail CI on any
+              // network hiccup. An intentional abort is not a failure.
+              if (!abort.signal.aborted) {
+                messages = messages.map((message) =>
+                  message.id === id
+                    ? { ...message, text: `${message.text}\n[reply failed]` }
+                    : message,
+                )
+              }
             } finally {
               state.streamAbort = null
             }
