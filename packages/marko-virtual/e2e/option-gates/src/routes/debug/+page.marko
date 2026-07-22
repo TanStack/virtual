@@ -1,0 +1,27 @@
+// GATE: debug — core (dev build) logs console.info timing lines (a stopwatch prefix and
+// the memo key, e.g. 'maybeNotify') when options.debug is true. Assert one appears.
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: debug</title></head>
+  <body>
+    <div/scrollEl data-testid="scroller" style="height: 400px; overflow-y: auto">
+      <virtualizer/v
+        count=10000
+        estimateSize=() => 35
+        overscan=5
+        getScrollElement=() => scrollEl()
+        debug=true
+      />
+      <div style=`height: ${v.totalSize}px; position: relative`>
+        <for|item| of=v.virtualItems>
+          <div
+            data-index=item.index
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+          >
+            Row ${item.index}
+          </div>
+        </for>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+// GATE: window-virtualizer horizontal — the PAGE scrolls sideways. Scrolling the
+// window horizontally must advance the rendered column window.
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: window horizontal</title></head>
+  <body style="margin: 0">
+    <window-virtualizer/v
+      count=10000
+      estimateSize=() => 100
+      overscan=5
+      horizontal=true
+    />
+    <div style=`width: ${v.totalSize}px; height: 200px; position: relative`>
+      <for|item| of=v.virtualItems>
+        <div
+          data-index=item.index
+          style=`position: absolute; top: 0; left: 0; width: ${item.size}px; height: 100%; transform: translateX(${item.start}px); border-right: 1px solid #ddd`
+        >
+          Col ${item.index}
+        </div>
+      </for>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,47 @@
+// Test fixture for the EXPANDED return surface of <virtualizer>:
+// range + measure/resizeItem/scrollToEnd/isAtEnd/getDistanceFromEnd.
+// Renders the values into the DOM so jsdom tests can assert on them, and
+// exposes buttons that invoke the methods so the wiring is exercised.
+
+export interface Input {
+  count?: number
+  itemHeight?: number
+  rangeExtractor?: (range: {
+    startIndex: number
+    endIndex: number
+    overscan: number
+    count: number
+  }) => number[]
+}
+
+<div/scrollEl style="height: 400px; width: 400px; overflow: auto">
+  <virtualizer/v
+    count=input.count ?? 100
+    estimateSize=() => input.itemHeight ?? 50
+    getScrollElement=() => scrollEl()
+    getItemKey=(i: number) => `key-${i}`
+    rangeExtractor=input.rangeExtractor
+  />
+  <div data-testid="range-start">${v.range ? v.range.startIndex : 'null'}</div>
+  <div data-testid="range-end">${v.range ? v.range.endIndex : 'null'}</div>
+  <div data-testid="at-end">${String(v.isAtEnd())}</div>
+  <div data-testid="first-key">${v.virtualItems[0] ? String(v.virtualItems[0].key) : 'none'}</div>
+  <button data-testid="do-resize" onClick() { v.resizeItem(0, 150) }>resize</button>
+  <button data-testid="do-measure" onClick() { v.measure() }>measure</button>
+  <button data-testid="do-scroll-end" onClick() { v.scrollToEnd() }>end</button>
+  <div
+    data-testid="virtual-wrapper"
+    style=`height: ${v.totalSize}px; position: relative`
+  >
+    <for|item| of=v.virtualItems>
+      <div
+        data-testid="virtual-item"
+        data-index=item.index
+        data-size=item.size
+        style=`position: absolute; height: ${item.size}px; transform: translateY(${item.start}px)`
+      >
+        Row ${item.index}
+      </div>
+    </for>
+  </div>
+</div>

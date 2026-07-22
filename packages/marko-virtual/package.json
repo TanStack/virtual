@@ -38,31 +38,34 @@
     },
     "./package.json": "./package.json",
     "./marko.json": "./marko.json",
-    "./src/tags/*": "./src/tags/*"
+    "./dist/tags/*": "./dist/tags/*"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.marko"
+  ],
   "files": [
     "dist",
-    "src/tags",
     "marko.json",
     "README.md"
   ],
   "scripts": {
     "clean": "premove ./dist ./coverage",
     "test:eslint": "eslint ./src",
-    "test:types": "tsc",
+    "test:types": "mtc -p tsconfig.typecheck.json",
     "test:lib": "vitest",
     "test:lib:dev": "pnpm run test:lib --watch",
     "test:build": "publint --strict",
-    "build": "vite build"
+    "build": "vite build && marko-type-check -p tsconfig.tags.json"
   },
   "dependencies": {
     "@tanstack/virtual-core": "workspace:*"
   },
   "devDependencies": {
-    "@marko/vite": "^3.0.0",
+    "@marko/language-tools": "^2.6.2",
+    "@marko/type-check": "3.1.1",
+    "@marko/vite": "^6.1.0",
     "@testing-library/dom": "^10.0.0",
-    "marko": "^6.0.0"
+    "marko": "^6.2.2"
   },
   "peerDependencies": {
     "marko": "^6.0.0"

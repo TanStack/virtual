@@ -28,10 +28,8 @@
     <let/loading = false/>
     <let/hasMore = true/>
     <let/offset  = 0/>
-    <let/mounted = false/>
 
     <lifecycle onMount() {
-      mounted = true
       loading = true
       new Promise<void>(r => setTimeout(r, 400)).then(() => {
         const n = Math.min(PAGE_SIZE, TOTAL)
@@ -43,47 +41,44 @@
     }/>
 
     <div/scrollEl class="scroll-container">
-      <if=mounted>
-        <virtualizer|{ virtualItems, totalSize }|
-          count=TOTAL
-          estimateSize=() => 52
-          getScrollElement=scrollEl
-          overscan=5
-        >
-          <effect() {
-            const last = virtualItems[virtualItems.length - 1]
-            if (last && last.index >= rows.length - 1 && !loading && hasMore) {
-              const off = offset
-              loading = true
-              new Promise<void>(r => setTimeout(r, 400)).then(() => {
-                const n = Math.min(PAGE_SIZE, TOTAL - off)
-                rows = [...rows, ...Array.from({ length: n }, (_, k) => "Row #" + (off + k + 1))]
-                offset = off + n
-                hasMore = offset < TOTAL
-                loading = false
-              })
-            }
-          }/>
+      <virtualizer/v
+        count=TOTAL
+        estimateSize=() => 52
+        getScrollElement=() => scrollEl()
+        overscan=5
+      />
+      <script() {
+        const last = v.virtualItems[v.virtualItems.length - 1]
+        if (last && last.index >= rows.length - 1 && !loading && hasMore) {
+          const off = offset
+          loading = true
+          new Promise<void>(r => setTimeout(r, 400)).then(() => {
+            const n = Math.min(PAGE_SIZE, TOTAL - off)
+            rows = [...rows, ...Array.from({ length: n }, (_, k) => "Row #" + (off + k + 1))]
+            offset = off + n
+            hasMore = offset < TOTAL
+            loading = false
+          })
+        }
+      }/>
 
-          <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-            <for|item| of=virtualItems>
-              <div
-                class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
-              >
-                <if=item.index < rows.length>
-                  ${rows[item.index]}
-                </if>
-                <else>
-                  <span class="placeholder">
-                    ${loading && item.index === rows.length ? "Loading…" : "—"}
-                  </span>
-                </else>
-              </div>
-            </for>
+      <div style=`height: ${v.totalSize}px; width: 100%; position: relative`>
+        <for|item| of=v.virtualItems>
+          <div
+            class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+          >
+            <if=item.index < rows.length>
+              ${rows[item.index]}
+            </if>
+            <else>
+              <span class="placeholder">
+                ${loading && item.index === rows.length ? "Loading…" : "—"}
+              </span>
+            </else>
           </div>
-        </virtualizer>
-      </if>
+        </for>
+      </div>
     </div>
 
     <p class="footer">${rows.length} of ${TOTAL} rows loaded</p>

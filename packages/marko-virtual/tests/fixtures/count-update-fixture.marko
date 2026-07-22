@@ -1,4 +1,4 @@
-// Fixture for testing reactive count changes via onUpdate.
+// Fixture for testing reactive count changes via onUpdate (return-a-tag-variable shape).
 // The <virtualizer> tag must recalculate items when count changes —
 // this requires the explicit notify() call after _willUpdate() in onUpdate.
 // Without it, count changes silently have no effect.
@@ -18,24 +18,23 @@ export interface Input {
     data-testid="decrement-btn"
     onClick=() => { count = Math.max(0, count - 1) }
   />
-  <virtualizer|{ virtualItems, totalSize }|
+  <virtualizer/v
     count=count
     estimateSize=() => 50
     getScrollElement=scrollEl
+  />
+  <div
+    data-testid="virtual-wrapper"
+    style=`height: ${v.totalSize}px; position: relative`
   >
-    <div
-      data-testid="virtual-wrapper"
-      style=`height: ${totalSize}px; position: relative`
-    >
-      <for|item| of=virtualItems>
-        <div
-          data-testid="virtual-item"
-          data-index=item.index
-          style=`position: absolute; height: ${item.size}px; transform: translateY(${item.start}px)`
-        >
-          Row ${item.index}
-        </div>
-      </for>
-    </div>
-  </virtualizer>
+    <for|item| of=v.virtualItems>
+      <div
+        data-testid="virtual-item"
+        data-index=item.index
+        style=`position: absolute; height: ${item.size}px; transform: translateY(${item.start}px)`
+      >
+        Row ${item.index}
+      </div>
+    </for>
+  </div>
 </div>

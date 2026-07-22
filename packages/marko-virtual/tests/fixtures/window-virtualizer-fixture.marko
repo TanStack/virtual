@@ -1,26 +1,27 @@
-// Test fixture for <window-virtualizer> tag.
+// Test fixture for <window-virtualizer> tag (return-a-tag-variable shape).
+// No <if=mounted> guard: the tag builds at render time and renders nothing itself;
+// the consumer owns the markup below and reads v.virtualItems / v.totalSize.
 
 export interface Input {
   count?: number
   itemHeight?: number
 }
 
-<window-virtualizer|{ virtualItems, totalSize }|
+<window-virtualizer/v
   count=input.count ?? 100
   estimateSize=() => input.itemHeight ?? 50
+/>
+<div
+  data-testid="virtual-wrapper"
+  style=`height: ${v.totalSize}px; position: relative`
 >
-  <div
-    data-testid="virtual-wrapper"
-    style=`height: ${totalSize}px; position: relative`
-  >
-    <for|item| of=virtualItems>
-      <div
-        data-testid="virtual-item"
-        data-index=item.index
-        style=`position: absolute; height: ${item.size}px; transform: translateY(${item.start}px)`
-      >
-        Row ${item.index}
-      </div>
-    </for>
-  </div>
-</window-virtualizer>
+  <for|item| of=v.virtualItems>
+    <div
+      data-testid="virtual-item"
+      data-index=item.index
+      style=`position: absolute; height: ${item.size}px; transform: translateY(${item.start}px)`
+    >
+      Row ${item.index}
+    </div>
+  </for>
+</div>

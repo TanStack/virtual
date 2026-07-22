@@ -42,6 +42,12 @@ npm install @tanstack/lit-virtual
 npm install @tanstack/angular-virtual
 ```
 
+## Marko Virtual
+
+```bash
+npm install @tanstack/marko-virtual
+```
+
 ## Virtual Core (no framework)
 
 ```bash

@@ -1,6 +1,20 @@
 import { Virtualizer } from "@tanstack/virtual-core"
-import type { VirtualItem, ScrollToOptions } from "@tanstack/virtual-core"
-import { buildOptions } from "./options"
+import type { Range, VirtualItem, ScrollToOptions } from "@tanstack/virtual-core"
+import { buildOptions, renderSlice } from "./options"
+
+export interface VirtualizerHandle {
+  virtualItems: VirtualItem[]
+  totalSize: number
+  range: { startIndex: number; endIndex: number } | null
+  measureElement: ((el: Element | null) => void) | undefined
+  scrollToIndex: (index: number, options?: ScrollToOptions) => void
+  scrollToOffset: (offset: number, options?: ScrollToOptions) => void
+  measure: () => void
+  resizeItem: (index: number, size: number) => void
+  scrollToEnd: (options?: { behavior?: ScrollToOptions['behavior'] }) => void
+  isAtEnd: (threshold?: number) => boolean
+  getDistanceFromEnd: () => number
+}
 
 export interface Input {
   count: number
@@ -15,19 +29,41 @@ export interface Input {
   gap?: number
   lanes?: number
   initialOffset?: number | (() => number)
-  content: Marko.Body<[{
-    virtualItems: VirtualItem[]
-    totalSize: number
-    measureElement: ((el: Element | null) => void) | undefined
-    scrollToIndex: (index: number, options?: ScrollToOptions) => void
-    scrollToOffset: (offset: number, options?: ScrollToOptions) => void
-  }]>
+  initialRect?: { width: number; height: number }
+  getItemKey?: (index: number) => number | string | bigint
+  rangeExtractor?: (range: Range) => number[]
+  indexAttribute?: string
+  initialMeasurementsCache?: VirtualItem[]
+  anchorTo?: 'start' | 'end'
+  followOnAppend?: boolean | ScrollBehavior
+  scrollEndThreshold?: number
+  scrollMargin?: number
+  enabled?: boolean
+  isRtl?: boolean
+  isScrollingResetDelay?: number
+  useScrollendEvent?: boolean
+  useAnimationFrameWithResizeObserver?: boolean
+  laneAssignmentMode?: 'estimate' | 'measured'
+  useCachedMeasurements?: boolean
+  debug?: boolean
+  measureElement?: (
+    element: Element,
+    entry: ResizeObserverEntry | undefined,
+    instance: Virtualizer<Element, Element>,
+  ) => number
 }
 
+// Render-time seed: derive the initial window as plain data via a transient virtual-core
+// instance (see renderSlice in ./options). On the server this paints the initial slice into
+// the HTML (when `initialRect` is given) or an empty container with the correct total height
+// (when it is not) — no <if=mounted> guard. The values serialize and recompute identically on
+// resume. The live, observing instance is then built client-only in onMount and takes over.
+<const/seed=renderSlice(input)/>
+<let/items   = (seed.items as VirtualItem[])/>
+<let/size    = (seed.size as number)/>
+<let/range   = (seed.range as { startIndex: number; endIndex: number } | null)/>
 <let/v       = (null as Virtualizer<Element, Element> | null)/>
 <let/cleanup = (null as (() => void) | null)/>
-<let/items   = ([] as VirtualItem[])/>
-<let/size    = 0/>
 
 <lifecycle<{}>
   onMount() {
@@ -36,11 +72,13 @@ export interface Input {
       if (!inst) return
       items = inst.getVirtualItems()
       size  = inst.getTotalSize()
+      range = inst.range
     }
 
     v = new Virtualizer<Element, Element>(buildOptions(input, notify))
     cleanup = v!._didMount()
     v!._willUpdate()
+    notify()
   }
 
   onUpdate() {
@@ -52,12 +90,10 @@ export interface Input {
       if (!inst) return
       items = inst.getVirtualItems()
       size  = inst.getTotalSize()
+      range = inst.range
     }
 
     current.setOptions({ ...current.options, ...buildOptions(input, notify) })
-
-    // _willUpdate() is a no-op when the scroll element is unchanged, so
-    // notify() explicitly afterwards to recompute on count/option changes.
     current._willUpdate()
     notify()
   }
@@ -69,10 +105,16 @@ export interface Input {
   }
 />
 
-<${input.content}
-  virtualItems=items
-  totalSize=size
-  measureElement=v?.measureElement
-  scrollToIndex=(index: number, options?: ScrollToOptions) => v?.scrollToIndex(index, options)
-  scrollToOffset=(offset: number, options?: ScrollToOptions) => v?.scrollToOffset(offset, options)
-/>
+<return=(({
+  virtualItems: items,
+  totalSize: size,
+  range: range,
+  measureElement: v?.measureElement,
+  scrollToIndex: (index: number, options?: ScrollToOptions) => v?.scrollToIndex(index, options),
+  scrollToOffset: (offset: number, options?: ScrollToOptions) => v?.scrollToOffset(offset, options),
+  measure: () => v?.measure(),
+  resizeItem: (index: number, itemSize: number) => v?.resizeItem(index, itemSize),
+  scrollToEnd: (options?: { behavior?: ScrollToOptions['behavior'] }) => v?.scrollToEnd(options),
+  isAtEnd: (threshold?: number) => v?.isAtEnd(threshold) ?? false,
+  getDistanceFromEnd: () => v?.getDistanceFromEnd() ?? Infinity,
+}) as VirtualizerHandle)>
