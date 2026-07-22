@@ -2553,9 +2553,11 @@ test('scroll-up jank: idle (scrollDirection=null) still applies adjustment', () 
 function createAdjustmentVirtualizer({
   count = 30,
   offset,
+  onChange,
 }: {
   count?: number
   offset: number
+  onChange?: (instance: any, sync: boolean) => void
 }) {
   const scrollToFn = vi.fn()
   let scrollCb: ((o: number, s: boolean) => void) | null = null
@@ -2571,6 +2573,7 @@ function createAdjustmentVirtualizer({
         offsetHeight: 200,
       }) as any,
     scrollToFn,
+    onChange,
     observeElementRect: (_inst: any, cb: any) => {
       cb({ width: 400, height: 200 })
       return () => {}
@@ -2733,6 +2736,54 @@ test('multi-frame reflow: above-viewport re-measure compensation is never skippe
   // frames 2-5 were skipped and the offset is stuck at 645.
   expect(scrollToFn).toHaveBeenCalledTimes(5)
   expect(v.scrollOffset).toBe(725)
+})
+
+test('above-viewport compensation notifies synchronously so the scroll write and transforms commit in one paint (#1227)', () => {
+  // applyScrollAdjustment writes scrollTop synchronously inside the resize
+  // (ResizeObserver) callback. If the follow-up notify were async, the
+  // browser could paint one frame with the new scrollTop but the old item
+  // transforms — the viewport visibly jumps by `delta` and snaps back. The
+  // compensating resize must notify synchronously (sync=true) so the render
+  // flushes in the same callback.
+  const onChange = vi.fn()
+  const { v, scrollToFn } = createAdjustmentVirtualizer({
+    offset: 600,
+    onChange,
+  })
+  v['getMeasurements']()
+  onChange.mockClear()
+  scrollToFn.mockClear()
+
+  // Item 0 sits entirely above the fold (offset 600) — a first measurement
+  // there compensates regardless of scroll direction, moving scrollTop.
+  v.resizeItem(0, 90)
+
+  // The compensation write happened...
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  // ...and its notify was synchronous so transforms flush in this same frame.
+  expect(onChange).toHaveBeenCalled()
+  expect(onChange.mock.calls.at(-1)![1]).toBe(true)
+})
+
+test('a resize that moves no scroll position keeps the cheaper async notify (#1227)', () => {
+  // No scroll write → no same-frame constraint → the notify stays async so we
+  // don't force a synchronous render on every below-fold measurement.
+  const onChange = vi.fn()
+  const { v, scrollToFn } = createAdjustmentVirtualizer({
+    offset: 0,
+    onChange,
+  })
+  v['getMeasurements']()
+  onChange.mockClear()
+  scrollToFn.mockClear()
+
+  // Item 10 (start 500) sits below the fold at offset 0 — measuring it does
+  // not compensate, so scrollTop is untouched.
+  v.resizeItem(10, 90)
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+  expect(onChange).toHaveBeenCalled()
+  expect(onChange.mock.calls.at(-1)![1]).toBe(false)
 })
 
 // ─── end anchoring / chat-style reverse virtualization ──────────────────────
