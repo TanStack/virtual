@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.17.6
+
+### Patch Changes
+
+- [#1236](https://github.com/TanStack/virtual/pull/1236) [`7ae32b5`](https://github.com/TanStack/virtual/commit/7ae32b55887fd044a48c788546cd940279b338e0) - Stop the default scroll-adjustment heuristic from drifting the viewport when a viewport-spanning item grows. Previously any item whose top sat above the fold (`itemStart < scrollOffset`) had its size delta compensated on every re-measure — including a streaming chat message that spans the fold and grows at its bottom, dragging `scrollTop` downward token by token ([#1218](https://github.com/TanStack/virtual/issues/1218)). Re-measurements now only compensate items that are _entirely_ above the fold (`itemStart + itemSize <= scrollOffset`); growth below the anchor point leaves the scroll position untouched. First measurements (estimate→actual) still compensate any above-fold item, and a custom `shouldAdjustScrollPositionOnItemSizeChange` still overrides the default.
+
 ## 3.17.5
 
 ### Patch Changes
