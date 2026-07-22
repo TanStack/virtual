@@ -1,5 +1,21 @@
 # @tanstack/react-virtual
 
+## 3.14.9
+
+### Patch Changes
+
+- Updated dependencies [[`a5417b4`](https://github.com/TanStack/virtual/commit/a5417b4b0d3c82876747bb9635db7239c28d3e44)]:
+  - @tanstack/virtual-core@3.17.7
+
+## 3.14.8
+
+### Patch Changes
+
+- [#1237](https://github.com/TanStack/virtual/pull/1237) [`aa536e7`](https://github.com/TanStack/virtual/commit/aa536e7746a88d9f55ca8a4b50d2f548a888fea6) - Fix a gap at the top of the list after an end-anchored prepend in `directDomUpdates` mode. The prepend grows the total size and bumps `scrollOffset` to the new bottom in the same pass, but the size container's height was written _after_ `_willUpdate` synced the scroll position — so the browser clamped the `scrollTop` write to the stale (shorter) `scrollHeight`, leaving whitespace at the top until the next scroll. The container is now grown before the scroll sync. Only affected `directDomUpdates` mode (React-rendered sizers receive their height during render).
+
+- Updated dependencies [[`7ae32b5`](https://github.com/TanStack/virtual/commit/7ae32b55887fd044a48c788546cd940279b338e0)]:
+  - @tanstack/virtual-core@3.17.6
+
 ## 3.14.7
 
 ### Patch Changes

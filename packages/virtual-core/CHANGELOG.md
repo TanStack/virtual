@@ -1,5 +1,17 @@
 # @tanstack/virtual-core
 
+## 3.17.7
+
+### Patch Changes
+
+- [#1239](https://github.com/TanStack/virtual/pull/1239) [`a5417b4`](https://github.com/TanStack/virtual/commit/a5417b4b0d3c82876747bb9635db7239c28d3e44) - Fix a one-frame viewport jump when above-viewport rows resize while scrolling up ([#1227](https://github.com/TanStack/virtual/issues/1227)). `resizeItem` writes `scrollTop` synchronously inside the ResizeObserver callback to compensate for the size change, but then notified asynchronously — so the browser could paint a frame with the new `scrollTop` and the old item transforms, making the content jerk by the resize delta and snap back. When a compensation actually moves the scroll position, `resizeItem` now notifies synchronously so the transform commit lands in the same paint as the scroll write. Resizes that don't move the scroll position (below-fold measurements, iOS-deferred adjustments) keep the cheaper async notify.
+
+## 3.17.6
+
+### Patch Changes
+
+- [#1236](https://github.com/TanStack/virtual/pull/1236) [`7ae32b5`](https://github.com/TanStack/virtual/commit/7ae32b55887fd044a48c788546cd940279b338e0) - Stop the default scroll-adjustment heuristic from drifting the viewport when a viewport-spanning item grows. Previously any item whose top sat above the fold (`itemStart < scrollOffset`) had its size delta compensated on every re-measure — including a streaming chat message that spans the fold and grows at its bottom, dragging `scrollTop` downward token by token ([#1218](https://github.com/TanStack/virtual/issues/1218)). Re-measurements now only compensate items that are _entirely_ above the fold (`itemStart + itemSize <= scrollOffset`); growth below the anchor point leaves the scroll position untouched. First measurements (estimate→actual) still compensate any above-fold item, and a custom `shouldAdjustScrollPositionOnItemSizeChange` still overrides the default.
+
 ## 3.17.5
 
 ### Patch Changes
@@ -117,8 +129,9 @@
   Forward-scroll and idle (mount-time) adjustments still fire as before
   to preserve visual stability of the visible window. Consumers who want
   the old behavior — adjusting on every above-viewport resize regardless
-  of direction — can supply `shouldAdjustScrollPositionOnItemSizeChange`
-  which is checked before the default branch.
+  of direction — can assign `shouldAdjustScrollPositionOnItemSizeChange`
+  directly on the virtualizer instance. This instance property is checked
+  before the default branch.
 
 - Add `takeSnapshot()` instance method for scroll-restoration round-trips. ([#1168](https://github.com/TanStack/virtual/pull/1168))
   Returns the currently-measured items as plain `VirtualItem` objects;

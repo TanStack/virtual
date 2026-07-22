@@ -420,7 +420,7 @@ export class Virtualizer<
   scrollRect: Rect | null = null
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
-  private scrollAdjustments = 0
+  scrollAdjustments = 0
   // Sum of size-change deltas above-viewport that were skipped during
   // iOS momentum scroll (writing scrollTop mid-momentum cancels it).
   // Flushed in a single scrollTo when iOS is fully settled.
@@ -679,8 +679,15 @@ export class Virtualizer<
     this.options.onChange?.(this, sync)
   }
 
-  private applyScrollAdjustment(delta: number, behavior?: ScrollBehavior) {
-    if (delta === 0) return
+  // Returns `true` when it performed a synchronous `scrollTop` write this
+  // tick, `false` when the delta was zero or the write was deferred (iOS).
+  // `resizeItem` uses that to decide whether the follow-up `notify` must be
+  // synchronous so the grown transforms commit in the same paint (#1227).
+  private applyScrollAdjustment(
+    delta: number,
+    behavior?: ScrollBehavior,
+  ): boolean {
+    if (delta === 0) return false
 
     if (process.env.NODE_ENV !== 'production' && this.options.debug) {
       console.info('correction', delta)
@@ -691,6 +698,7 @@ export class Virtualizer<
       (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
     ) {
       this._iosDeferredAdjustment += delta
+      return false
     } else {
       this._scrollToOffset(this.getScrollOffset(), {
         adjustments: (this.scrollAdjustments += delta),
@@ -716,6 +724,7 @@ export class Virtualizer<
         if (this.scrollOffset < 0) this.scrollOffset = 0
         this.scrollAdjustments = 0
       }
+      return true
     }
   }
 
@@ -1599,13 +1608,26 @@ export class Virtualizer<
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
 
+      let adjustedSync = false
       if (wasAtEnd) {
-        this.applyScrollAdjustment(this.getTotalSize() - prevTotalSize)
+        adjustedSync = this.applyScrollAdjustment(
+          this.getTotalSize() - prevTotalSize,
+        )
       } else if (shouldAdjustScroll) {
-        this.applyScrollAdjustment(delta)
+        adjustedSync = this.applyScrollAdjustment(delta)
       }
 
-      this.notify(false)
+      // When we just moved `scrollTop` to compensate for an above-viewport
+      // resize, the grown item transforms must commit in the SAME frame as
+      // that write. `applyScrollAdjustment` writes `scrollTop` synchronously
+      // inside this ResizeObserver callback, but an async `notify` schedules
+      // the transform render for a later commit — so the browser can paint
+      // one frame with the new `scrollTop` and the old positions, and the
+      // viewport visibly jumps by `delta` before snapping back (#1227). A
+      // synchronous notify flushes the render in this same callback, so both
+      // land in one paint. When nothing moved (or the write was deferred on
+      // iOS), keep the cheaper async notify.
+      this.notify(adjustedSync)
     }
   }
 
