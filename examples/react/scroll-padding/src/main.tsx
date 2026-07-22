@@ -81,7 +81,7 @@ function App() {
                 }}
               >
                 <td>#{virtualRow.index}</td>
-                <td>{virtualRow.key}</td>
+                <td>{String(virtualRow.key)}</td>
               </tr>
             ))}
           </tbody>
