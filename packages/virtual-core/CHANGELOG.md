@@ -117,8 +117,9 @@
   Forward-scroll and idle (mount-time) adjustments still fire as before
   to preserve visual stability of the visible window. Consumers who want
   the old behavior — adjusting on every above-viewport resize regardless
-  of direction — can supply `shouldAdjustScrollPositionOnItemSizeChange`
-  which is checked before the default branch.
+  of direction — can assign `shouldAdjustScrollPositionOnItemSizeChange`
+  directly on the virtualizer instance. This instance property is checked
+  before the default branch.
 
 - Add `takeSnapshot()` instance method for scroll-restoration round-trips. ([#1168](https://github.com/TanStack/virtual/pull/1168))
   Returns the currently-measured items as plain `VirtualItem` objects;
