@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Setup Tools
-        uses: tanstack/config/.github/setup@e4b48f16568324f76f467aa4c2aac2f05db632c3 # main
+        uses: tanstack/config/.github/setup@bfa16483f70e69805e1ea4eee29988b133d2aa46 # main
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium
       - name: Run Tests
@@ -45,6 +45,6 @@ jobs:
           title: 'ci: Version Packages'
       - name: Comment on PRs about release
         if: steps.changesets.outputs.published == 'true'
-        uses: TanStack/config/.github/comment-on-release@e4b48f16568324f76f467aa4c2aac2f05db632c3 # main
+        uses: TanStack/config/.github/comment-on-release@bfa16483f70e69805e1ea4eee29988b133d2aa46 # main
         with:
           published-packages: ${{ steps.changesets.outputs.publishedPackages }}
