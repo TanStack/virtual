@@ -138,7 +138,7 @@ export function buildOptions(
 // `range` is the visible window ({ startIndex, endIndex }) the probe computed — plain data,
 // null when there is no slice.
 export function renderSlice(input: VirtualizerInput): {
-  items: VirtualItem[]
+  items: Array<VirtualItem>
   size: number
   range: { startIndex: number; endIndex: number } | null
 } {

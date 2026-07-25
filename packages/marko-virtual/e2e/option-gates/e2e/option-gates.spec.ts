@@ -17,7 +17,15 @@ test.beforeEach(({ page }) => {
     if (message.location().url.endsWith('/favicon.ico')) return
     consoleErrors.push(text)
   })
-  page.on('pageerror', (error) => consoleErrors.push(String(error)))
+  page.on('pageerror', (error) => {
+    // Same vite dev-server noise the console handler ignores, but arriving as an
+    // uncaught error instead of a console message: the HMR client's connect
+    // promise rejects ("WebSocket closed without opened") when the dev server is
+    // slow to accept, which happens once CI runs several suites in parallel.
+    const text = String(error)
+    if (text.includes('WebSocket') || text.includes('[vite]')) return
+    consoleErrors.push(text)
+  })
 })
 
 test.afterEach(() => {

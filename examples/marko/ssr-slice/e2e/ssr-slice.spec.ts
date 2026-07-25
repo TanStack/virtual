@@ -20,7 +20,13 @@ test.beforeEach(({ page }) => {
     consoleErrors.push(text)
   })
   page.on('pageerror', (error) => {
-    consoleErrors.push(String(error))
+    // Filter the vite HMR client's WebSocket noise the same way the console
+    // handler does: under parallel CI runs the dev server can be slow to accept
+    // the HMR socket, and the client's connect promise rejects as an uncaught
+    // error ("WebSocket closed without opened") rather than a console message.
+    const text = String(error)
+    if (text.includes('WebSocket') || text.includes('[vite]')) return
+    consoleErrors.push(text)
   })
 })
 
@@ -101,14 +107,16 @@ test('client resumes over the server slice and the list is live (scroll re-windo
   ).toBeVisible()
 })
 
-test('the awaited slice STREAMS: placeholder flushes first, server-painted rows arrive in a later chunk', async () => {
+test('the awaited slice STREAMS: placeholder flushes first, server-painted rows arrive in a later chunk', async ({
+  baseURL,
+}) => {
   // Raw HTTP streaming probe (no browser): Marko streams the <await> subtree
   // out-of-order — the shell + placeholder flush immediately, and the awaited
   // content (including the server-painted rows) arrives in a LATER chunk once
   // fetchPeople() resolves. This is the wire-level proof that a virtualizer
   // inside a streamed <await> renders its server slice into the mid-stream
   // chunk (each such chunk resumes independently on the client).
-  const response = await fetch('http://localhost:4173/')
+  const response = await fetch(baseURL!)
   expect(response.ok).toBe(true)
   const reader = response.body!.getReader()
   const decoder = new TextDecoder()
