@@ -36,7 +36,10 @@ This function returns a window-based `Virtualizer` instance configured to work w
 ## `useVirtualizerSnapshot`
 
 ```tsx
-function useVirtualizerSnapshot<TScrollElement, TItemElement = unknown>(
+function useVirtualizerSnapshot<
+  TScrollElement extends Element,
+  TItemElement extends Element,
+>(
   options: PartialKeys<
     ReactVirtualizerSnapshotOptions<TScrollElement, TItemElement>,
     'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
@@ -48,10 +51,13 @@ Like `useVirtualizer`, but returns the render-facing values as immutable
 snapshot data instead of methods to call during render:
 
 ```tsx
-interface VirtualizerSnapshot<TScrollElement, TItemElement> {
-  virtualItems: Array<VirtualItem>
-  totalSize: number
-  virtualizer: Virtualizer<TScrollElement, TItemElement>
+interface VirtualizerSnapshot<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+> {
+  readonly virtualItems: ReadonlyArray<VirtualItem>
+  readonly totalSize: number
+  readonly virtualizer: Virtualizer<TScrollElement, TItemElement>
 }
 ```
 
@@ -114,7 +120,7 @@ the snapshot hooks make React rendering itself compiler-safe.
 ## `useWindowVirtualizerSnapshot`
 
 ```tsx
-function useWindowVirtualizerSnapshot<TItemElement = unknown>(
+function useWindowVirtualizerSnapshot<TItemElement extends Element>(
   options: PartialKeys<
     ReactVirtualizerSnapshotOptions<Window, TItemElement>,
     | 'getScrollElement'

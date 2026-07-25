@@ -298,14 +298,15 @@ export interface VirtualizerSnapshot<
    * The virtual items for the current visible range, as immutable snapshot
    * data. The array reference changes when — and only when — the computed
    * items change, so memoization keyed on it (manual or via React Compiler)
-   * stays correct.
+   * stays correct. Treat it as read-only: the reference is shared with the
+   * core (like `getVirtualItems()`), so mutating it corrupts later reads.
    */
-  virtualItems: Array<VirtualItem>
+  readonly virtualItems: ReadonlyArray<VirtualItem>
   /**
    * Total size of the virtualized extent, captured in the same snapshot as
    * `virtualItems`.
    */
-  totalSize: number
+  readonly totalSize: number
   /**
    * The underlying virtualizer instance, for imperative APIs only:
    * `measureElement` (as a ref), `scrollToIndex`, `scrollToOffset`,
@@ -315,7 +316,7 @@ export interface VirtualizerSnapshot<
    * `range`, `scrollOffset`, …) from it during render — those reads are what
    * memoizing compilers cache stale (#736). Use the snapshot fields instead.
    */
-  virtualizer: Virtualizer<TScrollElement, TItemElement>
+  readonly virtualizer: Virtualizer<TScrollElement, TItemElement>
 }
 
 function useVirtualizerSnapshotBase<
@@ -331,7 +332,7 @@ function useVirtualizerSnapshotBase<
   const [store] = React.useState(() => {
     const listeners = new Set<() => void>()
     let snapshot: {
-      virtualItems: Array<VirtualItem>
+      virtualItems: ReadonlyArray<VirtualItem>
       totalSize: number
     } | null = null
     let dirty = true
