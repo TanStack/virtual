@@ -55,7 +55,7 @@ interface VirtualizerSnapshot<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
 > {
-  readonly virtualItems: ReadonlyArray<VirtualItem>
+  readonly virtualItems: ReadonlyArray<Readonly<VirtualItem>>
   readonly totalSize: number
   readonly virtualizer: Virtualizer<TScrollElement, TItemElement>
 }

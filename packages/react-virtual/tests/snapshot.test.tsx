@@ -24,6 +24,7 @@ beforeEach(() => {
 
 interface SnapshotListProps {
   count?: number
+  gap?: number
   height?: number
   width?: number
   label?: string
@@ -31,6 +32,7 @@ interface SnapshotListProps {
 
 function SnapshotList({
   count = 200,
+  gap,
   height = 200,
   width = 200,
   label = '',
@@ -43,6 +45,7 @@ function SnapshotList({
     count,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
+    gap,
     observeElementRect: (_, cb) => {
       cb({ height, width })
     },
@@ -61,7 +64,10 @@ function SnapshotList({
       style={{ height, width, overflow: 'auto' }}
       data-testid="scroller"
     >
-      <div style={{ height: totalSize, width: '100%', position: 'relative' }}>
+      <div
+        data-testid="sizer"
+        style={{ height: totalSize, width: '100%', position: 'relative' }}
+      >
         {virtualItems.map((virtualRow) => (
           <div
             data-testid={`item-${virtualRow.key}`}
@@ -106,6 +112,31 @@ test('keeps snapshot and result referentially stable across unrelated re-renders
   expect(afterRerender.totalSize).toBe(afterMount.totalSize)
   expect(afterRerender.virtualizer).toBe(afterMount.virtualizer)
   expect(afterRerender).toBe(afterMount)
+})
+
+test('publishes a new snapshot when render-time options change geometry', () => {
+  const { rerender } = render(<SnapshotList count={200} />)
+  const before = captured.results[captured.results.length - 1]!
+
+  expect(screen.getByTestId('sizer')).toHaveStyle({ height: '10000px' })
+
+  // Growing the count does not change the visible range, so virtual-core does
+  // not emit onChange. The hook must still refresh during the parent render.
+  rerender(<SnapshotList count={300} />)
+  const afterCountChange = captured.results[captured.results.length - 1]!
+
+  expect(screen.getByTestId('sizer')).toHaveStyle({ height: '15000px' })
+  expect(afterCountChange.virtualItems).not.toBe(before.virtualItems)
+  expect(afterCountChange.virtualizer).toBe(before.virtualizer)
+
+  rerender(<SnapshotList count={300} gap={10} />)
+  const afterGapChange = captured.results[captured.results.length - 1]!
+
+  expect(screen.getByTestId('sizer')).toHaveStyle({ height: '17990px' })
+  expect(screen.getByTestId('item-1')).toHaveStyle({
+    transform: 'translateY(60px)',
+  })
+  expect(afterGapChange.virtualItems).not.toBe(afterCountChange.virtualItems)
 })
 
 test('publishes a new snapshot when the scroll offset changes the range', () => {

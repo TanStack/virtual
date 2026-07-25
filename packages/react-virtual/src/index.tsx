@@ -301,7 +301,7 @@ export interface VirtualizerSnapshot<
    * stays correct. Treat it as read-only: the reference is shared with the
    * core (like `getVirtualItems()`), so mutating it corrupts later reads.
    */
-  readonly virtualItems: ReadonlyArray<VirtualItem>
+  readonly virtualItems: ReadonlyArray<Readonly<VirtualItem>>
   /**
    * Total size of the virtualized extent, captured in the same snapshot as
    * `virtualItems`.
@@ -332,7 +332,7 @@ function useVirtualizerSnapshotBase<
   const [store] = React.useState(() => {
     const listeners = new Set<() => void>()
     let snapshot: {
-      virtualItems: ReadonlyArray<VirtualItem>
+      virtualItems: ReadonlyArray<Readonly<VirtualItem>>
       totalSize: number
     } | null = null
     let dirty = true
@@ -397,6 +397,11 @@ function useVirtualizerSnapshotBase<
   )
   store.instance = instance
   instance.setOptions(resolvedOptions)
+  // setOptions can synchronously change render-facing geometry (count, gap,
+  // lanes, keys, enabled, …) without notifying when the visible range stays
+  // the same. Re-read the memoized core values during this render; the store
+  // keeps the public snapshot reference stable when neither value changed.
+  store.markDirty()
 
   useIsomorphicLayoutEffect(() => {
     return instance._didMount()
