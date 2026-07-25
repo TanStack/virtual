@@ -55,12 +55,15 @@
     "src"
   ],
   "dependencies": {
-    "@tanstack/virtual-core": "workspace:*"
+    "@tanstack/virtual-core": "workspace:*",
+    "use-sync-external-store": "^1.6.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.0",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
+    "@types/use-sync-external-store": "^1.5.0",
     "@vitejs/plugin-react": "^4.5.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "react": "^19.2.7",

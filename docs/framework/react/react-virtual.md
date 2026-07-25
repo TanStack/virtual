@@ -33,6 +33,100 @@ function useWindowVirtualizer<TItemElement = unknown>(
 
 This function returns a window-based `Virtualizer` instance configured to work with the window as the scrollElement.
 
+## `useVirtualizerSnapshot`
+
+```tsx
+function useVirtualizerSnapshot<TScrollElement, TItemElement = unknown>(
+  options: PartialKeys<
+    ReactVirtualizerSnapshotOptions<TScrollElement, TItemElement>,
+    'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
+  >,
+): VirtualizerSnapshot<TScrollElement, TItemElement>
+```
+
+Like `useVirtualizer`, but returns the render-facing values as immutable
+snapshot data instead of methods to call during render:
+
+```tsx
+interface VirtualizerSnapshot<TScrollElement, TItemElement> {
+  virtualItems: Array<VirtualItem>
+  totalSize: number
+  virtualizer: Virtualizer<TScrollElement, TItemElement>
+}
+```
+
+### Why: React Compiler
+
+`useVirtualizer` returns a stable instance whose `getVirtualItems()` /
+`getTotalSize()` read mutable internal state during render. Memoizing
+compilers cache those reads keyed on the stable instance and serve the first
+result forever, so the list never updates
+([#736](https://github.com/TanStack/virtual/issues/736)) — which is why React
+Compiler skips any component calling `useVirtualizer` as a
+known-incompatible API, leaving that component entirely un-memoized.
+
+With `useVirtualizerSnapshot`, positional data arrives as reactive values
+(via `useSyncExternalStore`): `virtualItems` and `totalSize` change identity
+exactly when the computed geometry changes. Components consuming the
+snapshot hook are compiled — and memoized correctly — by React Compiler.
+
+- Read `virtualItems` / `totalSize` from the snapshot during render.
+- Use `snapshot.virtualizer` for imperative APIs only — `measureElement` (as
+  a ref), `scrollToIndex`, `scrollToOffset`, `measure`. Its identity is
+  stable for the lifetime of the component. Do not read positional data from
+  it during render.
+
+```tsx
+const { virtualItems, totalSize, virtualizer } = useVirtualizerSnapshot({
+  count: rows.length,
+  getScrollElement: () => parentRef.current,
+  estimateSize: () => 35,
+})
+
+return (
+  <div ref={parentRef} style={{ height: 400, overflow: 'auto' }}>
+    <div style={{ height: totalSize, position: 'relative' }}>
+      {virtualItems.map((item) => (
+        <div
+          key={item.key}
+          ref={virtualizer.measureElement}
+          data-index={item.index}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            transform: `translateY(${item.start}px)`,
+          }}
+        >
+          Row {item.index}
+        </div>
+      ))}
+    </div>
+  </div>
+)
+```
+
+The snapshot hooks do not support `directDomUpdates` — that option is an
+alternative strategy that bypasses React rendering for scroll updates, while
+the snapshot hooks make React rendering itself compiler-safe.
+
+## `useWindowVirtualizerSnapshot`
+
+```tsx
+function useWindowVirtualizerSnapshot<TItemElement = unknown>(
+  options: PartialKeys<
+    ReactVirtualizerSnapshotOptions<Window, TItemElement>,
+    | 'getScrollElement'
+    | 'observeElementRect'
+    | 'observeElementOffset'
+    | 'scrollToFn'
+  >,
+): VirtualizerSnapshot<Window, TItemElement>
+```
+
+Window-scrolling variant of `useVirtualizerSnapshot`.
+
 ## React-Specific Options
 
 ### `useFlushSync`

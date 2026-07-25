@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { flushSync } from 'react-dom'
+import { useSyncExternalStore } from 'use-sync-external-store/shim'
 import {
   Virtualizer,
   elementScroll,
@@ -9,7 +10,11 @@ import {
   observeWindowRect,
   windowScroll,
 } from '@tanstack/virtual-core'
-import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  PartialKeys,
+  VirtualItem,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
 
@@ -269,6 +274,197 @@ export function useWindowVirtualizer<TItemElement extends Element>(
   >,
 ): ReactVirtualizer<Window, TItemElement> {
   return useVirtualizerBase<Window, TItemElement>({
+    getScrollElement: () => (typeof document !== 'undefined' ? window : null),
+    observeElementRect: observeWindowRect,
+    observeElementOffset: observeWindowOffset,
+    scrollToFn: windowScroll,
+    initialOffset: () => (typeof document !== 'undefined' ? window.scrollY : 0),
+    ...options,
+  })
+}
+
+export type ReactVirtualizerSnapshotOptions<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+> = VirtualizerOptions<TScrollElement, TItemElement> & {
+  useFlushSync?: boolean
+}
+
+export interface VirtualizerSnapshot<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+> {
+  /**
+   * The virtual items for the current visible range, as immutable snapshot
+   * data. The array reference changes when — and only when — the computed
+   * items change, so memoization keyed on it (manual or via React Compiler)
+   * stays correct.
+   */
+  virtualItems: Array<VirtualItem>
+  /**
+   * Total size of the virtualized extent, captured in the same snapshot as
+   * `virtualItems`.
+   */
+  totalSize: number
+  /**
+   * The underlying virtualizer instance, for imperative APIs only:
+   * `measureElement` (as a ref), `scrollToIndex`, `scrollToOffset`,
+   * `measure`, … Its identity is stable for the lifetime of the component.
+   *
+   * Do not read positional data (`getVirtualItems()`, `getTotalSize()`,
+   * `range`, `scrollOffset`, …) from it during render — those reads are what
+   * memoizing compilers cache stale (#736). Use the snapshot fields instead.
+   */
+  virtualizer: Virtualizer<TScrollElement, TItemElement>
+}
+
+function useVirtualizerSnapshotBase<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+>({
+  useFlushSync = true,
+  ...options
+}: ReactVirtualizerSnapshotOptions<
+  TScrollElement,
+  TItemElement
+>): VirtualizerSnapshot<TScrollElement, TItemElement> {
+  const [store] = React.useState(() => {
+    const listeners = new Set<() => void>()
+    let snapshot: {
+      virtualItems: Array<VirtualItem>
+      totalSize: number
+    } | null = null
+    let dirty = true
+
+    const state = {
+      instance: null as Virtualizer<TScrollElement, TItemElement> | null,
+      subscribe: (listener: () => void) => {
+        listeners.add(listener)
+        return () => {
+          listeners.delete(listener)
+        }
+      },
+      markDirty: () => {
+        dirty = true
+      },
+      notify: () => {
+        listeners.forEach((listener) => listener())
+      },
+      // Must return a cached value until the store actually changes
+      // (React warns and loops otherwise). `getVirtualItems` is memoized in
+      // virtual-core, so comparing the parts keeps the snapshot reference
+      // stable across notifications that didn't change anything visible
+      // (e.g. `isScrolling` flips).
+      getSnapshot: () => {
+        const instance = state.instance
+        if (instance === null) {
+          throw new Error('virtualizer read before initialization')
+        }
+        if (dirty || snapshot === null) {
+          dirty = false
+          const virtualItems = instance.getVirtualItems()
+          const totalSize = instance.getTotalSize()
+          if (
+            snapshot === null ||
+            snapshot.virtualItems !== virtualItems ||
+            snapshot.totalSize !== totalSize
+          ) {
+            snapshot = { virtualItems, totalSize }
+          }
+        }
+        return snapshot
+      },
+    }
+    return state
+  })
+
+  const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
+    ...options,
+    onChange: (instance, sync) => {
+      store.markDirty()
+      if (useFlushSync && sync) {
+        flushSync(store.notify)
+      } else {
+        store.notify()
+      }
+      options.onChange?.(instance, sync)
+    },
+  }
+
+  const [instance] = React.useState(
+    () => new Virtualizer<TScrollElement, TItemElement>(resolvedOptions),
+  )
+  store.instance = instance
+  instance.setOptions(resolvedOptions)
+
+  useIsomorphicLayoutEffect(() => {
+    return instance._didMount()
+  }, [])
+
+  useIsomorphicLayoutEffect(() => {
+    return instance._willUpdate()
+  })
+
+  const snapshot = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot,
+  )
+
+  return React.useMemo(
+    () => ({
+      virtualItems: snapshot.virtualItems,
+      totalSize: snapshot.totalSize,
+      virtualizer: instance,
+    }),
+    [snapshot, instance],
+  )
+}
+
+/**
+ * Like `useVirtualizer`, but returns the render-facing values as immutable
+ * snapshot data (via `useSyncExternalStore`) instead of methods to call
+ * during render.
+ *
+ * `useVirtualizer` returns a stable instance whose `getVirtualItems()` /
+ * `getTotalSize()` read mutable internal state. Memoizing compilers (React
+ * Compiler) cache such reads keyed on the stable instance and serve the
+ * first result forever (#736, #743) — which is why the compiler skips
+ * components calling `useVirtualizer` (#1119). With this hook the data
+ * arrives as reactive values whose identities change when the geometry
+ * changes, so consuming components compile — and memoize — correctly.
+ */
+export function useVirtualizerSnapshot<
+  TScrollElement extends Element,
+  TItemElement extends Element,
+>(
+  options: PartialKeys<
+    ReactVirtualizerSnapshotOptions<TScrollElement, TItemElement>,
+    'observeElementRect' | 'observeElementOffset' | 'scrollToFn'
+  >,
+): VirtualizerSnapshot<TScrollElement, TItemElement> {
+  return useVirtualizerSnapshotBase<TScrollElement, TItemElement>({
+    observeElementRect: observeElementRect,
+    observeElementOffset: observeElementOffset,
+    scrollToFn: elementScroll,
+    ...options,
+  })
+}
+
+/**
+ * Window-scrolling variant of `useVirtualizerSnapshot`. See its docs for the
+ * motivation (React Compiler compatibility).
+ */
+export function useWindowVirtualizerSnapshot<TItemElement extends Element>(
+  options: PartialKeys<
+    ReactVirtualizerSnapshotOptions<Window, TItemElement>,
+    | 'getScrollElement'
+    | 'observeElementRect'
+    | 'observeElementOffset'
+    | 'scrollToFn'
+  >,
+): VirtualizerSnapshot<Window, TItemElement> {
+  return useVirtualizerSnapshotBase<Window, TItemElement>({
     getScrollElement: () => (typeof document !== 'undefined' ? window : null),
     observeElementRect: observeWindowRect,
     observeElementOffset: observeWindowOffset,

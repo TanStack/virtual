@@ -18,6 +18,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         'react-compiler': path.resolve(root, 'react-compiler/index.html'),
+        'snapshot-hook': path.resolve(root, 'snapshot-hook/index.html'),
       },
     },
   },
