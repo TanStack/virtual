@@ -137,6 +137,7 @@ test('publishes a new snapshot when render-time options change geometry', () => 
     transform: 'translateY(60px)',
   })
   expect(afterGapChange.virtualItems).not.toBe(afterCountChange.virtualItems)
+  expect(afterGapChange.virtualizer).toBe(afterCountChange.virtualizer)
 })
 
 test('publishes a new snapshot when the scroll offset changes the range', () => {
@@ -195,7 +196,14 @@ test('renders the initial range on the server via getServerSnapshot', () => {
   expect(html).not.toMatch(/>5</)
 })
 
-test('useWindowVirtualizerSnapshot renders items', () => {
+test('useWindowVirtualizerSnapshot updates items after scrolling', () => {
+  const originalScrollY = Object.getOwnPropertyDescriptor(window, 'scrollY')
+  let scrollY = 0
+  Object.defineProperty(window, 'scrollY', {
+    configurable: true,
+    get: () => scrollY,
+  })
+
   function WindowList() {
     const { virtualItems } = useWindowVirtualizerSnapshot<HTMLDivElement>({
       count: 50,
@@ -210,7 +218,23 @@ test('useWindowVirtualizerSnapshot renders items', () => {
     )
   }
 
-  render(<WindowList />)
+  try {
+    render(<WindowList />)
 
-  expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+
+    act(() => {
+      scrollY = 1000
+      window.dispatchEvent(new window.Event('scroll'))
+    })
+
+    expect(screen.queryByText('Row 20')).toBeInTheDocument()
+    expect(screen.queryByText('Row 0')).not.toBeInTheDocument()
+  } finally {
+    if (originalScrollY) {
+      Object.defineProperty(window, 'scrollY', originalScrollY)
+    } else {
+      Reflect.deleteProperty(window, 'scrollY')
+    }
+  }
 })
