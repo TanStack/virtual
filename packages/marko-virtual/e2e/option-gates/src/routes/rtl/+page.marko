@@ -1,0 +1,29 @@
+// GATE: isRtl — a right-to-left horizontal list. In RTL, scrollLeft goes NEGATIVE
+// as the user scrolls toward the list end; isRtl makes core interpret that correctly,
+// so the window advances to higher indexes.
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: isRtl</title></head>
+  <body>
+    <div/scrollEl dir="rtl" data-testid="scroller" style="width: 500px; height: 120px; overflow-x: auto; position: relative">
+      <virtualizer/v
+        count=10000
+        estimateSize=() => 100
+        overscan=5
+        horizontal=true
+        isRtl=true
+        getScrollElement=() => scrollEl()
+      />
+      <div style=`width: ${v.totalSize}px; height: 100%; position: relative`>
+        <for|item| of=v.virtualItems>
+          <div
+            data-index=item.index
+            style=`position: absolute; top: 0; right: 0; width: ${item.size}px; height: 100%; transform: translateX(${-item.start}px); border-left: 1px solid #ddd`
+          >
+            Col ${item.index}
+          </div>
+        </for>
+      </div>
+    </div>
+  </body>
+</html>

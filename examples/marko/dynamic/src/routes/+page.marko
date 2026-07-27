@@ -24,34 +24,28 @@
       text: "Item " + idx + " — " + "lorem ipsum dolor sit amet ".repeat(1 + (idx % 5)),
     }))/>
 
-    <let/mounted = false/>
-    <lifecycle onMount() { mounted = true }/>
-
     <div/scrollEl class="scroll-container">
-      <if=mounted>
-        <virtualizer|{ virtualItems, totalSize, measureElement }|
-          count=items.length
-          estimateSize=() => 80
-          getScrollElement=scrollEl
-        >
-          <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-            <for|item| of=virtualItems>
-              <div/itemEl
-                data-index=item.index
-                class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                style=`position: absolute; top: 0; left: 0; width: 100%; transform: translateY(${item.start}px)`
-              >
-                <effect() {
-                  const _key = item.key
-                  const node = itemEl()
-                  if (node && measureElement) measureElement(node)
-                }/>
-                <strong>${items[item.index]!.id}.</strong> ${items[item.index]!.text}
-              </div>
-            </for>
+      <virtualizer/v
+        count=items.length
+        estimateSize=() => 80
+        getScrollElement=() => scrollEl()
+      />
+      <div style=`height: ${v.totalSize}px; width: 100%; position: relative`>
+        <for|item| of=v.virtualItems>
+          <div/itemEl
+            data-index=item.index
+            class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+            style=`position: absolute; top: 0; left: 0; width: 100%; transform: translateY(${item.start}px)`
+          >
+            <script() {
+              const _key = item.key
+              const node = itemEl()
+              if (node && v.measureElement) v.measureElement(node)
+            }/>
+            <strong>${items[item.index]!.id}.</strong> ${items[item.index]!.text}
           </div>
-        </virtualizer>
-      </if>
+        </for>
+      </div>
     </div>
   </body>
 </html>

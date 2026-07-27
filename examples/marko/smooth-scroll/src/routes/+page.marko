@@ -26,34 +26,28 @@
       native CSS smooth scrolling to any item.
     </p>
 
-    <let/mounted = false/>
-    <lifecycle onMount() { mounted = true }/>
-
     <div/scrollEl class="scroll-container">
-      <if=mounted>
-        <virtualizer|{ virtualItems, totalSize, scrollToIndex }|
-          count=10000
-          estimateSize=() => 35
-          getScrollElement=scrollEl
-        >
-          <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-            <for|item| of=virtualItems>
-              <div
-                class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
-              >
-                Row ${item.index}
-              </div>
-            </for>
+      <virtualizer/v
+        count=10000
+        estimateSize=() => 35
+        getScrollElement=() => scrollEl()
+      />
+      <div style=`height: ${v.totalSize}px; width: 100%; position: relative`>
+        <for|item| of=v.virtualItems>
+          <div
+            class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+          >
+            Row ${item.index}
           </div>
+        </for>
+      </div>
 
-          <div class="controls">
-            <button onClick=() => scrollToIndex(0, { behavior: 'smooth' })>↑ Top</button>
-            <button onClick=() => scrollToIndex(Math.floor(Math.random() * 10000), { behavior: 'smooth' })>→ Random</button>
-            <button onClick=() => scrollToIndex(9999, { behavior: 'smooth' })>↓ Bottom</button>
-          </div>
-        </virtualizer>
-      </if>
+      <div class="controls">
+        <button onClick=() => v.scrollToIndex(0, { behavior: 'smooth' })>↑ Top</button>
+        <button onClick=() => v.scrollToIndex(Math.floor(Math.random() * 10000), { behavior: 'smooth' })>→ Random</button>
+        <button onClick=() => v.scrollToIndex(9999, { behavior: 'smooth' })>↓ Bottom</button>
+      </div>
     </div>
   </body>
 </html>

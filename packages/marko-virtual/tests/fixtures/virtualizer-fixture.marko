@@ -1,6 +1,7 @@
-// Test fixture for <virtualizer> tag.
+// Test fixture for <virtualizer> tag (return-a-tag-variable shape).
 // Not a route file — no <!DOCTYPE html> needed.
-// No <if=mounted> guard needed since template.mount() runs client-side directly.
+// No <if=mounted> guard: the tag builds at render time and renders nothing itself;
+// the consumer owns the markup below and reads v.virtualItems / v.totalSize.
 
 export interface Input {
   count?: number
@@ -10,26 +11,25 @@ export interface Input {
 }
 
 <div/scrollEl style="height: 400px; width: 400px; overflow: auto">
-  <virtualizer|{ virtualItems, totalSize }|
+  <virtualizer/v
     count=input.count ?? 100
     estimateSize=() => input.itemHeight ?? 50
     horizontal=input.horizontal ?? false
     lanes=input.lanes ?? 1
     getScrollElement=scrollEl
+  />
+  <div
+    data-testid="virtual-wrapper"
+    style=`${input.horizontal ? "width" : "height"}: ${v.totalSize}px; position: relative`
   >
-    <div
-      data-testid="virtual-wrapper"
-      style=`${input.horizontal ? "width" : "height"}: ${totalSize}px; position: relative`
-    >
-      <for|item| of=virtualItems>
-        <div
-          data-testid="virtual-item"
-          data-index=item.index
-          style=`position: absolute; ${input.horizontal ? "width" : "height"}: ${item.size}px; transform: translate${input.horizontal ? "X" : "Y"}(${item.start}px)`
-        >
-          Row ${item.index}
-        </div>
-      </for>
-    </div>
-  </virtualizer>
+    <for|item| of=v.virtualItems>
+      <div
+        data-testid="virtual-item"
+        data-index=item.index
+        style=`position: absolute; ${input.horizontal ? "width" : "height"}: ${item.size}px; transform: translate${input.horizontal ? "X" : "Y"}(${item.start}px)`
+      >
+        Row ${item.index}
+      </div>
+    </for>
+  </div>
 </div>

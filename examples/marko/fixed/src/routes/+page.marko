@@ -26,88 +26,75 @@
     <h1>Fixed Virtualisation</h1>
     <p>Fixed sizes — every item's dimensions are hard-coded to the same value and never change.</p>
 
-    <let/mounted = false/>
-    <lifecycle onMount() { mounted = true }/>
-
     <section>
       <h2>Rows</h2>
       <div/rowScroll class="scroll-row-container">
-        <if=mounted>
-          <virtualizer|{ virtualItems, totalSize }|
-            count=10000
-            estimateSize=() => 35
-            getScrollElement=rowScroll
-          >
-            <div style=`height: ${totalSize}px; width: 100%; position: relative`>
-              <for|item| of=virtualItems>
-                <div
-                  class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                  style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
-                >
-                  Row ${item.index}
-                </div>
-              </for>
+        <virtualizer/rowV
+          count=10000
+          estimateSize=() => 35
+          getScrollElement=() => rowScroll()
+        />
+        <div style=`height: ${rowV.totalSize}px; width: 100%; position: relative`>
+          <for|item| of=rowV.virtualItems>
+            <div
+              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+              style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+            >
+              Row ${item.index}
             </div>
-          </virtualizer>
-        </if>
+          </for>
+        </div>
       </div>
     </section>
 
     <section>
       <h2>Columns</h2>
       <div/colScroll class="scroll-col-container">
-        <if=mounted>
-          <virtualizer|{ virtualItems, totalSize }|
-            count=10000
-            estimateSize=() => 100
-            horizontal=true
-            getScrollElement=colScroll
-          >
-            <div style=`width: ${totalSize}px; height: 100%; position: relative`>
-              <for|item| of=virtualItems>
-                <div
-                  class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
-                  style=`position: absolute; top: 0; left: 0; height: 100%; width: ${item.size}px; transform: translateX(${item.start}px)`
-                >
-                  Col ${item.index}
-                </div>
-              </for>
+        <virtualizer/colV
+          count=10000
+          estimateSize=() => 100
+          horizontal=true
+          getScrollElement=() => colScroll()
+        />
+        <div style=`width: ${colV.totalSize}px; height: 100%; position: relative`>
+          <for|item| of=colV.virtualItems>
+            <div
+              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+              style=`position: absolute; top: 0; left: 0; height: 100%; width: ${item.size}px; transform: translateX(${item.start}px)`
+            >
+              Col ${item.index}
             </div>
-          </virtualizer>
-        </if>
+          </for>
+        </div>
       </div>
     </section>
 
     <section>
       <h2>Grid</h2>
       <div/gridScroll class="scroll-grid-container">
-        <if=mounted>
-          <virtualizer|{ virtualItems: rowItems, totalSize: rowTotal }|
-            count=1000
-            estimateSize=() => 35
-            getScrollElement=gridScroll
-          >
-            <virtualizer|{ virtualItems: colItems, totalSize: colTotal }|
-              count=1000
-              estimateSize=() => 100
-              horizontal=true
-              getScrollElement=gridScroll
-            >
-              <div style=`height: ${rowTotal}px; width: ${colTotal}px; position: relative`>
-                <for|row| of=rowItems>
-                  <for|col| of=colItems>
-                    <div
-                      class=(col.index + row.index) % 2 === 0 ? "cell cell-even" : "cell cell-odd"
-                      style=`position: absolute; top: 0; left: 0; width: ${col.size}px; height: ${row.size}px; transform: translateX(${col.start}px) translateY(${row.start}px); display: flex; align-items: center; justify-content: center`
-                    >
-                      ${row.index},${col.index}
-                    </div>
-                  </for>
-                </for>
+        <virtualizer/gridRowV
+          count=1000
+          estimateSize=() => 35
+          getScrollElement=() => gridScroll()
+        />
+        <virtualizer/gridColV
+          count=1000
+          estimateSize=() => 100
+          horizontal=true
+          getScrollElement=() => gridScroll()
+        />
+        <div style=`height: ${gridRowV.totalSize}px; width: ${gridColV.totalSize}px; position: relative`>
+          <for|row| of=gridRowV.virtualItems>
+            <for|col| of=gridColV.virtualItems>
+              <div
+                class=(col.index + row.index) % 2 === 0 ? "cell cell-even" : "cell cell-odd"
+                style=`position: absolute; top: 0; left: 0; width: ${col.size}px; height: ${row.size}px; transform: translateX(${col.start}px) translateY(${row.start}px); display: flex; align-items: center; justify-content: center`
+              >
+                ${row.index},${col.index}
               </div>
-            </virtualizer>
-          </virtualizer>
-        </if>
+            </for>
+          </for>
+        </div>
       </div>
     </section>
   </body>

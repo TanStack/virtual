@@ -1,0 +1,66 @@
+import { fetchPeople } from "../data"
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Window SSR data-fetching — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; max-width: 70ch; }
+      code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+      .item { display: flex; align-items: center; gap: 16px; padding: 0 12px; font-size: 13px; border-bottom: 1px solid #f3f4f6; }
+      .item-even { background: #f9fafb; }
+      .item-odd  { background: #ffffff; }
+      .idx   { width: 56px; color: #9ca3af; font-family: monospace; font-size: 12px; }
+      .name  { width: 120px; font-weight: 600; }
+      .email { flex: 1; color: #4b5563; font-family: monospace; font-size: 12px; }
+      .role  { width: 90px; color: #6b7280; }
+      .err   { color: #b91c1c; }
+    </style>
+  </head>
+  <body>
+    <h1>Window SSR data-fetching (server slice)</h1>
+    <p>
+      The window counterpart of <code>ssr-slice</code>: the whole page scrolls, and
+      <code>&lt;window-virtualizer&gt;</code> paints its initial rows on the server from
+      <code>initialRect</code> (the window viewport estimate). <code>fetchPeople()</code> runs on the
+      server; rows serialize and resume with no re-fetch. View source and the first rows are already
+      in the HTML; scroll the page to re-window.
+    </p>
+
+    <try>
+      <@placeholder>
+        <p>Loading people…</p>
+      </@placeholder>
+      <@catch|err|>
+        <p class="err">Failed to load: ${(err as Error).message}</p>
+      </@catch>
+
+      <await|people| value=fetchPeople()>
+        <window-virtualizer/v
+          count=people.length
+          estimateSize=() => 48
+          initialRect=({ width: 1280, height: 800 })
+        />
+        <div style=`height: ${v.totalSize}px; width: 100%; position: relative`>
+          <for|item| of=v.virtualItems>
+            <const/person=people[item.index]/>
+            <div
+              class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+              style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+            >
+              <span class="idx">#${person!.id}</span>
+              <span class="name">${person!.name}</span>
+              <span class="email">${person!.email}</span>
+              <span class="role">${person!.role}</span>
+            </div>
+          </for>
+        </div>
+      </await>
+    </try>
+  </body>
+</html>

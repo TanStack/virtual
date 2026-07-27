@@ -1,0 +1,30 @@
+// GATE: scrollMargin — a 300px header sits INSIDE the scroller above the list.
+// scrollMargin=300 shifts the position math: item.start includes the margin, rows
+// subtract it, and visibility is computed relative to the LIST, not the scroller top.
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: scrollMargin</title></head>
+  <body>
+    <div/scrollEl data-testid="scroller" style="height: 400px; overflow-y: auto; position: relative">
+      <div data-testid="header" style="height: 300px; background: #eee">header above the list</div>
+      <virtualizer/v
+        count=10000
+        estimateSize=() => 35
+        overscan=5
+        getScrollElement=() => scrollEl()
+        scrollMargin=300
+      />
+      <div data-testid="list" style=`height: ${v.totalSize}px; position: relative`>
+        <for|item| of=v.virtualItems>
+          <div
+            data-index=item.index
+            data-start=item.start
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start - 300}px); border-bottom: 1px solid #ddd`
+          >
+            Row ${item.index}
+          </div>
+        </for>
+      </div>
+    </div>
+  </body>
+</html>

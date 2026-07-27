@@ -1,1 +1,1 @@
-{ "taglib-imports": ["../../../packages/marko-virtual/marko.json"] }
+{ "tags-dir": "../../../packages/marko-virtual/src/tags" }

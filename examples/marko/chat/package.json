@@ -1,0 +1,24 @@
+{
+  "name": "tanstack-marko-virtual-example-chat",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "marko-run dev",
+    "build": "marko-run build",
+    "preview": "marko-run preview",
+    "test:e2e": "playwright test",
+    "test:types": "marko-type-check"
+  },
+  "dependencies": {
+    "@marko/run": "^0.10.0",
+    "@tanstack/marko-virtual": "^3.14.2",
+    "marko": "^6.2.2"
+  },
+  "devDependencies": {
+    "@marko/language-tools": "^2.6.2",
+    "@marko/type-check": "3.1.1",
+    "@playwright/test": "^1.53.1",
+    "typescript": "5.9.3",
+    "vite": "^6.4.2"
+  }
+}

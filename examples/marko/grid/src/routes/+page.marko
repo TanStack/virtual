@@ -19,37 +19,30 @@
     <h1>Grid Virtualisation</h1>
     <p>A 1000 × 1000 grid — two &lt;virtualizer&gt; tags sharing the same scroll element.</p>
 
-    <let/mounted = false/>
-    <lifecycle onMount() { mounted = true }/>
-
     <div/gridScroll class="scroll-grid">
-      <if=mounted>
-        <virtualizer|{ virtualItems: rowItems, totalSize: rowTotal }|
-          count=1000
-          estimateSize=(i) => 30 + ((i * 7 + 11) % 20)
-          getScrollElement=gridScroll
-        >
-          <virtualizer|{ virtualItems: colItems, totalSize: colTotal }|
-            count=1000
-            estimateSize=(i) => 80 + ((i * 11 + 17) % 80)
-            horizontal=true
-            getScrollElement=gridScroll
-          >
-            <div style=`height: ${rowTotal}px; width: ${colTotal}px; position: relative`>
-              <for|row| of=rowItems>
-                <for|col| of=colItems>
-                  <div
-                    class=(col.index + row.index) % 2 === 0 ? "cell cell-even" : "cell cell-odd"
-                    style=`position: absolute; top: 0; left: 0; width: ${col.size}px; height: ${row.size}px; transform: translateX(${col.start}px) translateY(${row.start}px)`
-                  >
-                    ${row.index},${col.index}
-                  </div>
-                </for>
-              </for>
+      <virtualizer/rowV
+        count=1000
+        estimateSize=(i) => 30 + ((i * 7 + 11) % 20)
+        getScrollElement=() => gridScroll()
+      />
+      <virtualizer/colV
+        count=1000
+        estimateSize=(i) => 80 + ((i * 11 + 17) % 80)
+        horizontal=true
+        getScrollElement=() => gridScroll()
+      />
+      <div style=`height: ${rowV.totalSize}px; width: ${colV.totalSize}px; position: relative`>
+        <for|row| of=rowV.virtualItems>
+          <for|col| of=colV.virtualItems>
+            <div
+              class=(col.index + row.index) % 2 === 0 ? "cell cell-even" : "cell cell-odd"
+              style=`position: absolute; top: 0; left: 0; width: ${col.size}px; height: ${row.size}px; transform: translateX(${col.start}px) translateY(${row.start}px)`
+            >
+              ${row.index},${col.index}
             </div>
-          </virtualizer>
-        </virtualizer>
-      </if>
+          </for>
+        </for>
+      </div>
     </div>
   </body>
 </html>
