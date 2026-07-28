@@ -53,6 +53,13 @@ Install is covered by the repo-level `pnpm install` via the workspace glob
 `packages/marko-virtual/e2e/*`. A first browser run may need
 `npx playwright install chromium`.
 
+The `dev`/`build`/`preview` scripts exist for Playwright's webServer command and
+for local debugging only — `includedScripts` in package.json keeps them out of
+nx's target graph. Exposing `build` to nx makes CI run `marko-run build` as a
+parallel peer of `test:e2e`, whose webServer runs its own `marko-run build` in
+the same directory; the two race in `dist/` and one dies with
+`ENOENT ... dist/index.mjs` mid-write. Playwright owns this app's build.
+
 To debug a spec interactively, start `npm run dev -- --port 4199` (HMR) or
 `npm run preview` in one terminal and rerun `npm run test:e2e` — it reuses an
 already-running server unless CI is set. MARKO_E2E_PORT points a run at another
