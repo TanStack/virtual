@@ -1,5 +1,32 @@
 # @tanstack/marko-virtual
 
+## 3.15.0
+
+### Minor Changes
+
+- [#1219](https://github.com/TanStack/virtual/pull/1219) [`1323692`](https://github.com/TanStack/virtual/commit/13236928fb4430f22f9c6de41937e24db578c9df) - Post-release follow-ups for the Marko adapter: full option parity for both tags
+  (scrollMargin, enabled, isRtl, isScrollingResetDelay, useScrollendEvent,
+  useAnimationFrameWithResizeObserver, laneAssignmentMode, useCachedMeasurements,
+  debug, custom measureElement; window tag adds horizontal and initialOffset),
+  named handle types (VirtualizerHandle / WindowVirtualizerHandle) whose .d.marko
+  declarations are generated into dist/tags at build time (via marko-type-check)
+  and type-checked in CI, a new Chat + Pretext example (calculated row heights via
+  @chenglou/pretext; streamed replies grow through resizeItem), browser e2e suites
+  for every example plus option-gate behavioral proofs, TypeScript-strict cleanups
+  across examples, and chat example improvements (accurate size estimate,
+  load-ahead history trigger, overflow-anchor handling).
+
+### Patch Changes
+
+- [#1243](https://github.com/TanStack/virtual/pull/1243) [`b4a76ca`](https://github.com/TanStack/virtual/commit/b4a76cac25ef7e334c180ceb8c0d859b7c91ab09) - Stop publishing the tags build's incremental state: `marko-type-check` writes
+  `dist/tsconfig.tags.tsbuildinfo`, which the `files` field shipped to npm and nx
+  cached as part of `dist`. Because `@marko/type-check` always runs incrementally, a
+  `dist` that carried that file but not `dist/tags` (which `marko.json` points at)
+  made every subsequent build a silent no-op — exit 0, nothing emitted — and any
+  consumer then failed to compile with
+  `ENOENT: no such file or directory, scandir '.../dist/tags'`. The build now removes
+  the file after emitting, so a build always produces `dist/tags`.
+
 ## 3.14.4
 
 ### Patch Changes

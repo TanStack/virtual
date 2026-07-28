@@ -709,7 +709,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -737,7 +737,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -762,7 +762,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -787,7 +787,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -812,7 +812,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -837,7 +837,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -862,7 +862,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -890,7 +890,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -915,7 +915,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -940,7 +940,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -965,7 +965,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -990,7 +990,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1015,7 +1015,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1040,7 +1040,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1065,7 +1065,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1090,7 +1090,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1115,7 +1115,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1140,7 +1140,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1165,7 +1165,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.14.2
+        specifier: ^3.15.0
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -4139,6 +4139,12 @@ packages:
   '@napi-rs/wasm-runtime@1.0.7':
     resolution: {integrity: sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw==}
 
+  '@napi-rs/wasm-runtime@1.1.6':
+    resolution: {integrity: sha512-ZLv/JdUfkvOy9eCnnBaGfiO+XimbjebAeO+MRQqD/B+FR1tnRN0tpKSJHRbE8sFfS6aqsXZ67TQjfwfsxULVbg==}
+    peerDependencies:
+      '@emnapi/core': ^1.7.1
+      '@emnapi/runtime': ^1.7.1
+
   '@ngtools/webpack@20.3.32':
     resolution: {integrity: sha512-a3KWNfv3NEyNHdGusIP/+lfLtjH7L5rcqgouBm6v3t1vHQ4zg2sNgoYIQIJCAJnFI2b080YrP9jh2FqKTCJlug==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
@@ -5028,6 +5034,9 @@ packages:
 
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
+
+  '@tybys/wasm-util@0.10.3':
+    resolution: {integrity: sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==}
 
   '@tybys/wasm-util@0.9.0':
     resolution: {integrity: sha512-6+7nlbMVX/PVDCwaIQ8nTOPveOcFLSt8GcXdx8hD0bt39uWxYT88uXzqTd4fTvqta7oeUJqudepapKNt2DYJFw==}
@@ -12174,6 +12183,13 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
+  '@napi-rs/wasm-runtime@1.1.6(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)':
+    dependencies:
+      '@emnapi/core': 1.11.1
+      '@emnapi/runtime': 1.11.1
+      '@tybys/wasm-util': 0.10.3
+    optional: true
+
   '@ngtools/webpack@20.3.32(@angular/compiler-cli@20.3.26(@angular/compiler@20.3.26)(typescript@5.9.3))(typescript@5.9.3)(webpack@5.105.0(esbuild@0.28.1))':
     dependencies:
       '@angular/compiler-cli': 20.3.26(@angular/compiler@20.3.26)(typescript@5.9.3)
@@ -12615,6 +12631,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.11.1
       '@emnapi/runtime': 1.11.1
+      '@napi-rs/wasm-runtime': 1.1.6(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)
     optional: true
 
   '@rolldown/binding-win32-arm64-msvc@1.1.5':
@@ -12989,6 +13006,11 @@ snapshots:
       minimatch: 10.2.5
 
   '@tybys/wasm-util@0.10.1':
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
+  '@tybys/wasm-util@0.10.3':
     dependencies:
       tslib: 2.8.1
     optional: true
