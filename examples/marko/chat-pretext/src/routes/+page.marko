@@ -193,12 +193,14 @@ static function messageHeight(message: Message, viewportWidth: number) {
         atEnd = statusEl.scrollHeight - statusEl.scrollTop - statusEl.clientHeight <= AT_END_PX
       }
       // Converge an in-flight "Latest": re-issue the jump while content growth keeps
-      // moving the end away (see pinPending above). Terminates as soon as the end
-      // holds through one virtualizer update.
+      // moving the end away (see pinPending above). Disarms once the end holds AND no
+      // history load is in flight — a prepend armed before the click can land after
+      // the end was first reached, and disarming early would leave that late growth
+      // with no corrective jump.
       if (state.pinPending) {
-        if (atEnd) {
+        if (atEnd && !loadingHistory) {
           state.pinPending = false
-        } else {
+        } else if (!atEnd) {
           v.scrollToEnd()
         }
       }

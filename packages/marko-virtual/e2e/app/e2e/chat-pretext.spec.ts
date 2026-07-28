@@ -57,16 +57,21 @@ async function scrollTop(page: Page): Promise<number> {
 // virtualizer is still measuring the rows that came into view, and a measured size
 // above the viewport makes core compensate the offset. A baseline captured mid-settle
 // makes the "this action did NOT move the view" assertion race. Same helper as
-// chat.spec.ts; the two pages share this shape.
+// chat.spec.ts; the two pages share this shape. Requires several consecutive stable
+// samples: a single unchanged pair can straddle a pause between two compensation
+// steps under load, reading as settled mid-drift.
 async function waitForScrollSettled(page: Page) {
   let previous = Number.NaN
+  let stableSamples = 0
   await expect
     .poll(
       async () => {
         const current = await scrollTop(page)
-        const settled = current === previous
+        const stable =
+          !Number.isNaN(previous) && Math.abs(current - previous) <= 0.5
+        stableSamples = stable ? stableSamples + 1 : 0
         previous = current
-        return settled
+        return stableSamples >= 3
       },
       { timeout: 5000, intervals: [100, 100, 100, 150, 150, 200] },
     )
