@@ -7,7 +7,7 @@
 // useCachedMeasurements, debug, custom measureElement — plus horizontal and an
 // initialOffset override on the window tag) is Tier-1 forwarding-tested here; the
 // behaviorally-observable subset has real-browser gates (see the session record).
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   Virtualizer,
   observeWindowRect,
@@ -157,6 +157,34 @@ describe('buildOptions — input to virtual-core option mapping', () => {
     expect(opts.useCachedMeasurements).toBeUndefined()
     expect(opts.debug).toBeUndefined()
     expect(opts.measureElement).toBeUndefined()
+  })
+
+  test('debug=true makes core emit its timing logs', () => {
+    // The observable effect of the debug option, not just its forwarding. This used
+    // to be a browser gate, which was the wrong tier twice over: a console.info
+    // needs no browser, and core writes it from a
+    // `process.env.NODE_ENV !== 'production'` branch, so it does not exist in the
+    // production build the e2e suite serves. Here NODE_ENV is 'test', so the branch
+    // is live.
+    const infos: Array<string> = []
+    const spy = vi
+      .spyOn(console, 'info')
+      .mockImplementation((...args: Array<unknown>) => {
+        infos.push(args.map(String).join(' '))
+      })
+    try {
+      const v = new Virtualizer<Element, Element>(
+        buildOptions(
+          { count: 100, getScrollElement: () => null, debug: true },
+          noop,
+        ),
+      )
+      // memo() logs when it computes; getVirtualItems pulls the memoized chain.
+      v.getVirtualItems()
+    } finally {
+      spy.mockRestore()
+    }
+    expect(infos.some((t) => t.includes('⏱'))).toBe(true)
   })
 
   test('core merge contract: undefined forwards land on core defaults; provided values stick', () => {

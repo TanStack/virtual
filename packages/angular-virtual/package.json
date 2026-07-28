@@ -46,7 +46,7 @@
     "test:build": "publint --strict",
     "test:types": "tsc",
     "build": "vite build",
-    "test:e2e": "../../node_modules/.bin/playwright test"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@tanstack/virtual-core": "workspace:*"
