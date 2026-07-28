@@ -13,8 +13,6 @@
   },
   "include": [
     "src",
-    "e2e",
-    "playwright.config.ts",
     "vite.config.ts",
     "../../../packages/marko-virtual/src/tags/**/*"
   ]

@@ -133,6 +133,14 @@ static function messageHeight(message: Message, viewportWidth: number) {
       pinnedInitially: false,
       autoHistoryArmed: false,
       autoHistoryEnabled: false,
+      // "Latest" in flight: keep re-pinning until the end is actually reached. A
+      // single scrollToEnd() can land and then be carried away — e.g. an in-flight
+      // history prepend (180ms timer) resolving AFTER the jump grows the content
+      // above the viewport, and if core's offset read is stale at that moment its
+      // at-end compensation is skipped — so the view strands ~12 rows short with no
+      // scroll event to recover it. The reactive <script> below re-issues the jump
+      // on every virtualizer update until the end holds, then disarms.
+      pinPending: false,
       streamAbort: null as AbortController | null,
       width: DEFAULT_VIEWPORT_WIDTH,
     })/>
@@ -167,6 +175,7 @@ static function messageHeight(message: Message, viewportWidth: number) {
     // the initial settle. Same pattern as the Chat example.
     <script() {
       if (!state.pinnedInitially && v.range) {
+        state.pinPending = true
         v.scrollToEnd()
         atEnd = true
         state.pinnedInitially = true
@@ -182,6 +191,18 @@ static function messageHeight(message: Message, viewportWidth: number) {
       const statusEl = scrollEl()
       if (statusEl) {
         atEnd = statusEl.scrollHeight - statusEl.scrollTop - statusEl.clientHeight <= AT_END_PX
+      }
+      // Converge an in-flight "Latest": re-issue the jump while content growth keeps
+      // moving the end away (see pinPending above). Disarms once the end holds AND no
+      // history load is in flight — a prepend armed before the click can land after
+      // the end was first reached, and disarming early would leave that late growth
+      // with no corrective jump.
+      if (state.pinPending) {
+        if (atEnd && !loadingHistory) {
+          state.pinPending = false
+        } else if (!atEnd) {
+          v.scrollToEnd()
+        }
       }
     }/>
 
@@ -238,7 +259,10 @@ static function messageHeight(message: Message, viewportWidth: number) {
             }
           })()
         }>Stream reply</button>
-        <button data-testid="latest" onClick() { v.scrollToEnd() }>Latest</button>
+        <button data-testid="latest" onClick() {
+          state.pinPending = true
+          v.scrollToEnd()
+        }>Latest</button>
       </div>
       <div class="status" data-testid="status">
         ${loadingHistory ? 'Loading history' : atEnd ? 'At latest' : 'Reading history'}
