@@ -940,6 +940,90 @@ test('RO callback should not delete cache entry if node was replaced by React', 
   expect(virtualizer.elementsCache.get(3)).toBe(nodeB)
 })
 
+test('ignores connected stale ref and ResizeObserver measurements after count shrinks', () => {
+  let roCallback: ResizeObserverCallback | null = null
+  const MockResizeObserver = vi.fn(function (cb: ResizeObserverCallback) {
+    roCallback = cb
+    return {
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    }
+  })
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    performance: { now: () => Date.now() },
+    ResizeObserver: MockResizeObserver,
+  }
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 1000,
+    scrollHeight: 5000,
+    offsetWidth: 400,
+    offsetHeight: 600,
+    ownerDocument: { defaultView: mockWindow },
+  } as unknown as HTMLDivElement
+
+  let virtualizer: Virtualizer<HTMLDivElement, HTMLElement>
+  const getItemKey = vi.fn((index: number) => {
+    if (index < 0 || index >= virtualizer.options.count) {
+      throw new Error(`getItemKey received stale index ${index}`)
+    }
+    return index
+  })
+  virtualizer = new Virtualizer({
+    count: 22,
+    estimateSize: () => 50,
+    getItemKey,
+    useCachedMeasurements: true,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn: vi.fn(),
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+  virtualizer._willUpdate()
+
+  const staleNode = {
+    getAttribute: () => '21',
+    getBoundingClientRect: () => ({ height: 50, width: 400 }),
+    isConnected: true,
+    setAttribute: vi.fn(),
+  } as unknown as HTMLElement
+  virtualizer.measureElement(staleNode)
+
+  virtualizer.setOptions({ ...virtualizer.options, count: 1 })
+  getItemKey.mockClear()
+
+  expect(() => virtualizer.measureElement(staleNode)).not.toThrow()
+  expect(getItemKey).not.toHaveBeenCalled()
+
+  getItemKey.mockClear()
+  expect(roCallback).not.toBeNull()
+  expect(() => {
+    roCallback!(
+      [
+        {
+          target: staleNode,
+          contentRect: { height: 50, width: 400 } as DOMRectReadOnly,
+          borderBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+          contentBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+          devicePixelContentBoxSize: [{ blockSize: 50, inlineSize: 400 }],
+        } as ResizeObserverEntry,
+      ],
+      {} as ResizeObserver,
+    )
+  }).not.toThrow()
+  expect(getItemKey).not.toHaveBeenCalled()
+})
+
 // ─── setOptions behavioral contract ──────────────────────────────────────────
 // These tests pin down how setOptions merges defaults with user-supplied opts.
 // They guard against regressions when changing the merge mechanism

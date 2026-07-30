@@ -489,6 +489,10 @@ export class Virtualizer<
               return
             }
 
+            if (index < 0 || index >= this.options.count) {
+              return
+            }
+
             if (this.shouldMeasureDuringScroll(index)) {
               this.resizeItem(
                 index,
@@ -1511,6 +1515,9 @@ export class Virtualizer<
     }
 
     const index = this.indexFromElement(node)
+    if (index < 0 || index >= this.options.count) {
+      return
+    }
     const key = this.options.getItemKey(index)
     const prevNode = this.elementsCache.get(key)
 
