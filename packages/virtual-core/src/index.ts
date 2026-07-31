@@ -489,9 +489,7 @@ export class Virtualizer<
               return
             }
 
-            if (!this.isIndexInRange(index)) {
-              return
-            }
+            if (!this.isIndexInRange(index)) return
 
             if (this.shouldMeasureDuringScroll(index)) {
               this.resizeItem(
@@ -1518,9 +1516,8 @@ export class Virtualizer<
     }
 
     const index = this.indexFromElement(node)
-    if (index < 0 || index >= this.options.count) {
-      return
-    }
+    if (!this.isIndexInRange(index)) return
+
     const key = this.options.getItemKey(index)
     const prevNode = this.elementsCache.get(key)
 
@@ -1544,7 +1541,7 @@ export class Virtualizer<
   }
 
   resizeItem = (index: number, size: number) => {
-    if (index < 0 || index >= this.options.count) return
+    if (!this.isIndexInRange(index)) return
 
     // Fast field reads. For lanes===1 we read raw start/size from the flat
     // typed array, avoiding a Proxy.get + VirtualItem allocation per call.
