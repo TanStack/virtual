@@ -489,7 +489,7 @@ export class Virtualizer<
               return
             }
 
-            if (index < 0 || index >= this.options.count) {
+            if !this.isIndexInRange(index) {
               return
             }
 
