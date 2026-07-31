@@ -489,7 +489,7 @@ export class Virtualizer<
               return
             }
 
-            if !this.isIndexInRange(index) {
+            if (!this.isIndexInRange(index)) {
               return
             }
 
@@ -1174,6 +1174,9 @@ export class Virtualizer<
       key: false,
     },
   )
+
+  private isIndexInRange = (index: number): boolean =>
+    index >= 0 && index < this.options.count
 
   private getMeasurements = memo(
     () => [this.getMeasurementOptions(), this.itemSizeCacheVersion],
