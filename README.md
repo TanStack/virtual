@@ -1,5 +1,19 @@
 <div align="center">
-  <img src="./media/header_virtual.png" alt="Tanstack Virtual">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="https://tanstack.com/api/readme/virtual.png?theme=dark"
+    />
+    <source
+      media="(prefers-color-scheme: light)"
+      srcset="https://tanstack.com/api/readme/virtual.png"
+    />
+    <img
+      src="https://tanstack.com/api/readme/virtual.png"
+      alt="TanStack Virtual"
+      width="900"
+    />
+  </picture>
 </div>
 
 <br />
