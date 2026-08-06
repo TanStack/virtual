@@ -2,6 +2,8 @@ cleanupUnusedCatalogs: true
 minimumReleaseAge: 1440
 linkWorkspacePackages: true
 preferWorkspacePackages: true
+blockExoticSubdeps: true
+trustPolicy: 'no-downgrade'
 
 packages:
   - 'packages/*'
