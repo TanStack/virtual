@@ -37,7 +37,8 @@ function App() {
   } = useInfiniteQuery({
     queryKey: ['projects'],
     queryFn: (ctx) => fetchServerPage(10, ctx.pageParam),
-    getNextPageParam: (lastGroup) => lastGroup.nextOffset,
+    getNextPageParam: (lastGroup) =>
+      lastGroup.nextOffset < 5 ? lastGroup.nextOffset : undefined,
     initialPageParam: 0,
   })
 
@@ -46,7 +47,7 @@ function App() {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
-    count: hasNextPage ? allRows.length + 1 : allRows.length,
+    count: allRows.length + 1,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 100,
     overscan: 5,
