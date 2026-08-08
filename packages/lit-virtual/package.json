@@ -60,5 +60,8 @@
   },
   "peerDependencies": {
     "lit": "^3.1.0"
+  },
+  "bugs": {
+    "url": "https://github.com/TanStack/virtual/issues"
   }
 }

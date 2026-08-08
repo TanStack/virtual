@@ -57,5 +57,8 @@
   },
   "peerDependencies": {
     "svelte": "^3.48.0 || ^4.0.0 || ^5.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/TanStack/virtual/issues"
   }
 }
