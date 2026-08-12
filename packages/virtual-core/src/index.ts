@@ -425,6 +425,18 @@ export class Virtualizer<
   // iOS momentum scroll (writing scrollTop mid-momentum cancels it).
   // Flushed in a single scrollTo when iOS is fully settled.
   private _iosDeferredAdjustment = 0
+  // Touch provenance for the whole scroll sequence. `isScrolling` is set by
+  // *any* scroll event, including the echo of a programmatic `scrollTop`
+  // write, so it over-captures: on iOS it would defer scroll adjustments
+  // during app-initiated scrolls too, painting a sagged landing then snapping
+  // (#1250). We instead track whether the current scroll sequence began with
+  // a real touch (`touchstart`), keep it set for as long as `isScrolling`
+  // remains true (covering the whole momentum phase), and clear it when the
+  // scroll fully settles. Programmatic scrolls never set it, so their
+  // adjustments stay on the synchronous pre-paint path. Introduced as a
+  // supporting signal for the deferral gates below; touch-driven sequences
+  // defer exactly as before.
+  private _isUserScrolling = false
   // Touch state. iOS WebKit cancels momentum when scrollTop is written, so
   // we defer adjustments not only during `isScrolling` but also through the
   // touchstart→touchend window (active drag) and a short tail after
@@ -697,7 +709,7 @@ export class Virtualizer<
 
     if (
       isIOSWebKit() &&
-      (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
+      (this._isUserScrolling || this._iosTouching || this._iosJustTouchEnded)
     ) {
       this._iosDeferredAdjustment += delta
       return false
@@ -774,6 +786,7 @@ export class Virtualizer<
     // pending reset of the flag), deferring every adjustment on the new
     // element until its next touch cycle.
     this._iosDeferredAdjustment = 0
+    this._isUserScrolling = false
     this._iosTouching = false
     this._iosJustTouchEnded = false
     this.scrollElement = null
@@ -865,6 +878,13 @@ export class Virtualizer<
             : null
           this.scrollOffset = offset
           this.isScrolling = isScrolling
+          // When the scroll fully settles, touch provenance for the sequence
+          // ends: programmatic scrolls never set it, and a user sequence is
+          // done once the momentum/subsequent scroll events stop. Clearing it
+          // here lets a later app-initiated scroll (which fires its own
+          // scroll events) take the synchronous adjustment path as intended
+          // (#1250).
+          if (!isScrolling) this._isUserScrolling = false
 
           // Flush deferred iOS adjustments if we're now fully settled.
           // "Fully settled" means: not actively scrolling, no finger on
@@ -885,6 +905,7 @@ export class Virtualizer<
       if ('addEventListener' in this.scrollElement) {
         const scrollEl = this.scrollElement as unknown as EventTarget
         const onTouchStart = () => {
+          this._isUserScrolling = true
           this._iosTouching = true
           this._iosJustTouchEnded = false
           if (this._iosTouchEndTimerId !== null && this.targetWindow != null) {
@@ -952,7 +973,7 @@ export class Virtualizer<
         // _flushIosDeferredIfReady handle it once the scroll settles.
         if (
           isIOSWebKit() &&
-          (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
+          (this._isUserScrolling || this._iosTouching || this._iosJustTouchEnded)
         ) {
           if (anchorDelta !== 0) {
             this._iosDeferredAdjustment += anchorDelta
