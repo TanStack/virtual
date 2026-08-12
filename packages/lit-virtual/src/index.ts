@@ -18,12 +18,15 @@ class VirtualizerControllerBase<
 
   private readonly virtualizer: Virtualizer<TScrollElement, TItemElement>
 
+  private options: VirtualizerOptions<TScrollElement, TItemElement>
+
   private cleanup: () => void = () => {}
 
   constructor(
     host: ReactiveControllerHost,
     options: VirtualizerOptions<TScrollElement, TItemElement>,
   ) {
+    this.options = options
     const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
       ...options,
       onChange: (instance, sync) => {
@@ -37,6 +40,21 @@ class VirtualizerControllerBase<
 
   public getVirtualizer() {
     return this.virtualizer
+  }
+
+  public setOptions(
+    options: Partial<VirtualizerOptions<TScrollElement, TItemElement>>,
+  ) {
+    this.options = { ...this.options, ...options }
+    const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
+      ...this.options,
+      onChange: (instance, sync) => {
+        this.host.updateComplete.then(() => this.host.requestUpdate())
+        this.options.onChange?.(instance, sync)
+      },
+    }
+    this.virtualizer.setOptions(resolvedOptions)
+    this.virtualizer._willUpdate()
   }
 
   hostConnected() {
