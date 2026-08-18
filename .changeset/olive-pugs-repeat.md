@@ -2,4 +2,4 @@
 '@tanstack/virtual-core': patch
 ---
 
-Cancel the pending `isScrolling` reset when a scroll observer is torn down, so a virtualizer unmounted within `isScrollingResetDelay` of a scroll no longer emits one late `onChange`.
+Cancel the pending `isScrolling` reset when a scroll observer is torn down, and reset `isScrolling` and `scrollDirection` in `cleanup()` so they don't stay stuck after the scroll element changes or is removed.

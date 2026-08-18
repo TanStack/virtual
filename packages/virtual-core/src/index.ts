@@ -767,6 +767,13 @@ export class Virtualizer<
       this.rafId = null
     }
     this.scrollState = null
+    // The debounce cancelled above is the only thing that writes `isScrolling`
+    // back to false, so a cleanup inside the reset window would strand it, and
+    // the direction derived from it, as true. That matters because `cleanup`
+    // also runs when the scroll element changes or `enabled` goes false, where
+    // the instance lives on.
+    this.isScrolling = false
+    this.scrollDirection = null
     // The iOS gesture/deferral state is scoped to the current scroll
     // element: the touch listeners that maintain it were just removed, and
     // an in-flight touch keeps targeting the old element (implicit touch
