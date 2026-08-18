@@ -3361,6 +3361,35 @@ test('observeElementOffset: attaches scroll listener and fires callback with scr
   expect(listeners.has('scroll')).toBe(false)
 })
 
+test('observeElementOffset: cleanup drops the queued isScrolling reset', () => {
+  vi.useFakeTimers()
+  try {
+    const cb = vi.fn()
+    const listeners = new Map<string, EventListener>()
+    const el: any = {
+      scrollTop: 50,
+      scrollLeft: 0,
+      addEventListener: (name: string, fn: any) => listeners.set(name, fn),
+      removeEventListener: (name: string) => listeners.delete(name),
+    }
+    const cleanup = observeElementOffset(makeObserveInstance(el) as any, cb)
+
+    // Each scroll arms a debounce that resets isScrolling to false.
+    listeners.get('scroll')!({} as Event)
+    expect(cb).toHaveBeenCalledWith(50, true)
+    cb.mockClear()
+
+    // Tearing down inside that window must not leave the reset queued —
+    // it would arrive after the consumer stopped listening.
+    cleanup?.()
+    vi.advanceTimersByTime(1000)
+
+    expect(cb).not.toHaveBeenCalled()
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
 test('observeElementOffset: reads scrollLeft + applies isRtl when horizontal', () => {
   const cb = vi.fn()
   const listeners = new Map<string, EventListener>()

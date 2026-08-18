@@ -217,6 +217,10 @@ const observeOffset = <T extends Element | Window>(
     if (registerScrollendEvent) {
       element.removeEventListener('scrollend', endHandler)
     }
+    // Removing the listener doesn't retract a reset already queued by the
+    // last scroll, and that call would land on a virtualizer that has been
+    // torn down — in React, a dispatch into an unmounted tree.
+    fallback?.cancel()
   }
 }
 
