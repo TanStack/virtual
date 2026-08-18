@@ -119,7 +119,10 @@ test('should apply updated options via setOptions', async () => {
   class ListSetOptions extends LitElement {
     private scrollElementRef: Ref<HTMLDivElement> = createRef()
 
-    private virtualizerController: VirtualizerController<HTMLDivElement, Element>
+    private virtualizerController: VirtualizerController<
+      HTMLDivElement,
+      Element
+    >
 
     constructor() {
       super()
@@ -169,14 +172,23 @@ test('should apply updated options via setOptions', async () => {
           </div>
         </div>
         <style>
-          .list { border: 1px solid #e6e4dc; max-width: 100%; }
-          .scroll-container { height: ${height}px; width: ${width}px; overflow-y: auto; }
+          .list {
+            border: 1px solid #e6e4dc;
+            max-width: 100%;
+          }
+          .scroll-container {
+            height: ${height}px;
+            width: ${width}px;
+            overflow-y: auto;
+          }
         </style>
       `
     }
   }
 
-  const el = await fixture(html`<test-list-setoptions></test-list-setoptions>` as any)
+  const el = await fixture(
+    html`<test-list-setoptions></test-list-setoptions>` as any,
+  )
   await elementUpdated(el)
   await waitUntil(
     () => el.shadowRoot.querySelector('[data-index="15"]'),
