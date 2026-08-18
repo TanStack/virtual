@@ -102,8 +102,18 @@ export const debounce = (
   ms: number,
 ) => {
   let timeoutId: number
-  return function (this: any, ...args: Array<any>) {
-    targetWindow.clearTimeout(timeoutId)
-    timeoutId = targetWindow.setTimeout(() => fn.apply(this, args), ms)
-  }
+  return Object.assign(
+    function (this: any, ...args: Array<any>) {
+      targetWindow.clearTimeout(timeoutId)
+      timeoutId = targetWindow.setTimeout(() => fn.apply(this, args), ms)
+    },
+    {
+      // The handle is closure-local, so a caller that has already
+      // unsubscribed has no way to stop a queued call. Teardown paths use
+      // this to drop the pending invocation instead of letting it land.
+      cancel: () => {
+        targetWindow.clearTimeout(timeoutId)
+      },
+    },
+  )
 }

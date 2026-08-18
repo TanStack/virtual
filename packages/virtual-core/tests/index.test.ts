@@ -3361,6 +3361,131 @@ test('observeElementOffset: attaches scroll listener and fires callback with scr
   expect(listeners.has('scroll')).toBe(false)
 })
 
+// ─── cleanup resets the scroll flags ─────────────────────────────────────────
+// The cancelled debounce is the only writer of `isScrolling = false`, and
+// `cleanup()` also runs while the instance stays alive (element swap,
+// `enabled: false`), so it has to reset the flags itself.
+
+const makeScrollFlagsVirtualizer = () => {
+  const MockResizeObserver = vi.fn(function () {
+    return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+  })
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    ResizeObserver: MockResizeObserver,
+  }
+  const makeElement = () =>
+    ({
+      scrollTop: 0,
+      scrollLeft: 0,
+      scrollWidth: 1000,
+      scrollHeight: 5000,
+      offsetWidth: 400,
+      offsetHeight: 600,
+      ownerDocument: { defaultView: mockWindow },
+    }) as unknown as HTMLDivElement
+
+  const first = makeElement()
+  const second = makeElement()
+  let element: HTMLDivElement | null = first
+  let emit: ((offset: number, isScrolling: boolean) => void) | null = null
+
+  const virtualizer = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => element,
+    scrollToFn: vi.fn(),
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      emit = cb
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+
+  // Mid-scroll: this is the state the debounce used to clear on its own.
+  emit!(500, true)
+
+  return {
+    virtualizer,
+    swapElement: () => {
+      element = second
+      virtualizer._willUpdate()
+    },
+    disable: () => {
+      element = null
+      virtualizer._willUpdate()
+    },
+  }
+}
+
+test('cleanup resets the scroll flags when the scroll element is swapped', () => {
+  const { virtualizer, swapElement } = makeScrollFlagsVirtualizer()
+
+  expect(virtualizer.isScrolling).toBe(true)
+
+  swapElement()
+
+  expect(virtualizer.isScrolling).toBe(false)
+  expect(virtualizer.scrollDirection).toBe(null)
+})
+
+test('cleanup resets the scroll flags when the scroll element goes away', () => {
+  const { virtualizer, disable } = makeScrollFlagsVirtualizer()
+
+  expect(virtualizer.isScrolling).toBe(true)
+
+  disable()
+
+  expect(virtualizer.isScrolling).toBe(false)
+  expect(virtualizer.scrollDirection).toBe(null)
+})
+
+test('cleanup resets the scroll flags on unmount', () => {
+  const { virtualizer } = makeScrollFlagsVirtualizer()
+
+  expect(virtualizer.isScrolling).toBe(true)
+
+  virtualizer._didMount()()
+
+  expect(virtualizer.isScrolling).toBe(false)
+  expect(virtualizer.scrollDirection).toBe(null)
+})
+
+test('observeElementOffset: cleanup drops the queued isScrolling reset', () => {
+  vi.useFakeTimers()
+  try {
+    const cb = vi.fn()
+    const listeners = new Map<string, EventListener>()
+    const el: any = {
+      scrollTop: 50,
+      scrollLeft: 0,
+      addEventListener: (name: string, fn: any) => listeners.set(name, fn),
+      removeEventListener: (name: string) => listeners.delete(name),
+    }
+    const cleanup = observeElementOffset(makeObserveInstance(el) as any, cb)
+
+    // Each scroll arms a debounce that resets isScrolling to false.
+    listeners.get('scroll')!({} as Event)
+    expect(cb).toHaveBeenCalledWith(50, true)
+    cb.mockClear()
+
+    // Tearing down inside that window must not leave the reset queued —
+    // it would arrive after the consumer stopped listening.
+    cleanup?.()
+    vi.advanceTimersByTime(1000)
+
+    expect(cb).not.toHaveBeenCalled()
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
 test('observeElementOffset: reads scrollLeft + applies isRtl when horizontal', () => {
   const cb = vi.fn()
   const listeners = new Map<string, EventListener>()
