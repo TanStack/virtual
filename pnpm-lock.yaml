@@ -145,7 +145,7 @@ importers:
         specifier: ^20.2.0
         version: 20.3.26(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.26(@angular/animations@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -200,7 +200,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -252,7 +252,7 @@ importers:
         specifier: ^20.2.0
         version: 20.3.26(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.26(@angular/animations@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -307,7 +307,7 @@ importers:
         specifier: 5.80.7
         version: 5.80.7(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -359,7 +359,7 @@ importers:
         specifier: ^20.2.0
         version: 20.3.26(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.26(@angular/animations@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -411,7 +411,7 @@ importers:
         specifier: ^20.2.0
         version: 20.3.26(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.26(@angular/animations@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -466,7 +466,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -524,7 +524,7 @@ importers:
         specifier: 8.21.3
         version: 8.21.3(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -576,7 +576,7 @@ importers:
         specifier: ^20.2.0
         version: 20.3.26(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.26(@angular/animations@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -628,7 +628,7 @@ importers:
         specifier: ^20.2.0
         version: 20.3.26(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.26(@angular/animations@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.26(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.26(@angular/compiler@20.3.26)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@tanstack/angular-virtual':
-        specifier: ^6.0.2
+        specifier: ^6.0.3
         version: link:../../../packages/angular-virtual
       rxjs:
         specifier: ^7.8.2
@@ -659,10 +659,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.13.36
+        specifier: ^3.13.37
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.17.7
+        specifier: ^3.17.8
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.3.0
@@ -684,10 +684,10 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/lit-virtual':
-        specifier: ^3.13.36
+        specifier: ^3.13.37
         version: link:../../../packages/lit-virtual
       '@tanstack/virtual-core':
-        specifier: ^3.17.7
+        specifier: ^3.17.8
         version: link:../../../packages/virtual-core
       lit:
         specifier: ^3.3.0
@@ -709,7 +709,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -737,7 +737,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -762,7 +762,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -787,7 +787,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -812,7 +812,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -837,7 +837,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -862,7 +862,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -890,7 +890,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -915,7 +915,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -940,7 +940,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -965,7 +965,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -990,7 +990,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1015,7 +1015,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1040,7 +1040,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1065,7 +1065,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1090,7 +1090,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1115,7 +1115,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1140,7 +1140,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1165,7 +1165,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@marko/compiler@5.40.0)(@types/node@24.9.2)(esbuild@0.28.1)(jiti@2.6.1)(less@4.4.0)(marko@6.3.15)(sass@1.90.0)(terser@5.43.1)(yaml@2.8.1)
       '@tanstack/marko-virtual':
-        specifier: ^3.15.0
+        specifier: ^3.15.1
         version: link:../../../packages/marko-virtual
       marko:
         specifier: ^6.2.2
@@ -1187,7 +1187,7 @@ importers:
   examples/react/chat:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1218,7 +1218,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1249,7 +1249,7 @@ importers:
   examples/react/fixed:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1283,7 +1283,7 @@ importers:
         specifier: ^5.80.7
         version: 5.90.5(react@19.2.7)
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1308,7 +1308,7 @@ importers:
   examples/react/padding:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1336,7 +1336,7 @@ importers:
         specifier: ^0.0.7
         version: 0.0.7
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1370,7 +1370,7 @@ importers:
         specifier: ^25.1.1
         version: 25.1.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1395,7 +1395,7 @@ importers:
   examples/react/smooth-scroll:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1423,7 +1423,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       lodash:
         specifier: ^4.17.21
@@ -1460,7 +1460,7 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1485,7 +1485,7 @@ importers:
   examples/react/variable:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1510,7 +1510,7 @@ importers:
   examples/react/window:
     dependencies:
       '@tanstack/react-virtual':
-        specifier: ^3.14.9
+        specifier: ^3.14.10
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
@@ -1544,7 +1544,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1572,7 +1572,7 @@ importers:
   examples/svelte/fixed:
     dependencies:
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1603,7 +1603,7 @@ importers:
         specifier: ^5.80.7
         version: 5.90.2(svelte@4.2.20)
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1634,7 +1634,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1665,7 +1665,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/svelte-virtual
       lodash:
         specifier: ^4.17.21
@@ -1702,7 +1702,7 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(svelte@4.2.20)
       '@tanstack/svelte-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/svelte-virtual
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
@@ -1733,7 +1733,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1758,7 +1758,7 @@ importers:
   examples/vue/fixed:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1786,7 +1786,7 @@ importers:
         specifier: ^5.80.7
         version: 5.90.5(vue@3.5.22(typescript@5.9.3))
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1811,7 +1811,7 @@ importers:
   examples/vue/padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1836,7 +1836,7 @@ importers:
   examples/vue/scroll-padding:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       '@vueuse/core':
         specifier: ^12.8.2
@@ -1864,7 +1864,7 @@ importers:
   examples/vue/smooth-scroll:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1892,7 +1892,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       lodash:
         specifier: ^4.17.21
@@ -1929,7 +1929,7 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(vue@3.5.22(typescript@5.9.3))
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
@@ -1954,7 +1954,7 @@ importers:
   examples/vue/variable:
     dependencies:
       '@tanstack/vue-virtual':
-        specifier: ^3.13.35
+        specifier: ^3.13.36
         version: link:../../../packages/vue-virtual
       vue:
         specifier: ^3.5.16
