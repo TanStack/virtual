@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@marko/run": "^0.10.0",
-    "@tanstack/marko-virtual": "^3.15.0",
+    "@tanstack/marko-virtual": "^3.15.1",
     "marko": "^6.2.2"
   },
   "devDependencies": {

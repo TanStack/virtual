@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.17.8
+
+### Patch Changes
+
+- [#1256](https://github.com/TanStack/virtual/pull/1256) [`a0a411e`](https://github.com/TanStack/virtual/commit/a0a411e06f7334a063422de35d59b12b264b3573) - Cancel the pending `isScrolling` reset when a scroll observer is torn down, and reset `isScrolling` and `scrollDirection` in `cleanup()` so they don't stay stuck after the scroll element changes or is removed.
+
+- [#1246](https://github.com/TanStack/virtual/pull/1246) [`d2cf98b`](https://github.com/TanStack/virtual/commit/d2cf98beea1696c7187c06b57c9e724d1957963c) - Ignore connected measurement nodes whose indexes are outside the current item count.
+
 ## 3.17.7
 
 ### Patch Changes
