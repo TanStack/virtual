@@ -1,3 +1,20 @@
+<div align="center">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="https://tanstack.com/api/readme/virtual.png?framework=angular&theme=dark"
+    />
+    <source
+      media="(prefers-color-scheme: light)"
+      srcset="https://tanstack.com/api/readme/virtual.png?framework=angular"
+    />
+    <img
+      src="https://tanstack.com/api/readme/virtual.png?framework=angular"
+      alt="TanStack Angular Virtual"
+      width="900"
+    />
+  </picture>
+</div>
 # Angular Virtual
 
 Efficiently virtualize only the visible DOM nodes within massive scrollable elements using Angular, while maintaining complete control over markup and styles.
