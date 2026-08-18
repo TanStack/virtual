@@ -16,6 +16,7 @@ export default defineConfig({
           'measure-element/index.html',
         ),
         'smooth-scroll': path.resolve(__dirname, 'smooth-scroll/index.html'),
+        'smooth-prepend': path.resolve(__dirname, 'smooth-prepend/index.html'),
         'stale-index': path.resolve(__dirname, 'stale-index/index.html'),
         'direct-dom-updates': path.resolve(
           __dirname,
