@@ -64,5 +64,8 @@
   },
   "peerDependencies": {
     "vue": "^2.7.0 || ^3.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/TanStack/virtual/issues"
   }
 }
