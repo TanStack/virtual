@@ -1768,10 +1768,20 @@ export class Virtualizer<
       }
     }
 
-    // For the last item with 'end' alignment, use browser's actual max scroll
-    // to account for borders/padding that aren't in our measurements
+    // For the last item with 'end' alignment, use the virtual max scroll offset
+    // so that the item's end aligns with the bottom of the viewport, not the
+    // absolute bottom of the scroll container. This excludes paddingEnd from the
+    // offset, matching the semantic of paddingEnd as "extra space after content"
+    // rather than "extra scrollable space". Without this, paddingEnd > 0 causes
+    // scrollToIndex(last) to overshoot past the last item's rendered end.
     if (align === 'end' && index === this.options.count - 1) {
-      return [this.getMaxScrollOffset(), align] as const
+      return [
+        Math.max(
+          this.getTotalSize() - this.options.paddingEnd - this.getSize(),
+          0,
+        ),
+        align,
+      ] as const
     }
 
     const toOffset =
