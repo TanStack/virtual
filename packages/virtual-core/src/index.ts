@@ -1768,18 +1768,26 @@ export class Virtualizer<
       }
     }
 
-    // For the last item with 'end' alignment, use the virtual max scroll offset
-    // so that the item's end aligns with the bottom of the viewport, not the
-    // absolute bottom of the scroll container. This excludes paddingEnd from the
-    // offset, matching the semantic of paddingEnd as "extra space after content"
-    // rather than "extra scrollable space". Without this, paddingEnd > 0 causes
-    // scrollToIndex(last) to overshoot past the last item's rendered end.
+    // For the last item with 'end' alignment, derive the target from the
+    // selected item's own end rather than from getTotalSize() across all
+    // lanes. getTotalSize() returns the furthest measured end across lanes,
+    // but in a multi-lane layout the last index can end in a shorter lane
+    // and have a smaller item.end than getTotalSize() implies. Targeting the
+    // lane-max would scroll the selected item above the viewport top.
+    //
+    // We also apply scrollPaddingEnd here (matching the normal 'end' path
+    // below) and clamp to the virtual maximum so paddingEnd > 0 still keeps
+    // the last item flush with the bottom of the viewport rather than
+    // overshooting it.
     if (align === 'end' && index === this.options.count - 1) {
+      const virtualMaxOffset = Math.max(
+        this.getTotalSize() - this.options.paddingEnd - this.getSize(),
+        0,
+      )
+      const itemEndOffset =
+        item.end + this.options.scrollPaddingEnd - this.getSize()
       return [
-        Math.max(
-          this.getTotalSize() - this.options.paddingEnd - this.getSize(),
-          0,
-        ),
+        Math.min(Math.max(itemEndOffset, 0), virtualMaxOffset),
         align,
       ] as const
     }

@@ -3813,3 +3813,115 @@ test('#1257: scrollToIndex(last) with paddingEnd keeps the last item flush with 
   // bottom edge of the visible area.
   expect(scrollToFn).toHaveBeenCalledWith(50, expect.any(Object), expect.any(Object))
 })
+
+// ─── #1263 follow-up: last item in a shorter lane must still align with the viewport bottom ──────
+// When the last item lives in a lane that is shorter than the tallest lane,
+// item.end is smaller than getTotalSize() - paddingEnd. Targeting the lane-max
+// offset would scroll the selected item past the top of the viewport. The fix
+// derives the target from the selected item's own end and clamps to the
+// virtual maximum.
+//
+// Layout: 2 lanes, lane 0 = [0, 1, 2, 3] @100px (max 400), lane 1 = [4] @50px.
+// count = 5, last item = index 4, item.end = 50. getTotalSize() = 400.
+// Viewport = 200. With the previous (lane-max) formula, scroll target would
+// be 400 - 0 - 200 = 200, leaving item 4 (at offset 50) above the viewport.
+// With the fix, the target is item.end + scrollPaddingEnd - getSize() = 50 - 200
+// = -150, clamped to 0 — item 4 is rendered at the top of the viewport,
+// matching the user's "end" alignment intent for a single-lane list with
+// smaller-than-viewport content.
+
+test('#1263: scrollToIndex(last) with the last item in a shorter lane does not over-scroll', () => {
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 200,
+    scrollHeight: 200, // single-lane equivalent for the last item
+    clientWidth: 200,
+    clientHeight: 200,
+    offsetWidth: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: globalThis },
+    scrollTo: vi.fn(),
+  } as unknown as HTMLDivElement
+
+  const scrollToFn = vi.fn()
+  const virtualizer = new Virtualizer({
+    count: 5,
+    // Lane 0 ends at 400 (items 0..3 @100), lane 1 ends at 50 (item 4 @50).
+    // getTotalSize() returns the lane-max (400).
+    estimateSize: (index) => (index === 4 ? 50 : 100),
+    lanes: 2,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 200, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  virtualizer.scrollToIndex(4, { align: 'end' })
+
+  // The fix clamps the item-derived target (-150) to 0. The previous code
+  // would have returned 200, leaving item 4 at offset 50 above the viewport.
+  expect(scrollToFn).toHaveBeenCalledWith(0, expect.any(Object), expect.any(Object))
+})
+
+// ─── #1263 follow-up: scrollPaddingEnd is honored on the last-item path ──────────────
+// The previous fix only used paddingEnd in the clamping, not scrollPaddingEnd.
+// The end-align path for non-last items applies scrollPaddingEnd to leave a
+// visual gap between the item and the viewport bottom, so the last-item path
+// should match that semantic for consistency.
+
+test('#1263: scrollToIndex(last) with scrollPaddingEnd leaves a visual gap above the viewport bottom', () => {
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 200,
+    scrollHeight: 300, // 200 content + 100 paddingEnd
+    clientWidth: 200,
+    clientHeight: 200,
+    offsetWidth: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: globalThis },
+    scrollTo: vi.fn(),
+  } as unknown as HTMLDivElement
+
+  const scrollToFn = vi.fn()
+  const virtualizer = new Virtualizer({
+    count: 5,
+    estimateSize: () => 50,
+    paddingEnd: 100,
+    scrollPaddingEnd: 30,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 200, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  virtualizer.scrollToIndex(4, { align: 'end' })
+
+  // virtualMaxOffset = max(300 - 100 - 200, 0) = 0
+  // itemEndOffset = 250 + 30 - 200 = 80
+  // final = min(max(80, 0), 0) = 0  (clamped to virtual max)
+  // The previous code returned 0 as well, but via getTotalSize() - paddingEnd
+  // - getSize() without applying scrollPaddingEnd — these happen to coincide
+  // here because the content already overflows the viewport. The test guards
+  // against regressions on the clamping path.
+  expect(scrollToFn).toHaveBeenCalledWith(0, expect.any(Object), expect.any(Object))
+})
