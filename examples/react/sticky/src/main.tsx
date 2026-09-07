@@ -1,6 +1,6 @@
 import './index.css'
 import * as React from 'react'
-import ReactDOM from 'react-dom'
+import * as ReactDOM from 'react-dom/client'
 import { faker } from '@faker-js/faker'
 import { findIndex, groupBy } from 'lodash'
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
@@ -115,9 +115,8 @@ const App = () => {
   )
 }
 
-ReactDOM.render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-  document.getElementById('root'),
 )
