@@ -447,7 +447,16 @@ export class Virtualizer<
   // value when the diff is < 1.5 px, distinguishing it from a real user
   // scroll. The +0.5 over Math.abs lets us also absorb the +1 / -1 cases.
   private _intendedScrollOffset: number | null = null
-  private _maxScrollOffsetAtWrite: number | null = null
+  // A compensation write from `applyScrollAdjustment` whose target exceeded
+  // the element's scroll max at the moment of the write. The browser clamps
+  // such a write because the consumer's sizer has not grown yet: an
+  // end-anchored item growing at the bottom only extends `scrollHeight` to
+  // its own end, so with `paddingEnd > 0` the clamp lands exactly
+  // `paddingEnd` short of the target (#1258). `_willUpdate` re-issues the
+  // write once the sizer has caught up; the clamped read-back keeps it
+  // pending, any other scroll event (a real gesture) cancels it.
+  private _clampedAdjustment: { target: number; maxAtWrite: number } | null =
+    null
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -481,31 +490,32 @@ export class Virtualizer<
               // it. We can't call getItemKey(index) here because items may
               // have been removed since this node was rendered — the index
               // could be stale and out-of-bounds in the user's data array
-      // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
-      // The === comparison naturally handles the React-replaced-
-      // a-node-for-the-same-key case: that entry now points to a
-      // different node, so this loop won't match.
-      for (const [cacheKey, cachedNode] of this.elementsCache) {
-        if (cachedNode === node) {
-          this.elementsCache.delete(cacheKey)
-          break
-        }
-      }
-      return
-    }
-    if (!this.isIndexInRange(index)) return
-    if (this.shouldMeasureDuringScroll(index)) {
-      this.resizeItem(
-        index,
-        this.options.measureElement(node, entry, this),
-      )
-    }
-  }
-  this.options.useAnimationFrameWithResizeObserver
-    ? requestAnimationFrame(run)
-    : run()
-})
+              // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
+              // The === comparison naturally handles the React-replaced-
+              // a-node-for-the-same-key case: that entry now points to a
+              // different node, so this loop won't match.
+              for (const [cacheKey, cachedNode] of this.elementsCache) {
+                if (cachedNode === node) {
+                  this.elementsCache.delete(cacheKey)
+                  break
+                }
+              }
+              return
+            }
 
+            if (!this.isIndexInRange(index)) return
+
+            if (this.shouldMeasureDuringScroll(index)) {
+              this.resizeItem(
+                index,
+                this.options.measureElement(node, entry, this),
+              )
+            }
+          }
+          this.options.useAnimationFrameWithResizeObserver
+            ? requestAnimationFrame(run)
+            : run()
+        })
       }))
     }
 
@@ -706,6 +716,18 @@ export class Virtualizer<
       this._iosDeferredAdjustment += delta
       return false
     } else {
+      const target = this.getScrollOffset() + this.scrollAdjustments + delta
+      // Guarded so a bare test double without `scrollHeight` / `document`
+      // does not crash in `getMaxScrollOffset`.
+      const el = this.scrollElement
+      const maxAtWrite =
+        el !== null && ('scrollHeight' in el || 'document' in el)
+          ? this.getMaxScrollOffset()
+          : null
+      this._clampedAdjustment =
+        maxAtWrite !== null && target > maxAtWrite + 0.5
+          ? { target, maxAtWrite }
+          : null
       this._scrollToOffset(this.getScrollOffset(), {
         adjustments: (this.scrollAdjustments += delta),
         behavior,
@@ -787,6 +809,7 @@ export class Virtualizer<
     this._iosDeferredAdjustment = 0
     this._iosTouching = false
     this._iosJustTouchEnded = false
+    this._clampedAdjustment = null
     this.scrollElement = null
     this.targetWindow = null
   }
@@ -853,16 +876,24 @@ export class Virtualizer<
           // self-write — by the time the user has moved 1.5 px, the
           // intended value will already have been consumed by a prior
           // scroll event and cleared.
-          const intendedOffset = this._intendedScrollOffset
-          const maxAtWrite = this._maxScrollOffsetAtWrite
-
           if (
-            intendedOffset !== null &&
-            Math.abs(offset - intendedOffset) < 1.5
+            this._intendedScrollOffset !== null &&
+            Math.abs(offset - this._intendedScrollOffset) < 1.5
           ) {
-            offset = intendedOffset
+            offset = this._intendedScrollOffset
           }
           this._intendedScrollOffset = null
+
+          // A pending clamped compensation write (#1258) survives only its
+          // own read-back, which the browser reports at the scroll max we
+          // saw at write time. Anything else is a real gesture (or the write
+          // landing after all), so drop it rather than yank the user later.
+          if (
+            this._clampedAdjustment !== null &&
+            Math.abs(offset - this._clampedAdjustment.maxAtWrite) >= 1.5
+          ) {
+            this._clampedAdjustment = null
+          }
 
           this.scrollAdjustments = 0
           // If the offset hasn't moved, this is the echo of our own
@@ -885,31 +916,12 @@ export class Virtualizer<
           // screen, and the post-touchend grace window has expired.
           this._flushIosDeferredIfReady()
 
-          // Check if we hit the scroll limit we recorded at write time.
-          // If we landed exactly on that limit but are still short of the
-          // intended offset, the scroll container hadn't grown yet when the
-          // write was issued (e.g. paddingEnd + a growing last item). Keep
-          // _maxScrollOffsetAtWrite set so _willUpdate can re-issue the write
-          // once React has committed the new sizer size and there is room.
-          if (
-            intendedOffset !== null &&
-            maxAtWrite !== null &&
-            offset === maxAtWrite &&
-            offset < intendedOffset
-          ) {
-            // Leave _maxScrollOffsetAtWrite intact — _willUpdate will clear it
-            // and re-issue once getMaxScrollOffset() has grown.
-          } else {
-            this._maxScrollOffsetAtWrite = null
-          }
-
           if (this.scrollState) {
             this.scheduleScrollReconcile()
           }
           this.maybeNotify()
-         }),
-       )
-
+        }),
+      )
 
       // Touch event listeners (iOS-aware deferral). We attach unconditionally
       // — the listeners are passive and cheap; on non-touch devices they
@@ -1003,23 +1015,24 @@ export class Virtualizer<
       }
     }
 
-    // Re-issue a previously clamped scroll write now that React has committed
-    // and the sizer may have grown. This handles the case where
-    // applyScrollAdjustment wrote a scrollTop that the browser clamped because
-    // the sizer hadn't caught up yet (e.g. paddingEnd + a growing last item).
-    // _maxScrollOffsetAtWrite is kept set by the scroll callback when it detects
-    // a clamped self-write; we clear it here once we can satisfy the offset.
+    // Re-issue a compensation write the browser clamped because the sizer
+    // had not grown yet (#1258). By now the consumer has committed the new
+    // total size, so there may be room. Runs before the clamped read-back
+    // in a synchronous (flushSync) render and after it otherwise; both
+    // paths leave `_clampedAdjustment` set, so the timing does not matter.
     if (
-      this._maxScrollOffsetAtWrite !== null &&
-      this._intendedScrollOffset !== null &&
+      this._clampedAdjustment !== null &&
       this.scrollElement &&
       this.options.enabled
     ) {
-      const newMax = this.getMaxScrollOffset()
-      if (newMax > this._maxScrollOffsetAtWrite) {
-        const intended = this._intendedScrollOffset
-        this._maxScrollOffsetAtWrite = null
-        this._scrollToOffset(intended, {
+      const { target, maxAtWrite } = this._clampedAdjustment
+      const max = this.getMaxScrollOffset()
+      if (max > maxAtWrite + 0.5) {
+        // Still short (the sizer grew only partially): stay pending against
+        // the new max so the next commit retries.
+        this._clampedAdjustment =
+          target > max + 0.5 ? { target, maxAtWrite: max } : null
+        this._scrollToOffset(target, {
           adjustments: undefined,
           behavior: undefined,
         })
@@ -2015,7 +2028,6 @@ export class Virtualizer<
     // Record the intended logical scroll target so the next scroll event
     // can reconcile against subpixel rounding by the browser.
     this._intendedScrollOffset = offset + (adjustments ?? 0)
-    this._maxScrollOffsetAtWrite = this.getMaxScrollOffset()
     this.options.scrollToFn(offset, { behavior, adjustments }, this)
   }
 
