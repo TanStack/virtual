@@ -161,9 +161,8 @@ function useVirtualizerBase<
   const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
     ...options,
     scrollToFn: (offset, scrollOptions, instance) => {
-      // resizeItem adjusts the offset before onChange updates the DOM. Grow
-      // the sizer first so the browser cannot clamp the adjustment to its old
-      // scroll range when an earlier item grows but the last item stays fixed.
+      // resizeItem scrolls before onChange; update the sizer first so the
+      // browser does not clamp the adjustment to the old scroll range.
       applyContainerSize(instance)
       options.scrollToFn(offset, scrollOptions, instance)
     },
