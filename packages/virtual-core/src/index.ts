@@ -886,23 +886,19 @@ export class Virtualizer<
           this._flushIosDeferredIfReady()
 
           // Check if we hit the scroll limit we recorded at write time.
-          // If we landed on that limit and are still short of the
-          // intended offset, the scroll container hadn't grown yet when
-          // the write was issued (e.g. paddingEnd, dynamic content). The
-          // container may have grown since — re-issue the write so we
-          // reach the intended position now that there's room.
+          // If we landed exactly on that limit but are still short of the
+          // intended offset, the scroll container hadn't grown yet when the
+          // write was issued (e.g. paddingEnd + a growing last item). Keep
+          // _maxScrollOffsetAtWrite set so _willUpdate can re-issue the write
+          // once React has committed the new sizer size and there is room.
           if (
             intendedOffset !== null &&
             maxAtWrite !== null &&
             offset === maxAtWrite &&
-            offset < intendedOffset &&
-            this.getMaxScrollOffset() > maxAtWrite
+            offset < intendedOffset
           ) {
-            this._maxScrollOffsetAtWrite = null
-            this._scrollToOffset(intendedOffset, {
-              adjustments: undefined,
-              behavior: undefined,
-            })
+            // Leave _maxScrollOffsetAtWrite intact — _willUpdate will clear it
+            // and re-issue once getMaxScrollOffset() has grown.
           } else {
             this._maxScrollOffsetAtWrite = null
           }
@@ -1004,6 +1000,29 @@ export class Virtualizer<
 
       if (followOnAppend) {
         this.scrollToEnd({ behavior: followOnAppend })
+      }
+    }
+
+    // Re-issue a previously clamped scroll write now that React has committed
+    // and the sizer may have grown. This handles the case where
+    // applyScrollAdjustment wrote a scrollTop that the browser clamped because
+    // the sizer hadn't caught up yet (e.g. paddingEnd + a growing last item).
+    // _maxScrollOffsetAtWrite is kept set by the scroll callback when it detects
+    // a clamped self-write; we clear it here once we can satisfy the offset.
+    if (
+      this._maxScrollOffsetAtWrite !== null &&
+      this._intendedScrollOffset !== null &&
+      this.scrollElement &&
+      this.options.enabled
+    ) {
+      const newMax = this.getMaxScrollOffset()
+      if (newMax > this._maxScrollOffsetAtWrite) {
+        const intended = this._intendedScrollOffset
+        this._maxScrollOffsetAtWrite = null
+        this._scrollToOffset(intended, {
+          adjustments: undefined,
+          behavior: undefined,
+        })
       }
     }
   }
