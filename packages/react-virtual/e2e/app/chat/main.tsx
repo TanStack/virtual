@@ -34,6 +34,8 @@ function App() {
     followOnAppend: true,
     scrollEndThreshold: 4,
     overscan: 4,
+    directDomUpdates: true,
+    useFlushSync: false,
   })
 
   React.useLayoutEffect(() => {
@@ -83,6 +85,20 @@ function App() {
       >
         Grow last
       </button>
+      <button
+        id="grow-previous"
+        onClick={() => {
+          setMessages((current) =>
+            current.map((message, index) =>
+              index === current.length - 2
+                ? { ...message, height: message.height + 24 }
+                : message,
+            ),
+          )
+        }}
+      >
+        Grow previous
+      </button>
       <button id="scroll-to-end" onClick={() => virtualizer.scrollToEnd()}>
         End
       </button>
@@ -93,13 +109,14 @@ function App() {
         style={{
           height: 300,
           overflow: 'auto',
+          overflowAnchor: 'none',
           width: 420,
           border: '1px solid #ddd',
         }}
       >
         <div
+          ref={virtualizer.containerRef}
           style={{
-            height: virtualizer.getTotalSize(),
             position: 'relative',
             width: '100%',
           }}
@@ -118,7 +135,6 @@ function App() {
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  transform: `translateY(${item.start}px)`,
                   width: '100%',
                 }}
               >

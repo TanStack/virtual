@@ -158,3 +158,20 @@ test('chat mode keeps streaming bottom message pinned as it grows', async ({
 
   await expect(page.locator('[data-testid="message-m-29"]')).toBeVisible()
 })
+
+test('direct DOM chat stays pinned when a previous message grows', async ({
+  page,
+}) => {
+  await page.goto('/chat/')
+  await waitForEnd(page)
+  const before = await getScrollState(page)
+
+  // The last message keeps its size, so its overflow cannot grow the scroll
+  // range before ResizeObserver reports the previous message's new height.
+  await page.click('#grow-previous')
+  await expect
+    .poll(async () => (await getScrollState(page)).scrollHeight)
+    .toBe(before.scrollHeight + 24)
+  await waitForEnd(page)
+  expect((await getScrollState(page)).scrollTop).toBe(before.scrollTop + 24)
+})
