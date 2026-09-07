@@ -158,3 +158,15 @@ test('chat mode keeps streaming bottom message pinned as it grows', async ({
 
   await expect(page.locator('[data-testid="message-m-29"]')).toBeVisible()
 })
+
+test('chat mode keeps streaming bottom message pinned as it grows with paddingEnd', async ({
+  page,
+}) => {
+  await page.goto('/chat/?paddingEnd=80')
+  await waitForEnd(page)
+
+  await page.click('#grow-last')
+  await waitForEnd(page)
+
+  await expect(page.locator('[data-testid="message-m-29"]')).toBeVisible()
+})

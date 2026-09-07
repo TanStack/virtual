@@ -447,6 +447,7 @@ export class Virtualizer<
   // value when the diff is < 1.5 px, distinguishing it from a real user
   // scroll. The +0.5 over Math.abs lets us also absorb the +1 / -1 cases.
   private _intendedScrollOffset: number | null = null
+  private _maxScrollOffsetAtWrite: number | null = null
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -480,32 +481,31 @@ export class Virtualizer<
               // it. We can't call getItemKey(index) here because items may
               // have been removed since this node was rendered — the index
               // could be stale and out-of-bounds in the user's data array
-              // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
-              // The === comparison naturally handles the React-replaced-
-              // a-node-for-the-same-key case: that entry now points to a
-              // different node, so this loop won't match.
-              for (const [cacheKey, cachedNode] of this.elementsCache) {
-                if (cachedNode === node) {
-                  this.elementsCache.delete(cacheKey)
-                  break
-                }
-              }
-              return
-            }
+      // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
+      // The === comparison naturally handles the React-replaced-
+      // a-node-for-the-same-key case: that entry now points to a
+      // different node, so this loop won't match.
+      for (const [cacheKey, cachedNode] of this.elementsCache) {
+        if (cachedNode === node) {
+          this.elementsCache.delete(cacheKey)
+          break
+        }
+      }
+      return
+    }
+    if (!this.isIndexInRange(index)) return
+    if (this.shouldMeasureDuringScroll(index)) {
+      this.resizeItem(
+        index,
+        this.options.measureElement(node, entry, this),
+      )
+    }
+  }
+  this.options.useAnimationFrameWithResizeObserver
+    ? requestAnimationFrame(run)
+    : run()
+})
 
-            if (!this.isIndexInRange(index)) return
-
-            if (this.shouldMeasureDuringScroll(index)) {
-              this.resizeItem(
-                index,
-                this.options.measureElement(node, entry, this),
-              )
-            }
-          }
-          this.options.useAnimationFrameWithResizeObserver
-            ? requestAnimationFrame(run)
-            : run()
-        })
       }))
     }
 
@@ -853,11 +853,14 @@ export class Virtualizer<
           // self-write — by the time the user has moved 1.5 px, the
           // intended value will already have been consumed by a prior
           // scroll event and cleared.
+          const intendedOffset = this._intendedScrollOffset
+          const maxAtWrite = this._maxScrollOffsetAtWrite
+
           if (
-            this._intendedScrollOffset !== null &&
-            Math.abs(offset - this._intendedScrollOffset) < 1.5
+            intendedOffset !== null &&
+            Math.abs(offset - intendedOffset) < 1.5
           ) {
-            offset = this._intendedScrollOffset
+            offset = intendedOffset
           }
           this._intendedScrollOffset = null
 
@@ -882,12 +885,35 @@ export class Virtualizer<
           // screen, and the post-touchend grace window has expired.
           this._flushIosDeferredIfReady()
 
+          // Check if we hit the scroll limit we recorded at write time.
+          // If we landed on that limit and are still short of the
+          // intended offset, the scroll container hadn't grown yet when
+          // the write was issued (e.g. paddingEnd, dynamic content). The
+          // container may have grown since — re-issue the write so we
+          // reach the intended position now that there's room.
+          if (
+            intendedOffset !== null &&
+            maxAtWrite !== null &&
+            offset === maxAtWrite &&
+            offset < intendedOffset &&
+            this.getMaxScrollOffset() > maxAtWrite
+          ) {
+            this._maxScrollOffsetAtWrite = null
+            this._scrollToOffset(intendedOffset, {
+              adjustments: undefined,
+              behavior: undefined,
+            })
+          } else {
+            this._maxScrollOffsetAtWrite = null
+          }
+
           if (this.scrollState) {
             this.scheduleScrollReconcile()
           }
           this.maybeNotify()
-        }),
-      )
+         }),
+       )
+
 
       // Touch event listeners (iOS-aware deferral). We attach unconditionally
       // — the listeners are passive and cheap; on non-touch devices they
@@ -1970,6 +1996,7 @@ export class Virtualizer<
     // Record the intended logical scroll target so the next scroll event
     // can reconcile against subpixel rounding by the browser.
     this._intendedScrollOffset = offset + (adjustments ?? 0)
+    this._maxScrollOffsetAtWrite = this.getMaxScrollOffset()
     this.options.scrollToFn(offset, { behavior, adjustments }, this)
   }
 
