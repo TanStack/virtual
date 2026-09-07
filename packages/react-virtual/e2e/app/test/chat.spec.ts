@@ -162,7 +162,7 @@ test('chat mode keeps streaming bottom message pinned as it grows', async ({
 test('direct DOM chat stays pinned when a previous message grows', async ({
   page,
 }) => {
-  await page.goto('/chat/')
+  await page.goto('/chat-resize/')
   await waitForEnd(page)
   const before = await getScrollState(page)
 
