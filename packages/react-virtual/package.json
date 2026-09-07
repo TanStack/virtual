@@ -1,6 +1,6 @@
 {
   "name": "@tanstack/react-virtual",
-  "version": "3.14.2",
+  "version": "3.14.11",
   "description": "Headless UI for virtualizing scrollable elements in React",
   "author": "Tanner Linsley",
   "license": "MIT",
@@ -30,7 +30,7 @@
     "test:lib:dev": "pnpm run test:lib --watch",
     "test:build": "publint --strict",
     "build": "vite build",
-    "test:e2e": "../../node_modules/.bin/playwright test"
+    "test:e2e": "playwright test"
   },
   "type": "module",
   "types": "dist/esm/index.d.ts",

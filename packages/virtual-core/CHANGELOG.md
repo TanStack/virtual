@@ -1,5 +1,77 @@
 # @tanstack/virtual-core
 
+## 3.17.9
+
+### Patch Changes
+
+- [#1260](https://github.com/TanStack/virtual/pull/1260) [`4a0adf3`](https://github.com/TanStack/virtual/commit/4a0adf3e3ba46968e0e6ba66471253e467babe55) - Recover the bottom pin when the browser clamps an end-anchored scroll compensation write. `resizeItem` compensates a size change by writing `scrollTop` before the consumer has committed the new total size, so when the grown item does not itself extend the scroll range the browser clamps the write to the old maximum and the viewport is left short of the end with no scroll event to correct it. Two cases hit this: `paddingEnd > 0` with a growing last item, where the overflowing item only extends `scrollHeight` to its own end and the clamp lands exactly `paddingEnd` short ([#1258](https://github.com/TanStack/virtual/issues/1258)); and a row above the last one growing while the last row keeps its size, under `directDomUpdates` ([#1266](https://github.com/TanStack/virtual/issues/1266)). A compensation write whose target exceeds the scroll maximum at write time is now recorded as clamped and re-issued once the sizer has grown — right after `notify` for consumers that size the container synchronously in `onChange`, and from `_willUpdate` for consumers that size it during a render. The clamped read-back keeps the retry pending; any other scroll event cancels it, so a user reading history is never yanked.
+
+## 3.17.8
+
+### Patch Changes
+
+- [#1256](https://github.com/TanStack/virtual/pull/1256) [`a0a411e`](https://github.com/TanStack/virtual/commit/a0a411e06f7334a063422de35d59b12b264b3573) - Cancel the pending `isScrolling` reset when a scroll observer is torn down, and reset `isScrolling` and `scrollDirection` in `cleanup()` so they don't stay stuck after the scroll element changes or is removed.
+
+- [#1246](https://github.com/TanStack/virtual/pull/1246) [`d2cf98b`](https://github.com/TanStack/virtual/commit/d2cf98beea1696c7187c06b57c9e724d1957963c) - Ignore connected measurement nodes whose indexes are outside the current item count.
+
+## 3.17.7
+
+### Patch Changes
+
+- [#1239](https://github.com/TanStack/virtual/pull/1239) [`a5417b4`](https://github.com/TanStack/virtual/commit/a5417b4b0d3c82876747bb9635db7239c28d3e44) - Fix a one-frame viewport jump when above-viewport rows resize while scrolling up ([#1227](https://github.com/TanStack/virtual/issues/1227)). `resizeItem` writes `scrollTop` synchronously inside the ResizeObserver callback to compensate for the size change, but then notified asynchronously — so the browser could paint a frame with the new `scrollTop` and the old item transforms, making the content jerk by the resize delta and snap back. When a compensation actually moves the scroll position, `resizeItem` now notifies synchronously so the transform commit lands in the same paint as the scroll write. Resizes that don't move the scroll position (below-fold measurements, iOS-deferred adjustments) keep the cheaper async notify.
+
+## 3.17.6
+
+### Patch Changes
+
+- [#1236](https://github.com/TanStack/virtual/pull/1236) [`7ae32b5`](https://github.com/TanStack/virtual/commit/7ae32b55887fd044a48c788546cd940279b338e0) - Stop the default scroll-adjustment heuristic from drifting the viewport when a viewport-spanning item grows. Previously any item whose top sat above the fold (`itemStart < scrollOffset`) had its size delta compensated on every re-measure — including a streaming chat message that spans the fold and grows at its bottom, dragging `scrollTop` downward token by token ([#1218](https://github.com/TanStack/virtual/issues/1218)). Re-measurements now only compensate items that are _entirely_ above the fold (`itemStart + itemSize <= scrollOffset`); growth below the anchor point leaves the scroll position untouched. First measurements (estimate→actual) still compensate any above-fold item, and a custom `shouldAdjustScrollPositionOnItemSizeChange` still overrides the default.
+
+## 3.17.5
+
+### Patch Changes
+
+- [#1230](https://github.com/TanStack/virtual/pull/1230) [`1e3b908`](https://github.com/TanStack/virtual/commit/1e3b908705e04e45be2615f2277580cb09f5cdef) - Clamp the tracked `scrollOffset` at 0 when applying end-anchor measurement compensation and when re-anchoring in `setOptions`. Previously, with `anchorTo: 'end'` and content shorter than the viewport, items measuring smaller than their estimates drove the tracked offset negative with no scroll event to ever correct it — `getDistanceFromEnd()` reported a permanent phantom distance and iOS deferred measurement corrections stayed wedged forever.
+
+- [#1235](https://github.com/TanStack/virtual/pull/1235) [`7dcfc07`](https://github.com/TanStack/virtual/commit/7dcfc07b877479697124157d3124c09537b87a75) - Stop iOS-deferred scroll adjustments from replaying stale deltas after the position is already correct ([#1233](https://github.com/TanStack/virtual/issues/1233)). On iOS WebKit the end-anchored virtualizer defers scroll compensation while the scroller is live and replays it once settled, but two cases replayed a delta whose premise no longer held:
+  - Absolute scroll commands (`scrollToOffset` / `scrollToIndex` / `scrollToEnd`) derive their target from current measurements, so a pending deferred delta is already stale — it now invalidates the deferral instead of letting it replay and shift the list off the just-established position. Relative commands (`scrollBy`) keep the deferral.
+  - At the end clamp with `anchorTo: 'end'`, a row above the viewport re-measuring smaller lets the browser clamp `scrollTop` onto the new bottom (already the correct position); the flush now drops the stale negative compensation instead of replaying it and lifting the view off the bottom. Positive deltas still replay, since content growth above does not clamp.
+
+## 3.17.4
+
+### Patch Changes
+
+- [#1224](https://github.com/TanStack/virtual/pull/1224) [`6cbecd8`](https://github.com/TanStack/virtual/commit/6cbecd887df56faaee3b6a81a1aae8049de0671e) - Improve multi-lane virtualization performance: replace the backward scan in getMeasurements with an incremental per-lane argmin (O(lanes) shortest-lane lookup). Placement output is unchanged and the single-lane fast path is untouched.
+
+- [#1223](https://github.com/TanStack/virtual/pull/1223) [`d49cc52`](https://github.com/TanStack/virtual/commit/d49cc526fe248be7b5ad97ec6ac814db8271b0d0) - Made gap option changes invalidate measurements
+
+- [#1220](https://github.com/TanStack/virtual/pull/1220) [`cf7834d`](https://github.com/TanStack/virtual/commit/cf7834daade953fea5dfd2ab5685c15771ca300a) - Reset iOS gesture/deferral state in `cleanup()` so it no longer leaks across scroll element swaps.
+
+## 3.17.3
+
+### Patch Changes
+
+- [#1206](https://github.com/TanStack/virtual/pull/1206) [`767ead4`](https://github.com/TanStack/virtual/commit/767ead46e4fab761fd6e15bcf281486042723152) - Cut per-scroll-frame allocations on the default `lanes === 1` path. Range computation previously allocated an options object and two closures on every scroll event; it now does the same work allocation-free, reducing GC pressure during continuous scroll.
+
+- [#1212](https://github.com/TanStack/virtual/pull/1212) [`bc8643b`](https://github.com/TanStack/virtual/commit/bc8643b7579e10e512654f58269de13d98b48781) - Don't latch a scroll direction from the read-back of the virtualizer's own adjustment write
+
+  `applyScrollAdjustment` folds the pending adjustment into `scrollOffset` eagerly, so the browser's scroll event for that write arrives at exactly the held offset. The scroll-direction computation treated that equality as `'backward'`, which made the default `shouldAdjustScrollPositionOnItemSizeChange` skip above-viewport re-measure compensation for the rest of the `isScrollingResetDelay` window — so during multi-frame reflows (e.g. a side pane's width animation re-wrapping rows while scrolled up) most frames went uncompensated and the viewport drifted. An event at the held offset carries no direction information, so the direction now stays unchanged in that case; real gestures always move the offset and still latch normally.
+
+## 3.17.2
+
+### Patch Changes
+
+- [#1208](https://github.com/TanStack/virtual/pull/1208) [`b04f9ee`](https://github.com/TanStack/virtual/commit/b04f9ee48f0812e89156c1dac1fa58277cc32464) - Skip redundant scroll events at unchanged offset
+
+- [#1209](https://github.com/TanStack/virtual/pull/1209) [`37be284`](https://github.com/TanStack/virtual/commit/37be28427ba52399ce8884e0006933e83f2645e9) - Sync `scrollOffset` in `applyScrollAdjustment` so end-anchored streaming resize isn't lost to browser clamp
+
+  With `anchorTo: 'end'` and a dynamically growing last item (token streaming), `resizeItem` writes the scroll adjustment to `scrollTop` before the consumer has grown the sizer, so the browser clamps the write and no scroll event fires. `scrollOffset` stayed stale, the next tick's `wasAtEnd` check failed, and the viewport drifted away from the end. This fix carries the intended target in `scrollOffset` (zeroing `scrollAdjustments`) the same way the prepend path in `setOptions` does, so the next `getVirtualDistanceFromEnd()` reads the post-adjustment position.
+
+## 3.17.1
+
+### Patch Changes
+
+- [#1199](https://github.com/TanStack/virtual/pull/1199) [`ef69ea3`](https://github.com/TanStack/virtual/commit/ef69ea31738caa2819142e922efa03d3c408e25c) - Fix "items jump while scrolling up": the default scroll-adjustment predicate now compensates scrollTop on the first measurement of an above-viewport item even while scrolling backward (the estimate→actual delta must be absorbed), and only skips compensation for re-measurements during backward scroll to avoid the cascading jank
+
 ## 3.17.0
 
 ### Minor Changes
@@ -71,8 +143,9 @@
   Forward-scroll and idle (mount-time) adjustments still fire as before
   to preserve visual stability of the visible window. Consumers who want
   the old behavior — adjusting on every above-viewport resize regardless
-  of direction — can supply `shouldAdjustScrollPositionOnItemSizeChange`
-  which is checked before the default branch.
+  of direction — can assign `shouldAdjustScrollPositionOnItemSizeChange`
+  directly on the virtualizer instance. This instance property is checked
+  before the default branch.
 
 - Add `takeSnapshot()` instance method for scroll-restoration round-trips. ([#1168](https://github.com/TanStack/virtual/pull/1168))
   Returns the currently-measured items as plain `VirtualItem` objects;

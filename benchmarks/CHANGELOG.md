@@ -1,5 +1,68 @@
 # @tanstack/virtual-benchmarks
 
+## 0.0.14
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/react-virtual@3.14.11
+
+## 0.0.13
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/react-virtual@3.14.10
+
+## 0.0.12
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/react-virtual@3.14.9
+
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [[`aa536e7`](https://github.com/TanStack/virtual/commit/aa536e7746a88d9f55ca8a4b50d2f548a888fea6)]:
+  - @tanstack/react-virtual@3.14.8
+
+## 0.0.10
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/react-virtual@3.14.7
+
+## 0.0.9
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/react-virtual@3.14.6
+
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/react-virtual@3.14.5
+
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tanstack/react-virtual@3.14.4
+
+## 0.0.6
+
+### Patch Changes
+
+- Updated dependencies [[`2ba5eb6`](https://github.com/TanStack/virtual/commit/2ba5eb60f108f4ba9b2bd9570bbd41f9ce618438)]:
+  - @tanstack/react-virtual@3.14.3
+
 ## 0.0.5
 
 ### Patch Changes

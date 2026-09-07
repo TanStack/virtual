@@ -1,5 +1,72 @@
 # @tanstack/angular-virtual
 
+## 6.0.4
+
+### Patch Changes
+
+- Updated dependencies [[`4a0adf3`](https://github.com/TanStack/virtual/commit/4a0adf3e3ba46968e0e6ba66471253e467babe55)]:
+  - @tanstack/virtual-core@3.17.9
+
+## 6.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`a0a411e`](https://github.com/TanStack/virtual/commit/a0a411e06f7334a063422de35d59b12b264b3573), [`d2cf98b`](https://github.com/TanStack/virtual/commit/d2cf98beea1696c7187c06b57c9e724d1957963c)]:
+  - @tanstack/virtual-core@3.17.8
+
+## 6.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`a5417b4`](https://github.com/TanStack/virtual/commit/a5417b4b0d3c82876747bb9635db7239c28d3e44)]:
+  - @tanstack/virtual-core@3.17.7
+
+## 6.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`7ae32b5`](https://github.com/TanStack/virtual/commit/7ae32b55887fd044a48c788546cd940279b338e0)]:
+  - @tanstack/virtual-core@3.17.6
+
+## 6.0.0
+
+### Major Changes
+
+- [#1228](https://github.com/TanStack/virtual/pull/1228) [`ba5c47a`](https://github.com/TanStack/virtual/commit/ba5c47a93f597f8370bc9e0119d505551c962a09) - require angular 20 and up following their lts
+
+### Patch Changes
+
+- Updated dependencies [[`1e3b908`](https://github.com/TanStack/virtual/commit/1e3b908705e04e45be2615f2277580cb09f5cdef), [`7dcfc07`](https://github.com/TanStack/virtual/commit/7dcfc07b877479697124157d3124c09537b87a75)]:
+  - @tanstack/virtual-core@3.17.5
+
+## 5.0.8
+
+### Patch Changes
+
+- Updated dependencies [[`6cbecd8`](https://github.com/TanStack/virtual/commit/6cbecd887df56faaee3b6a81a1aae8049de0671e), [`d49cc52`](https://github.com/TanStack/virtual/commit/d49cc526fe248be7b5ad97ec6ac814db8271b0d0), [`cf7834d`](https://github.com/TanStack/virtual/commit/cf7834daade953fea5dfd2ab5685c15771ca300a)]:
+  - @tanstack/virtual-core@3.17.4
+
+## 5.0.7
+
+### Patch Changes
+
+- Updated dependencies [[`767ead4`](https://github.com/TanStack/virtual/commit/767ead46e4fab761fd6e15bcf281486042723152), [`bc8643b`](https://github.com/TanStack/virtual/commit/bc8643b7579e10e512654f58269de13d98b48781)]:
+  - @tanstack/virtual-core@3.17.3
+
+## 5.0.6
+
+### Patch Changes
+
+- Updated dependencies [[`b04f9ee`](https://github.com/TanStack/virtual/commit/b04f9ee48f0812e89156c1dac1fa58277cc32464), [`37be284`](https://github.com/TanStack/virtual/commit/37be28427ba52399ce8884e0006933e83f2645e9)]:
+  - @tanstack/virtual-core@3.17.2
+
+## 5.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`ef69ea3`](https://github.com/TanStack/virtual/commit/ef69ea31738caa2819142e922efa03d3c408e25c)]:
+  - @tanstack/virtual-core@3.17.1
+
 ## 5.0.4
 
 ### Patch Changes

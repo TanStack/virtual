@@ -103,6 +103,28 @@ function useVirtualizerBase<
   directRef.current.enabled = directDomUpdates
   directRef.current.mode = directDomUpdatesMode
 
+  // Writes the size container's total extent to the DOM. Idempotent — guarded
+  // by lastSize. Split out from applyDirectStyles so it can run *before* the
+  // scroll-position sync in the _willUpdate effect: an end-anchored prepend
+  // grows the total and bumps scrollOffset in the same pass, and if scrollTop
+  // is written before the container has grown the browser clamps it to the
+  // stale (shorter) scrollHeight, leaving a gap at the top until the next
+  // scroll (visible only in directDomUpdates mode — React-rendered sizers get
+  // their height during render).
+  const applyContainerSize = (
+    instance: Virtualizer<TScrollElement, TItemElement>,
+  ) => {
+    const state = directRef.current
+    if (!state.enabled || !state.container) return
+
+    const totalSize = instance.getTotalSize()
+    if (totalSize !== state.lastSize) {
+      state.lastSize = totalSize
+      const sizeAxis = instance.options.horizontal ? 'width' : 'height'
+      state.container.style[sizeAxis] = `${totalSize}px`
+    }
+  }
+
   // Writes container size + item positions to the DOM. Idempotent — guarded
   // by lastSize / lastPositions. Called from onChange (covers scroll-driven
   // updates) and from a layout effect (covers post-render commits when refs
@@ -111,14 +133,9 @@ function useVirtualizerBase<
     instance: Virtualizer<TScrollElement, TItemElement>,
   ) => {
     const state = directRef.current
-    if (!state.enabled) return
+    if (!state.enabled || !state.container) return
 
-    const totalSize = instance.getTotalSize()
-    if (state.container && totalSize !== state.lastSize) {
-      state.lastSize = totalSize
-      const sizeAxis = instance.options.horizontal ? 'width' : 'height'
-      state.container.style[sizeAxis] = `${totalSize}px`
-    }
+    applyContainerSize(instance)
 
     const horizontal = !!instance.options.horizontal
     const useTransform = state.mode === 'transform'
@@ -205,6 +222,13 @@ function useVirtualizerBase<
   }, [])
 
   useIsomorphicLayoutEffect(() => {
+    // Grow the size container to the new total BEFORE _willUpdate syncs the
+    // scroll position. On an end-anchored prepend the scroll target lands at
+    // the new bottom; if the container is still at its old (shorter) height the
+    // browser clamps the scrollTop write and the list is left with a gap at the
+    // top until the next scroll. Positions are written afterwards by the
+    // applyDirectStyles effect below.
+    applyContainerSize(instance)
     return instance._willUpdate()
   })
 

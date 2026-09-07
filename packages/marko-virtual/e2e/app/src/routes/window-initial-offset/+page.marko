@@ -1,0 +1,27 @@
+// GATE: window-virtualizer initialOffset override — SSR seed at a position.
+// initialRect + initialOffset=3500 must make the SERVER paint the slice around
+// index 100 (35px rows), not index 0. Asserted at view-source level (raw HTML)
+// and live (the page loads with those rows present pre-scroll).
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: window initialOffset</title></head>
+  <body style="margin: 0">
+    <window-virtualizer/v
+      count=10000
+      estimateSize=() => 35
+      overscan=5
+      initialRect=({ width: 1280, height: 700 })
+      initialOffset=3500
+    />
+    <div style=`height: ${v.totalSize}px; position: relative`>
+      <for|item| of=v.virtualItems>
+        <div
+          data-index=item.index
+          style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+        >
+          Row ${item.index}
+        </div>
+      </for>
+    </div>
+  </body>
+</html>

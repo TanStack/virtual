@@ -1,3 +1,20 @@
+<div align="center">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="https://tanstack.com/api/readme/virtual.png?framework=lit&theme=dark"
+    />
+    <source
+      media="(prefers-color-scheme: light)"
+      srcset="https://tanstack.com/api/readme/virtual.png?framework=lit"
+    />
+    <img
+      src="https://tanstack.com/api/readme/virtual.png?framework=lit"
+      alt="TanStack Lit Virtual"
+      width="900"
+    />
+  </picture>
+</div>
 # @tanstack/lit-virtual
 
 Efficiently virtualize only the visible DOM nodes within massive scrollable elements using Lit, while maintaining complete control over markup and styles.

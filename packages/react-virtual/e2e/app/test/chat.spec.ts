@@ -158,3 +158,37 @@ test('chat mode keeps streaming bottom message pinned as it grows', async ({
 
   await expect(page.locator('[data-testid="message-m-29"]')).toBeVisible()
 })
+
+test('chat mode keeps streaming bottom message pinned as it grows with paddingEnd', async ({
+  page,
+}) => {
+  await page.goto('/chat/?paddingEnd=80')
+  await waitForEnd(page)
+
+  await page.click('#grow-last')
+  await waitForEnd(page)
+
+  await expect(page.locator('[data-testid="message-m-29"]')).toBeVisible()
+})
+
+// #1266 — adapted from PR #1265 by @tigerBeA. Direct DOM updates, no flushSync,
+// and a row ABOVE the last one grows: the compensation write is clamped against
+// the old scroll range, and with an unchanged range nothing re-renders afterwards,
+// so only the post-notify retry in core can recover the lost distance.
+test('direct DOM chat stays pinned when a previous message grows without a re-render', async ({
+  page,
+}) => {
+  await page.goto('/chat-resize/')
+  await waitForEnd(page)
+  // Let the initial scrollToEnd's isScrolling debounce settle first. Its reset
+  // triggers a re-render that would run _willUpdate and mask a missing retry.
+  await page.waitForTimeout(300)
+  const before = await getScrollState(page)
+
+  await page.click('#grow-previous')
+  await expect
+    .poll(async () => (await getScrollState(page)).scrollHeight)
+    .toBe(before.scrollHeight + 24)
+  await waitForEnd(page)
+  expect((await getScrollState(page)).scrollTop).toBe(before.scrollTop + 24)
+})

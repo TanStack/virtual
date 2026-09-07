@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": { "@tanstack/virtual-core": ["../virtual-core/src/index.ts"] },
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.marko",
+    "tests/**/*.ts",
+    "tests/**/*.marko",
+    "../virtual-core/src/**/*.ts"
+  ]
+}

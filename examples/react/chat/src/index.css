@@ -70,6 +70,7 @@ button:hover {
 .Messages {
   min-height: 0;
   overflow: auto;
+  overflow-anchor: none;
   width: 100%;
 }
 

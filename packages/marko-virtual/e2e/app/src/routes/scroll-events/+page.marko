@@ -1,0 +1,31 @@
+// GATE (smoke-level, honestly labeled): useScrollendEvent + isScrollingResetDelay.
+// Neither surfaces state the tag returns (isScrolling is core-internal), so the
+// observable here is the ABSENCE of regression: with both options set, scrolling still
+// re-windows correctly and produces zero console errors. Forwarding is Tier-1-proven;
+// the isScrolling timing itself is explicitly NOT asserted (soft territory).
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: scroll-event options</title></head>
+  <body>
+    <div/scrollEl data-testid="scroller" style="height: 400px; overflow-y: auto">
+      <virtualizer/v
+        count=10000
+        estimateSize=() => 35
+        overscan=5
+        getScrollElement=() => scrollEl()
+        useScrollendEvent=true
+        isScrollingResetDelay=50
+      />
+      <div style=`height: ${v.totalSize}px; position: relative`>
+        <for|item| of=v.virtualItems>
+          <div
+            data-index=item.index
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+          >
+            Row ${item.index}
+          </div>
+        </for>
+      </div>
+    </div>
+  </body>
+</html>

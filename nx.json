@@ -53,6 +53,15 @@
       "dependsOn": ["^build"],
       "inputs": ["default", "^production"]
     },
+    "test:e2e": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^production"],
+      "outputs": [
+        "{projectRoot}/playwright-report",
+        "{projectRoot}/test-results"
+      ]
+    },
     "build": {
       "cache": true,
       "dependsOn": ["^build"],

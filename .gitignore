@@ -46,3 +46,7 @@ vite.config.ts.timestamp-*
 test-results/
 playwright-report/
 *.log
+**/*.tsbuildinfo
+
+# Marko Run generated route types
+.marko-run/

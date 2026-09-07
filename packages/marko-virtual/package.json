@@ -1,0 +1,73 @@
+{
+  "name": "@tanstack/marko-virtual",
+  "version": "3.15.2",
+  "description": "Headless UI for virtualizing scrollable elements in Marko 6",
+  "author": "Tanner Linsley",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TanStack/virtual.git",
+    "directory": "packages/marko-virtual"
+  },
+  "homepage": "https://tanstack.com/virtual",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "keywords": [
+    "marko",
+    "virtual",
+    "virtual-core",
+    "virtualizer",
+    "datagrid"
+  ],
+  "type": "module",
+  "types": "dist/esm/index.d.ts",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./package.json": "./package.json",
+    "./marko.json": "./marko.json",
+    "./dist/tags/*": "./dist/tags/*"
+  },
+  "sideEffects": [
+    "**/*.marko"
+  ],
+  "files": [
+    "dist",
+    "marko.json",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "premove ./dist ./coverage",
+    "test:eslint": "eslint ./src",
+    "test:types": "mtc -p tsconfig.typecheck.json",
+    "test:lib": "vitest",
+    "test:lib:dev": "pnpm run test:lib --watch",
+    "test:build": "publint --strict",
+    "build": "vite build && marko-type-check -p tsconfig.tags.json && premove ./dist/tsconfig.tags.tsbuildinfo"
+  },
+  "dependencies": {
+    "@tanstack/virtual-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@marko/language-tools": "^2.6.2",
+    "@marko/type-check": "3.1.1",
+    "@marko/vite": "^6.1.0",
+    "@testing-library/dom": "^10.0.0",
+    "marko": "^6.2.2"
+  },
+  "peerDependencies": {
+    "marko": "^6.0.0"
+  }
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Scroll Padding — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
+      .buttons { display: flex; gap: 8px; margin-bottom: 16px; }
+      button { padding: 6px 12px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; }
+      button:hover { background: #f3f4f6; }
+      .list { height: 200px; width: 400px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 6px; }
+      table { width: 100%; border-collapse: collapse; position: relative; }
+      thead { position: sticky; top: 0; z-index: 1; background: #f3f4f6; }
+      th { text-align: left; padding: 8px 12px; font-size: 13px; border-bottom: 1px solid #d1d5db; }
+      td { padding: 8px 12px; font-size: 13px; }
+      .row-even { background: #fff; }
+      .row-odd { background: #fafafa; }
+    </style>
+  </head>
+  <body>
+    <h1>Scroll Padding</h1>
+    <p>
+      The table header is sticky inside the scroller and its measured height feeds both
+      paddingStart (rows start below it) and scrollPaddingStart (upward scrollToIndex
+      calls land the target row just below the header instead of underneath it).
+      scrollToIndex uses align "auto": scrolling DOWN to 40 brings the row in at the
+      bottom edge; scrolling back UP to 20 aligns it to the start — where, without
+      scrollPaddingStart, it would sit hidden under the sticky header.
+    </p>
+
+    // The sticky header's real height, measured after mount (and re-measured on resize).
+    // Feeding it reactively into paddingStart/scrollPaddingStart exercises the tag's
+    // onUpdate -> setOptions path when the value settles from 0 to the measured height.
+    <let/theadHeight = 0/>
+
+    <virtualizer/v
+      count=10000
+      estimateSize=() => 35
+      getScrollElement=(): Element | null => scrollEl() ?? null
+      overscan=5
+      paddingStart=theadHeight
+      scrollPaddingStart=theadHeight
+    />
+
+    <div class="buttons">
+      <button data-testid="scroll-40" onClick() { v.scrollToIndex(40) }>
+        Scroll to index 40
+      </button>
+      <button data-testid="scroll-20" onClick() { v.scrollToIndex(20) }>
+        Then scroll to index 20
+      </button>
+    </div>
+
+    <div/scrollEl class="list">
+      <table style=`height: ${v.totalSize}px`>
+        <thead/theadEl>
+          <tr>
+            <th>Index</th>
+            <th>Key</th>
+          </tr>
+        </thead>
+        <tbody>
+          <for|item| of=v.virtualItems>
+            <tr
+              data-index=item.index
+              class=(item.index % 2 ? 'row-odd' : 'row-even')
+              style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start}px)`
+            >
+              <td>#${item.index}</td>
+              <td>${item.key}</td>
+            </tr>
+          </for>
+        </tbody>
+      </table>
+    </div>
+
+    <const/lifecycleState = ({ cleanup: null as (() => void) | null })/>
+    <lifecycle
+      onMount() {
+        const node = theadEl()
+        if (!node) return
+        const observer = new ResizeObserver(() => {
+          theadHeight = node.getBoundingClientRect().height
+        })
+        observer.observe(node)
+        theadHeight = node.getBoundingClientRect().height
+        lifecycleState.cleanup = () => observer.disconnect()
+      }
+      onDestroy() {
+        lifecycleState.cleanup?.()
+      }
+    />
+  </body>
+</html>

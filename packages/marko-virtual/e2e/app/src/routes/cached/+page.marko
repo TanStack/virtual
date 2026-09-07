@@ -1,0 +1,64 @@
+// GATE: useCachedMeasurements — swaps the default measurer for one that returns the
+// cached (or estimated) size instead of reading the DOM. Two identical lists whose rows
+// really render 90px tall (estimate 50): the frozen list must KEEP item.size 50; the
+// control list must learn 90.
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: useCachedMeasurements</title></head>
+  <body>
+    <div style="display: flex; gap: 16px">
+      <div/frozenScroll data-testid="frozen-scroller" style="height: 400px; width: 300px; overflow-y: auto">
+        <virtualizer/fv
+          count=1000
+          estimateSize=() => 50
+          overscan=5
+          getScrollElement=() => frozenScroll()
+          useCachedMeasurements=true
+          indexAttribute="data-frozen-index"
+        />
+        <div style=`height: ${fv.totalSize}px; position: relative`>
+          <for|item| of=fv.virtualItems by=(item) => String(item.key)>
+            <div/frozenItemEl
+              data-frozen-index=item.index
+              data-size=item.size
+              style=`position: absolute; top: 0; left: 0; width: 100%; height: 90px; transform: translateY(${item.start}px)`
+            >
+              <script() {
+                const _key = item.key
+                const node = frozenItemEl()
+                if (node && fv.measureElement) fv.measureElement(node)
+              }/>
+              Frozen ${item.index}
+            </div>
+          </for>
+        </div>
+      </div>
+
+      <div/controlScroll data-testid="control-scroller" style="height: 400px; width: 300px; overflow-y: auto">
+        <virtualizer/cv
+          count=1000
+          estimateSize=() => 50
+          overscan=5
+          getScrollElement=() => controlScroll()
+          indexAttribute="data-control-index"
+        />
+        <div style=`height: ${cv.totalSize}px; position: relative`>
+          <for|item| of=cv.virtualItems by=(item) => String(item.key)>
+            <div/controlItemEl
+              data-control-index=item.index
+              data-size=item.size
+              style=`position: absolute; top: 0; left: 0; width: 100%; height: 90px; transform: translateY(${item.start}px)`
+            >
+              <script() {
+                const _key = item.key
+                const node = controlItemEl()
+                if (node && cv.measureElement) cv.measureElement(node)
+              }/>
+              Control ${item.index}
+            </div>
+          </for>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

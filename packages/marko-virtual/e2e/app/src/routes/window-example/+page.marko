@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Window Virtualisation — @tanstack/marko-virtual</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; padding: 24px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      p { color: #555; margin-bottom: 16px; max-width: 70ch; }
+      code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+      .item { display: flex; align-items: center; padding: 0 12px; font-size: 13px; border-bottom: 1px solid #f3f4f6; box-sizing: border-box; }
+      .item-even { background: #f9fafb; }
+      .item-odd  { background: #ffffff; }
+    </style>
+  </head>
+  <body>
+    <h1>Window Virtualisation</h1>
+    <p>
+      Uses &lt;window-virtualizer&gt; — the entire page scrolls. The list does not start at the
+      top of the page (this heading sits above it), so its offset from the document top is
+      measured on mount and passed as <code>scrollMargin</code>. The virtualizer then computes
+      visibility relative to the list itself; <code>item.start</code> values include the margin,
+      so each row subtracts it when positioning inside the wrapper. Scroll down to see rows.
+    </p>
+
+    // The list's distance from the top of the document. 0 during SSR and first paint;
+    // measured from the real layout on mount. Passing it as `scrollMargin` shifts the
+    // virtualizer's position math so the window of rendered rows tracks the LIST's
+    // visibility, not the page top's.
+    <let/listOffset=0/>
+    <script>
+      const el = listEl()
+      if (el) listOffset = el.offsetTop
+    </script>
+
+    <window-virtualizer/v
+      count=10000
+      estimateSize=() => 35
+      overscan=5
+      scrollMargin=listOffset
+    />
+    // totalSize is already margin-free (core subtracts scrollMargin), so it is the
+    // wrapper's height as-is; only item.start values carry the margin.
+    <div/listEl style=`height: ${v.totalSize}px; width: 100%; position: relative`>
+      <for|item| of=v.virtualItems>
+        <div
+          class=item.index % 2 === 0 ? "item item-even" : "item item-odd"
+          style=`position: absolute; top: 0; left: 0; width: 100%; height: ${item.size}px; transform: translateY(${item.start - listOffset}px)`
+        >
+          Row ${item.index}
+        </div>
+      </for>
+    </div>
+  </body>
+</html>

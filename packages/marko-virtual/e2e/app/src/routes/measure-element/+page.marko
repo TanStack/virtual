@@ -1,0 +1,34 @@
+// GATE: custom measureElement — a measurer that reports offsetHeight + 10.
+// Rows render at a real 30px; the virtualizer must record item.size 40 for
+// measured rows (estimate is 50, so 40 is unambiguously the custom measurer).
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/><title>gate: custom measureElement</title></head>
+  <body>
+    <div/scrollEl data-testid="scroller" style="height: 400px; overflow-y: auto">
+      <virtualizer/v
+        count=1000
+        estimateSize=() => 50
+        overscan=5
+        getScrollElement=() => scrollEl()
+        measureElement=(el, _entry, _instance) => ((el as HTMLElement).offsetHeight + 10)
+      />
+      <div style=`height: ${v.totalSize}px; position: relative`>
+        <for|item| of=v.virtualItems by=(item) => String(item.key)>
+          <div/itemEl
+            data-index=item.index
+            data-size=item.size
+            style=`position: absolute; top: 0; left: 0; width: 100%; height: 30px; transform: translateY(${item.start}px)`
+          >
+            <script() {
+              const _key = item.key
+              const node = itemEl()
+              if (node && v.measureElement) v.measureElement(node)
+            }/>
+            Row ${item.index}
+          </div>
+        </for>
+      </div>
+    </div>
+  </body>
+</html>

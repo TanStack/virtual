@@ -89,6 +89,8 @@ const virtualizer = useVirtualizer({
 
 > ⚠️ This flag is intended to be set once at mount. Toggling it (or `directDomUpdatesMode`) at runtime can leave stale inline styles on items and the container.
 
+> **Note:** If you omit `containerRef`, the virtualizer makes no direct DOM writes — it writes neither item positions nor the container size. You're then responsible for positioning items and sizing the container yourself (e.g. in `onChange`), while still benefiting from the skipped re-renders.
+
 #### Example
 
 ```tsx
