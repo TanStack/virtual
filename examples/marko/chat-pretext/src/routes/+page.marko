@@ -26,6 +26,8 @@ static function makeMessage(index: number): Message {
 
 static const HISTORY_LIMIT = -90
 static const AT_END_PX = 80
+static const PIN_RETRY_MAX_FRAMES = 60
+static const PIN_SETTLED_FRAME_COUNT = 2
 
 // ---- Height model: mirrors the CSS below exactly. Every constant corresponds to a
 // declared style; if you change one, change the other. A NAMED font (Arial) with
@@ -139,8 +141,12 @@ static function messageHeight(message: Message, viewportWidth: number) {
       // above the viewport, and if core's offset read is stale at that moment its
       // at-end compensation is skipped — so the view strands ~12 rows short with no
       // scroll event to recover it. The reactive <script> below re-issues the jump
-      // on every virtualizer update until the end holds, then disarms.
+      // on virtualizer updates and bounded retry frames until the end holds, then
+      // disarms.
       pinPending: false,
+      pinRetryFrame: null as number | null,
+      pinRetryAttempts: 0,
+      pinSettledFrames: 0,
       streamAbort: null as AbortController | null,
       width: DEFAULT_VIEWPORT_WIDTH,
     })/>
@@ -192,6 +198,37 @@ static function messageHeight(message: Message, viewportWidth: number) {
       if (statusEl) {
         atEnd = statusEl.scrollHeight - statusEl.scrollTop - statusEl.clientHeight <= AT_END_PX
       }
+      const requestPinRetry = () => {
+        if (state.pinRetryFrame !== null) return
+        state.pinRetryFrame = requestAnimationFrame(() => {
+          state.pinRetryFrame = null
+          if (!state.pinPending) return
+          v.scrollToEnd()
+          const el = scrollEl()
+          const reachedEnd =
+            el !== null && el.scrollHeight - el.scrollTop - el.clientHeight <= AT_END_PX
+          atEnd = reachedEnd
+          if (reachedEnd && !loadingHistory) {
+            state.pinSettledFrames += 1
+          } else {
+            state.pinSettledFrames = 0
+          }
+          if (state.pinSettledFrames >= PIN_SETTLED_FRAME_COUNT) {
+            state.pinPending = false
+            state.pinRetryAttempts = 0
+            state.pinSettledFrames = 0
+            return
+          }
+          state.pinRetryAttempts += 1
+          if (state.pinRetryAttempts >= PIN_RETRY_MAX_FRAMES) {
+            state.pinPending = false
+            state.pinRetryAttempts = 0
+            state.pinSettledFrames = 0
+            return
+          }
+          requestPinRetry()
+        })
+      }
       // Converge an in-flight "Latest": re-issue the jump while content growth keeps
       // moving the end away (see pinPending above). Disarms once the end holds AND no
       // history load is in flight — a prepend armed before the click can land after
@@ -199,9 +236,10 @@ static function messageHeight(message: Message, viewportWidth: number) {
       // with no corrective jump.
       if (state.pinPending) {
         if (atEnd && !loadingHistory) {
-          state.pinPending = false
+          requestPinRetry()
         } else if (!atEnd) {
           v.scrollToEnd()
+          requestPinRetry()
         }
       }
     }/>
@@ -261,6 +299,8 @@ static function messageHeight(message: Message, viewportWidth: number) {
         }>Stream reply</button>
         <button data-testid="latest" onClick() {
           state.pinPending = true
+          state.pinRetryAttempts = 0
+          state.pinSettledFrames = 0
           v.scrollToEnd()
         }>Latest</button>
       </div>
@@ -330,6 +370,10 @@ static function messageHeight(message: Message, viewportWidth: number) {
         lifecycleState.cleanup = () => {
           cancelled = true
           observer.disconnect()
+          if (state.pinRetryFrame !== null) {
+            cancelAnimationFrame(state.pinRetryFrame)
+            state.pinRetryFrame = null
+          }
         }
       }
       onDestroy() {
