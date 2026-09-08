@@ -3098,6 +3098,130 @@ test('followOnAppend accepts smooth behavior', () => {
   expect(scrollToFn.mock.calls[0]![1].behavior).toBe('smooth')
 })
 
+test.each([
+  { removed: 1, appended: 1, behavior: true as const },
+  { removed: 1, appended: 2, behavior: true as const },
+  { removed: 3, appended: 3, behavior: true as const },
+  { removed: 3, appended: 1, behavior: true as const },
+  { removed: 1, appended: 1, behavior: 'smooth' as const },
+])(
+  'followOnAppend follows a sliding window removing $removed and appending $appended with $behavior',
+  ({ removed, appended, behavior }) => {
+    const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+    const { setMessages, scrollToFn } = createChatVirtualizer({
+      messages,
+      offset: 200,
+      followOnAppend: behavior,
+    })
+    const nextMessages = [
+      ...messages.slice(removed),
+      ...Array.from({ length: appended }, (_, i) => ({ id: `m-${8 + i}` })),
+    ]
+
+    setMessages(nextMessages)
+
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(nextMessages.length * 50 - 200)
+    expect(scrollToFn.mock.calls[0]![1].behavior).toBe(
+      behavior === true ? 'auto' : behavior,
+    )
+  },
+)
+
+test.each([
+  { offset: 100, followOnAppend: true, threshold: 1, target: 50 },
+  { offset: 200, followOnAppend: false, threshold: 1, target: 150 },
+  { offset: 195, followOnAppend: true, threshold: 4, target: 145 },
+  { offset: 196, followOnAppend: true, threshold: 4, target: 200 },
+])(
+  'followOnAppend respects offset $offset, enabled $followOnAppend and threshold $threshold for a sliding window',
+  ({ offset, followOnAppend, threshold, target }) => {
+    const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+    const { setMessages, scrollToFn } = createChatVirtualizer({
+      messages,
+      offset,
+      followOnAppend,
+      threshold,
+    })
+
+    setMessages([...messages.slice(1), { id: 'm-8' }])
+
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(target)
+  },
+)
+
+test('followOnAppend stays pinned across sliding updates without scroll events', () => {
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 200,
+    followOnAppend: true,
+  })
+
+  // Equal-size append + trim leaves the DOM offset unchanged, so no scroll event fires.
+  setMessages([...messages.slice(1), { id: 'm-8' }])
+  expect(virtualizer.isAtEnd()).toBe(true)
+
+  setMessages([...messages.slice(2), { id: 'm-8' }, { id: 'm-9' }])
+  expect(virtualizer.isAtEnd()).toBe(true)
+  expect(scrollToFn.mock.calls.at(-1)![0]).toBe(200)
+})
+
+test('followOnAppend stays pinned with a stable key callback', () => {
+  const messages = Array.from({ length: 20 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 800,
+    followOnAppend: true,
+  })
+  virtualizer.getVirtualItems()
+
+  for (let step = 1; step <= 2; step++) {
+    scrollToFn.mockClear()
+    messages.splice(0, 1)
+    messages.push({ id: `m-${19 + step}` })
+    virtualizer.setOptions(virtualizer.options)
+    virtualizer._willUpdate()
+
+    expect(scrollToFn.mock.calls.at(-1)?.[0]).toBe(800)
+    // A no-op end scroll produces no browser scroll event.
+    expect(virtualizer.isAtEnd()).toBe(true)
+    virtualizer.getVirtualItems()
+  }
+})
+
+test.each([
+  { name: 'replacement', ids: [8, 9, 10, 11, 12, 13, 14, 15], target: null },
+  { name: 'reorder', ids: [1, 0, 2, 3, 4, 5, 7, 6], target: null },
+  { name: 'rotation', ids: [1, 2, 3, 4, 5, 6, 7, 0], target: 150 },
+  { name: 'rotation with append', ids: [2, 3, 4, 5, 6, 7, 0, 8], target: 100 },
+  { name: 'reordered overlap', ids: [1, 3, 2, 4, 5, 6, 7, 8], target: 150 },
+  { name: 'trim only', ids: [1, 2, 3, 4, 5, 6, 7], target: 150 },
+  {
+    name: 'prepend and trim tail',
+    ids: [-1, 0, 1, 2, 3, 4, 5, 6],
+    target: 250,
+  },
+])('followOnAppend does not follow $name', ({ ids, target }) => {
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 200,
+    followOnAppend: true,
+  })
+
+  setMessages(ids.map((id) => ({ id: `m-${id}` })))
+
+  if (target === null) {
+    expect(scrollToFn).not.toHaveBeenCalled()
+  } else {
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(target)
+    expect(scrollToFn.mock.calls[0]![1].behavior).toBeUndefined()
+  }
+})
+
 test('anchorTo:end keeps a pinned streaming message pinned as it grows', () => {
   const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
   const { virtualizer, scrollElement, scrollToFn } = createChatVirtualizer({

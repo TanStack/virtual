@@ -1,4 +1,7 @@
-import { createLazyMeasurementsView } from './lazy-measurements'
+import {
+  createLazyMeasurementsView,
+  getMeasurementKey,
+} from './lazy-measurements'
 import { approxEqual, debounce, memo, notUndefined } from './utils'
 
 // Browser-aware iOS detection. Programmatic `scrollTo`/`scrollTop` writes
@@ -398,6 +401,36 @@ type PendingScrollAnchor = [
   anchorDelta: number,
 ]
 
+function isAppendWithTrim(
+  prevCount: number,
+  nextCount: number,
+  getPreviousKey: (index: number) => Key,
+  getNextKey: (index: number) => Key,
+): boolean {
+  if (nextCount === 0) return false
+
+  const firstKey = getNextKey(0)
+  const removedKeys = new Set<Key>()
+  let removedCount = 0
+  while (removedCount < prevCount) {
+    const key = getPreviousKey(removedCount)
+    if (key === firstKey) break
+    removedKeys.add(key)
+    removedCount++
+  }
+
+  const retainedCount = prevCount - removedCount
+  if (retainedCount === 0 || retainedCount >= nextCount) return false
+
+  for (let i = 0; i < retainedCount; i++) {
+    if (getNextKey(i) !== getPreviousKey(removedCount + i)) return false
+  }
+  for (let i = retainedCount; i < nextCount; i++) {
+    if (removedKeys.has(getNextKey(i))) return false
+  }
+  return true
+}
+
 export class Virtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
@@ -594,15 +627,11 @@ export class Virtualizer<
       const prevCount = prevOptions.count
       const nextCount = merged.count
       const measurements = this.getMeasurements()
-      const prevFirstKey =
-        prevCount > 0
-          ? (measurements[0]?.key ?? prevOptions.getItemKey(0))
-          : null
-      const prevLastKey =
-        prevCount > 0
-          ? (measurements[prevCount - 1]?.key ??
-            prevOptions.getItemKey(prevCount - 1))
-          : null
+      const previousItems = this._singleLaneMeasurements?.items ?? measurements
+      const getPreviousKey = (index: number) =>
+        getMeasurementKey(previousItems[index]!)
+      const prevFirstKey = prevCount > 0 ? getPreviousKey(0) : null
+      const prevLastKey = prevCount > 0 ? getPreviousKey(prevCount - 1) : null
       const didCountChange = nextCount !== prevCount
       const didEdgeKeysChange =
         didCountChange ||
@@ -630,11 +659,21 @@ export class Virtualizer<
 
         if (
           behavior &&
-          nextCount > prevCount &&
+          nextCount > 0 &&
           this.isAtEnd(prevOptions.scrollEndThreshold) &&
           (prevCount === 0 || merged.getItemKey(nextCount - 1) !== prevLastKey)
         ) {
-          followOnAppend = behavior
+          if (
+            nextCount > prevCount ||
+            isAppendWithTrim(
+              prevCount,
+              nextCount,
+              getPreviousKey,
+              merged.getItemKey,
+            )
+          ) {
+            followOnAppend = behavior
+          }
         }
       }
     }
@@ -675,7 +714,8 @@ export class Virtualizer<
           // (rubber-band), and a negative tracked offset never self-heals
           // when the element cannot scroll (#1229).
           const newOffset = Math.max(0, anchorItem.start + anchorOffset)
-          if (newOffset !== this.scrollOffset) {
+          // A no-op end scroll emits no event to correct a reading-anchor offset.
+          if (!followOnAppend && newOffset !== this.scrollOffset) {
             anchorDelta = newOffset - this.scrollOffset
             this.scrollOffset = newOffset
             anchorResolved = true

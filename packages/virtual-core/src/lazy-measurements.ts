@@ -5,6 +5,12 @@
 
 import type { VirtualItem } from './index'
 
+export function getMeasurementKey(
+  item: VirtualItem | VirtualItem['key'],
+): VirtualItem['key'] {
+  return typeof item === 'object' ? item.key : item
+}
+
 export function createLazyMeasurementsView(
   cache: Array<VirtualItem | VirtualItem['key']>,
   flat: Float64Array,
