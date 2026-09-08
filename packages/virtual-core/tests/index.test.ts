@@ -1436,6 +1436,44 @@ test('lazy fast path: same item read twice returns identical reference (cache wo
   expect(a).toBe(b)
 })
 
+test.each([
+  { name: 'initial build', resizeIndex: null },
+  { name: 'partial rebuild', resizeIndex: 2 },
+])(
+  'lazy fast path: preserves unread item keys after $name',
+  ({ resizeIndex }) => {
+    const messages = ['a', 'b', 'c', 'd']
+    const v = new Virtualizer({
+      count: messages.length,
+      estimateSize: () => 50,
+      getItemKey: (index) => messages[index]!,
+      getScrollElement: () => null,
+      scrollToFn: vi.fn(),
+      observeElementRect: vi.fn(),
+      observeElementOffset: vi.fn(),
+    })
+    expect(v.getTotalSize()).toBe(200)
+
+    if (resizeIndex !== null) {
+      v.resizeItem(resizeIndex, 80)
+      expect(v.getTotalSize()).toBe(230)
+    }
+
+    // The old layout is still needed while setOptions compares the two lists.
+    messages.splice(0, 1)
+    messages.push('e')
+
+    expect(v.getVirtualItemForOffset(50)).toEqual({
+      index: 1,
+      key: 'b',
+      start: 50,
+      size: 50,
+      end: 100,
+      lane: 0,
+    })
+  },
+)
+
 test('lazy fast path: out-of-range access returns undefined', () => {
   const v = new Virtualizer({
     count: 5,
@@ -3000,6 +3038,34 @@ test('anchorTo:end does not yank a scrolled-up user when items append', () => {
   setMessages([...messages, { id: 'm-8' }])
 
   expect(scrollToFn).not.toHaveBeenCalled()
+})
+
+test('anchorTo:end preserves a reading anchor with a stable key callback', () => {
+  const messages = Array.from({ length: 20 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, emitScroll } = createChatVirtualizer({
+    messages,
+    offset: 400,
+    followOnAppend: false,
+  })
+  const readingKey = virtualizer.getVirtualItemForOffset(400)!.key
+  virtualizer.getVirtualItems()
+
+  for (let step = 1; step <= 2; step++) {
+    scrollToFn.mockClear()
+    messages.splice(0, 1)
+    messages.push({ id: `m-${19 + step}` })
+    // Keep the same callback; the old edge keys have not been read yet.
+    virtualizer.setOptions(virtualizer.options)
+    virtualizer._willUpdate()
+
+    const target = 400 - step * 50
+    expect(scrollToFn.mock.calls.at(-1)?.[0]).toBe(target)
+    emitScroll(target)
+    expect(virtualizer.getVirtualItemForOffset(target)?.key).toBe(readingKey)
+    for (const item of virtualizer.getVirtualItems()) {
+      expect(item.key).toBe(messages[item.index]!.id)
+    }
+  }
 })
 
 test('followOnAppend keeps an end-pinned user at the end when items append', () => {

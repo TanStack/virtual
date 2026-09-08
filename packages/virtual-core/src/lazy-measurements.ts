@@ -1,19 +1,16 @@
 // Lazy materialization for the lanes===1 fast path. Backed by a
 // Float64Array (stride 2: start, size, …); VirtualItems are constructed on
-// first indexed read and cached. Saves the per-item object allocation at
-// large list counts where most items are never visible.
+// first indexed read, replacing the stored key. Saves the per-item object
+// allocation at large list counts where most items are never visible.
 
 import type { VirtualItem } from './index'
 
-type Key = number | string | bigint
-
 export function createLazyMeasurementsView(
-  count: number,
+  cache: Array<VirtualItem | VirtualItem['key']>,
   flat: Float64Array,
-  getItemKey: (i: number) => Key,
 ): Array<VirtualItem> {
-  const cache: Array<VirtualItem | undefined> = new Array(count)
-  return new Proxy(cache as any, {
+  const count = cache.length
+  return new Proxy(cache, {
     get(target, prop, receiver) {
       if (typeof prop === 'string') {
         // Cheap digit-prefix sniff before number coerce.
@@ -21,12 +18,12 @@ export function createLazyMeasurementsView(
         if (c >= 48 && c <= 57) {
           const i = +prop
           if (Number.isInteger(i) && i >= 0 && i < count) {
-            let v = target[i]
-            if (!v) {
+            let v = target[i]!
+            if (typeof v !== 'object') {
               const s = flat[i * 2]!
               v = target[i] = {
                 index: i,
-                key: getItemKey(i),
+                key: v,
                 start: s,
                 size: flat[i * 2 + 1]!,
                 end: s + flat[i * 2 + 1]!,
