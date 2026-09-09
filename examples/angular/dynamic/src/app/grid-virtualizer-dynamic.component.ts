@@ -115,11 +115,9 @@ export class GridVirtualizerDynamic {
 
   virtualRows = viewChildren<ElementRef<HTMLDivElement>>('virtualRow')
 
-  #measureItems = effect(
-    () =>
-      this.virtualRows().forEach((el) => {
-        this.rowVirtualizer.measureElement(el.nativeElement)
-      }),
-    { allowSignalWrites: true },
+  #measureItems = effect(() =>
+    this.virtualRows().forEach((el) => {
+      this.rowVirtualizer.measureElement(el.nativeElement)
+    }),
   )
 }

@@ -56,12 +56,10 @@ export class ColumnVirtualizerDynamic {
 
   count = this.sentences.length
 
-  #measureItems = effect(
-    () =>
-      this.virtualItems().forEach((el) => {
-        this.virtualizer.measureElement(el.nativeElement)
-      }),
-    { allowSignalWrites: true },
+  #measureItems = effect(() =>
+    this.virtualItems().forEach((el) => {
+      this.virtualizer.measureElement(el.nativeElement)
+    }),
   )
 
   virtualizer = injectVirtualizer(() => ({
