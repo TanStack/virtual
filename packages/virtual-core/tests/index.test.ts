@@ -3933,3 +3933,150 @@ test('#1258: cleanup drops a pending clamped write', () => {
 
   expect(virtualizer['_clampedAdjustment']).toBeNull()
 })
+
+// ─── #1257: paddingEnd must not make scrollToIndex(last) overshoot the last item ─────────────
+// When paddingEnd > 0, getOffsetForIndex(last, 'end') was returning the raw
+// DOM max scroll offset (scrollHeight - clientHeight), which equals
+// (content + paddingEnd - clientHeight). This caused scrollToIndex(last) to
+// scroll past the rendered end of the last item. The fix uses
+// getMaxScrollOffset() - paddingEnd, which equals
+// (content - clientHeight) — the correct virtual max offset that keeps the
+// last item flush with the bottom of the viewport.
+
+test('#1257: scrollToIndex(last) with paddingEnd keeps the last item flush with the viewport bottom', () => {
+  // 5 items × 50px = 250px content, paddingEnd = 80, scrollMargin = 0
+  // viewport = 200px → total scrollHeight = 330px (250 + 80)
+  // Expected virtual max scroll offset:
+  //   getMaxScrollOffset() - paddingEnd = (330 - 200) - 80 = 50
+  // Without the fix (using raw scrollHeight - clientHeight):
+  //   330 - 200 = 130 → overshoots by 80px (exactly the paddingEnd)
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 200,
+    scrollHeight: 330, // 250 (content) + 80 (paddingEnd)
+    clientWidth: 200,
+    clientHeight: 200,
+    offsetWidth: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: globalThis },
+    scrollTo: vi.fn(),
+  } as unknown as HTMLDivElement
+
+  const scrollToFn = vi.fn()
+  const virtualizer = new Virtualizer({
+    count: 5,
+    estimateSize: () => 50,
+    paddingEnd: 80,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 200, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  // Scroll to last item with 'end' alignment
+  virtualizer.scrollToIndex(4, { align: 'end' })
+
+  // getMaxScrollOffset() = 330 - 200 = 130; minus paddingEnd(80) = 50
+  expect(scrollToFn).toHaveBeenCalledWith(50, expect.any(Object), expect.any(Object))
+})
+
+// ─── #1263: getMaxScrollOffset() preserves lane-max for multi-lane layouts ─────────────
+// The fix uses getMaxScrollOffset() directly (rather than getTotalSize()), which
+// preserves the lane-max behavior added in #1105 (#1001 fix). In multi-lane layouts
+// where the last item lives in a shorter lane, getMaxScrollOffset() still absorbs
+// DOM extras that aren't in our measurements.
+
+test('#1263: scrollToIndex(last) in a shorter lane uses getMaxScrollOffset() lane-max', () => {
+  // 2 lanes: lane 0 = [0..3] @100px (ends at 400), lane 1 = [4] @50px (ends at 50).
+  // getTotalSize() = 400 (lane-max), getMaxScrollOffset() = 400 - 200 = 200.
+  // The fix uses getMaxScrollOffset() - paddingEnd = 200 - 0 = 200.
+  // This preserves the #1001 behavior where lane-max absorbs DOM extras.
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 200,
+    scrollHeight: 200,
+    clientWidth: 200,
+    clientHeight: 200,
+    offsetWidth: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: globalThis },
+    scrollTo: vi.fn(),
+  } as unknown as HTMLDivElement
+
+  const scrollToFn = vi.fn()
+  const virtualizer = new Virtualizer({
+    count: 5,
+    estimateSize: (index) => (index === 4 ? 50 : 100),
+    lanes: 2,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 200, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  virtualizer.scrollToIndex(4, { align: 'end' })
+
+  // getMaxScrollOffset() = 200; minus paddingEnd(0) = 200
+  expect(scrollToFn).toHaveBeenCalledWith(200, expect.any(Object), expect.any(Object))
+})
+
+// ─── #1257: paddingEnd=0 is a no-op ─────────────
+test('#1257: scrollToIndex(last) with paddingEnd=0 uses getMaxScrollOffset() unchanged', () => {
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 200,
+    scrollHeight: 250, // 5 × 50px content, no paddingEnd
+    clientWidth: 200,
+    clientHeight: 200,
+    offsetWidth: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: globalThis },
+    scrollTo: vi.fn(),
+  } as unknown as HTMLDivElement
+
+  const scrollToFn = vi.fn()
+  const virtualizer = new Virtualizer({
+    count: 5,
+    estimateSize: () => 50,
+    paddingEnd: 0,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 200, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  virtualizer.scrollToIndex(4, { align: 'end' })
+
+  // getMaxScrollOffset() = 250 - 200 = 50; minus paddingEnd(0) = 50
+  expect(scrollToFn).toHaveBeenCalledWith(50, expect.any(Object), expect.any(Object))
+})
