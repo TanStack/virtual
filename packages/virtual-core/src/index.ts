@@ -1,4 +1,7 @@
-import { createLazyMeasurementsView } from './lazy-measurements'
+import {
+  createLazyMeasurementsView,
+  getMeasurementKey,
+} from './lazy-measurements'
 import { approxEqual, debounce, memo, notUndefined } from './utils'
 
 // Browser-aware iOS detection. Programmatic `scrollTo`/`scrollTop` writes
@@ -398,6 +401,36 @@ type PendingScrollAnchor = [
   anchorDelta: number,
 ]
 
+function isAppendWithTrim(
+  prevCount: number,
+  nextCount: number,
+  getPreviousKey: (index: number) => Key,
+  getNextKey: (index: number) => Key,
+): boolean {
+  if (nextCount === 0) return false
+
+  const firstKey = getNextKey(0)
+  const removedKeys = new Set<Key>()
+  let removedCount = 0
+  while (removedCount < prevCount) {
+    const key = getPreviousKey(removedCount)
+    if (key === firstKey) break
+    removedKeys.add(key)
+    removedCount++
+  }
+
+  const retainedCount = prevCount - removedCount
+  if (retainedCount === 0 || retainedCount >= nextCount) return false
+
+  for (let i = 0; i < retainedCount; i++) {
+    if (getNextKey(i) !== getPreviousKey(removedCount + i)) return false
+  }
+  for (let i = retainedCount; i < nextCount; i++) {
+    if (removedKeys.has(getNextKey(i))) return false
+  }
+  return true
+}
+
 export class Virtualizer<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
@@ -409,9 +442,12 @@ export class Virtualizer<
   isScrolling = false
   private scrollState: ScrollState | null = null
   measurementsCache: Array<VirtualItem> = []
-  // Flat backing store for the lanes===1 fast path: [start_0, size_0, start_1, size_1, ...].
-  // null until the first single-lane build; reused (and grown) across rebuilds.
-  private _flatMeasurements: Float64Array | null = null
+  // Keys belong to the layout build, even when VirtualItems are read later.
+  // The flat [start, size, ...] buffer is reused across builds.
+  private _singleLaneMeasurements: {
+    flat: Float64Array
+    items: Array<Key | VirtualItem>
+  } | null = null
   itemSizeCache = new Map<Key, number>()
   private itemSizeCacheVersion = 0
   private laneAssignments = new Map<number, number>() // index → lane cache
@@ -591,15 +627,11 @@ export class Virtualizer<
       const prevCount = prevOptions.count
       const nextCount = merged.count
       const measurements = this.getMeasurements()
-      const prevFirstKey =
-        prevCount > 0
-          ? (measurements[0]?.key ?? prevOptions.getItemKey(0))
-          : null
-      const prevLastKey =
-        prevCount > 0
-          ? (measurements[prevCount - 1]?.key ??
-            prevOptions.getItemKey(prevCount - 1))
-          : null
+      const previousItems = this._singleLaneMeasurements?.items ?? measurements
+      const getPreviousKey = (index: number) =>
+        getMeasurementKey(previousItems[index]!)
+      const prevFirstKey = prevCount > 0 ? getPreviousKey(0) : null
+      const prevLastKey = prevCount > 0 ? getPreviousKey(prevCount - 1) : null
       const didCountChange = nextCount !== prevCount
       const didEdgeKeysChange =
         didCountChange ||
@@ -627,11 +659,21 @@ export class Virtualizer<
 
         if (
           behavior &&
-          nextCount > prevCount &&
+          nextCount > 0 &&
           this.isAtEnd(prevOptions.scrollEndThreshold) &&
           (prevCount === 0 || merged.getItemKey(nextCount - 1) !== prevLastKey)
         ) {
-          followOnAppend = behavior
+          if (
+            nextCount > prevCount ||
+            isAppendWithTrim(
+              prevCount,
+              nextCount,
+              getPreviousKey,
+              merged.getItemKey,
+            )
+          ) {
+            followOnAppend = behavior
+          }
         }
       }
     }
@@ -672,7 +714,8 @@ export class Virtualizer<
           // (rubber-band), and a negative tracked offset never self-heals
           // when the element cannot scroll (#1229).
           const newOffset = Math.max(0, anchorItem.start + anchorOffset)
-          if (newOffset !== this.scrollOffset) {
+          // A no-op end scroll emits no event to correct a reading-anchor offset.
+          if (!followOnAppend && newOffset !== this.scrollOffset) {
             anchorDelta = newOffset - this.scrollOffset
             this.scrollOffset = newOffset
             anchorResolved = true
@@ -1272,6 +1315,7 @@ export class Virtualizer<
       const itemSizeCache = this.itemSizeCache
       if (!enabled) {
         this.measurementsCache = []
+        this._singleLaneMeasurements = null
         this.itemSizeCache.clear()
         this.laneAssignments.clear()
         return []
@@ -1291,6 +1335,7 @@ export class Virtualizer<
         this.lanesChangedFlag = false // Reset immediately
         this.lanesSettling = true // Start settling period
         this.measurementsCache = []
+        this._singleLaneMeasurements = null
         this.itemSizeCache.clear()
         this.laneAssignments.clear() // Clear lane cache for new lane count
         // Force min = 0 on the rebuild
@@ -1320,20 +1365,21 @@ export class Virtualizer<
       // per-item VirtualItem object allocation. We write start/size pairs
       // into a Float64Array and return a Proxy that builds VirtualItem
       // objects on demand (only the indices a consumer actually reads).
-      //
-      // At n=100k this drops cold-mount cost from ~2.5ms (eager object
-      // allocation) to roughly the cost of a single typed-array fill.
       if (lanes === 1) {
         // Reuse flat backing if large enough; else grow (preserving data
         // before `min` to mirror the slice-and-rebuild contract).
         const need = count * 2
-        let flat = this._flatMeasurements
+        let flat = this._singleLaneMeasurements?.flat
         if (!flat || flat.length < need) {
           const next = new Float64Array(need)
           if (flat && min > 0) next.set(flat.subarray(0, min * 2))
           flat = next
-          this._flatMeasurements = flat
         }
+
+        const items: Array<Key | VirtualItem> =
+          min === 0
+            ? new Array(count)
+            : this._singleLaneMeasurements!.items.slice()
 
         let runningStart: number
         if (min === 0) {
@@ -1346,6 +1392,7 @@ export class Virtualizer<
 
         for (let i = min; i < count; i++) {
           const key = getItemKey(i)
+          items[i] = key
           const measuredSize = itemSizeCache.get(key)
           const size =
             typeof measuredSize === 'number'
@@ -1356,7 +1403,8 @@ export class Virtualizer<
           runningStart += size + gap
         }
 
-        const view = createLazyMeasurementsView(count, flat, getItemKey)
+        this._singleLaneMeasurements = { flat, items }
+        const view = createLazyMeasurementsView(items, flat)
         this.measurementsCache = view
         return view
       }
@@ -1490,8 +1538,8 @@ export class Virtualizer<
         lanes,
         // Pass the typed array so binary search + forward-walk can read
         // start/end directly from Float64Array, skipping the Proxy traps.
-        lanes === 1 && this._flatMeasurements != null
-          ? this._flatMeasurements
+        lanes === 1 && this._singleLaneMeasurements !== null
+          ? this._singleLaneMeasurements.flat
           : null,
       )
       return this.range
@@ -1627,8 +1675,8 @@ export class Virtualizer<
     let cachedSize: number
     let itemStart: number
     let key: Key
-    const flat = this._flatMeasurements
-    if (this.options.lanes === 1 && flat !== null) {
+    const flat = this._singleLaneMeasurements?.flat
+    if (this.options.lanes === 1 && flat != null) {
       key = this.options.getItemKey(index)
       itemStart = flat[index * 2]!
       cachedSize = flat[index * 2 + 1]!
@@ -1749,7 +1797,7 @@ export class Virtualizer<
     // Same fast-path as calculateRange: read start values directly from the
     // typed array during binary search to skip the Proxy.get materialization
     // per probe.
-    const flat = this._flatMeasurements
+    const flat = this._singleLaneMeasurements?.flat
     const useFlat = this.options.lanes === 1 && flat != null
     const idx = findNearestBinarySearch(
       0,
@@ -1987,7 +2035,7 @@ export class Virtualizer<
       // when available; avoids a Proxy.get + VirtualItem materialization
       // just to call getTotalSize (which React renders trigger every commit).
       const lastIdx = measurements.length - 1
-      const flat = this._flatMeasurements
+      const flat = this._singleLaneMeasurements?.flat
       if (flat != null) {
         end = flat[lastIdx * 2]! + flat[lastIdx * 2 + 1]!
       } else {
