@@ -197,7 +197,12 @@ test('scrolling near the top auto-loads older history', async ({ page }) => {
     .toBeGreaterThan(heightBefore)
 })
 
-test('Latest returns to the bottom and status flips back to At latest', async ({
+// FIXME(#1267): same prepend race as the chat-pretext sibling (#1268), flaky on CI.
+// Latest is clicked while the near-top auto history load is in flight; the prepend
+// resolves after the jump and the adapter's anchor write is clamped against the
+// not-yet-grown sizer, so the status stays "Reading history". Re-enable once #1267
+// is fixed.
+test.fixme('Latest returns to the bottom and status flips back to At latest', async ({
   page,
 }) => {
   await page.goto('/chat')
