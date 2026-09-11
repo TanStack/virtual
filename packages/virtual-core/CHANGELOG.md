@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.17.11
+
+### Patch Changes
+
+- [#1248](https://github.com/TanStack/virtual/pull/1248) [`2c0a0ea`](https://github.com/TanStack/virtual/commit/2c0a0ea101c360ea15832c060008aa163cae2f7c) - Keep a travelling smooth `scrollToIndex` alive when content is prepended. With `anchorTo: 'end'`, the prepend anchor sync wrote `scrollTop` instantly, which cancelled the browser's smooth animation and left the scroll stranded partway; Chromium drops a smooth request re-issued right after such a cancel, so it could not be resumed. The sync is now skipped while a smooth programmatic scroll is still in flight, and the animation continues to its recomputed target. A smooth scroll that has already landed still receives the anchor sync.
+
 ## 3.17.10
 
 ### Patch Changes
