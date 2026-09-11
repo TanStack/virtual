@@ -22,24 +22,15 @@ async function waitForEnd(page: Page) {
     .toBeLessThan(1.01)
 }
 
-// KNOWN BUG, not a guard on current behaviour — test.fail() asserts this still
-// reproduces and turns red the moment it is fixed, at which point drop the
-// annotation and keep the assertions.
-//
-// A prepend that lands while a scrollToIndex is still travelling strands it. The
-// anchor sync in _willUpdate writes scrollTop, which cancels the browser's
-// smooth animation, and reconcileScroll never resumes the journey because its
-// `else` branch only re-asserts when the *target* changed. With uniform rows
-// index 0 sits at offset 0 both before and after the prepend, so the target is
-// unchanged and the loop just idles. "Jump to the oldest message" therefore dies
-// halfway whenever history streams in mid-animation.
-//
-// Reproduces identically on the commit before the stale-target fix (stranded at
-// ~3900 vs ~3500), so it is pre-existing and independent of it. Resuming an
-// unfinished scroll needs its own change: reconcileScroll idling is exactly what
-// stops it fighting a reader who deliberately scrolls away mid-scroll, so making
-// it re-assert is a behavioural decision rather than a local patch.
-test.fail()
+// Regression guard: a prepend that lands while a smooth scrollToIndex is still
+// travelling must not strand it. The end-anchor prepend sync in _willUpdate
+// used to write scrollTop instantly, which cancels the browser's smooth
+// animation; Chromium then drops a smooth request re-issued in the very next
+// frame, so reconcileScroll could not recover the journey and "Jump to the
+// oldest message" died halfway whenever history streamed in mid-animation.
+// Core now skips that sync while a smooth programmatic scroll is in flight
+// (its index-based target recomputes against the new layout), so the
+// animation simply continues to the top.
 test('a prepend mid-flight does not abandon a smooth scrollToIndex', async ({
   page,
 }) => {

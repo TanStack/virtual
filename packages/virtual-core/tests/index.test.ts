@@ -4123,3 +4123,112 @@ test('#1258: cleanup drops a pending clamped write', () => {
 
   expect(virtualizer['_clampedAdjustment']).toBeNull()
 })
+
+// ─── a prepend must not strand a travelling smooth scroll ────────────────────
+// The end-anchor prepend sync in _willUpdate writes scrollTop instantly. That
+// cancels a smooth scrollToIndex the browser is still animating, and Chromium
+// drops a smooth request re-issued in the frame right after that cancel, so
+// re-driving from reconcileScroll cannot recover it. While a smooth
+// programmatic scroll is travelling, the sync is skipped: its target is
+// index-based and recomputes against the new layout, so the animation simply
+// continues. Browser coverage: react-virtual e2e/app/test/smooth-prepend.spec.ts.
+
+function createSmoothPrependVirtualizer() {
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(() => 1),
+    cancelAnimationFrame: vi.fn(),
+    performance: { now: () => Date.now() },
+    ResizeObserver: vi.fn(function () {
+      return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+    }),
+  }
+  const el = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 400,
+    scrollHeight: 10000, // 200 x 50
+    clientWidth: 400,
+    clientHeight: 300,
+    offsetWidth: 400,
+    offsetHeight: 300,
+    ownerDocument: { defaultView: mockWindow },
+    scrollTo: vi.fn(),
+  } as unknown as HTMLDivElement
+
+  const scrollToFn = vi.fn()
+  let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
+    null
+  const messages = Array.from({ length: 200 }, (_, i) => `m-${i}`)
+  const v = new Virtualizer<HTMLDivElement, any>({
+    count: messages.length,
+    estimateSize: () => 50,
+    anchorTo: 'end',
+    getItemKey: (i) => messages[i]!,
+    getScrollElement: () => el,
+    scrollToFn,
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 300 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      scrollCallback = cb
+      cb(9700, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v.getVirtualItems()
+  scrollToFn.mockClear() // drop the mount sync write
+
+  return {
+    v,
+    scrollToFn,
+    scroll: (offset: number, isScrolling = true) => {
+      scrollCallback!(offset, isScrolling)
+      v.getVirtualItems()
+    },
+    // 5 messages x 50px land above the reader.
+    prepend: () => {
+      messages.unshift('m--5', 'm--4', 'm--3', 'm--2', 'm--1')
+      ;(el as any).scrollHeight = 10250
+      v.setOptions({
+        ...v.options,
+        count: messages.length,
+        getItemKey: (i: number) => messages[i]!,
+      })
+      v._willUpdate()
+    },
+  }
+}
+
+test('a prepend mid-flight leaves a travelling smooth scrollToIndex alone', () => {
+  const { v, scrollToFn, scroll, prepend } = createSmoothPrependVirtualizer()
+
+  v.scrollToIndex(0, { behavior: 'smooth' })
+  expect(scrollToFn.mock.calls[0]![0]).toBe(0)
+  scroll(3500) // the browser is mid-animation
+  scrollToFn.mockClear()
+
+  prepend()
+
+  // No instant scrollTop write that would cancel the animation...
+  expect(scrollToFn).not.toHaveBeenCalled()
+  // ...and the journey is still live.
+  expect(v['scrollState']).toMatchObject({ index: 0, behavior: 'smooth' })
+})
+
+test('a prepend right after a smooth scroll landed still syncs the anchor', () => {
+  const { v, scrollToFn, scroll, prepend } = createSmoothPrependVirtualizer()
+
+  v.scrollToIndex(100, { behavior: 'smooth' })
+  const target = scrollToFn.mock.calls[0]![0] as number
+  expect(target).toBe(5000)
+  // Arrived; reconcileScroll has not retired scrollState yet.
+  scroll(target, false)
+  scrollToFn.mockClear()
+
+  prepend()
+
+  // The reader's position is preserved: the DOM is synced to the shifted offset.
+  expect(scrollToFn.mock.calls.at(-1)?.[0]).toBe(target + 250)
+})
