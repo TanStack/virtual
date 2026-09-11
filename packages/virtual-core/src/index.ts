@@ -1045,6 +1045,21 @@ export class Virtualizer<
           if (anchorDelta !== 0) {
             this._iosDeferredAdjustment += anchorDelta
           }
+        } else if (
+          this.scrollState?.behavior === 'smooth' &&
+          !approxEqual(
+            this.getScrollOffset() - anchorDelta,
+            this.scrollState.lastTargetOffset,
+          )
+        ) {
+          // A smooth programmatic scroll is still travelling. Writing scrollTop
+          // here would cancel the browser's animation, and Chromium drops a
+          // smooth request re-issued in the frame right after that cancel, so
+          // the journey would be stranded. The target is index-based and
+          // recomputes against the new layout in reconcileScroll, so let the
+          // animation run; the next scroll event re-syncs the tracked offset.
+          // A smooth scroll that has already landed (offset at its target,
+          // reconcile not yet retired it) still gets the anchor sync.
         } else {
           this._scrollToOffset(this.getScrollOffset(), {
             adjustments: undefined,
