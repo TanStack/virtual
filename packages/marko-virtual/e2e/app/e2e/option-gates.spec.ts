@@ -101,17 +101,6 @@ test('enabled=false disables the virtualizer (empty window); enabled=true re-win
   const deep = await renderedIndexes(page)
   expect(deep[0]!).toBeGreaterThan(50)
 
-  // Let the end-of-scroll debounce fire while STILL ENABLED before toggling.
-  // KNOWN UPSTREAM CORE BUG (found by this gate): core's debounce (utils.ts) has no
-  // cancel, and observeOffset's unsubscribe only removes the event listeners — a
-  // pending end-of-scroll timer survives cleanup() and later fires
-  // cb(staleOffset, false) into the live instance. Disable + re-enable within
-  // isScrollingResetDelay (150ms) and the stale offset overwrites the correct
-  // re-enable recompute, leaving a stale window until the next real scroll event.
-  // This wait sidesteps the zombie timer so the gate asserts the enabled contract
-  // itself; remove it if/when the core fix (cancellable debounce) lands.
-  await page.waitForTimeout(250)
-
   // Disable: the deep window disappears (measurements cleared, empty/collapsed window).
   await page.locator('[data-testid="toggle"]').click()
   await page.waitForFunction(

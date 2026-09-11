@@ -1,3 +1,20 @@
+<div align="center">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="https://tanstack.com/api/readme/virtual.png?framework=marko&theme=dark"
+    />
+    <source
+      media="(prefers-color-scheme: light)"
+      srcset="https://tanstack.com/api/readme/virtual.png?framework=marko"
+    />
+    <img
+      src="https://tanstack.com/api/readme/virtual.png?framework=marko"
+      alt="TanStack Marko Virtual"
+      width="900"
+    />
+  </picture>
+</div>
 # @tanstack/marko-virtual
 
 Headless UI for virtualizing scrollable elements in [Marko 6](https://markojs.com), built on top of [`@tanstack/virtual-core`](https://tanstack.com/virtual).

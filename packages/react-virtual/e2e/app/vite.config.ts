@@ -11,6 +11,7 @@ export default defineConfig({
         scroll: path.resolve(__dirname, 'scroll/index.html'),
         'scroll-anchor': path.resolve(__dirname, 'scroll-anchor/index.html'),
         chat: path.resolve(__dirname, 'chat/index.html'),
+        'chat-resize': path.resolve(__dirname, 'chat-resize/index.html'),
         'measure-element': path.resolve(
           __dirname,
           'measure-element/index.html',

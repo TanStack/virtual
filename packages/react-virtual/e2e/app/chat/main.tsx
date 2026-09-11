@@ -25,6 +25,10 @@ function App() {
   const firstMessageIndexRef = React.useRef(0)
   const nextMessageIndexRef = React.useRef(initialMessages.length)
 
+  const paddingEnd = Number(
+    new URLSearchParams(window.location.search).get('paddingEnd') ?? 0,
+  )
+
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => parentRef.current,
@@ -34,6 +38,7 @@ function App() {
     followOnAppend: true,
     scrollEndThreshold: 4,
     overscan: 4,
+    paddingEnd,
   })
 
   React.useLayoutEffect(() => {

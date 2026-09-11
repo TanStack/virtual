@@ -1,5 +1,19 @@
 # @tanstack/virtual-core
 
+## 3.17.9
+
+### Patch Changes
+
+- [#1260](https://github.com/TanStack/virtual/pull/1260) [`4a0adf3`](https://github.com/TanStack/virtual/commit/4a0adf3e3ba46968e0e6ba66471253e467babe55) - Recover the bottom pin when the browser clamps an end-anchored scroll compensation write. `resizeItem` compensates a size change by writing `scrollTop` before the consumer has committed the new total size, so when the grown item does not itself extend the scroll range the browser clamps the write to the old maximum and the viewport is left short of the end with no scroll event to correct it. Two cases hit this: `paddingEnd > 0` with a growing last item, where the overflowing item only extends `scrollHeight` to its own end and the clamp lands exactly `paddingEnd` short ([#1258](https://github.com/TanStack/virtual/issues/1258)); and a row above the last one growing while the last row keeps its size, under `directDomUpdates` ([#1266](https://github.com/TanStack/virtual/issues/1266)). A compensation write whose target exceeds the scroll maximum at write time is now recorded as clamped and re-issued once the sizer has grown — right after `notify` for consumers that size the container synchronously in `onChange`, and from `_willUpdate` for consumers that size it during a render. The clamped read-back keeps the retry pending; any other scroll event cancels it, so a user reading history is never yanked.
+
+## 3.17.8
+
+### Patch Changes
+
+- [#1256](https://github.com/TanStack/virtual/pull/1256) [`a0a411e`](https://github.com/TanStack/virtual/commit/a0a411e06f7334a063422de35d59b12b264b3573) - Cancel the pending `isScrolling` reset when a scroll observer is torn down, and reset `isScrolling` and `scrollDirection` in `cleanup()` so they don't stay stuck after the scroll element changes or is removed.
+
+- [#1246](https://github.com/TanStack/virtual/pull/1246) [`d2cf98b`](https://github.com/TanStack/virtual/commit/d2cf98beea1696c7187c06b57c9e724d1957963c) - Ignore connected measurement nodes whose indexes are outside the current item count.
+
 ## 3.17.7
 
 ### Patch Changes

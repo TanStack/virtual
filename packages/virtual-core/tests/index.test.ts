@@ -1436,6 +1436,44 @@ test('lazy fast path: same item read twice returns identical reference (cache wo
   expect(a).toBe(b)
 })
 
+test.each([
+  { name: 'initial build', resizeIndex: null },
+  { name: 'partial rebuild', resizeIndex: 2 },
+])(
+  'lazy fast path: preserves unread item keys after $name',
+  ({ resizeIndex }) => {
+    const messages = ['a', 'b', 'c', 'd']
+    const v = new Virtualizer({
+      count: messages.length,
+      estimateSize: () => 50,
+      getItemKey: (index) => messages[index]!,
+      getScrollElement: () => null,
+      scrollToFn: vi.fn(),
+      observeElementRect: vi.fn(),
+      observeElementOffset: vi.fn(),
+    })
+    expect(v.getTotalSize()).toBe(200)
+
+    if (resizeIndex !== null) {
+      v.resizeItem(resizeIndex, 80)
+      expect(v.getTotalSize()).toBe(230)
+    }
+
+    // The old layout is still needed while setOptions compares the two lists.
+    messages.splice(0, 1)
+    messages.push('e')
+
+    expect(v.getVirtualItemForOffset(50)).toEqual({
+      index: 1,
+      key: 'b',
+      start: 50,
+      size: 50,
+      end: 100,
+      lane: 0,
+    })
+  },
+)
+
 test('lazy fast path: out-of-range access returns undefined', () => {
   const v = new Virtualizer({
     count: 5,
@@ -2879,6 +2917,7 @@ function createChatVirtualizer({
   itemSize = 50,
   followOnAppend = false,
   threshold = 1,
+  paddingEnd = 0,
 }: {
   messages: Array<{ id: string }>
   offset: number
@@ -2886,13 +2925,16 @@ function createChatVirtualizer({
   itemSize?: number
   followOnAppend?: boolean | 'auto' | 'smooth' | 'instant'
   threshold?: number
+  paddingEnd?: number
 }) {
   let currentMessages = messages
   const scrollToFn = vi.fn()
+  let offsetCb: ((offset: number, isScrolling: boolean) => void) | null = null
   const scrollElement = {
     scrollTop: offset,
     scrollLeft: 0,
-    scrollHeight: messages.length * itemSize,
+    // The sizer is `getTotalSize()`, which includes paddingEnd.
+    scrollHeight: messages.length * itemSize + paddingEnd,
     scrollWidth: 1000,
     clientHeight: viewportSize,
     clientWidth: 400,
@@ -2935,12 +2977,14 @@ function createChatVirtualizer({
         _instance: any,
         cb: (offset: number, isScrolling: boolean) => void,
       ) => {
+        offsetCb = cb
         cb(scrollElement.scrollTop, false)
         return () => {}
       },
       anchorTo: 'end' as const,
       followOnAppend,
       scrollEndThreshold: threshold,
+      paddingEnd,
     }
   }
 
@@ -2956,8 +3000,14 @@ function createChatVirtualizer({
     setMessages(nextMessages: Array<{ id: string }>) {
       currentMessages = nextMessages
       virtualizer.setOptions(makeOptions())
-      ;(scrollElement as any).scrollHeight = nextMessages.length * itemSize
+      ;(scrollElement as any).scrollHeight =
+        nextMessages.length * itemSize + paddingEnd
       virtualizer._willUpdate()
+    },
+    // Simulate the browser's scroll event after a write (or a gesture).
+    emitScroll(nextOffset: number, isScrolling = false) {
+      scrollElement.scrollTop = nextOffset
+      offsetCb?.(nextOffset, isScrolling)
     },
   }
 }
@@ -2990,6 +3040,34 @@ test('anchorTo:end does not yank a scrolled-up user when items append', () => {
   expect(scrollToFn).not.toHaveBeenCalled()
 })
 
+test('anchorTo:end preserves a reading anchor with a stable key callback', () => {
+  const messages = Array.from({ length: 20 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, emitScroll } = createChatVirtualizer({
+    messages,
+    offset: 400,
+    followOnAppend: false,
+  })
+  const readingKey = virtualizer.getVirtualItemForOffset(400)!.key
+  virtualizer.getVirtualItems()
+
+  for (let step = 1; step <= 2; step++) {
+    scrollToFn.mockClear()
+    messages.splice(0, 1)
+    messages.push({ id: `m-${19 + step}` })
+    // Keep the same callback; the old edge keys have not been read yet.
+    virtualizer.setOptions(virtualizer.options)
+    virtualizer._willUpdate()
+
+    const target = 400 - step * 50
+    expect(scrollToFn.mock.calls.at(-1)?.[0]).toBe(target)
+    emitScroll(target)
+    expect(virtualizer.getVirtualItemForOffset(target)?.key).toBe(readingKey)
+    for (const item of virtualizer.getVirtualItems()) {
+      expect(item.key).toBe(messages[item.index]!.id)
+    }
+  }
+})
+
 test('followOnAppend keeps an end-pinned user at the end when items append', () => {
   const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
   const { setMessages, scrollToFn } = createChatVirtualizer({
@@ -3018,6 +3096,130 @@ test('followOnAppend accepts smooth behavior', () => {
 
   expect(scrollToFn).toHaveBeenCalledTimes(1)
   expect(scrollToFn.mock.calls[0]![1].behavior).toBe('smooth')
+})
+
+test.each([
+  { removed: 1, appended: 1, behavior: true as const },
+  { removed: 1, appended: 2, behavior: true as const },
+  { removed: 3, appended: 3, behavior: true as const },
+  { removed: 3, appended: 1, behavior: true as const },
+  { removed: 1, appended: 1, behavior: 'smooth' as const },
+])(
+  'followOnAppend follows a sliding window removing $removed and appending $appended with $behavior',
+  ({ removed, appended, behavior }) => {
+    const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+    const { setMessages, scrollToFn } = createChatVirtualizer({
+      messages,
+      offset: 200,
+      followOnAppend: behavior,
+    })
+    const nextMessages = [
+      ...messages.slice(removed),
+      ...Array.from({ length: appended }, (_, i) => ({ id: `m-${8 + i}` })),
+    ]
+
+    setMessages(nextMessages)
+
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(nextMessages.length * 50 - 200)
+    expect(scrollToFn.mock.calls[0]![1].behavior).toBe(
+      behavior === true ? 'auto' : behavior,
+    )
+  },
+)
+
+test.each([
+  { offset: 100, followOnAppend: true, threshold: 1, target: 50 },
+  { offset: 200, followOnAppend: false, threshold: 1, target: 150 },
+  { offset: 195, followOnAppend: true, threshold: 4, target: 145 },
+  { offset: 196, followOnAppend: true, threshold: 4, target: 200 },
+])(
+  'followOnAppend respects offset $offset, enabled $followOnAppend and threshold $threshold for a sliding window',
+  ({ offset, followOnAppend, threshold, target }) => {
+    const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+    const { setMessages, scrollToFn } = createChatVirtualizer({
+      messages,
+      offset,
+      followOnAppend,
+      threshold,
+    })
+
+    setMessages([...messages.slice(1), { id: 'm-8' }])
+
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(target)
+  },
+)
+
+test('followOnAppend stays pinned across sliding updates without scroll events', () => {
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 200,
+    followOnAppend: true,
+  })
+
+  // Equal-size append + trim leaves the DOM offset unchanged, so no scroll event fires.
+  setMessages([...messages.slice(1), { id: 'm-8' }])
+  expect(virtualizer.isAtEnd()).toBe(true)
+
+  setMessages([...messages.slice(2), { id: 'm-8' }, { id: 'm-9' }])
+  expect(virtualizer.isAtEnd()).toBe(true)
+  expect(scrollToFn.mock.calls.at(-1)![0]).toBe(200)
+})
+
+test('followOnAppend stays pinned with a stable key callback', () => {
+  const messages = Array.from({ length: 20 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 800,
+    followOnAppend: true,
+  })
+  virtualizer.getVirtualItems()
+
+  for (let step = 1; step <= 2; step++) {
+    scrollToFn.mockClear()
+    messages.splice(0, 1)
+    messages.push({ id: `m-${19 + step}` })
+    virtualizer.setOptions(virtualizer.options)
+    virtualizer._willUpdate()
+
+    expect(scrollToFn.mock.calls.at(-1)?.[0]).toBe(800)
+    // A no-op end scroll produces no browser scroll event.
+    expect(virtualizer.isAtEnd()).toBe(true)
+    virtualizer.getVirtualItems()
+  }
+})
+
+test.each([
+  { name: 'replacement', ids: [8, 9, 10, 11, 12, 13, 14, 15], target: null },
+  { name: 'reorder', ids: [1, 0, 2, 3, 4, 5, 7, 6], target: null },
+  { name: 'rotation', ids: [1, 2, 3, 4, 5, 6, 7, 0], target: 150 },
+  { name: 'rotation with append', ids: [2, 3, 4, 5, 6, 7, 0, 8], target: 100 },
+  { name: 'reordered overlap', ids: [1, 3, 2, 4, 5, 6, 7, 8], target: 150 },
+  { name: 'trim only', ids: [1, 2, 3, 4, 5, 6, 7], target: 150 },
+  {
+    name: 'prepend and trim tail',
+    ids: [-1, 0, 1, 2, 3, 4, 5, 6],
+    target: 250,
+  },
+])('followOnAppend does not follow $name', ({ ids, target }) => {
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 200,
+    followOnAppend: true,
+  })
+
+  setMessages(ids.map((id) => ({ id: `m-${id}` })))
+
+  if (target === null) {
+    expect(scrollToFn).not.toHaveBeenCalled()
+  } else {
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(target)
+    expect(scrollToFn.mock.calls[0]![1].behavior).toBeUndefined()
+  }
 })
 
 test('anchorTo:end keeps a pinned streaming message pinned as it grows', () => {
@@ -3361,6 +3563,131 @@ test('observeElementOffset: attaches scroll listener and fires callback with scr
   expect(listeners.has('scroll')).toBe(false)
 })
 
+// ─── cleanup resets the scroll flags ─────────────────────────────────────────
+// The cancelled debounce is the only writer of `isScrolling = false`, and
+// `cleanup()` also runs while the instance stays alive (element swap,
+// `enabled: false`), so it has to reset the flags itself.
+
+const makeScrollFlagsVirtualizer = () => {
+  const MockResizeObserver = vi.fn(function () {
+    return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+  })
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    ResizeObserver: MockResizeObserver,
+  }
+  const makeElement = () =>
+    ({
+      scrollTop: 0,
+      scrollLeft: 0,
+      scrollWidth: 1000,
+      scrollHeight: 5000,
+      offsetWidth: 400,
+      offsetHeight: 600,
+      ownerDocument: { defaultView: mockWindow },
+    }) as unknown as HTMLDivElement
+
+  const first = makeElement()
+  const second = makeElement()
+  let element: HTMLDivElement | null = first
+  let emit: ((offset: number, isScrolling: boolean) => void) | null = null
+
+  const virtualizer = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => element,
+    scrollToFn: vi.fn(),
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      emit = cb
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+
+  // Mid-scroll: this is the state the debounce used to clear on its own.
+  emit!(500, true)
+
+  return {
+    virtualizer,
+    swapElement: () => {
+      element = second
+      virtualizer._willUpdate()
+    },
+    disable: () => {
+      element = null
+      virtualizer._willUpdate()
+    },
+  }
+}
+
+test('cleanup resets the scroll flags when the scroll element is swapped', () => {
+  const { virtualizer, swapElement } = makeScrollFlagsVirtualizer()
+
+  expect(virtualizer.isScrolling).toBe(true)
+
+  swapElement()
+
+  expect(virtualizer.isScrolling).toBe(false)
+  expect(virtualizer.scrollDirection).toBe(null)
+})
+
+test('cleanup resets the scroll flags when the scroll element goes away', () => {
+  const { virtualizer, disable } = makeScrollFlagsVirtualizer()
+
+  expect(virtualizer.isScrolling).toBe(true)
+
+  disable()
+
+  expect(virtualizer.isScrolling).toBe(false)
+  expect(virtualizer.scrollDirection).toBe(null)
+})
+
+test('cleanup resets the scroll flags on unmount', () => {
+  const { virtualizer } = makeScrollFlagsVirtualizer()
+
+  expect(virtualizer.isScrolling).toBe(true)
+
+  virtualizer._didMount()()
+
+  expect(virtualizer.isScrolling).toBe(false)
+  expect(virtualizer.scrollDirection).toBe(null)
+})
+
+test('observeElementOffset: cleanup drops the queued isScrolling reset', () => {
+  vi.useFakeTimers()
+  try {
+    const cb = vi.fn()
+    const listeners = new Map<string, EventListener>()
+    const el: any = {
+      scrollTop: 50,
+      scrollLeft: 0,
+      addEventListener: (name: string, fn: any) => listeners.set(name, fn),
+      removeEventListener: (name: string) => listeners.delete(name),
+    }
+    const cleanup = observeElementOffset(makeObserveInstance(el) as any, cb)
+
+    // Each scroll arms a debounce that resets isScrolling to false.
+    listeners.get('scroll')!({} as Event)
+    expect(cb).toHaveBeenCalledWith(50, true)
+    cb.mockClear()
+
+    // Tearing down inside that window must not leave the reset queued —
+    // it would arrive after the consumer stopped listening.
+    cleanup?.()
+    vi.advanceTimersByTime(1000)
+
+    expect(cb).not.toHaveBeenCalled()
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
 test('observeElementOffset: reads scrollLeft + applies isRtl when horizontal', () => {
   const cb = vi.fn()
   const listeners = new Map<string, EventListener>()
@@ -3627,4 +3954,172 @@ test('#1218: first measurement of a spanning item still compensates', () => {
   v.resizeItem(3, 120) // first measure: 50 -> 120, delta +70
 
   expect(v.scrollOffset).toBe(before + 70)
+})
+
+// ─── #1258: compensation write clamped by a not-yet-grown sizer ─────────────
+// 5 items × 50px + paddingEnd 80 = 330px sizer, 200px viewport → the bottom is
+// scrollTop 130. When the last item grows by 70, resizeItem writes 200, but
+// the consumer has not committed the 400px sizer yet, so the browser clamps
+// the write to the current max (130) — exactly paddingEnd short once the
+// overflowing item alone has extended scrollHeight. The write must be
+// re-issued once the sizer has grown.
+
+function clampedGrowthSetup() {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const setup = createChatVirtualizer({
+    messages,
+    offset: 130,
+    paddingEnd: 80,
+    threshold: 0,
+  })
+  setup.virtualizer.resizeItem(4, 120)
+  // The end-anchor compensation fired against the not-yet-grown sizer.
+  expect(setup.scrollToFn).toHaveBeenCalledTimes(1)
+  expect(setup.scrollToFn.mock.calls[0]![1].adjustments).toBe(70)
+  return setup
+}
+
+test('#1258: clamped end-anchor write is re-issued after the read-back once the sizer grows', () => {
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    clampedGrowthSetup()
+
+  // Browser read-back of the clamped write: it landed on the old max.
+  emitScroll(130)
+  // Consumer commits the grown sizer, then the layout effect runs.
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+})
+
+test('#1258: clamped end-anchor write is re-issued in a sync render before the read-back', () => {
+  const { virtualizer, scrollElement, scrollToFn } = clampedGrowthSetup()
+
+  // flushSync path: the layout effect runs before the scroll event arrives.
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+})
+
+test('#1258: a render without sizer growth does not re-issue; a later one does', () => {
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    clampedGrowthSetup()
+
+  emitScroll(130)
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+})
+
+test('#1258: a real gesture after the clamp cancels the pending re-issue', () => {
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    clampedGrowthSetup()
+
+  emitScroll(130)
+  // The user scrolls up to read history.
+  emitScroll(60, true)
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+})
+
+test('#1258: an unclamped compensation write is not re-issued when the sizer later grows', () => {
+  // 8 × 50 = 400px, viewport 200, user reading at 100. Item 0 (above the
+  // fold) re-measures +10 → compensation writes 110, well within max 200.
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    createChatVirtualizer({ messages, offset: 100 })
+
+  virtualizer.resizeItem(0, 60)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  emitScroll(110)
+  ;(scrollElement as any).scrollHeight = 450
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+})
+
+test('#1266: a consumer that grows the sizer synchronously in onChange gets the clamped write re-issued without a re-render', () => {
+  // Direct DOM updates: the adapter sets the container height inside
+  // onChange, and with an unchanged range nothing re-renders afterwards.
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 130,
+    paddingEnd: 80,
+    threshold: 0,
+  })
+  virtualizer.options.onChange = (instance) => {
+    ;(scrollElement as any).scrollHeight = instance.getTotalSize()
+  }
+
+  virtualizer.resizeItem(4, 120)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(70)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1258: both retry sites firing in one sync pass write exactly once', () => {
+  // flushSync consumer: onChange grows the sizer AND runs the layout effect
+  // (_willUpdate) synchronously inside notify. The retry after notify must then
+  // find nothing pending — no double write.
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 130,
+    paddingEnd: 80,
+    threshold: 0,
+  })
+  virtualizer.options.onChange = (instance) => {
+    ;(scrollElement as any).scrollHeight = instance.getTotalSize()
+    instance._willUpdate()
+  }
+
+  virtualizer.resizeItem(4, 120)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1258: a partially grown sizer re-issues and stays pending until the target fits', () => {
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    clampedGrowthSetup()
+  emitScroll(130)
+
+  // Sizer grew only to 360 → max 160, still short of the 200 target.
+  ;(scrollElement as any).scrollHeight = 360
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+  expect(virtualizer['_clampedAdjustment']).toEqual({
+    target: 200,
+    maxAtWrite: 160,
+  })
+
+  // The browser clamps that write to the new max; its read-back keeps it pending.
+  emitScroll(160)
+  expect(virtualizer['_clampedAdjustment']).not.toBeNull()
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(3)
+  expect(scrollToFn.mock.calls[2]![0]).toBe(200)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1258: cleanup drops a pending clamped write', () => {
+  const { virtualizer } = clampedGrowthSetup()
+  expect(virtualizer['_clampedAdjustment']).not.toBeNull()
+
+  virtualizer['cleanup']()
+
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
 })
