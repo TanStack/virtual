@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.17.10
+
+### Patch Changes
+
+- [#1272](https://github.com/TanStack/virtual/pull/1272) [`ab3278c`](https://github.com/TanStack/virtual/commit/ab3278cbe7b9a895ecdde263ad3c55c868b85d74) - Keep an end-pinned virtualizer following appended items when older items are trimmed in the same update and the item count does not increase. Recognize ordered, overlapping windows while preserving reading anchors for users who have scrolled away from the end.
+
+  Preserve item keys in the lazy measurement cache so a stable `getItemKey` callback reading mutable data cannot change the identity of previously measured rows.
+
 ## 3.17.9
 
 ### Patch Changes
