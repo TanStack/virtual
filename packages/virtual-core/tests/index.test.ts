@@ -3987,7 +3987,11 @@ test('#1257: scrollToIndex(last) with paddingEnd keeps the last item flush with 
   virtualizer.scrollToIndex(4, { align: 'end' })
 
   // getMaxScrollOffset() = 330 - 200 = 130; minus paddingEnd(80) = 50
-  expect(scrollToFn).toHaveBeenCalledWith(50, expect.any(Object), expect.any(Object))
+  expect(scrollToFn).toHaveBeenCalledWith(
+    50,
+    expect.any(Object),
+    expect.any(Object),
+  )
 })
 
 // ─── #1263: getMaxScrollOffset() preserves lane-max for multi-lane layouts ─────────────
@@ -4037,7 +4041,11 @@ test('#1263: scrollToIndex(last) in a shorter lane uses getMaxScrollOffset() lan
   virtualizer.scrollToIndex(4, { align: 'end' })
 
   // getMaxScrollOffset() = 200; minus paddingEnd(0) = 200
-  expect(scrollToFn).toHaveBeenCalledWith(200, expect.any(Object), expect.any(Object))
+  expect(scrollToFn).toHaveBeenCalledWith(
+    200,
+    expect.any(Object),
+    expect.any(Object),
+  )
 })
 
 // ─── #1257: paddingEnd=0 is a no-op ─────────────
@@ -4078,5 +4086,9 @@ test('#1257: scrollToIndex(last) with paddingEnd=0 uses getMaxScrollOffset() unc
   virtualizer.scrollToIndex(4, { align: 'end' })
 
   // getMaxScrollOffset() = 250 - 200 = 50; minus paddingEnd(0) = 50
-  expect(scrollToFn).toHaveBeenCalledWith(50, expect.any(Object), expect.any(Object))
+  expect(scrollToFn).toHaveBeenCalledWith(
+    50,
+    expect.any(Object),
+    expect.any(Object),
+  )
 })
