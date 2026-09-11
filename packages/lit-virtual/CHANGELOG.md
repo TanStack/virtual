@@ -1,5 +1,16 @@
 # @tanstack/lit-virtual
 
+## 3.14.0
+
+### Minor Changes
+
+- [#1264](https://github.com/TanStack/virtual/pull/1264) [`bb4e0f1`](https://github.com/TanStack/virtual/commit/bb4e0f11c0be7a29b06e2a59779fa0fa28f20afe) - Re-export `@tanstack/virtual-core` from `@tanstack/lit-virtual`, so the core API (`Virtualizer`, `defaultRangeExtractor`, `measureElement`, the scroll observers and the shared types) can be imported from the adapter without adding `@tanstack/virtual-core` as a second dependency. Every other framework adapter already does this.
+
+### Patch Changes
+
+- Updated dependencies [[`4a0adf3`](https://github.com/TanStack/virtual/commit/4a0adf3e3ba46968e0e6ba66471253e467babe55)]:
+  - @tanstack/virtual-core@3.17.9
+
 ## 3.13.37
 
 ### Patch Changes

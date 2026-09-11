@@ -447,6 +447,16 @@ export class Virtualizer<
   // value when the diff is < 1.5 px, distinguishing it from a real user
   // scroll. The +0.5 over Math.abs lets us also absorb the +1 / -1 cases.
   private _intendedScrollOffset: number | null = null
+  // A compensation write from `applyScrollAdjustment` whose target exceeded
+  // the element's scroll max at the moment of the write. The browser clamps
+  // such a write because the consumer's sizer has not grown yet: an
+  // end-anchored item growing at the bottom only extends `scrollHeight` to
+  // its own end, so with `paddingEnd > 0` the clamp lands exactly
+  // `paddingEnd` short of the target (#1258). `_willUpdate` re-issues the
+  // write once the sizer has caught up; the clamped read-back keeps it
+  // pending, any other scroll event (a real gesture) cancels it.
+  private _clampedAdjustment: { target: number; maxAtWrite: number } | null =
+    null
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
@@ -706,6 +716,18 @@ export class Virtualizer<
       this._iosDeferredAdjustment += delta
       return false
     } else {
+      const target = this.getScrollOffset() + this.scrollAdjustments + delta
+      // Guarded so a bare test double without `scrollHeight` / `document`
+      // does not crash in `getMaxScrollOffset`.
+      const el = this.scrollElement
+      const maxAtWrite =
+        el !== null && ('scrollHeight' in el || 'document' in el)
+          ? this.getMaxScrollOffset()
+          : null
+      this._clampedAdjustment =
+        maxAtWrite !== null && target > maxAtWrite + 0.5
+          ? { target, maxAtWrite }
+          : null
       this._scrollToOffset(this.getScrollOffset(), {
         adjustments: (this.scrollAdjustments += delta),
         behavior,
@@ -787,6 +809,7 @@ export class Virtualizer<
     this._iosDeferredAdjustment = 0
     this._iosTouching = false
     this._iosJustTouchEnded = false
+    this._clampedAdjustment = null
     this.scrollElement = null
     this.targetWindow = null
   }
@@ -860,6 +883,17 @@ export class Virtualizer<
             offset = this._intendedScrollOffset
           }
           this._intendedScrollOffset = null
+
+          // A pending clamped compensation write (#1258) survives only its
+          // own read-back, which the browser reports at the scroll max we
+          // saw at write time. Anything else is a real gesture (or the write
+          // landing after all), so drop it rather than yank the user later.
+          if (
+            this._clampedAdjustment !== null &&
+            Math.abs(offset - this._clampedAdjustment.maxAtWrite) >= 1.5
+          ) {
+            this._clampedAdjustment = null
+          }
 
           this.scrollAdjustments = 0
           // If the offset hasn't moved, this is the echo of our own
@@ -979,6 +1013,39 @@ export class Virtualizer<
       if (followOnAppend) {
         this.scrollToEnd({ behavior: followOnAppend })
       }
+    }
+
+    // The consumer has committed the new total size by now, so a clamped
+    // compensation write may have room (#1258).
+    this._retryClampedAdjustment()
+  }
+
+  // Re-issue a compensation write the browser clamped because the sizer had
+  // not grown yet (#1258, #1266). Called after `notify` in `resizeItem`,
+  // which covers consumers that size the container synchronously inside
+  // `onChange` (direct DOM updates, flushSync renders — where no re-render
+  // may follow at all), and from `_willUpdate` for consumers that size it
+  // during an asynchronous render. Both the clamped read-back and the
+  // absence of one leave `_clampedAdjustment` set, so timing does not matter.
+  private _retryClampedAdjustment = () => {
+    if (
+      this._clampedAdjustment === null ||
+      !this.scrollElement ||
+      !this.options.enabled
+    ) {
+      return
+    }
+    const { target, maxAtWrite } = this._clampedAdjustment
+    const max = this.getMaxScrollOffset()
+    if (max > maxAtWrite + 0.5) {
+      // Still short (the sizer grew only partially): stay pending against
+      // the new max so the next opportunity retries.
+      this._clampedAdjustment =
+        target > max + 0.5 ? { target, maxAtWrite: max } : null
+      this._scrollToOffset(target, {
+        adjustments: undefined,
+        behavior: undefined,
+      })
     }
   }
 
@@ -1646,6 +1713,11 @@ export class Virtualizer<
       // land in one paint. When nothing moved (or the write was deferred on
       // iOS), keep the cheaper async notify.
       this.notify(adjustedSync)
+      // A consumer that grows the sizer synchronously inside `onChange`
+      // (direct DOM updates) may never re-render when the range is
+      // unchanged, so retry a clamped write here rather than only in
+      // `_willUpdate` (#1266).
+      this._retryClampedAdjustment()
     }
   }
 

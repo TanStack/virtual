@@ -2879,6 +2879,7 @@ function createChatVirtualizer({
   itemSize = 50,
   followOnAppend = false,
   threshold = 1,
+  paddingEnd = 0,
 }: {
   messages: Array<{ id: string }>
   offset: number
@@ -2886,13 +2887,16 @@ function createChatVirtualizer({
   itemSize?: number
   followOnAppend?: boolean | 'auto' | 'smooth' | 'instant'
   threshold?: number
+  paddingEnd?: number
 }) {
   let currentMessages = messages
   const scrollToFn = vi.fn()
+  let offsetCb: ((offset: number, isScrolling: boolean) => void) | null = null
   const scrollElement = {
     scrollTop: offset,
     scrollLeft: 0,
-    scrollHeight: messages.length * itemSize,
+    // The sizer is `getTotalSize()`, which includes paddingEnd.
+    scrollHeight: messages.length * itemSize + paddingEnd,
     scrollWidth: 1000,
     clientHeight: viewportSize,
     clientWidth: 400,
@@ -2935,12 +2939,14 @@ function createChatVirtualizer({
         _instance: any,
         cb: (offset: number, isScrolling: boolean) => void,
       ) => {
+        offsetCb = cb
         cb(scrollElement.scrollTop, false)
         return () => {}
       },
       anchorTo: 'end' as const,
       followOnAppend,
       scrollEndThreshold: threshold,
+      paddingEnd,
     }
   }
 
@@ -2956,8 +2962,14 @@ function createChatVirtualizer({
     setMessages(nextMessages: Array<{ id: string }>) {
       currentMessages = nextMessages
       virtualizer.setOptions(makeOptions())
-      ;(scrollElement as any).scrollHeight = nextMessages.length * itemSize
+      ;(scrollElement as any).scrollHeight =
+        nextMessages.length * itemSize + paddingEnd
       virtualizer._willUpdate()
+    },
+    // Simulate the browser's scroll event after a write (or a gesture).
+    emitScroll(nextOffset: number, isScrolling = false) {
+      scrollElement.scrollTop = nextOffset
+      offsetCb?.(nextOffset, isScrolling)
     },
   }
 }
@@ -3924,4 +3936,170 @@ test('#1263: scrollToIndex(last) with scrollPaddingEnd leaves a visual gap above
   // here because the content already overflows the viewport. The test guards
   // against regressions on the clamping path.
   expect(scrollToFn).toHaveBeenCalledWith(0, expect.any(Object), expect.any(Object))
+// ─── #1258: compensation write clamped by a not-yet-grown sizer ─────────────
+// 5 items × 50px + paddingEnd 80 = 330px sizer, 200px viewport → the bottom is
+// scrollTop 130. When the last item grows by 70, resizeItem writes 200, but
+// the consumer has not committed the 400px sizer yet, so the browser clamps
+// the write to the current max (130) — exactly paddingEnd short once the
+// overflowing item alone has extended scrollHeight. The write must be
+// re-issued once the sizer has grown.
+
+function clampedGrowthSetup() {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const setup = createChatVirtualizer({
+    messages,
+    offset: 130,
+    paddingEnd: 80,
+    threshold: 0,
+  })
+  setup.virtualizer.resizeItem(4, 120)
+  // The end-anchor compensation fired against the not-yet-grown sizer.
+  expect(setup.scrollToFn).toHaveBeenCalledTimes(1)
+  expect(setup.scrollToFn.mock.calls[0]![1].adjustments).toBe(70)
+  return setup
+}
+
+test('#1258: clamped end-anchor write is re-issued after the read-back once the sizer grows', () => {
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    clampedGrowthSetup()
+
+  // Browser read-back of the clamped write: it landed on the old max.
+  emitScroll(130)
+  // Consumer commits the grown sizer, then the layout effect runs.
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+})
+
+test('#1258: clamped end-anchor write is re-issued in a sync render before the read-back', () => {
+  const { virtualizer, scrollElement, scrollToFn } = clampedGrowthSetup()
+
+  // flushSync path: the layout effect runs before the scroll event arrives.
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+})
+
+test('#1258: a render without sizer growth does not re-issue; a later one does', () => {
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    clampedGrowthSetup()
+
+  emitScroll(130)
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+})
+
+test('#1258: a real gesture after the clamp cancels the pending re-issue', () => {
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    clampedGrowthSetup()
+
+  emitScroll(130)
+  // The user scrolls up to read history.
+  emitScroll(60, true)
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+})
+
+test('#1258: an unclamped compensation write is not re-issued when the sizer later grows', () => {
+  // 8 × 50 = 400px, viewport 200, user reading at 100. Item 0 (above the
+  // fold) re-measures +10 → compensation writes 110, well within max 200.
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    createChatVirtualizer({ messages, offset: 100 })
+
+  virtualizer.resizeItem(0, 60)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  emitScroll(110)
+  ;(scrollElement as any).scrollHeight = 450
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+})
+
+test('#1266: a consumer that grows the sizer synchronously in onChange gets the clamped write re-issued without a re-render', () => {
+  // Direct DOM updates: the adapter sets the container height inside
+  // onChange, and with an unchanged range nothing re-renders afterwards.
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 130,
+    paddingEnd: 80,
+    threshold: 0,
+  })
+  virtualizer.options.onChange = (instance) => {
+    ;(scrollElement as any).scrollHeight = instance.getTotalSize()
+  }
+
+  virtualizer.resizeItem(4, 120)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(70)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1258: both retry sites firing in one sync pass write exactly once', () => {
+  // flushSync consumer: onChange grows the sizer AND runs the layout effect
+  // (_willUpdate) synchronously inside notify. The retry after notify must then
+  // find nothing pending — no double write.
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 130,
+    paddingEnd: 80,
+    threshold: 0,
+  })
+  virtualizer.options.onChange = (instance) => {
+    ;(scrollElement as any).scrollHeight = instance.getTotalSize()
+    instance._willUpdate()
+  }
+
+  virtualizer.resizeItem(4, 120)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1258: a partially grown sizer re-issues and stays pending until the target fits', () => {
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    clampedGrowthSetup()
+  emitScroll(130)
+
+  // Sizer grew only to 360 → max 160, still short of the 200 target.
+  ;(scrollElement as any).scrollHeight = 360
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(200)
+  expect(virtualizer['_clampedAdjustment']).toEqual({
+    target: 200,
+    maxAtWrite: 160,
+  })
+
+  // The browser clamps that write to the new max; its read-back keeps it pending.
+  emitScroll(160)
+  expect(virtualizer['_clampedAdjustment']).not.toBeNull()
+  ;(scrollElement as any).scrollHeight = 400
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(3)
+  expect(scrollToFn.mock.calls[2]![0]).toBe(200)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1258: cleanup drops a pending clamped write', () => {
+  const { virtualizer } = clampedGrowthSetup()
+  expect(virtualizer['_clampedAdjustment']).not.toBeNull()
+
+  virtualizer['cleanup']()
+
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
 })

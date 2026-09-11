@@ -10,6 +10,8 @@ import {
 import type { ReactiveController, ReactiveControllerHost } from 'lit'
 import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
+export * from '@tanstack/virtual-core'
+
 class VirtualizerControllerBase<
   TScrollElement extends Element | Window,
   TItemElement extends Element,
