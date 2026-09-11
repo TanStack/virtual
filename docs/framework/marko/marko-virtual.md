@@ -2,8 +2,6 @@
 title: Marko Virtual
 ---
 
-# Marko Virtual
-
 `@tanstack/marko-virtual` is the Marko 6 adapter for TanStack Virtual. It provides
 row, column, and grid virtualisation via two auto-discovered Marko tags:
 
