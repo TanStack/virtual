@@ -107,13 +107,11 @@ export class GridVirtualizerPadding {
 
   virtualItems = viewChildren<ElementRef<HTMLDivElement>>('virtualItem')
 
-  #measureItems = effect(
-    () =>
-      this.virtualItems().forEach((el) => {
-        this.rowVirtualizer.measureElement(el.nativeElement)
-        this.columnVirtualizer.measureElement(el.nativeElement)
-      }),
-    { allowSignalWrites: true },
+  #measureItems = effect(() =>
+    this.virtualItems().forEach((el) => {
+      this.rowVirtualizer.measureElement(el.nativeElement)
+      this.columnVirtualizer.measureElement(el.nativeElement)
+    }),
   )
 
   show = signal(true)

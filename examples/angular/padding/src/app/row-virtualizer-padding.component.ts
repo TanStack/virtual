@@ -51,12 +51,10 @@ export class RowVirtualizerPadding {
 
   virtualItems = viewChildren<ElementRef<HTMLDivElement>>('virtualItem')
 
-  #measureItems = effect(
-    () =>
-      this.virtualItems().forEach((el) => {
-        this.virtualizer.measureElement(el.nativeElement)
-      }),
-    { allowSignalWrites: true },
+  #measureItems = effect(() =>
+    this.virtualItems().forEach((el) => {
+      this.virtualizer.measureElement(el.nativeElement)
+    }),
   )
 
   virtualizer = injectVirtualizer(() => ({
