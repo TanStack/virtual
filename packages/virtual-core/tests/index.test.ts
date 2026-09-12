@@ -2513,6 +2513,116 @@ test('#884: an end-anchored prepend during an active touch defers the anchor del
   })
 })
 
+// ─── WebKit rubber band (desktop Safari): writes mid-bounce are discarded ───
+// Safari lets an inner scroller's scrollTop go negative while the user flings
+// past the top, then animates it back to 0. A scrollTop write made during that
+// bounce is dropped. If history lands mid-bounce, the prepend anchor write is
+// lost and the reader ends up a whole prepend away from their row once the
+// bounce settles at 0. Such writes are held in the deferred accumulator and
+// replayed on the first in-bounds scroll event — no iOS user agent involved.
+
+function makeDesktopPrependFixture(initialScrollTop: number) {
+  let keys = Array.from({ length: 10 }, (_, i) => `k-${i}`)
+  const scrollToFn = vi.fn()
+  let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
+    null
+  const el = {
+    scrollTop: initialScrollTop,
+    scrollLeft: 0,
+    scrollHeight: 500,
+    clientHeight: 200,
+    offsetHeight: 200,
+    ownerDocument: {
+      defaultView: {
+        requestAnimationFrame: () => 1,
+        cancelAnimationFrame: () => {},
+        performance: { now: () => Date.now() },
+      },
+    },
+  } as unknown as HTMLDivElement
+  const v = new Virtualizer<HTMLDivElement, any>({
+    count: keys.length,
+    estimateSize: () => 50,
+    anchorTo: 'end',
+    getItemKey: (i) => keys[i]!,
+    getScrollElement: () => el,
+    scrollToFn,
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      scrollCallback = cb
+      cb(initialScrollTop, true)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v.getVirtualItems()
+  scrollToFn.mockClear()
+  return {
+    v,
+    scrollToFn,
+    scroll: (offset: number, isScrolling: boolean) => {
+      scrollCallback!(offset, isScrolling)
+      v.getVirtualItems()
+    },
+    // 2 x 50px land above the reader.
+    prepend: () => {
+      keys = ['p-0', 'p-1', ...keys]
+      ;(el as any).scrollHeight = 600
+      v.setOptions({
+        ...v.options,
+        count: keys.length,
+        getItemKey: (i: number) => keys[i]!,
+      })
+      v._willUpdate()
+    },
+  }
+}
+
+test('rubber band: a prepend landing mid-bounce holds the anchor write and replays it once in-bounds', () => {
+  // Desktop Safari: the fling overshot the top, scrollTop is -46 and bouncing.
+  const { v, scrollToFn, scroll, prepend } = makeDesktopPrependFixture(-46)
+
+  prepend()
+
+  // Nothing written into the bounce — WebKit would drop it — and the tracked
+  // offset stays with the DOM so the range renders what is actually visible.
+  expect(scrollToFn).not.toHaveBeenCalled()
+  expect(v.scrollOffset).toBe(-46)
+  expect(v['_iosDeferredAdjustment']).toBe(100)
+
+  // A prepended row measures taller while still bouncing: it will sit above
+  // the fold once the anchor lands, so its estimate error is held too.
+  v.resizeItem(0, 80) // 50 → 80
+  expect(scrollToFn).not.toHaveBeenCalled()
+  expect(v['_iosDeferredAdjustment']).toBe(130)
+
+  // Still bouncing: nothing to replay yet.
+  scroll(-20, true)
+  expect(scrollToFn).not.toHaveBeenCalled()
+
+  // The bounce settles at 0: one write lands the reader exactly one measured
+  // prepend lower, on the same row.
+  scroll(0, true)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  const [offset, opts] = scrollToFn.mock.calls[0]!
+  expect(offset + opts.adjustments).toBe(130)
+  expect(v['_iosDeferredAdjustment']).toBe(0)
+})
+
+test('rubber band: an in-bounds prepend still syncs the anchor immediately', () => {
+  const { v, scrollToFn, prepend } = makeDesktopPrependFixture(100)
+
+  prepend()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(200)
+  expect(v.scrollOffset).toBe(200)
+  expect(v['_iosDeferredAdjustment']).toBe(0)
+})
+
 test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   // On non-iOS, touchend should not arm the grace timer.
   _resetIOSDetectionForTests()

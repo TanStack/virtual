@@ -461,9 +461,11 @@ export class Virtualizer<
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
   scrollAdjustments = 0
-  // Sum of size-change deltas above-viewport that were skipped during a
-  // touch-driven iOS scroll (writing scrollTop mid-momentum cancels it,
-  // #884). Flushed in a single scrollTo once the gesture has settled.
+  // Sum of scroll writes that could not land yet: size-change deltas and
+  // prepend anchors skipped during a touch-driven iOS scroll (writing
+  // scrollTop mid-momentum cancels it, #884) or while a WebKit scroller is
+  // rubber-banding past its top edge (the write is discarded). Flushed in a
+  // single scrollTo once the gesture has settled and the offset is in-bounds.
   private _iosDeferredAdjustment = 0
   // Touch provenance. iOS WebKit cancels momentum when scrollTop is written,
   // so adjustments are deferred through the touchstart→touchend window
@@ -757,7 +759,10 @@ export class Virtualizer<
       console.info('correction', delta)
     }
 
-    if (isIOSWebKit() && (this._iosTouching || this._iosJustTouchEnded)) {
+    if (
+      (isIOSWebKit() && (this._iosTouching || this._iosJustTouchEnded)) ||
+      this._isInTopOverscroll()
+    ) {
       this._iosDeferredAdjustment += delta
       return false
     } else {
@@ -1045,7 +1050,10 @@ export class Virtualizer<
         // the in-flight scroll. Defer the DOM sync the same way
         // applyScrollAdjustment does — accumulate the delta and let
         // _flushIosDeferredIfReady handle it once the scroll settles.
-        if (isIOSWebKit() && (this._iosTouching || this._iosJustTouchEnded)) {
+        if (
+          (isIOSWebKit() && (this._iosTouching || this._iosJustTouchEnded)) ||
+          this._isInTopOverscroll(this.getScrollOffset() - anchorDelta)
+        ) {
           if (anchorDelta !== 0) {
             this._iosDeferredAdjustment += anchorDelta
             // setOptions folded anchorDelta into scrollOffset assuming this
@@ -1054,8 +1062,11 @@ export class Virtualizer<
             // eager value in place applies the delta twice and throws the
             // reader a whole prepend past their row. Hand scrollOffset back
             // to the DOM's truth and re-render the range for it.
+            // Not clamped: a negative value here is the DOM's own bounce
+            // offset, and later compensations in the same bounce must still
+            // see it to be held too. The next scroll event overwrites it.
             if (this.scrollOffset !== null) {
-              this.scrollOffset = Math.max(0, this.scrollOffset - anchorDelta)
+              this.scrollOffset -= anchorDelta
               this.maybeNotify()
             }
           }
@@ -1125,6 +1136,18 @@ export class Virtualizer<
   // truly settled — not actively scrolling, not under an active touch, and
   // past the post-touchend grace window. Called from the scroll callback
   // and the touchend grace-timer.
+  // WebKit — desktop Safari included — discards a scrollTop write made while
+  // the scroller is rubber-banding past its top edge and snaps back to 0 when
+  // the bounce ends. A prepend anchor or measurement compensation written
+  // mid-bounce is therefore lost: the tracked offset follows the DOM back to
+  // the edge and the reader lands a whole prepend away from their row. Hold
+  // such writes in the deferred accumulator and let the flush replay them on
+  // the first in-bounds scroll event, exactly as the iOS path does. Only the
+  // top edge is detected: an offset past the bottom is transiently legitimate
+  // mid-prepend while the consumer's sizer catches up (see _clampedAdjustment).
+  private _isInTopOverscroll = (offset = this.getScrollOffset()) =>
+    this.scrollElement !== null && offset < 0
+
   // (Re)arm the post-touchend tail. Called from touchend/touchcancel and from
   // every momentum scroll event while the tail is armed, so it self-terminates
   // ~150 ms after the last frame and no piece of touch state can latch.
