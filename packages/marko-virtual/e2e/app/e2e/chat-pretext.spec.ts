@@ -8,6 +8,10 @@ import type { Page } from '@playwright/test'
 // v.resizeItem with calculated heights that match the rendered DOM.
 
 const AT_END_PX = 80
+const AUTO_HISTORY_ARM_DELAY_MS = 400
+const PREPEND_RACE_DELAY_MS = 30
+const LATEST_PREPEND_RACE_ATTEMPTS = 4
+const DISPLAY_ATTEMPT_OFFSET = 1
 
 const consoleErrors: string[] = []
 
@@ -41,6 +45,10 @@ async function distanceFromEnd(page: Page): Promise<number> {
   return page
     .locator('.messages')
     .evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)
+}
+
+async function scrollHeight(page: Page): Promise<number> {
+  return page.locator('.messages').evaluate((el) => el.scrollHeight)
 }
 
 async function waitForPin(page: Page) {
@@ -193,25 +201,32 @@ test('scrolling near the top auto-loads older history', async ({ page }) => {
     .toBeGreaterThan(heightBefore)
 })
 
-// FIXME(#1267): deterministic on CI. The click lands before the 180ms auto history
-// load fires, the prepend then resolves after the jump, and the adapter's anchor
-// write is clamped against the not-yet-grown sizer — the view strands one prepend
-// (~870px) above the bottom. Re-enable once #1267 is fixed.
-test.fixme('Latest returns to the bottom and status flips back to At latest', async ({
-  page,
-}) => {
-  await page.goto('/chat-pretext')
-  await waitForPin(page)
-  await page.locator('.messages').evaluate((el) => {
-    el.scrollTop = 0
+Array.from({ length: LATEST_PREPEND_RACE_ATTEMPTS }, (_, index) => {
+  const attempt = index + DISPLAY_ATTEMPT_OFFSET
+
+  test(`Latest returns to the bottom after an in-flight prepend (${attempt})`, async ({
+    page,
+  }) => {
+    await page.goto('/chat-pretext')
+    await waitForPin(page)
+    await page.waitForTimeout(AUTO_HISTORY_ARM_DELAY_MS)
+    await page.locator('.messages').evaluate((el) => {
+      el.scrollTop = 0
+    })
+    await expect(page.locator('[data-testid="status"]')).toHaveText(
+      'Loading history',
+    )
+    const heightBeforeClick = await scrollHeight(page)
+    await page.waitForTimeout(PREPEND_RACE_DELAY_MS)
+    await page.locator('[data-testid="latest"]').click()
+
+    await expect
+      .poll(() => scrollHeight(page), { timeout: 3000 })
+      .toBeGreaterThan(heightBeforeClick)
+    await waitForPin(page)
+    await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
+    await expect(page.locator('[data-key^="message-4"]').last()).toBeVisible()
   })
-  await expect(page.locator('[data-testid="status"]')).toHaveText(
-    /Reading history|Loading history/,
-  )
-  await page.locator('[data-testid="latest"]').click()
-  await waitForPin(page)
-  await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
-  await expect(page.locator('[data-key^="message-4"]').last()).toBeVisible()
 })
 
 test('a reply streamed from the server grows progressively and stays pinned', async ({
