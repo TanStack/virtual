@@ -2480,14 +2480,36 @@ test('#1250: an end-anchored prepend during a programmatic scroll syncs the anch
   })
 })
 
-test('#884: an end-anchored prepend during an active touch defers the anchor delta', () => {
+test('#884: an end-anchored prepend during an active touch defers the anchor delta and applies it once', () => {
   withFakeIOSUserAgent(() => {
-    const { v, scrollToFn, touch, prepend } = makeIOSPrependFixture()
+    const { v, scrollToFn, touch, expireTouchTail, prepend } =
+      makeIOSPrependFixture()
     touch('touchstart')
 
-    prepend()
+    prepend() // 2 x 50px above the reader, finger still down
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(100)
+    // setOptions bumped scrollOffset eagerly for a sync that did not happen.
+    // The DOM is still at 100, so the tracked offset must say so too —
+    // otherwise the flush below would write 200 + 100 and land a whole
+    // prepend past the reader's row.
+    expect(v.scrollOffset).toBe(100)
+
+    // A prepended row measures taller than its estimate while the finger is
+    // still down. It sits above where the viewport will land once the flush
+    // applies, so its estimate error is deferred on top of the anchor delta.
+    v.resizeItem(0, 80) // 50 → 80
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(130)
+
+    // Gesture settles: the single flush lands exactly one (measured) prepend
+    // lower.
+    touch('touchend')
+    expireTouchTail()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    const [offset, opts] = scrollToFn.mock.calls[0]!
+    expect(offset + opts.adjustments).toBe(230)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
   })
 })
 

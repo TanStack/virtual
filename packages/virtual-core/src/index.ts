@@ -1048,6 +1048,16 @@ export class Virtualizer<
         if (isIOSWebKit() && (this._iosTouching || this._iosJustTouchEnded)) {
           if (anchorDelta !== 0) {
             this._iosDeferredAdjustment += anchorDelta
+            // setOptions folded anchorDelta into scrollOffset assuming this
+            // sync would land now. It won't until the gesture settles, and
+            // the flush writes `scrollOffset + deferred`, so leaving the
+            // eager value in place applies the delta twice and throws the
+            // reader a whole prepend past their row. Hand scrollOffset back
+            // to the DOM's truth and re-render the range for it.
+            if (this.scrollOffset !== null) {
+              this.scrollOffset = Math.max(0, this.scrollOffset - anchorDelta)
+              this.maybeNotify()
+            }
           }
         } else if (
           this.scrollState?.behavior === 'smooth' &&
@@ -1749,8 +1759,15 @@ export class Virtualizer<
       const prevTotalSize = wasAtEnd ? this.getTotalSize() : 0
       // Default anchoring predicate (used unless the consumer supplies a
       // custom shouldAdjustScrollPositionOnItemSizeChange).
+      // Compare against the offset the viewport will sit at once every
+      // pending write has landed. On iOS a deferred delta is such a write:
+      // during a touch the tracked offset is the DOM's, but rows prepended
+      // above the reader will end up above the fold after the flush, so their
+      // estimate error has to be folded in too (it is 0 off iOS).
       const scrollOffsetWithAdj =
-        this.getScrollOffset() + this.scrollAdjustments
+        this.getScrollOffset() +
+        this.scrollAdjustments +
+        this._iosDeferredAdjustment
       const isFirstMeasure = !this.itemSizeCache.has(key)
       const defaultShouldAdjust = isFirstMeasure
         ? // First measurement: compensate any item whose top sits above the
