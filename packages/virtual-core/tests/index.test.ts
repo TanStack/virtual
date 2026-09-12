@@ -1564,84 +1564,106 @@ function withFakeIOSUserAgent<T>(fn: () => T): T {
   }
 }
 
-test('iOS deferral: scroll-position write is deferred during isScrolling', () => {
+// Touch-driven iOS scroll fixture. Deferral is gated on touch provenance, so
+// tests drive the gesture explicitly: `touch('touchstart')` puts the finger
+// down, `touch('touchend')` releases it and arms the momentum tail,
+// `scroll(offset, true)` is a momentum frame (re-arms the tail), and
+// `expireTouchTail()` fires the tail's timer — the gesture has settled.
+function makeIOSTouchVirtualizer(
+  props: Record<string, any> = {},
+  options: Record<string, any> = {},
+) {
+  const timers = new Map<number, () => void>()
+  let timerId = 0
+  const mockWindow = {
+    setTimeout: (fn: () => void, _ms: number) => {
+      const id = ++timerId
+      timers.set(id, fn)
+      return id
+    },
+    clearTimeout: (id: number) => timers.delete(id),
+    requestAnimationFrame: () => 1,
+    cancelAnimationFrame: () => {},
+    performance: { now: () => Date.now() },
+  }
+  const el = makeMockScrollElement({
+    scrollTop: 100,
+    scrollLeft: 0,
+    scrollHeight: 500,
+    clientHeight: 200,
+    offsetHeight: 200,
+    ...props,
+    ownerDocument: { defaultView: mockWindow },
+  })
+  const scrollToFn = vi.fn()
+  let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
+    null
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => el as any,
+    scrollToFn,
+    observeElementRect: () => {},
+    observeElementOffset: (_inst, cb) => {
+      scrollCallback = cb
+      cb(el.scrollTop, false)
+      return () => {}
+    },
+    ...options,
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+  scrollToFn.mockClear()
+  return {
+    v,
+    el,
+    scrollToFn,
+    scroll: (offset: number, isScrolling: boolean) =>
+      scrollCallback!(offset, isScrolling),
+    touch: (type: 'touchstart' | 'touchend' | 'touchcancel') =>
+      el._dispatch(type),
+    expireTouchTail: () => {
+      const id = v['_iosTouchEndTimerId']
+      expect(id, 'a touch tail timer is armed').not.toBeNull()
+      const fn = timers.get(id!)!
+      fn()
+    },
+  }
+}
+
+test('iOS deferral: compensation is deferred during a touch-driven scroll and flushed once the gesture settles', () => {
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCallback:
-      | ((offset: number, isScrolling: boolean) => void)
-      | null = null
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      getScrollElement: () =>
-        ({
-          scrollTop: 100,
-          scrollLeft: 0,
-          scrollHeight: 500,
-          clientHeight: 200,
-          offsetHeight: 200,
-        }) as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCallback = cb
-        cb(100, true) // Start scrolling
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer()
+    // Finger down, drag, release into momentum.
+    touch('touchstart')
+    scroll(120, true)
+    touch('touchend')
+    scroll(140, true) // momentum frame
 
-    // Resize an item above the current scroll position while isScrolling=true
-    // The default condition (item.start < scrollOffset + scrollAdjustments)
-    // would normally trigger an immediate scroll adjustment.
+    // Resize an item above the viewport mid-fling. The default predicate
+    // (item.start < scrollOffset) would write scrollTop immediately, and on
+    // iOS that cancels momentum (#884) — so it must defer.
     v.resizeItem(0, 100) // item 0 was at start=0; now 50→100 grows by 50
-
-    // On iOS during scroll, the adjustment should be DEFERRED — scrollToFn
-    // should NOT have been called for the adjustment.
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(50)
 
-    // Now transition isScrolling → false
-    scrollCallback!(100, false)
-
-    // The deferred adjustment should be flushed.
-    expect(scrollToFn).toHaveBeenCalled()
+    // The tail armed by the last momentum frame expires: gesture settled.
+    expireTouchTail()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_iosDeferredAdjustment']).toBe(0)
   })
 })
 
-test('iOS deferral: multiple resizes during scroll accumulate and flush as one', () => {
+test('iOS deferral: multiple resizes during a fling accumulate and flush as one', () => {
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCallback:
-      | ((offset: number, isScrolling: boolean) => void)
-      | null = null
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      getScrollElement: () =>
-        ({
-          scrollTop: 200,
-          scrollLeft: 0,
-          scrollHeight: 500,
-          clientHeight: 200,
-          offsetHeight: 200,
-        }) as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCallback = cb
-        cb(200, true)
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer({ scrollTop: 200 })
+    touch('touchstart')
+    touch('touchend')
+    scroll(200, true)
 
-    // Three resizes during scroll: 10 + 15 + 20 = 45 total
+    // Three resizes during the fling: 10 + 15 + 20 = 45 total
     v.resizeItem(0, 60)
     v.resizeItem(1, 65)
     v.resizeItem(2, 70)
@@ -1649,7 +1671,7 @@ test('iOS deferral: multiple resizes during scroll accumulate and flush as one',
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(45)
 
-    scrollCallback!(200, false)
+    expireTouchTail()
     // Single flush call
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_iosDeferredAdjustment']).toBe(0)
@@ -1663,34 +1685,11 @@ test('iOS deferral: an absolute scroll command invalidates a pending deferred ad
   // just-established target by the accumulated delta. The absolute commands
   // must drop the deferral.
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCallback:
-      | ((offset: number, isScrolling: boolean) => void)
-      | null = null
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      getScrollElement: () =>
-        ({
-          scrollTop: 200,
-          scrollLeft: 0,
-          scrollHeight: 500,
-          clientHeight: 200,
-          offsetHeight: 200,
-        }) as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCallback = cb
-        cb(200, true)
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer({ scrollTop: 200 })
+    touch('touchstart') // finger down: the user owns the scroll
 
-    // Accumulate a deferred adjustment during scroll.
+    // Accumulate a deferred adjustment during the drag.
     v.resizeItem(0, 100)
     expect(v['_iosDeferredAdjustment']).toBe(50)
 
@@ -1698,7 +1697,7 @@ test('iOS deferral: an absolute scroll command invalidates a pending deferred ad
     v.scrollToOffset(300)
     expect(v['_iosDeferredAdjustment']).toBe(0)
 
-    // scrollToIndex clears it too (still scrolling, so the resize defers).
+    // scrollToIndex clears it too (finger still down, so the resize defers).
     v.resizeItem(1, 100)
     expect(v['_iosDeferredAdjustment']).toBe(50)
     v.scrollToIndex(5)
@@ -1706,8 +1705,11 @@ test('iOS deferral: an absolute scroll command invalidates a pending deferred ad
     scrollToFn.mockClear()
 
     // Settling must not replay any (now dropped) delta.
-    scrollCallback!(300, false)
+    touch('touchend')
+    expireTouchTail()
+    scroll(300, false)
     expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn).not.toHaveBeenCalled()
   })
 })
 
@@ -1719,41 +1721,19 @@ test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-ba
   // scrollAdjustments` would miss the flushed delta and the next correction
   // would compute from the stale offset.
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCallback:
-      | ((offset: number, isScrolling: boolean) => void)
-      | null = null
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      getScrollElement: () =>
-        ({
-          scrollTop: 200,
-          scrollLeft: 0,
-          scrollHeight: 500,
-          clientHeight: 200,
-          offsetHeight: 200,
-        }) as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCallback = cb
-        cb(200, true)
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer({ scrollTop: 200 })
+    touch('touchstart')
+    touch('touchend')
+    scroll(200, true)
 
-    // Build up a deferred adjustment of 50 during scroll.
+    // Build up a deferred adjustment of 50 during the fling.
     v.resizeItem(0, 100)
     expect(v['_iosDeferredAdjustment']).toBe(50)
     expect(v['scrollAdjustments']).toBe(0)
 
-    // Settle: scroll event resets scrollAdjustments to 0, then the flush
-    // runs and must roll the deferred delta back into scrollAdjustments.
-    scrollCallback!(200, false)
+    // Settle: the flush must roll the deferred delta into scrollAdjustments.
+    expireTouchTail()
 
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     const [, opts] = scrollToFn.mock.calls[0]!
@@ -1768,39 +1748,20 @@ test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-ba
 test('iOS deferral: a negative delta at the end clamp is dropped, not replayed', () => {
   // Regression (#1233 manifestation B): with anchorTo: 'end' and the reader
   // pinned at the bottom, a row above the viewport re-measuring *smaller*
-  // during isScrolling shrinks maxScrollOffset; the browser clamps scrollTop
+  // during a fling shrinks maxScrollOffset; the browser clamps scrollTop
   // onto the new bottom, which is already the correct end-anchored position.
   // The library also deferred a negative compensation for that same shrink —
   // replaying it on the settled, already-correct position lifts the view off
   // the bottom. The flush must drop the negative delta at the end clamp.
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCallback:
-      | ((offset: number, isScrolling: boolean) => void)
-      | null = null
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      anchorTo: 'end',
-      getScrollElement: () =>
-        ({
-          scrollTop: 300, // pinned at the bottom: scrollHeight - clientHeight
-          scrollLeft: 0,
-          scrollHeight: 500,
-          clientHeight: 200,
-          offsetHeight: 200,
-        }) as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCallback = cb
-        cb(300, true) // at the bottom, scrolling
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer(
+        { scrollTop: 300 }, // pinned at the bottom: scrollHeight - clientHeight
+        { anchorTo: 'end' },
+      )
+    touch('touchstart')
+    touch('touchend')
+    scroll(300, true) // at the bottom, flinging
 
     // A row above the viewport re-measures smaller while at the end.
     v.resizeItem(0, 30) // 50 → 30: total shrinks by 20
@@ -1810,7 +1771,7 @@ test('iOS deferral: a negative delta at the end clamp is dropped, not replayed',
     // Settle. The browser already clamped scrollTop onto the new bottom
     // (cur === max), so the deferred negative delta is stale and must not
     // replay.
-    scrollCallback!(300, false)
+    expireTouchTail()
     expect(v['_iosDeferredAdjustment']).toBe(0)
     expect(scrollToFn).not.toHaveBeenCalled()
   })
@@ -1822,33 +1783,11 @@ test('iOS deferral: a positive delta at the end clamp still replays (growth abov
   // DOM sizer may not have grown yet, so a positive deferred delta must still
   // flush — the end-clamp drop is negative-only.
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCallback:
-      | ((offset: number, isScrolling: boolean) => void)
-      | null = null
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      anchorTo: 'end',
-      getScrollElement: () =>
-        ({
-          scrollTop: 300,
-          scrollLeft: 0,
-          scrollHeight: 500,
-          clientHeight: 200,
-          offsetHeight: 200,
-        }) as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCallback = cb
-        cb(300, true)
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer({ scrollTop: 300 }, { anchorTo: 'end' })
+    touch('touchstart')
+    touch('touchend')
+    scroll(300, true)
 
     // A row above the viewport re-measures larger while at the end.
     v.resizeItem(0, 70) // 50 → 70: total grows by 20
@@ -1856,7 +1795,7 @@ test('iOS deferral: a positive delta at the end clamp still replays (growth abov
     expect(v['_iosDeferredAdjustment']).toBe(20)
 
     // Settle. Growth doesn't clamp, so the positive delta must replay.
-    scrollCallback!(300, false)
+    expireTouchTail()
     expect(v['_iosDeferredAdjustment']).toBe(0)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
   })
@@ -1912,7 +1851,10 @@ function makeIOSVirtualizerWithRealEl(
   return { v, el }
 }
 
-function dispatchTouchEvent(el: any, type: 'touchstart' | 'touchend') {
+function dispatchTouchEvent(
+  el: any,
+  type: 'touchstart' | 'touchend' | 'touchcancel',
+) {
   el._dispatch(type)
 }
 
@@ -2010,47 +1952,35 @@ test('iOS Phase 1: resize in post-touchend grace window defers; flushes when tim
   })
 })
 
-test('iOS Phase 1: scroll-event after touchend timer cleanup also flushes', () => {
+test('iOS Phase 1: momentum scroll events re-arm the post-touchend tail until the fling ends', () => {
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCallback: ((o: number, s: boolean) => void) | null = null
-    const el = makeMockScrollElement({
-      scrollTop: 100,
-      scrollLeft: 0,
-      scrollHeight: 500,
-      clientHeight: 200,
-      offsetHeight: 200,
-      ownerDocument: {
-        defaultView: {
-          setTimeout: globalThis.setTimeout.bind(globalThis),
-          clearTimeout: globalThis.clearTimeout.bind(globalThis),
-        },
-      },
-    })
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      getScrollElement: () => el as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCallback = cb
-        cb(100, true) // scrolling
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer()
+    touch('touchstart')
+    touch('touchend')
+    const firstTimer = v['_iosTouchEndTimerId']
+    expect(firstTimer).not.toBeNull()
 
-    // Resize during scroll (no touch tracked here — pure scroll).
+    // iOS fires no touch events during momentum, only scroll events. Each
+    // one must push the tail out — otherwise it would expire 150 ms into a
+    // fling that lasts a second or more, and the next resize would write
+    // scrollTop and kill the momentum (#884).
+    scroll(120, true)
+    expect(v['_iosJustTouchEnded']).toBe(true)
+    expect(v['_iosTouchEndTimerId']).not.toBe(firstTimer)
+
     v.resizeItem(0, 100)
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(50)
 
-    // Scroll ends. Touch never started here, so the flush gate's
-    // !isScrolling && !_iosTouching && !_iosJustTouchEnded all hold.
-    scrollCallback!(100, false)
+    scroll(140, true) // still flinging: re-armed again, still deferred
+    expect(v['_iosJustTouchEnded']).toBe(true)
+    expect(scrollToFn).not.toHaveBeenCalled()
+
+    // 150 ms after the last frame the tail expires and the delta flushes.
+    expireTouchTail()
+    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(v['_iosTouchEndTimerId']).toBeNull()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_iosDeferredAdjustment']).toBe(0)
   })
@@ -2134,13 +2064,12 @@ test('iOS Phase 1: scroll-element swap does not replay a stale deferred adjustme
       clearTimeout: globalThis.clearTimeout.bind(globalThis),
     }
     const { v, holder, makeEl, getScrollCallback } =
-      makeIOSVirtualizerWithSwappableEl(scrollToFn, mockWindow, {
-        startScrolling: true,
-      })
+      makeIOSVirtualizerWithSwappableEl(scrollToFn, mockWindow)
     scrollToFn.mockClear()
 
-    // A resize above the viewport during the live scroll defers its
+    // A resize above the viewport during an active touch defers its
     // adjustment instead of writing scrollTop.
+    dispatchTouchEvent(holder.el, 'touchstart')
     v.resizeItem(0, 100)
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(50)
@@ -2288,53 +2217,27 @@ test('Phase 2a: user-initiated scroll (large delta) is NOT reconciled to intende
 
 test('Phase 2b: flush skipped when scrollTop is in elastic-overscroll zone (negative)', () => {
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCb: ((o: number, s: boolean) => void) | null = null
-    const el = makeMockScrollElement({
-      scrollTop: 100,
-      scrollLeft: 0,
-      scrollHeight: 500,
-      clientHeight: 200,
-      offsetHeight: 200,
-      ownerDocument: {
-        defaultView: {
-          setTimeout: globalThis.setTimeout.bind(globalThis),
-          clearTimeout: globalThis.clearTimeout.bind(globalThis),
-        },
-      },
-    })
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      getScrollElement: () => el as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCb = cb
-        cb(100, true)
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, el, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer()
+    touch('touchstart')
 
-    // Resize during scroll: defers
+    // Resize during the drag: defers
     v.resizeItem(0, 100)
     expect(v['_iosDeferredAdjustment']).toBe(50)
 
-    // User rubber-bands past the top: scrollTop becomes negative.
-    // Even though isScrolling=false now, the elastic-zone check blocks
-    // the flush so we don't snap-back to a clamped position.
+    // User rubber-bands past the top and lets go: scrollTop is negative
+    // when the gesture settles. The elastic-zone check blocks the flush so
+    // we don't snap back to a clamped position.
     el.scrollTop = -25
-    scrollCb!(-25, false)
+    scroll(-25, true)
+    touch('touchend')
+    expireTouchTail()
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(50) // still deferred
 
-    // User releases, scroll snaps back in-bounds. Next scroll event
-    // should successfully flush.
+    // Bounce-back resolves in-bounds. The next scroll event flushes.
     el.scrollTop = 100
-    scrollCb!(100, false)
+    scroll(100, false)
     expect(scrollToFn).toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(0)
   })
@@ -2342,47 +2245,24 @@ test('Phase 2b: flush skipped when scrollTop is in elastic-overscroll zone (nega
 
 test('Phase 2b: flush skipped when scrollTop > scrollHeight-clientHeight (overscroll bottom)', () => {
   withFakeIOSUserAgent(() => {
-    const scrollToFn = vi.fn()
-    let scrollCb: ((o: number, s: boolean) => void) | null = null
-    const el = makeMockScrollElement({
-      scrollTop: 100,
-      scrollLeft: 0,
-      scrollHeight: 500,
-      clientHeight: 200, // max valid scrollTop = 300
-      offsetHeight: 200,
-      ownerDocument: {
-        defaultView: {
-          setTimeout: globalThis.setTimeout.bind(globalThis),
-          clearTimeout: globalThis.clearTimeout.bind(globalThis),
-        },
-      },
-    })
-    const v = new Virtualizer({
-      count: 10,
-      estimateSize: () => 50,
-      getScrollElement: () => el as any,
-      scrollToFn,
-      observeElementRect: () => {},
-      observeElementOffset: (_inst, cb) => {
-        scrollCb = cb
-        cb(100, true)
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    scrollToFn.mockClear()
+    const { v, el, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer() // clientHeight 200 → max valid scrollTop = 300
+    touch('touchstart')
 
     v.resizeItem(0, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(50)
 
-    // User pulls past the bottom: scrollTop becomes 350 (> max 300).
+    // User pulls past the bottom and lets go: scrollTop is 350 (> max 300)
+    // when the tail expires, so the flush is skipped.
     el.scrollTop = 350
-    scrollCb!(350, false)
+    scroll(350, true)
+    touch('touchend')
+    expireTouchTail()
     expect(scrollToFn).not.toHaveBeenCalled()
 
     // Bounce-back resolves
     el.scrollTop = 300
-    scrollCb!(300, false)
+    scroll(300, false)
     expect(scrollToFn).toHaveBeenCalled()
   })
 })
@@ -2459,6 +2339,156 @@ test('Phase 2a: a second self-write replaces the intended target', () => {
   scrollCallback!(101, true)
   // 101 is not within 1.5px of 200.7, so browser value wins.
   expect(v.scrollOffset).toBe(101)
+})
+
+// ─── #1250: programmatic scrolls are never deferred ─────────────────────────
+// The deferral protects touch momentum (#884). A programmatic scroll has no
+// momentum to protect, but its scrollTop write echoes as a scroll event that
+// sets `isScrolling`, so gating on `isScrolling` deferred the compensation of
+// a scrollToIndex landing past a paint: the list painted sagged by the
+// accumulated delta and snapped a beat later. The gate is touch provenance
+// only.
+
+test('#1250: a programmatic scrollToIndex landing compensates synchronously with no touch', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll } = makeIOSTouchVirtualizer()
+
+    v.scrollToIndex(8)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    scroll(250, true) // the write's own scroll-event echo: isScrolling=true
+    expect(v.isScrolling).toBe(true)
+    expect(v['_iosJustTouchEnded']).toBe(false) // an echo never opens the tail
+    scrollToFn.mockClear()
+
+    // Newly mounted rows measure. Item 0 sits above the fold, so its first
+    // measurement must compensate pre-paint — not defer past it.
+    v.resizeItem(0, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+  })
+})
+
+test('#1250: a tap that never scrolls does not latch the deferral gate', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, touch, expireTouchTail } = makeIOSTouchVirtualizer()
+
+    // Tap a row: touchstart + touchend, no scroll events at all.
+    touch('touchstart')
+    touch('touchend')
+    expireTouchTail()
+    expect(v['_iosTouching']).toBe(false)
+    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(v['_iosTouchEndTimerId']).toBeNull()
+
+    // Every piece of touch state is timer-bounded, so the next compensation
+    // is applied synchronously rather than deferred by a stuck gate.
+    v.resizeItem(0, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+  })
+})
+
+test('#1250: a scrollToIndex issued from a tap handler lands compensated', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll, touch } = makeIOSTouchVirtualizer()
+
+    // Tapping a search result: its click handler calls scrollToIndex inside
+    // the post-touchend window.
+    touch('touchstart')
+    touch('touchend')
+    expect(v['_iosJustTouchEnded']).toBe(true)
+
+    // The command's own write cancels any momentum, so it closes the tail.
+    v.scrollToIndex(8)
+    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(v['_iosTouchEndTimerId']).toBeNull()
+    scroll(250, true) // the echo must not re-open it
+    expect(v['_iosJustTouchEnded']).toBe(false)
+    scrollToFn.mockClear()
+
+    v.resizeItem(0, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+  })
+})
+
+test('#1250: an absolute command with the finger still down keeps deferring', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, touch } = makeIOSTouchVirtualizer()
+
+    touch('touchstart')
+    v.scrollToIndex(8) // finger down: the user still owns the scroll
+    expect(v['_iosTouching']).toBe(true)
+    scrollToFn.mockClear()
+
+    v.resizeItem(0, 100)
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+  })
+})
+
+test('iOS Phase 1: touchcancel releases the touch like touchend', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, touch, expireTouchTail } = makeIOSTouchVirtualizer()
+
+    // A system gesture steals the touch: iOS fires touchcancel, never
+    // touchend. Without handling it `_iosTouching` would stay true forever.
+    touch('touchstart')
+    expect(v['_iosTouching']).toBe(true)
+    touch('touchcancel')
+    expect(v['_iosTouching']).toBe(false)
+    expect(v['_iosJustTouchEnded']).toBe(true)
+
+    expireTouchTail()
+    expect(v['_iosJustTouchEnded']).toBe(false)
+
+    v.resizeItem(0, 100)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+  })
+})
+
+// The end-anchor prepend sync in _willUpdate shares the gate.
+function makeIOSPrependFixture() {
+  let keys = Array.from({ length: 10 }, (_, i) => `k-${i}`)
+  const fixture = makeIOSTouchVirtualizer(
+    {},
+    { anchorTo: 'end', getItemKey: (i: number) => keys[i]! },
+  )
+  const prepend = () => {
+    keys = ['p-0', 'p-1', ...keys]
+    fixture.v.setOptions({
+      ...fixture.v.options,
+      count: keys.length,
+      getItemKey: (i: number) => keys[i]!,
+    })
+    fixture.v._willUpdate()
+  }
+  return { ...fixture, prepend }
+}
+
+test('#1250: an end-anchored prepend during a programmatic scroll syncs the anchor immediately', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll, prepend } = makeIOSPrependFixture()
+    v.scrollToIndex(2)
+    scroll(100, true) // echo: isScrolling=true, no touch
+    scrollToFn.mockClear()
+
+    prepend() // 2 x 50px above the reader
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(200)
+  })
+})
+
+test('#884: an end-anchored prepend during an active touch defers the anchor delta', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, touch, prepend } = makeIOSPrependFixture()
+    touch('touchstart')
+
+    prepend()
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(100)
+  })
 })
 
 test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
