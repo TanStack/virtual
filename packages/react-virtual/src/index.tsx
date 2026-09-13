@@ -103,6 +103,10 @@ function useVirtualizerBase<
   directRef.current.enabled = directDomUpdates
   directRef.current.mode = directDomUpdatesMode
 
+  // Set while the virtualizer measures an item through `measureElement`, which is
+  // passed as a ref and therefore runs while React is committing.
+  const measuringFromRef = React.useRef(false)
+
   // Writes the size container's total extent to the DOM. Idempotent — guarded
   // by lastSize. Split out from applyDirectStyles so it can run *before* the
   // scroll-position sync in the _willUpdate effect: an end-anchored prepend
@@ -187,7 +191,15 @@ function useVirtualizerBase<
       }
 
       if (shouldRerender) {
-        if (useFlushSync && sync) {
+        // A sync notify raised from `measureElement` reaches us while React is
+        // committing, because `measureElement` is a ref callback. `flushSync`
+        // cannot flush there: React still runs the callback at sync priority, but
+        // it skips the flush and warns in development. The commit phase already
+        // runs at discrete (sync) priority, so leaving `flushSync` out for that
+        // window keeps the same lane and the same flush point — without the
+        // warning. Every other sync notify (ResizeObserver re-measures, scroll
+        // adjustments) still flushes synchronously.
+        if (useFlushSync && sync && !measuringFromRef.current) {
           flushSync(rerender)
         } else {
           rerender()
@@ -200,6 +212,15 @@ function useVirtualizerBase<
 
   const [instance] = React.useState(() => {
     const v = new Virtualizer<TScrollElement, TItemElement>(resolvedOptions)
+    const measureElement = v.measureElement
+    v.measureElement = (node: TItemElement | null) => {
+      measuringFromRef.current = true
+      try {
+        measureElement(node)
+      } finally {
+        measuringFromRef.current = false
+      }
+    }
     return Object.assign(v, {
       containerRef: (node: HTMLElement | null) => {
         const state = directRef.current
