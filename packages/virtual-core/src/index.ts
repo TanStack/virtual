@@ -2055,11 +2055,6 @@ export class Virtualizer<
       behavior = 'auto',
     }: ScrollToIndexOptions = {},
   ) => {
-    // See scrollToOffset: an absolute target invalidates any pending
-    // iOS-deferred compensation and closes the post-touchend tail.
-    this._iosDeferredAdjustment = 0
-    this._closeIosTouchWindow()
-
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
     const offsetInfo = this.getOffsetForIndex(index, initialAlign)
@@ -2067,6 +2062,13 @@ export class Virtualizer<
       return
     }
     const [offset, align] = offsetInfo
+
+    // See scrollToOffset: an absolute target invalidates any pending
+    // iOS-deferred compensation and closes the post-touchend tail. Only once
+    // there is a target: without one no write follows, so the fling still
+    // owns the scroll and a resize inside it must keep deferring.
+    this._iosDeferredAdjustment = 0
+    this._closeIosTouchWindow()
 
     const now = this.now()
     this.scrollState = {

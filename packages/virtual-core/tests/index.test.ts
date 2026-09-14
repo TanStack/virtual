@@ -2427,6 +2427,41 @@ test('#1250: an absolute command with the finger still down keeps deferring', ()
   })
 })
 
+test('#1250: a scrollToIndex with no target leaves the fling and its deferral untouched', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer()
+    touch('touchstart')
+    touch('touchend')
+    scroll(120, true) // momentum
+    v.resizeItem(0, 100)
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+    const timer = v['_iosTouchEndTimerId']
+    expect(timer).not.toBeNull()
+
+    // getOffsetForIndex finds no measurement for the index (e.g. called
+    // before the layout for new data exists), so scrollToIndex writes
+    // nothing. It must not drop the deferral or close the tail: the fling is
+    // still running and owns the scroll.
+    v.measurementsCache = []
+    v.scrollToIndex(5)
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_iosJustTouchEnded']).toBe(true)
+    expect(v['_iosTouchEndTimerId']).toBe(timer)
+
+    // A resize during the remaining momentum still defers rather than
+    // writing scrollTop into the fling.
+    v.resizeItem(1, 80)
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_iosDeferredAdjustment']).toBe(80)
+
+    expireTouchTail()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
 test('iOS Phase 1: touchcancel releases the touch like touchend', () => {
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, touch, expireTouchTail } = makeIOSTouchVirtualizer()
