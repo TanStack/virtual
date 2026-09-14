@@ -3563,6 +3563,29 @@ test('observeElementOffset: attaches scroll listener and fires callback with scr
   expect(listeners.has('scroll')).toBe(false)
 })
 
+test('observeElementOffset: fallback reads offset after programmatic changes', () => {
+  vi.useFakeTimers()
+  try {
+    const cb = vi.fn()
+    const listeners = new Map<string, EventListener>()
+    const el: any = {
+      scrollTop: 50,
+      scrollLeft: 0,
+      addEventListener: (name: string, fn: any) => listeners.set(name, fn),
+      removeEventListener: (name: string) => listeners.delete(name),
+    }
+    observeElementOffset(makeObserveInstance(el) as any, cb)
+
+    listeners.get('scroll')!({} as Event)
+    el.scrollTop = 125
+    vi.advanceTimersByTime(150)
+
+    expect(cb).toHaveBeenLastCalledWith(125, false)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
 // ─── cleanup resets the scroll flags ─────────────────────────────────────────
 // The cancelled debounce is the only writer of `isScrolling = false`, and
 // `cleanup()` also runs while the instance stays alive (element swap,

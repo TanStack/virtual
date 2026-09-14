@@ -199,7 +199,7 @@ const observeOffset = <T extends Element | Window>(
     ? null
     : debounce(
         targetWindow,
-        () => cb(offset, false),
+        () => cb(readOffset(element), false),
         instance.options.isScrollingResetDelay,
       )
 
