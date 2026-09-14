@@ -2513,6 +2513,88 @@ test('#884: an end-anchored prepend during an active touch defers the anchor del
   })
 })
 
+// ─── iOS: a touch that starts right after a compensation write undoes it ────
+// iOS scrolls on a separate thread. When the flush (or any compensation write)
+// lands and the user touches the screen within a frame, the scrolling thread
+// still holds the pre-write position and wins: scrollTop reverts and the next
+// scroll event reports the old offset. Seen on-device as a fling into the top
+// whose history prepend flushes correctly and is then thrown away the moment
+// the finger comes back down. The delta must go back into the deferred
+// accumulator and replay once the gesture settles.
+
+test('iOS: a flush undone by a touch is re-deferred and replayed after the gesture', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer()
+    touch('touchstart')
+    touch('touchend')
+    scroll(100, true)
+    v.resizeItem(0, 150) // 50 → 150 above the fold: +100 held for the fling
+    expect(v['_iosDeferredAdjustment']).toBe(100)
+
+    // Tail expires: the flush writes 100 + 100.
+    expireTouchTail()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    const [offset, opts] = scrollToFn.mock.calls[0]!
+    expect(offset + opts.adjustments).toBe(200)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+
+    // Finger comes down within a frame and WebKit reverts the write: the
+    // scroll event reports the pre-write position.
+    touch('touchstart')
+    scroll(100, true)
+    expect(v.scrollOffset).toBe(100)
+    expect(v['_iosDeferredAdjustment']).toBe(100) // put back, not lost
+
+    // Gesture settles: the correction lands once more, exactly once.
+    scrollToFn.mockClear()
+    touch('touchend')
+    expireTouchTail()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    const [offset2, opts2] = scrollToFn.mock.calls[0]!
+    expect(offset2 + opts2.adjustments).toBe(200)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
+test('iOS: the echo of a write that landed leaves nothing deferred', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer()
+    touch('touchstart')
+    touch('touchend')
+    scroll(100, true)
+    v.resizeItem(0, 150)
+    expireTouchTail()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+
+    // The browser reads the write back (finger still up).
+    scroll(200, true)
+    expect(v.scrollOffset).toBe(200)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_iosCompensationWrite']).toBeNull()
+  })
+})
+
+test('iOS: a pan that starts after a landed write is not mistaken for a revert', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer()
+    touch('touchstart')
+    touch('touchend')
+    scroll(100, true)
+    v.resizeItem(0, 150)
+    expireTouchTail()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+
+    // The write landed (200); the user touches and drags a few pixels.
+    touch('touchstart')
+    scroll(196, true)
+    expect(v.scrollOffset).toBe(196)
+    expect(v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
 test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   // On non-iOS, touchend should not arm the grace timer.
   _resetIOSDetectionForTests()

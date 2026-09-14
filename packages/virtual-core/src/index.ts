@@ -465,6 +465,15 @@ export class Virtualizer<
   // touch-driven iOS scroll (writing scrollTop mid-momentum cancels it,
   // #884). Flushed in a single scrollTo once the gesture has settled.
   private _iosDeferredAdjustment = 0
+  // The last compensation-type write on iOS (adjustment, flush, or prepend
+  // anchor sync), so the next scroll event can tell whether it landed. iOS
+  // scrolls on a separate thread: a touch that begins before the write has
+  // been committed wins with the pre-write position and the write is undone.
+  private _iosCompensationWrite: {
+    target: number
+    delta: number
+    at: number
+  } | null = null
   // Touch provenance. iOS WebKit cancels momentum when scrollTop is written,
   // so adjustments are deferred through the touchstart→touchend window
   // (active drag) and a timer-bounded tail after touchend that spans the
@@ -777,6 +786,10 @@ export class Virtualizer<
         adjustments: (this.scrollAdjustments += delta),
         behavior,
       })
+      this._recordIosCompensationWrite(
+        this.getScrollOffset() + this.scrollAdjustments,
+        delta,
+      )
       // Eagerly carry the intended target in `scrollOffset` so callers that
       // read it before the next scroll event — notably the next `resizeItem`
       // tick's `getVirtualDistanceFromEnd()` / `wasAtEnd` check — see the
@@ -852,6 +865,7 @@ export class Virtualizer<
     // pending reset of the flag), deferring every adjustment on the new
     // element until its next touch cycle.
     this._iosDeferredAdjustment = 0
+    this._iosCompensationWrite = null
     this._iosTouching = false
     this._iosJustTouchEnded = false
     this._clampedAdjustment = null
@@ -899,6 +913,31 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementOffset(this, (offset, isScrolling) => {
+          // iOS: a touch that begins within a frame of a compensation write
+          // undoes it — the scrolling thread still holds the pre-write
+          // position and wins — and this event then reports that old
+          // position. Since the finger is down we cannot rewrite now; put the
+          // missing delta back into the deferred accumulator so the flush
+          // replays it once the gesture settles, instead of treating the
+          // revert as the user having scrolled and losing the correction.
+          // A write that landed echoes near its target; a pan that started
+          // after a landed write moves it by pixels, not by the whole delta.
+          const write = this._iosCompensationWrite
+          if (write !== null) {
+            this._iosCompensationWrite = null
+            if (
+              this._iosTouching &&
+              this.now() - write.at < 120 &&
+              Math.abs(write.target - offset) > Math.abs(write.delta) / 2
+            ) {
+              this._iosDeferredAdjustment += write.target - offset
+              // The write's share of `scrollAdjustments` never reached the
+              // DOM either; the replay will add it back.
+              this.scrollAdjustments = 0
+              this._intendedScrollOffset = null
+            }
+          }
+
           // A scroll event that reports movement but lands on the offset we
           // already hold — and isn't a self-write read-back — is a spurious
           // no-op re-emit that Safari/Firefox fire after a re-render's layout
@@ -1079,6 +1118,7 @@ export class Virtualizer<
             adjustments: undefined,
             behavior: undefined,
           })
+          this._recordIosCompensationWrite(this.getScrollOffset(), anchorDelta)
         }
       }
 
@@ -1125,6 +1165,11 @@ export class Virtualizer<
   // truly settled — not actively scrolling, not under an active touch, and
   // past the post-touchend grace window. Called from the scroll callback
   // and the touchend grace-timer.
+  private _recordIosCompensationWrite = (target: number, delta: number) => {
+    if (!isIOSWebKit() || delta === 0) return
+    this._iosCompensationWrite = { target, delta, at: this.now() }
+  }
+
   // (Re)arm the post-touchend tail. Called from touchend/touchcancel and from
   // every momentum scroll event while the tail is armed, so it self-terminates
   // ~150 ms after the last frame and no piece of touch state can latch.
@@ -1186,6 +1231,7 @@ export class Virtualizer<
       adjustments: (this.scrollAdjustments += delta),
       behavior: undefined,
     })
+    this._recordIosCompensationWrite(cur + this.scrollAdjustments, delta)
   }
 
   private rafId: number | null = null
