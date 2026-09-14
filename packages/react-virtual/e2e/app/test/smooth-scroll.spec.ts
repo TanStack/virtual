@@ -1,13 +1,36 @@
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
+
+// A smooth scroll's duration scales with distance (index 1000 is ~50,000px),
+// and reconcileScroll may re-drive it as rows measure. On a busy CI runner that
+// can outlast a fixed 2s wait — the "index 1000" case has flaked exactly that
+// way. Wait for the target row to render and the scroll position to stop
+// moving instead.
+async function waitForSmoothScroll(page: Page, testId: string) {
+  await expect(page.locator(`[data-testid="${testId}"]`)).toBeVisible({
+    timeout: 15_000,
+  })
+  let last = -1
+  await expect
+    .poll(
+      async () => {
+        const cur = await page.evaluate(
+          () => document.querySelector('#scroll-container')!.scrollTop,
+        )
+        const settled = cur === last
+        last = cur
+        return settled
+      },
+      { timeout: 15_000, intervals: [100] },
+    )
+    .toBe(true)
+}
 
 test('smooth scrolls to index 1000', async ({ page }) => {
   await page.goto('/smooth-scroll/')
   await page.click('#scroll-to-1000')
 
-  // Smooth scroll animation is 500ms + reconciliation time
-  await page.waitForTimeout(2000)
-
-  await expect(page.locator('[data-testid="item-1000"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-1000')
 
   const delta = await page.evaluate(() => {
     const item = document.querySelector('[data-testid="item-1000"]')
@@ -29,9 +52,7 @@ test('smooth scrolls to index 100', async ({ page }) => {
   await page.goto('/smooth-scroll/')
   await page.click('#scroll-to-100')
 
-  await page.waitForTimeout(2000)
-
-  await expect(page.locator('[data-testid="item-100"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-100')
 })
 
 test('smooth scrolls to index 0 after scrolling away', async ({ page }) => {
@@ -39,14 +60,11 @@ test('smooth scrolls to index 0 after scrolling away', async ({ page }) => {
 
   // First scroll down
   await page.click('#scroll-to-500')
-  await page.waitForTimeout(2000)
-  await expect(page.locator('[data-testid="item-500"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-500')
 
   // Then smooth scroll back to top
   await page.click('#scroll-to-0')
-  await page.waitForTimeout(2000)
-
-  await expect(page.locator('[data-testid="item-0"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-0')
 
   const scrollTop = await page.evaluate(() => {
     const container = document.querySelector('#scroll-container')
@@ -59,9 +77,7 @@ test('smooth scrolls to index 500 with start alignment', async ({ page }) => {
   await page.goto('/smooth-scroll/')
   await page.click('#scroll-to-500-start')
 
-  await page.waitForTimeout(2000)
-
-  await expect(page.locator('[data-testid="item-500"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-500')
 
   const delta = await page.evaluate(
     ([idx, align]) => {
@@ -84,9 +100,7 @@ test('smooth scrolls to index 500 with center alignment', async ({ page }) => {
   await page.goto('/smooth-scroll/')
   await page.click('#scroll-to-500-center')
 
-  await page.waitForTimeout(2000)
-
-  await expect(page.locator('[data-testid="item-500"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-500')
 
   const delta = await page.evaluate(
     ([idx]) => {
@@ -110,18 +124,15 @@ test('smooth scrolls sequentially to multiple targets', async ({ page }) => {
 
   // Scroll to 100 first
   await page.click('#scroll-to-100')
-  await page.waitForTimeout(2000)
-  await expect(page.locator('[data-testid="item-100"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-100')
 
   // Then scroll to 500
   await page.click('#scroll-to-500')
-  await page.waitForTimeout(2000)
-  await expect(page.locator('[data-testid="item-500"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-500')
 
   // Then scroll to 1000
   await page.click('#scroll-to-1000')
-  await page.waitForTimeout(2000)
-  await expect(page.locator('[data-testid="item-1000"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-1000')
 })
 
 test('interrupting smooth scroll with another smooth scroll', async ({
@@ -135,9 +146,5 @@ test('interrupting smooth scroll with another smooth scroll', async ({
   await page.waitForTimeout(200)
   await page.click('#scroll-to-100')
 
-  // Wait for the second scroll to complete
-  await page.waitForTimeout(2000)
-
-  // Should have ended at 100, not 1000
-  await expect(page.locator('[data-testid="item-100"]')).toBeVisible()
+  await waitForSmoothScroll(page, 'item-100')
 })
