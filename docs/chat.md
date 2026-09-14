@@ -129,6 +129,8 @@ Use a normal scroll container and normal item order. You do not need `flex-direc
 
 - Use stable message ids with `getItemKey`.
 - Give the scroll element a fixed height and `overflow: auto`.
+- Set `overflow-anchor: none` on the scroll element so the browser's own scroll anchoring does not fight the virtualizer's prepend compensation.
+- Set `overscroll-behavior: none` on the scroll element. Safari discards a `scrollTop` write made while the scroller is rubber-banding past its top edge, so history that lands mid-bounce would lose its anchor; suppressing the bounce closes that window.
 - Call `measureElement` for dynamic message heights.
 - Use `anchorTo: 'end'` for prepend stability and streaming bottom growth.
 - Use `followOnAppend` when new output should follow only from the latest position.

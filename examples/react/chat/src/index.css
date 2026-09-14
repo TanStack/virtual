@@ -71,6 +71,10 @@ button:hover {
   min-height: 0;
   overflow: auto;
   overflow-anchor: none;
+  /* Suppress the elastic bounce at the edges (Safari): a scrollTop write
+     made mid-bounce is discarded by WebKit, so a prepend landing during the
+     bounce would lose its anchor (#1287). */
+  overscroll-behavior: none;
   width: 100%;
 }
 
