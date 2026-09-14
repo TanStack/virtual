@@ -2,26 +2,24 @@ import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
 // A smooth scroll's duration scales with distance (index 1000 is ~50,000px),
-// and reconcileScroll may re-drive it as rows measure. On a busy CI runner that
-// can outlast a fixed 2s wait — the "index 1000" case has flaked exactly that
-// way. Wait for the target row to render and the scroll position to stop
-// moving instead.
+// and reconcileScroll may re-drive it as rows measure, so neither a fixed wait
+// nor a pair of equal scrollTop samples proves completion: the "index 1000"
+// case flaked on a fixed 2s wait, and two samples can straddle the pause
+// between two re-drives. The virtualizer has the real signal: reconcileScroll
+// retires `scrollState` only once the target is stable and reached. Wait for
+// the target row to render, then for that retirement.
 async function waitForSmoothScroll(page: Page, testId: string) {
   await expect(page.locator(`[data-testid="${testId}"]`)).toBeVisible({
     timeout: 15_000,
   })
-  let last = -1
   await expect
     .poll(
-      async () => {
-        const cur = await page.evaluate(
-          () => document.querySelector('#scroll-container')!.scrollTop,
-        )
-        const settled = cur === last
-        last = cur
-        return settled
-      },
-      { timeout: 15_000, intervals: [100] },
+      () =>
+        page.evaluate(() => {
+          const v = (window as any).__virtualizer
+          return v.scrollState === null && v.isScrolling === false
+        }),
+      { timeout: 15_000, intervals: [50] },
     )
     .toBe(true)
 }

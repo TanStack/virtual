@@ -27,6 +27,10 @@ const App = () => {
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
   })
+  // Test hook: lets the spec wait on the virtualizer's own settlement signal
+  // (reconcileScroll retiring `scrollState`) instead of guessing from
+  // scrollTop samples.
+  ;(window as any).__virtualizer = rowVirtualizer
 
   return (
     <div>
