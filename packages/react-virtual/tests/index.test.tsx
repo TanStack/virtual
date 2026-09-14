@@ -28,6 +28,7 @@ interface ListProps {
   rangeExtractor?: (range: Range) => number[]
   dynamic?: boolean
   gap?: number
+  initialOffset?: number
 }
 
 function List({
@@ -39,6 +40,7 @@ function List({
   rangeExtractor,
   dynamic,
   gap,
+  initialOffset,
 }: ListProps) {
   renderer()
 
@@ -60,6 +62,7 @@ function List({
     measureElement: () => itemSize ?? 0,
     rangeExtractor,
     gap,
+    initialOffset,
   })
 
   React.useEffect(() => {
@@ -186,4 +189,21 @@ test('should handle handle height change', () => {
   expect(screen.queryByText('Row 0')).not.toBeInTheDocument()
   rerender(<List count={1} height={200} />)
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
+})
+
+test('should not flushSync while measuring an item from its ref callback', () => {
+  // `measureElement` is passed as a ref, so React calls it while committing. When
+  // the measured size differs from the estimate for an item above the current
+  // scroll offset, the virtualizer compensates the scroll position and notifies
+  // synchronously. Calling flushSync from there makes React warn — it cannot flush
+  // while it is already committing.
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+  render(<List itemSize={100} dynamic initialOffset={400} />)
+
+  expect(
+    errorSpy.mock.calls.filter((args) => String(args[0]).includes('flushSync')),
+  ).toEqual([])
+
+  errorSpy.mockRestore()
 })
