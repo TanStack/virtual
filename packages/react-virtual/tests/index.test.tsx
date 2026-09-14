@@ -1,8 +1,10 @@
 import { beforeEach, test, expect, vi } from 'vitest'
 import * as React from 'react'
-import { render, screen } from '@testing-library/react'
+import { renderToString } from 'react-dom/server'
+import { act, render, screen } from '@testing-library/react'
 
 import { useVirtualizer, Range } from '../src/index'
+import type { Rect } from '../src/index'
 
 beforeEach(() => {
   Object.defineProperties(HTMLElement.prototype, {
@@ -19,6 +21,8 @@ beforeEach(() => {
 
 let renderer: vi.Mock<undefined, []>
 
+type OffsetCallback = (offset: number, isScrolling: boolean) => void
+
 interface ListProps {
   count?: number
   overscan?: number
@@ -28,6 +32,11 @@ interface ListProps {
   rangeExtractor?: (range: Range) => number[]
   dynamic?: boolean
   gap?: number
+  useFlushSync?: boolean
+  initialRect?: Rect
+  // When given, the list installs a stub `observeElementOffset` and stores
+  // its callback here so tests can drive scroll notifications directly.
+  offsetCallbackRef?: React.MutableRefObject<OffsetCallback | null>
 }
 
 function List({
@@ -39,6 +48,9 @@ function List({
   rangeExtractor,
   dynamic,
   gap,
+  useFlushSync,
+  initialRect,
+  offsetCallbackRef,
 }: ListProps) {
   renderer()
 
@@ -60,6 +72,16 @@ function List({
     measureElement: () => itemSize ?? 0,
     rangeExtractor,
     gap,
+    useFlushSync,
+    ...(initialRect ? { initialRect } : {}),
+    ...(offsetCallbackRef
+      ? {
+          observeElementOffset: (_: unknown, cb: OffsetCallback) => {
+            cb(0, false)
+            offsetCallbackRef.current = cb
+          },
+        }
+      : {}),
   })
 
   React.useEffect(() => {
@@ -186,4 +208,119 @@ test('should handle handle height change', () => {
   expect(screen.queryByText('Row 0')).not.toBeInTheDocument()
   rerender(<List count={1} height={200} />)
   expect(screen.queryByText('Row 0')).toBeInTheDocument()
+})
+
+// --- useSyncExternalStore subscription -------------------------------------
+//
+// Re-renders are driven by `useSyncExternalStore`. Scroll notifications
+// reach React through the store's subscription; notifications raised while
+// React is committing (initial measurement, item refs) are caught by a
+// layout effect so the corrected range still paints in the same frame.
+
+function createOffsetRef() {
+  return { current: null } as React.MutableRefObject<OffsetCallback | null>
+}
+
+test('should re-render when the scroll offset changes', () => {
+  const offsetRef = createOffsetRef()
+  render(<List offsetCallbackRef={offsetRef} />)
+
+  expect(screen.queryByText('Row 0')).toBeInTheDocument()
+  expect(renderer).toHaveBeenCalledTimes(2)
+
+  // 200px viewport, 50px rows, overscan 1: offset 250 → rows 4..9.
+  act(() => offsetRef.current!(250, true))
+
+  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 4')).toBeInTheDocument()
+  expect(screen.queryByText('Row 9')).toBeInTheDocument()
+  expect(screen.queryByText('Row 10')).not.toBeInTheDocument()
+  expect(renderer).toHaveBeenCalledTimes(3)
+
+  // Scroll settles: `isScrolling` flips, range unchanged → one more render.
+  act(() => offsetRef.current!(250, false))
+  expect(renderer).toHaveBeenCalledTimes(4)
+})
+
+// Runs `fn` outside React's act environment so that nothing but the hook's
+// own scheduling decides when the update commits.
+function withoutAct<T>(fn: () => T): T {
+  const g = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+  const prev = g.IS_REACT_ACT_ENVIRONMENT
+  g.IS_REACT_ACT_ENVIRONMENT = false
+  try {
+    return fn()
+  } finally {
+    g.IS_REACT_ACT_ENVIRONMENT = prev
+  }
+}
+
+test('should commit synchronously during scroll with useFlushSync', () => {
+  const offsetRef = createOffsetRef()
+  render(<List offsetCallbackRef={offsetRef} />)
+
+  withoutAct(() => {
+    offsetRef.current!(250, true)
+    // `flushSync` has already committed by the time the scroll handler
+    // returns — no scheduler turn in between.
+    expect(screen.queryByText('Row 0')).not.toBeInTheDocument()
+    expect(screen.queryByText('Row 5')).toBeInTheDocument()
+  })
+})
+
+test('should let React schedule the commit with useFlushSync: false', async () => {
+  const offsetRef = createOffsetRef()
+  render(<List offsetCallbackRef={offsetRef} useFlushSync={false} />)
+
+  await withoutAct(async () => {
+    offsetRef.current!(250, true)
+    // Not flushed synchronously …
+    expect(screen.queryByText('Row 0')).toBeInTheDocument()
+    expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
+
+    // … but React picks the store change up on its own.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(screen.queryByText('Row 0')).not.toBeInTheDocument()
+    expect(screen.queryByText('Row 5')).toBeInTheDocument()
+  })
+})
+
+test('should render on the server', () => {
+  const html = renderToString(
+    <List initialRect={{ height: 200, width: 200 }} />,
+  )
+
+  expect(html).toContain('data-testid="item-0"')
+  expect(html).toContain('data-testid="item-4"')
+  expect(html).not.toContain('data-testid="item-5"')
+})
+
+test('should work in StrictMode', () => {
+  const offsetRef = createOffsetRef()
+  render(
+    <React.StrictMode>
+      <List offsetCallbackRef={offsetRef} />
+    </React.StrictMode>,
+  )
+
+  expect(screen.queryByText('Row 0')).toBeInTheDocument()
+  expect(screen.queryByText('Row 4')).toBeInTheDocument()
+  expect(screen.queryByText('Row 5')).not.toBeInTheDocument()
+
+  act(() => offsetRef.current!(250, true))
+
+  expect(screen.queryByText('Row 3')).not.toBeInTheDocument()
+  expect(screen.queryByText('Row 4')).toBeInTheDocument()
+  expect(screen.queryByText('Row 9')).toBeInTheDocument()
+})
+
+test('should ignore notifications after unmount', () => {
+  const offsetRef = createOffsetRef()
+  const { unmount } = render(<List offsetCallbackRef={offsetRef} />)
+  const renders = renderer.mock.calls.length
+
+  unmount()
+
+  expect(() => act(() => offsetRef.current!(250, true))).not.toThrow()
+  expect(renderer).toHaveBeenCalledTimes(renders)
 })

@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { flushSync } from 'react-dom'
+import { useSyncExternalStore } from 'use-sync-external-store/shim'
 import {
   Virtualizer,
   elementScroll,
@@ -15,6 +16,35 @@ export * from '@tanstack/virtual-core'
 
 const useIsomorphicLayoutEffect =
   typeof document !== 'undefined' ? React.useLayoutEffect : React.useEffect
+
+/**
+ * Bridges the virtualizer's `onChange` notifications to
+ * `useSyncExternalStore`. The snapshot is a version counter: every
+ * notification the adapter decides to render bumps it. Consumers keep reading
+ * render-facing values (`getVirtualItems()`, `getTotalSize()`, …) straight
+ * from the instance — the counter only tells React *that* the instance moved,
+ * which is enough for it to schedule the re-render and, under concurrent
+ * rendering, to detect a store change mid-render and re-render synchronously
+ * instead of committing a torn frame.
+ */
+function createStore() {
+  const listeners = new Set<() => void>()
+  let version = 0
+
+  return {
+    subscribe: (listener: () => void) => {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    getSnapshot: () => version,
+    notify: () => {
+      version++
+      listeners.forEach((listener) => listener())
+    },
+  }
+}
 
 export type ReactVirtualizer<
   TScrollElement extends Element | Window,
@@ -81,7 +111,18 @@ function useVirtualizerBase<
   TScrollElement,
   TItemElement
 > {
-  const rerender = React.useReducer((x: number) => x + 1, 0)[1]
+  const [store] = React.useState(createStore)
+
+  // `useSyncExternalStore` subscribes in a passive effect, so a notification
+  // raised while React is committing — the initial rect / offset measurement
+  // in `_willUpdate`, a scroll-element swap, or a `measureElement` ref firing
+  // for a freshly mounted item — has no listener yet and would only be picked
+  // up by the store's post-commit check, i.e. after the browser has painted
+  // the stale range. The layout effect at the bottom of this hook dispatches
+  // this reducer when the store moved during commit so React re-renders
+  // synchronously, before paint — the timing the reducer-only implementation
+  // always had.
+  const [, rerenderBeforePaint] = React.useReducer((x: number) => x + 1, 0)
 
   // Mutable across renders so the onChange closure captured by setOptions
   // always reads the latest values without us having to re-create it.
@@ -188,9 +229,9 @@ function useVirtualizerBase<
 
       if (shouldRerender) {
         if (useFlushSync && sync) {
-          flushSync(rerender)
+          flushSync(store.notify)
         } else {
-          rerender()
+          store.notify()
         }
       }
 
@@ -217,6 +258,12 @@ function useVirtualizerBase<
 
   instance.setOptions(resolvedOptions)
 
+  const renderedVersion = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot,
+  )
+
   useIsomorphicLayoutEffect(() => {
     return instance._didMount()
   }, [])
@@ -237,6 +284,14 @@ function useVirtualizerBase<
   // them at (0, 0) until the next onChange.
   useIsomorphicLayoutEffect(() => {
     applyDirectStyles(instance)
+  })
+
+  // Must stay the last layout effect: it observes notifications raised by the
+  // effects above (and by item refs, which attach before layout effects run).
+  useIsomorphicLayoutEffect(() => {
+    if (store.getSnapshot() !== renderedVersion) {
+      rerenderBeforePaint()
+    }
   })
 
   return instance
