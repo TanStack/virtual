@@ -1,5 +1,14 @@
 # @tanstack/react-virtual
 
+## 3.14.13
+
+### Patch Changes
+
+- [#1282](https://github.com/TanStack/virtual/pull/1282) [`b48e3b0`](https://github.com/TanStack/virtual/commit/b48e3b0ab142f1b69d8453e531831fa3accd873f) - Skip `flushSync` for the synchronous notify raised from `measureElement`. React calls `measureElement` from a ref callback, i.e. while it is committing, and `flushSync` cannot flush there — it warns in development instead. The commit phase already runs at discrete (sync) priority, so the update lands in the same lane and the same frame without `flushSync`. Notifies from every other path (ResizeObserver re-measures, scroll adjustments) still flush synchronously.
+
+- Updated dependencies [[`06d1b6b`](https://github.com/TanStack/virtual/commit/06d1b6bf8f61f203556a8fb21a6639600c9751a0), [`2c0a0ea`](https://github.com/TanStack/virtual/commit/2c0a0ea101c360ea15832c060008aa163cae2f7c)]:
+  - @tanstack/virtual-core@3.17.11
+
 ## 3.14.12
 
 ### Patch Changes
