@@ -127,21 +127,41 @@ test('a prepend landing mid-touch is anchored once the gesture settles, not doub
   expect(await scrollTop(page)).toBe(stBefore + 250)
 })
 
-test('a programmatic scroll landing with no touch compensates immediately (iOS UA)', async ({
+test('a programmatic scrollToIndex landing with no touch compensates on the spot (#1250)', async ({
   page,
   browserName,
 }) => {
   test.skip(browserName !== 'chromium', 'CDP touch dispatch is Chromium-only')
-  await page.goto('/chat/')
-  await waitForEnd(page)
-  // scrollToIndex from the app itself: no touch, so nothing may be deferred and
-  // the landing is exact on the first frame, even though the write's own
-  // scroll event sets isScrolling.
-  await page.evaluate((sel) => {
-    document.querySelector(sel)!.scrollTop = 600
+  // /scroll/ has 1002 rows of random height against a 50px estimate, so a
+  // landing far down the list measures rows above the fold that differ from
+  // their estimate and needs compensation. With the old `isScrolling` gate the
+  // write's own scroll event deferred that compensation; reconcileScroll still
+  // landed the target, and ~150ms later the flush replayed the deferred delta
+  // on top of it — a visible snap after the landing. No touch is involved
+  // here, so nothing may be deferred and the position must not move once the
+  // landing has settled.
+  await page.goto('/scroll/')
+  await page.click('#scroll-to-1000')
+
+  const container = '#scroll-container'
+  const st = () =>
+    page.evaluate((sel) => document.querySelector(sel)!.scrollTop, container)
+  // Let the landing and its measurement corrections settle.
+  await page.waitForTimeout(300)
+  const settled = await st()
+  await expect(page.locator('[data-testid="item-1000"]')).toBeVisible()
+
+  // Nothing may be waiting to land later.
+  await page.waitForTimeout(600)
+  expect(await st()).toBe(settled)
+
+  // And the landing itself is exact: item 1000 ends flush with the viewport.
+  const delta = await page.evaluate((sel) => {
+    const item = document.querySelector('[data-testid="item-1000"]')!
+    const el = document.querySelector(sel)!
+    const itemRect = item.getBoundingClientRect()
+    const rect = el.getBoundingClientRect()
+    return Math.abs(itemRect.bottom - rect.bottom)
   }, container)
-  await page.waitForTimeout(200)
-  await page.click('#scroll-to-end')
-  await page.waitForTimeout(50)
-  await waitForEnd(page)
+  expect(delta).toBeLessThan(1.01)
 })
