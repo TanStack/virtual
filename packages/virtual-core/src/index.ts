@@ -1673,7 +1673,12 @@ export class Virtualizer<
     // Sync-measure when idle (initial render) or during programmatic scrolling
     // (scrollToIndex/scrollToOffset) where reconcileScroll needs sizes in the same frame.
     // During normal user scrolling, skip sync measurement — the RO callback handles it async.
+    // Skip nodes that aren't attached yet: they have no layout and would be
+    // cached as 0. Vue calls function refs during patch, before the parent is
+    // inserted. The node is observed above, so the RO reports its size once
+    // it's connected.
     if (
+      node.isConnected &&
       (!this.isScrolling || this.scrollState) &&
       this.shouldMeasureDuringScroll(index)
     ) {
