@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { flushSync } from 'react-dom'
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector'
 import {
   Virtualizer,
   elementScroll,
@@ -13,6 +14,7 @@ import type {
   PartialKeys,
   VirtualItem,
   VirtualizerOptions,
+  VirtualizerState,
 } from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
@@ -317,4 +319,49 @@ export function useWindowVirtualizer<TItemElement extends Element>(
     initialOffset: () => (typeof document !== 'undefined' ? window.scrollY : 0),
     ...options,
   })
+}
+
+const selectState = (state: VirtualizerState) => state
+
+/**
+ * Subscribes to a virtualizer's render-relevant state (`virtualItems`,
+ * `totalSize`, `range`, `isScrolling`, `scrollDirection`) through
+ * `useSyncExternalStore`. Values read here are safe under the React Compiler,
+ * unlike calling `virtualizer.getVirtualItems()` during render — the instance
+ * is stable, so the compiler may memoise such calls.
+ *
+ * Pass a `selector` to re-render only when the selected value changes, and
+ * `isEqual` when the selector builds a new object each time.
+ */
+export function useVirtualizerState<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+>(virtualizer: Virtualizer<TScrollElement, TItemElement>): VirtualizerState
+export function useVirtualizerState<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+  TSelected,
+>(
+  virtualizer: Virtualizer<TScrollElement, TItemElement>,
+  selector: (state: VirtualizerState) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean,
+): TSelected
+export function useVirtualizerState<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+  TSelected,
+>(
+  virtualizer: Virtualizer<TScrollElement, TItemElement>,
+  selector: (state: VirtualizerState) => TSelected = selectState as (
+    state: VirtualizerState,
+  ) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean,
+): TSelected {
+  return useSyncExternalStoreWithSelector(
+    virtualizer.subscribe,
+    virtualizer.getState,
+    virtualizer.getState,
+    selector,
+    isEqual,
+  )
 }

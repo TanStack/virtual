@@ -33,6 +33,65 @@ function useWindowVirtualizer<TItemElement = unknown>(
 
 This function returns a window-based `Virtualizer` instance configured to work with the window as the scrollElement.
 
+## `useVirtualizerState`
+
+```tsx
+function useVirtualizerState(
+  virtualizer: Virtualizer<TScrollElement, TItemElement>,
+): VirtualizerState
+
+function useVirtualizerState<TSelected>(
+  virtualizer: Virtualizer<TScrollElement, TItemElement>,
+  selector: (state: VirtualizerState) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean,
+): TSelected
+```
+
+Subscribes to the virtualizer's render-relevant state ([`VirtualizerState`](../../api/virtualizer.md#getstate)) through `useSyncExternalStore`. Works with both `useVirtualizer` and `useWindowVirtualizer`.
+
+Use it for values you read during render (`virtualItems`, `totalSize`, `isScrolling`, …), and keep using the `Virtualizer` instance for imperative calls such as `scrollToIndex`, `measure` or `resizeItem`:
+
+```tsx
+const virtualizer = useVirtualizer({
+  count: 10000,
+  getScrollElement: () => parentRef.current,
+  estimateSize: () => 35,
+})
+const { virtualItems, totalSize } = useVirtualizerState(virtualizer)
+
+return (
+  <div ref={parentRef} style={{ height: 400, overflow: 'auto' }}>
+    <div style={{ height: totalSize, position: 'relative' }}>
+      {virtualItems.map((item) => (
+        <div
+          key={item.key}
+          data-index={item.index}
+          ref={virtualizer.measureElement}
+          style={{
+            position: 'absolute',
+            top: 0,
+            width: '100%',
+            transform: `translateY(${item.start}px)`,
+          }}
+        >
+          Row {item.index}
+        </div>
+      ))}
+    </div>
+  </div>
+)
+```
+
+Pass a `selector` to re-render only when the selected value changes. When the selector returns a new object each time, also pass `isEqual`:
+
+```tsx
+const isScrolling = useVirtualizerState(virtualizer, (s) => s.isScrolling)
+```
+
+### React Compiler
+
+The `Virtualizer` instance is stable across renders, so the [React Compiler](https://react.dev/learn/react-compiler) can memoise reads such as `virtualizer.getVirtualItems()` on it and render stale items. The compiler skips components that call `useVirtualizer` itself, but it still compiles components the virtualizer is passed to, and components that call `useWindowVirtualizer`. Read render values through `useVirtualizerState` there.
+
 ## React-Specific Options
 
 ### `useFlushSync`
