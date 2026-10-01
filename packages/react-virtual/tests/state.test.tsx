@@ -127,3 +127,60 @@ test('useVirtualizerState updates a memoised child when the parent changes count
   rerender(<App count={2} />)
   expect(screen.getByTestId('total')).toHaveTextContent('100')
 })
+
+test('directDomUpdates positions rows a memoised child mounts after a count change', () => {
+  function Rows({
+    virtualizer,
+  }: {
+    virtualizer: ReturnType<typeof useVirtualizer<HTMLDivElement, Element>>
+  }) {
+    const virtualItems = useVirtualizerState(virtualizer, (s) => s.virtualItems)
+    return (
+      <div ref={virtualizer.containerRef} style={{ position: 'relative' }}>
+        {virtualItems.map((item) => (
+          <div
+            key={item.key}
+            data-testid={`row-${item.index}`}
+            data-index={item.index}
+            ref={virtualizer.measureElement}
+            style={{ position: 'absolute', top: 0, height: 50 }}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  const MemoRows = React.memo(Rows)
+
+  function App({ count }: { count: number }) {
+    const parentRef = React.useRef<HTMLDivElement>(null)
+    const virtualizer = useVirtualizer({
+      count,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 50,
+      overscan: 0,
+      measureElement: () => 50,
+      observeElementRect: (_, cb) => {
+        cb({ height: 200, width: 200 })
+      },
+      directDomUpdates: true,
+    })
+    return (
+      <div ref={parentRef}>
+        <MemoRows virtualizer={virtualizer} />
+      </div>
+    )
+  }
+
+  const { rerender } = render(<App count={2} />)
+  expect(screen.queryByTestId('row-2')).not.toBeInTheDocument()
+
+  rerender(<App count={100} />)
+
+  expect(screen.getByTestId('row-2').style.transform).toBe(
+    'translate3d(0, 100px, 0)',
+  )
+  expect(screen.getByTestId('row-3').style.transform).toBe(
+    'translate3d(0, 150px, 0)',
+  )
+})

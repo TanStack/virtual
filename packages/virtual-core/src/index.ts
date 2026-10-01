@@ -757,20 +757,30 @@ export class Virtualizer<
 
   private notify = (sync: boolean) => {
     this.options.onChange?.(this, sync)
-    this.publishState()
+    this.emitState()
   }
 
-  // Tells listeners about a new `getState()` snapshot. Besides `notify`, this
-  // also runs where the snapshot can change without an `onChange`: a scroll
-  // event that only flips `scrollDirection`, and `_willUpdate`, which picks
-  // up options set during render (e.g. a new `count`) once they are
-  // committed.
-  private publishState = () => {
+  // Calls listeners when `getState()` has moved since they were last called.
+  private emitState = () => {
     if (this.listeners.size === 0) return
     const state = this.getState()
     if (state === this.publishedState) return
     this.publishedState = state
     this.listeners.forEach((listener) => listener())
+  }
+
+  // Publishes snapshot changes that happen without a `notify`: a scroll event
+  // that only flips `scrollDirection`, and `_willUpdate`, which picks up
+  // options set during render (e.g. a new `count`) once they are committed.
+  private publishState = () => {
+    if (this.listeners.size === 0) return
+    // Reading the snapshot marks the current range as seen for `maybeNotify`
+    // (via `getVirtualIndexes`). Outside render, nothing else may have read it
+    // yet, so let a range change go through `notify` (and `onChange`) first;
+    // otherwise the read in `emitState` would swallow it. When that notifies,
+    // it has already emitted, and the call below is a no-op.
+    this.maybeNotify()
+    this.emitState()
   }
 
   /**
