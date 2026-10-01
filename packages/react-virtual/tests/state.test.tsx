@@ -99,3 +99,31 @@ test('useVirtualizerState with a selector re-renders only when the selection cha
   act(() => instance!.resizeItem(0, 150))
   expect(screen.getByTestId('total')).toHaveTextContent('5100')
 })
+
+test('useVirtualizerState updates a memoised child when the parent changes count', () => {
+  function TotalSize({
+    virtualizer,
+  }: {
+    virtualizer: Virtualizer<HTMLDivElement, Element>
+  }) {
+    const totalSize = useVirtualizerState(virtualizer, (s) => s.totalSize)
+    return <div data-testid="total">{totalSize}</div>
+  }
+
+  const Memoized = React.memo(TotalSize)
+
+  function App({ count }: { count: number }) {
+    const { parentRef, virtualizer } = useTestVirtualizer(count)
+    return (
+      <div ref={parentRef}>
+        <Memoized virtualizer={virtualizer} />
+      </div>
+    )
+  }
+
+  const { rerender } = render(<App count={100} />)
+  expect(screen.getByTestId('total')).toHaveTextContent('5000')
+
+  rerender(<App count={2} />)
+  expect(screen.getByTestId('total')).toHaveTextContent('100')
+})

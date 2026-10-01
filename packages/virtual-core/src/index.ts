@@ -654,6 +654,9 @@ export class Virtualizer<
   private _resizeBatch: { sync: boolean; notify?: boolean } | null = null
   private listeners = new Set<(sync: boolean) => void>()
   private state: VirtualizerState | null = null
+  // The snapshot listeners were last told about. Listeners run only when
+  // `getState()` moves away from it.
+  private publishedState: VirtualizerState | null = null
   private now = () => this.targetWindow?.performance?.now?.() ?? Date.now()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
@@ -924,14 +927,26 @@ export class Virtualizer<
 
   private notify = (sync: boolean) => {
     this.options.onChange?.(this, sync)
+    this.publishState(sync)
+  }
+
+  // Tells listeners about a new `getState()` snapshot. Besides `notify`, this
+  // also runs where the snapshot can change without an `onChange`: a scroll
+  // event that only flips `scrollDirection`, and `_willUpdate`, which picks
+  // up options set during render (e.g. a new `count`) once they are
+  // committed.
+  private publishState = (sync: boolean) => {
+    if (this.listeners.size === 0) return
+    const state = this.getState()
+    if (state === this.publishedState) return
+    this.publishedState = state
     this.listeners.forEach((listener) => listener(sync))
   }
 
   /**
-   * Registers a listener that runs whenever the virtualizer's state may have
-   * changed — the same moments `onChange` fires. Returns an unsubscribe
-   * function. Pair with `getState()` for a `useSyncExternalStore`-style
-   * subscription.
+   * Registers a listener that runs whenever `getState()` returns a new
+   * snapshot. Returns an unsubscribe function. Pair with `getState()` for a
+   * `useSyncExternalStore`-style subscription.
    */
   subscribe = (listener: (sync: boolean) => void) => {
     this.listeners.add(listener)
@@ -1117,6 +1132,7 @@ export class Virtualizer<
 
       if (!scrollElement) {
         this.maybeNotify()
+        this.publishState(false)
         return
       }
 
@@ -1272,6 +1288,8 @@ export class Virtualizer<
             this.scheduleScrollReconcile()
           }
           this.maybeNotify()
+          // A direction flip within the same range does not notify.
+          this.publishState(false)
         }),
       )
 
@@ -1337,6 +1355,11 @@ export class Virtualizer<
     // The consumer has committed the new total size by now, so a clamped
     // compensation write may have room (#1258).
     this._retryClampedAdjustment()
+
+    // Options set during render change the snapshot without a notify, and a
+    // subscriber that did not re-render with its parent (e.g. a memoised
+    // child) would keep the old one.
+    this.publishState(false)
   }
 
   // Classify a scroll event (see `ScrollEventKind`) from the state as it was
