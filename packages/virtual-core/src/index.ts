@@ -796,20 +796,31 @@ export class Virtualizer<
   getState = (): VirtualizerState => {
     const virtualItems = this.getVirtualItems()
     const totalSize = this.getTotalSize()
-    const range = this.range
     const prev = this.state
+    // `calculateRange` allocates a new object on every scroll offset change,
+    // so the snapshot keeps its own copy, reused for as long as the indexes
+    // match — `range` stays referentially stable across snapshots that only
+    // differ in other fields.
+    const range =
+      prev !== null &&
+      (prev.range === this.range ||
+        (prev.range !== null &&
+          this.range !== null &&
+          prev.range.startIndex === this.range.startIndex &&
+          prev.range.endIndex === this.range.endIndex))
+        ? prev.range
+        : this.range && {
+            startIndex: this.range.startIndex,
+            endIndex: this.range.endIndex,
+          }
 
     if (
       prev !== null &&
       prev.virtualItems === virtualItems &&
       prev.totalSize === totalSize &&
+      prev.range === range &&
       prev.isScrolling === this.isScrolling &&
-      prev.scrollDirection === this.scrollDirection &&
-      (prev.range === range ||
-        (prev.range !== null &&
-          range !== null &&
-          prev.range.startIndex === range.startIndex &&
-          prev.range.endIndex === range.endIndex))
+      prev.scrollDirection === this.scrollDirection
     ) {
       return prev
     }
@@ -817,12 +828,7 @@ export class Virtualizer<
     return (this.state = {
       virtualItems,
       totalSize,
-      // `calculateRange` allocates a new object on every scroll offset change,
-      // so copy the indexes rather than leaking that churn into the snapshot.
-      range: range && {
-        startIndex: range.startIndex,
-        endIndex: range.endIndex,
-      },
+      range,
       isScrolling: this.isScrolling,
       scrollDirection: this.scrollDirection,
     })

@@ -100,11 +100,10 @@ function useVirtualizerBase<
     // node — e.g. when `enabled` is toggled off then on) is treated as fresh
     // and gets its style written.
     lastPositions: new WeakMap<HTMLElement, number>(),
-    prevRange: null as {
-      startIndex: number
-      endIndex: number
-      isScrolling: boolean
-    } | null,
+    // The `range` / `isScrolling` last rendered. `undefined` until the first
+    // notify so that one always renders.
+    renderedRange: undefined as VirtualizerState['range'] | undefined,
+    renderedIsScrolling: false,
   })
   directRef.current.enabled = directDomUpdates
   directRef.current.mode = directDomUpdatesMode
@@ -183,22 +182,15 @@ function useVirtualizerBase<
       if (state.enabled) {
         applyDirectStyles(instance)
 
-        // Only re-render on range / isScrolling changes
-        const range = instance.range
-        const prev = state.prevRange
+        // Only re-render on range / isScrolling changes. The snapshot keeps
+        // `range` referentially stable while its indexes are unchanged.
+        const { range, isScrolling } = instance.getState()
         shouldRerender =
-          !prev ||
-          prev.isScrolling !== instance.isScrolling ||
-          prev.startIndex !== range?.startIndex ||
-          prev.endIndex !== range?.endIndex
+          range !== state.renderedRange ||
+          isScrolling !== state.renderedIsScrolling
         if (shouldRerender) {
-          state.prevRange = range
-            ? {
-                startIndex: range.startIndex,
-                endIndex: range.endIndex,
-                isScrolling: instance.isScrolling,
-              }
-            : null
+          state.renderedRange = range
+          state.renderedIsScrolling = isScrolling
         }
       }
 

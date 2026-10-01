@@ -4724,6 +4724,19 @@ test('getState keeps its identity until a field changes', () => {
   expect(virtualizer.getState()).toBe(next)
 })
 
+test('getState keeps range referentially stable while its indexes match', () => {
+  const virtualizer = createStoreVirtualizer()
+  virtualizer._willUpdate()
+
+  const first = virtualizer.getState()
+  virtualizer.resizeItem(0, 80)
+  const next = virtualizer.getState()
+
+  expect(next).not.toBe(first)
+  expect(next.totalSize).not.toBe(first.totalSize)
+  expect(next.range).toBe(first.range)
+})
+
 test('subscribe notifies listeners when the state changes and unsubscribes', () => {
   const virtualizer = createStoreVirtualizer()
   virtualizer._willUpdate()
