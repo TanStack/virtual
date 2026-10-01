@@ -4724,21 +4724,63 @@ test('getState keeps its identity until a field changes', () => {
   expect(virtualizer.getState()).toBe(next)
 })
 
-test('subscribe notifies listeners alongside onChange and unsubscribes', () => {
-  const onChange = vi.fn()
-  const virtualizer = createStoreVirtualizer({ onChange })
+test('subscribe notifies listeners when the state changes and unsubscribes', () => {
+  const virtualizer = createStoreVirtualizer()
   virtualizer._willUpdate()
 
   const listener = vi.fn()
   const unsubscribe = virtualizer.subscribe(listener)
 
-  onChange.mockClear()
-  virtualizer.measure()
-  expect(onChange).toHaveBeenCalledTimes(1)
+  virtualizer.resizeItem(0, 80)
   expect(listener).toHaveBeenCalledTimes(1)
-  expect(listener).toHaveBeenCalledWith(false)
+  expect(virtualizer.getState().totalSize).toBe(5030)
+
+  // A publish that leaves the snapshot untouched does not wake listeners.
+  virtualizer._willUpdate()
+  virtualizer._willUpdate()
+  expect(listener).toHaveBeenCalledTimes(1)
 
   unsubscribe()
-  virtualizer.measure()
+  virtualizer.resizeItem(0, 120)
   expect(listener).toHaveBeenCalledTimes(1)
+})
+
+test('subscribe publishes a scroll direction flip within the same range', () => {
+  let emitOffset: (offset: number, isScrolling: boolean) => void = () => {}
+  const virtualizer = createStoreVirtualizer({
+    observeElementOffset: (_, cb) => {
+      emitOffset = cb
+      cb(0, false)
+    },
+  })
+  virtualizer._willUpdate()
+
+  emitOffset(20, true)
+  expect(virtualizer.getState().scrollDirection).toBe('forward')
+
+  const listener = vi.fn()
+  virtualizer.subscribe(listener)
+  const range = virtualizer.getState().range
+
+  emitOffset(15, true)
+  expect(virtualizer.getState().range).toEqual(range)
+  expect(virtualizer.getState().scrollDirection).toBe('backward')
+  expect(listener).toHaveBeenCalledTimes(1)
+})
+
+test('_willUpdate publishes options set since the last notify', () => {
+  const virtualizer = createStoreVirtualizer()
+  virtualizer._willUpdate()
+
+  const listener = vi.fn()
+  virtualizer.subscribe(listener)
+  virtualizer._willUpdate()
+  listener.mockClear()
+
+  virtualizer.setOptions({ ...virtualizer.options, count: 2 })
+  expect(listener).not.toHaveBeenCalled()
+
+  virtualizer._willUpdate()
+  expect(listener).toHaveBeenCalledTimes(1)
+  expect(virtualizer.getState().totalSize).toBe(100)
 })
