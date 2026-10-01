@@ -69,6 +69,20 @@ export interface VirtualItem {
   lane: number
 }
 
+/**
+ * The render-relevant state of a `Virtualizer`, as returned by
+ * `getState()`. The object is immutable and keeps its identity until one of
+ * its fields changes, so it can back a `useSyncExternalStore`-style
+ * subscription (see `subscribe`).
+ */
+export interface VirtualizerState {
+  virtualItems: Array<VirtualItem>
+  totalSize: number
+  range: { startIndex: number; endIndex: number } | null
+  isScrolling: boolean
+  scrollDirection: ScrollDirection | null
+}
+
 export interface Rect {
   width: number
   height: number
@@ -503,6 +517,8 @@ export class Virtualizer<
         instance: Virtualizer<TScrollElement, TItemElement>,
       ) => boolean)
   elementsCache = new Map<Key, TItemElement>()
+  private listeners = new Set<(sync: boolean) => void>()
+  private state: VirtualizerState | null = null
   private now = () => this.targetWindow?.performance?.now?.() ?? Date.now()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
@@ -738,6 +754,62 @@ export class Virtualizer<
 
   private notify = (sync: boolean) => {
     this.options.onChange?.(this, sync)
+    this.listeners.forEach((listener) => listener(sync))
+  }
+
+  /**
+   * Registers a listener that runs whenever the virtualizer's state may have
+   * changed — the same moments `onChange` fires. Returns an unsubscribe
+   * function. Pair with `getState()` for a `useSyncExternalStore`-style
+   * subscription.
+   */
+  subscribe = (listener: (sync: boolean) => void) => {
+    this.listeners.add(listener)
+    return () => {
+      this.listeners.delete(listener)
+    }
+  }
+
+  /**
+   * Returns the render-relevant state. The returned object keeps its identity
+   * for as long as none of its fields change, so it is safe to use as a
+   * `useSyncExternalStore` snapshot. It is derived from the current options,
+   * so it also reflects a `setOptions` that has not been followed by a notify
+   * yet (e.g. a new `count` during render).
+   */
+  getState = (): VirtualizerState => {
+    const virtualItems = this.getVirtualItems()
+    const totalSize = this.getTotalSize()
+    const range = this.range
+    const prev = this.state
+
+    if (
+      prev !== null &&
+      prev.virtualItems === virtualItems &&
+      prev.totalSize === totalSize &&
+      prev.isScrolling === this.isScrolling &&
+      prev.scrollDirection === this.scrollDirection &&
+      (prev.range === range ||
+        (prev.range !== null &&
+          range !== null &&
+          prev.range.startIndex === range.startIndex &&
+          prev.range.endIndex === range.endIndex))
+    ) {
+      return prev
+    }
+
+    return (this.state = {
+      virtualItems,
+      totalSize,
+      // `calculateRange` allocates a new object on every scroll offset change,
+      // so copy the indexes rather than leaking that churn into the snapshot.
+      range: range && {
+        startIndex: range.startIndex,
+        endIndex: range.endIndex,
+      },
+      isScrolling: this.isScrolling,
+      scrollDirection: this.scrollDirection,
+    })
   }
 
   // Returns `true` when it performed a synchronous `scrollTop` write this

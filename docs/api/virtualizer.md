@@ -556,6 +556,30 @@ Measures the element using your configured `measureElement` virtualizer option. 
 
 By default the `measureElement` virtualizer option is configured to measure elements with `getBoundingClientRect()`.
 
+### `subscribe`
+
+```tsx
+subscribe: (listener: (sync: boolean) => void) => () => void
+```
+
+Registers a listener that runs whenever the virtualizer's state may have changed (the same moments [`onChange`](#onchange) fires) and returns an unsubscribe function. Unlike `onChange`, any number of listeners can be registered. Pair it with [`getState`](#getstate) to build a store subscription, such as React's `useSyncExternalStore`.
+
+### `getState`
+
+```tsx
+getState: () => VirtualizerState
+
+interface VirtualizerState {
+  virtualItems: VirtualItem[]
+  totalSize: number
+  range: { startIndex: number; endIndex: number } | null
+  isScrolling: boolean
+  scrollDirection: 'forward' | 'backward' | null
+}
+```
+
+Returns the render-relevant state of the virtualizer. The returned object keeps its identity until one of its fields changes, so it can be used directly as a store snapshot.
+
 ### `resizeItem`
 
 ```tsx
