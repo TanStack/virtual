@@ -559,10 +559,10 @@ By default the `measureElement` virtualizer option is configured to measure elem
 ### `subscribe`
 
 ```tsx
-subscribe: (listener: (sync: boolean) => void) => () => void
+subscribe: (listener: () => void) => () => void
 ```
 
-Registers a listener that runs whenever [`getState`](#getstate) returns a new snapshot, and returns an unsubscribe function. That covers every change in the snapshot, including ones that do not fire [`onChange`](#onchange), such as a scroll direction flip within the same range or a new `count` once it is committed. Unlike `onChange`, any number of listeners can be registered. Pair it with [`getState`](#getstate) to build a store subscription, such as React's `useSyncExternalStore`.
+Registers a listener that runs whenever [`getState`](#getstate) returns a new snapshot, and returns an unsubscribe function. That covers every change in the snapshot, including ones that do not fire [`onChange`](#onchange), such as a scroll direction flip within the same range or a new `count` once it is committed. Unlike `onChange`, any number of listeners can be registered. Listeners receive no `sync` flag; use `onChange` when an update must be flushed synchronously. Pair it with [`getState`](#getstate) to build a store subscription, such as React's `useSyncExternalStore`.
 
 ### `getState`
 

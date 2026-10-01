@@ -517,7 +517,7 @@ export class Virtualizer<
         instance: Virtualizer<TScrollElement, TItemElement>,
       ) => boolean)
   elementsCache = new Map<Key, TItemElement>()
-  private listeners = new Set<(sync: boolean) => void>()
+  private listeners = new Set<() => void>()
   private state: VirtualizerState | null = null
   // The snapshot listeners were last told about. Listeners run only when
   // `getState()` moves away from it.
@@ -757,7 +757,7 @@ export class Virtualizer<
 
   private notify = (sync: boolean) => {
     this.options.onChange?.(this, sync)
-    this.publishState(sync)
+    this.publishState()
   }
 
   // Tells listeners about a new `getState()` snapshot. Besides `notify`, this
@@ -765,20 +765,21 @@ export class Virtualizer<
   // event that only flips `scrollDirection`, and `_willUpdate`, which picks
   // up options set during render (e.g. a new `count`) once they are
   // committed.
-  private publishState = (sync: boolean) => {
+  private publishState = () => {
     if (this.listeners.size === 0) return
     const state = this.getState()
     if (state === this.publishedState) return
     this.publishedState = state
-    this.listeners.forEach((listener) => listener(sync))
+    this.listeners.forEach((listener) => listener())
   }
 
   /**
    * Registers a listener that runs whenever `getState()` returns a new
    * snapshot. Returns an unsubscribe function. Pair with `getState()` for a
-   * `useSyncExternalStore`-style subscription.
+   * `useSyncExternalStore`-style subscription. Use `onChange` instead when an
+   * update must be flushed synchronously.
    */
-  subscribe = (listener: (sync: boolean) => void) => {
+  subscribe = (listener: () => void) => {
     this.listeners.add(listener)
     return () => {
       this.listeners.delete(listener)
@@ -962,7 +963,7 @@ export class Virtualizer<
 
       if (!scrollElement) {
         this.maybeNotify()
-        this.publishState(false)
+        this.publishState()
         return
       }
 
@@ -1054,7 +1055,7 @@ export class Virtualizer<
           }
           this.maybeNotify()
           // A direction flip within the same range does not notify.
-          this.publishState(false)
+          this.publishState()
         }),
       )
 
@@ -1172,7 +1173,7 @@ export class Virtualizer<
     // Options set during render change the snapshot without a notify, and a
     // subscriber that did not re-render with its parent (e.g. a memoised
     // child) would keep the old one.
-    this.publishState(false)
+    this.publishState()
   }
 
   // Re-issue a compensation write the browser clamped because the sizer had
