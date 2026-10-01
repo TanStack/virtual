@@ -91,7 +91,7 @@ function injectVirtualizerBase<
       return {
         ..._options,
         onChange: (instance, sync) => {
-          reactiveVirtualizer.set(instance)
+          untracked(() => reactiveVirtualizer.set(instance))
           if (useApplicationRefTick) {
             scheduleDomFlush()
           }
