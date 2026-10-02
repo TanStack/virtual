@@ -108,9 +108,10 @@ function useVirtualizerBase<
   directRef.current.enabled = directDomUpdates
   directRef.current.mode = directDomUpdatesMode
 
-  // Set while the virtualizer measures an item through `measureElement`, which is
-  // passed as a ref and therefore runs while React is committing.
-  const measuringFromRef = React.useRef(false)
+  // Set while React is committing and the virtualizer may notify: inside
+  // `measureElement`, which is passed as a ref, and inside `_willUpdate`,
+  // which runs in a layout effect. `flushSync` cannot flush in that window.
+  const committingRef = React.useRef(false)
 
   // Writes the size container's total extent to the DOM. Idempotent — guarded
   // by lastSize. Split out from applyDirectStyles so it can run *before* the
@@ -195,15 +196,17 @@ function useVirtualizerBase<
       }
 
       if (shouldRerender) {
-        // A sync notify raised from `measureElement` reaches us while React is
-        // committing, because `measureElement` is a ref callback. `flushSync`
-        // cannot flush there: React still runs the callback at sync priority, but
-        // it skips the flush and warns in development. The commit phase already
-        // runs at discrete (sync) priority, so leaving `flushSync` out for that
-        // window keeps the same lane and the same flush point — without the
-        // warning. Every other sync notify (ResizeObserver re-measures, scroll
-        // adjustments) still flushes synchronously.
-        if (useFlushSync && sync && !measuringFromRef.current) {
+        // A sync notify can reach us while React is committing: from
+        // `measureElement`, a ref callback, or from `_willUpdate`, a layout
+        // effect, when it publishes an option change that moved the range
+        // mid-scroll. `flushSync` cannot flush there: React still runs the
+        // callback at sync priority, but it skips the flush and warns in
+        // development. The commit phase already runs at discrete (sync)
+        // priority, so leaving `flushSync` out for that window keeps the same
+        // lane and the same flush point — without the warning. Every other
+        // sync notify (ResizeObserver re-measures, scroll adjustments) still
+        // flushes synchronously.
+        if (useFlushSync && sync && !committingRef.current) {
           flushSync(rerender)
         } else {
           rerender()
@@ -218,11 +221,11 @@ function useVirtualizerBase<
     const v = new Virtualizer<TScrollElement, TItemElement>(resolvedOptions)
     const measureElement = v.measureElement
     v.measureElement = (node: TItemElement | null) => {
-      measuringFromRef.current = true
+      committingRef.current = true
       try {
         measureElement(node)
       } finally {
-        measuringFromRef.current = false
+        committingRef.current = false
       }
       // A row can mount in a commit that does not include this component — a
       // child re-rendering on its own state, context or a resolved Suspense
@@ -264,7 +267,12 @@ function useVirtualizerBase<
     // top until the next scroll. Positions are written afterwards by the
     // applyDirectStyles effect below.
     applyContainerSize(instance)
-    return instance._willUpdate()
+    committingRef.current = true
+    try {
+      return instance._willUpdate()
+    } finally {
+      committingRef.current = false
+    }
   })
 
   // After every render commit, newly mounted item refs have registered in

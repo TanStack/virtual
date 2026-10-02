@@ -387,3 +387,42 @@ test('directDomUpdates positions rows a memoised child mounts together with the 
   expect(transformOf('row-1')).toBe('translate3d(0, 50px, 0)')
   expect(transformOf('row-3')).toBe('translate3d(0, 150px, 0)')
 })
+
+test('an option change committed mid-scroll notifies a subscriber without flushSync', () => {
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const scroll = createScrollDriver()
+  const onChange = vi.fn()
+
+  function TotalSize({ virtualizer }: { virtualizer: TestVirtualizer }) {
+    const totalSize = useVirtualizerState(virtualizer, (s) => s.totalSize)
+    return <div data-testid="total">{totalSize}</div>
+  }
+
+  const Memoized = React.memo(TotalSize)
+
+  function App({ count }: { count: number }) {
+    const { parentRef, virtualizer } = useTestVirtualizer(count, {
+      observeElementOffset: scroll.observeElementOffset,
+      onChange,
+    })
+    return (
+      <div ref={parentRef}>
+        <Memoized virtualizer={virtualizer} />
+      </div>
+    )
+  }
+
+  const { rerender } = render(<App count={100} />)
+  act(() => scroll.scrollTo(10))
+  onChange.mockClear()
+  errors.mockClear()
+
+  // `isScrolling` is true, so the range change `_willUpdate` publishes is a
+  // sync notify raised inside a layout effect, where React cannot flushSync.
+  rerender(<App count={2} />)
+
+  expect(screen.getByTestId('total')).toHaveTextContent('100')
+  expect(onChange).toHaveBeenCalledWith(expect.anything(), true)
+  expect(errors).not.toHaveBeenCalled()
+  errors.mockRestore()
+})
