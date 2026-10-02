@@ -82,7 +82,9 @@ return (
 )
 ```
 
-Pass a `selector` to re-render only when the selected value changes. When the selector returns a new object each time, also pass `isEqual`:
+Without a selector, the component re-renders whenever any field of the state changes. That includes `isScrolling` and `scrollDirection`, which update while scrolling even when the visible rows stay the same.
+
+Pass a `selector` to re-render only when the selected value changes, such as `virtualItems` for a component that only renders rows. When the selector returns a new object each time, also pass `isEqual`:
 
 ```tsx
 const isScrolling = useVirtualizerState(virtualizer, (s) => s.isScrolling)

@@ -562,7 +562,7 @@ By default the `measureElement` virtualizer option is configured to measure elem
 subscribe: (listener: () => void) => () => void
 ```
 
-Registers a listener that runs whenever [`getState`](#getstate) returns a new snapshot, and returns an unsubscribe function. That covers every change in the snapshot, including ones that do not fire [`onChange`](#onchange), such as a scroll direction flip within the same range or a new `count` once it is committed. Unlike `onChange`, any number of listeners can be registered. Listeners receive no `sync` flag; use `onChange` when an update must be flushed synchronously. Pair it with [`getState`](#getstate) to build a store subscription, such as React's `useSyncExternalStore`.
+Registers a listener that runs whenever [`getState`](#getstate) returns a new snapshot, and returns an unsubscribe function. That covers every change in the snapshot, including ones that do not fire [`onChange`](#onchange), such as a scroll direction flip within the same range, or a committed `count` change that alters the total size but not the visible range. Unlike `onChange`, any number of listeners can be registered. Listeners receive no `sync` flag; use `onChange` when an update must be flushed synchronously. Pair it with [`getState`](#getstate) to build a store subscription, such as React's `useSyncExternalStore`.
 
 ### `getState`
 
@@ -579,6 +579,8 @@ interface VirtualizerState {
 ```
 
 Returns the render-relevant state of the virtualizer. The returned object keeps its identity until one of its fields changes, so it can be used directly as a store snapshot.
+
+Read it during render, or from a [`subscribe`](#subscribe) listener or [`onChange`](#onchange). Like `getVirtualItems`, it computes the current range and counts it as seen, so a range change that other code reads first, before the virtualizer has notified, does not fire `onChange`.
 
 ### `resizeItem`
 
