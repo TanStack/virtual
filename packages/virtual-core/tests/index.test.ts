@@ -4330,7 +4330,7 @@ test('#1263: scrollToIndex(last) in a shorter lane uses getMaxScrollOffset() lan
     scrollTop: 0,
     scrollLeft: 0,
     scrollWidth: 200,
-    scrollHeight: 200,
+    scrollHeight: 400,
     clientWidth: 200,
     clientHeight: 200,
     offsetWidth: 200,
