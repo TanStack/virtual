@@ -255,7 +255,7 @@ anchorTo?: 'start' | 'end'
 
 Controls which side of the scrollable content should be treated as the stable anchor when list data changes. The default `'start'` preserves TanStack Virtual's existing top/left anchored behavior.
 
-Set `anchorTo: 'end'` for chat, logs, and reverse/inverted feeds. In end-anchored mode, the virtualizer keeps the current visible item stable when older items are prepended, and keeps an end-pinned viewport pinned when the last item grows during streaming output. See the [Chat guide](../chat) for the full pattern.
+Set `anchorTo: 'end'` for chat, logs, and reverse/inverted feeds. In end-anchored mode, the virtualizer keeps the current visible item stable when older items are prepended, and keeps an end-pinned viewport pinned when the last item grows during streaming output or the scroll element shrinks. See the [Chat guide](../chat) for the full pattern.
 
 For prepend stability, use a stable `getItemKey` based on each item's persistent id. Index keys cannot distinguish prepends from appends after items shift.
 

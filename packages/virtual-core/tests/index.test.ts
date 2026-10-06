@@ -2930,6 +2930,7 @@ function createChatVirtualizer({
   let currentMessages = messages
   const scrollToFn = vi.fn()
   let offsetCb: ((offset: number, isScrolling: boolean) => void) | null = null
+  let rectCb: ((rect: { width: number; height: number }) => void) | null = null
   const scrollElement = {
     scrollTop: offset,
     scrollLeft: 0,
@@ -2970,6 +2971,7 @@ function createChatVirtualizer({
         _instance: any,
         cb: (rect: { width: number; height: number }) => void,
       ) => {
+        rectCb = cb
         cb({ width: 400, height: viewportSize })
         return () => {}
       },
@@ -3008,6 +3010,12 @@ function createChatVirtualizer({
     emitScroll(nextOffset: number, isScrolling = false) {
       scrollElement.scrollTop = nextOffset
       offsetCb?.(nextOffset, isScrolling)
+    },
+    // Simulate the ResizeObserver reporting a new scroll element size.
+    resizeViewport(height: number) {
+      ;(scrollElement as any).clientHeight = height
+      ;(scrollElement as any).offsetHeight = height
+      rectCb?.({ width: 400, height })
     },
   }
 }
@@ -3264,6 +3272,76 @@ test('anchorTo:end stays pinned across consecutive resizes when the scrollTop wr
   expect(scrollToFn.mock.calls[0]![0]).toBe(120)
   expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(80)
 })
+
+test('anchorTo:end keeps an end-pinned viewport pinned when the scroll element shrinks', () => {
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, resizeViewport } = createChatVirtualizer({
+    messages,
+    offset: 300,
+  })
+
+  resizeViewport(150)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(300)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(50)
+  expect(virtualizer.getVirtualDistanceFromEnd()).toBe(0)
+})
+
+test('anchorTo:end leaves the scroll position alone when the scroll element grows or the user is away from end', () => {
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const pinned = createChatVirtualizer({ messages, offset: 300 })
+  // The browser clamps scrollTop onto the new end itself.
+  pinned.resizeViewport(250)
+  expect(pinned.scrollToFn).not.toHaveBeenCalled()
+
+  const reading = createChatVirtualizer({ messages, offset: 100 })
+  reading.resizeViewport(150)
+  expect(reading.scrollToFn).not.toHaveBeenCalled()
+})
+
+test('anchorTo:end keeps the distance from the end when pinned within the threshold and ignores width changes', () => {
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, resizeViewport } = createChatVirtualizer({
+    messages,
+    offset: 295,
+    threshold: 10,
+  })
+
+  // Same height: nothing to keep in view.
+  resizeViewport(200)
+  expect(scrollToFn).not.toHaveBeenCalled()
+
+  resizeViewport(150)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(50)
+  expect(virtualizer.getVirtualDistanceFromEnd()).toBe(5)
+})
+
+test.each(['scroll element first', 'item first'])(
+  'anchorTo:end stays pinned when an item above the viewport shrinks in the same frame as the scroll element (%s)',
+  (order) => {
+    // e.g. rows capped at a share of the window height, on a window resize.
+    const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+    const { virtualizer, scrollElement, resizeViewport } =
+      createChatVirtualizer({ messages, offset: 300 })
+    const shrinkItem = () => {
+      virtualizer.resizeItem(2, 30)
+      ;(scrollElement as any).scrollHeight = 480
+    }
+
+    if (order === 'scroll element first') {
+      resizeViewport(150)
+      shrinkItem()
+    } else {
+      shrinkItem()
+      resizeViewport(150)
+    }
+
+    expect(virtualizer.getTotalSize()).toBe(480)
+    expect(virtualizer.scrollOffset).toBe(330)
+  },
+)
 
 test('anchorTo:end does not follow streaming growth when user is away from end', () => {
   const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
