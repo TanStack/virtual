@@ -903,8 +903,13 @@ export class Virtualizer<
             this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
           this.scrollRect = rect
           if (wasAtEnd && prevSize > this.getSize()) {
+            // While a clamped write waits for the sizer to grow, the DOM end
+            // is stale; apply the whole shrink and let the retry land it.
+            const shrink = prevSize - this.getSize()
             this.applyScrollAdjustment(
-              Math.min(prevSize - this.getSize(), this.getDistanceFromEnd()),
+              this._clampedAdjustment !== null
+                ? shrink
+                : Math.min(shrink, this.getDistanceFromEnd()),
             )
           }
           this.maybeNotify()

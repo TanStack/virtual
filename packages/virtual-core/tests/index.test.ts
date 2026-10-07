@@ -3318,6 +3318,22 @@ test('anchorTo:end keeps the distance from the end when pinned within the thresh
   expect(virtualizer.getVirtualDistanceFromEnd()).toBe(5)
 })
 
+test('anchorTo:end reaches the end when the scroll element shrinks while a clamped write waits for the sizer', () => {
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, resizeViewport } =
+    createChatVirtualizer({ messages, offset: 300 })
+
+  // The last item grows before the sizer does, so the end write is clamped.
+  virtualizer.resizeItem(9, 120)
+  resizeViewport(150)
+  // The sizer commits and the clamped write is retried.
+  ;(scrollElement as any).scrollHeight = 570
+  virtualizer._willUpdate()
+
+  const [offset, { adjustments }] = scrollToFn.mock.calls.at(-1)!
+  expect(offset + (adjustments ?? 0)).toBe(420)
+})
+
 test.each(['scroll element first', 'item first'])(
   'anchorTo:end stays pinned when an item above the viewport shrinks in the same frame as the scroll element (%s)',
   (order) => {
