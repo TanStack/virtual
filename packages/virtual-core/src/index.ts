@@ -383,6 +383,8 @@ type ScrollState = {
   index: number | null
   align: ScrollAlignment
   behavior: ScrollBehavior
+  // scrollToEnd: track the DOM max scroll offset instead of the item's offset
+  toEnd?: boolean
 
   // lifecycle
   startedAt: number
@@ -1168,8 +1170,9 @@ export class Virtualizer<
       return
     }
 
-    const offsetInfo =
-      this.scrollState.index != null
+    const offsetInfo = this.scrollState.toEnd
+      ? ([Math.max(this.getMaxScrollOffset(), 0)] as const)
+      : this.scrollState.index != null
         ? this.getOffsetForIndex(this.scrollState.index, this.scrollState.align)
         : undefined
     const targetOffset = offsetInfo
@@ -1905,13 +1908,13 @@ export class Virtualizer<
 
     // For the last item with 'end' alignment, use browser's actual max scroll
     // to account for borders/padding that aren't in our measurements (#1001),
-    // but subtract paddingEnd to keep the last item flush with the viewport
-    // bottom rather than overshooting past it (#1257).
+    // but swap paddingEnd for scrollPaddingEnd so the last item lands where
+    // any other end-aligned item would instead of overshooting past it (#1257).
     if (align === 'end' && index === this.options.count - 1) {
-      return [
-        Math.max(this.getMaxScrollOffset() - this.options.paddingEnd, 0),
-        align,
-      ] as const
+      const maxOffset = this.getMaxScrollOffset()
+      const toOffset =
+        maxOffset - this.options.paddingEnd + this.options.scrollPaddingEnd
+      return [Math.max(Math.min(toOffset, maxOffset), 0), align] as const
     }
 
     const toOffset =
@@ -2011,10 +2014,25 @@ export class Virtualizer<
 
   scrollToEnd = ({ behavior = 'auto' }: ScrollToEndOptions = {}) => {
     if (this.options.count > 0) {
-      this.scrollToIndex(this.options.count - 1, {
+      // Target the browser's max scroll rather than the last item's end-align
+      // offset, so paddingEnd is included and isAtEnd() holds afterwards.
+      this._iosDeferredAdjustment = 0
+
+      const offset = Math.max(this.getMaxScrollOffset(), 0)
+
+      this.scrollState = {
+        index: this.options.count - 1,
         align: 'end',
         behavior,
-      })
+        toEnd: true,
+        startedAt: this.now(),
+        lastTargetOffset: offset,
+        stableFrames: 0,
+      }
+
+      this._scrollToOffset(offset, { adjustments: undefined, behavior })
+
+      this.scheduleScrollReconcile()
       return
     }
 

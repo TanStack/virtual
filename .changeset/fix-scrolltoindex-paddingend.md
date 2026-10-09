@@ -2,4 +2,4 @@
 '@tanstack/virtual-core': patch
 ---
 
-fix(virtual-core): use getMaxScrollOffset() - paddingEnd for scrollToIndex(last) end-align, preserving lane-max behavior from #1001
+Fix `scrollToIndex(last, { align: 'end' })` overshooting the last item by `paddingEnd`; it now respects `scrollPaddingEnd` like other end-aligned items. To scroll to the very bottom including `paddingEnd`, use `scrollToEnd()`.
