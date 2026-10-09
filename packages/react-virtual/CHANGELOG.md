@@ -1,5 +1,16 @@
 # @tanstack/react-virtual
 
+## 3.14.14
+
+### Patch Changes
+
+- [#1301](https://github.com/TanStack/virtual/pull/1301) [`ce57b78`](https://github.com/TanStack/virtual/commit/ce57b78ddf7c2c3384067c528ef59f18d3199a46) - fix(react-virtual): position `directDomUpdates` rows that mount without the owner re-rendering
+
+  Rows were only positioned by the owner's layout effect or the next `onChange`. A row mounted by a child that re-renders on its own (local state, context, a resolved Suspense boundary) skipped both when it was fixed-size, and stayed unpositioned until the range changed. Rows are now positioned as they register through `measureElement`, and `containerRef` positions the rows that mounted together with the container.
+
+- Updated dependencies [[`43675bc`](https://github.com/TanStack/virtual/commit/43675bc42e3043cb2cea4dba015df077d9813602), [`9df47a3`](https://github.com/TanStack/virtual/commit/9df47a3215f3fb3d182442316d058e2a96696e4f), [`c644f10`](https://github.com/TanStack/virtual/commit/c644f1096c9f4d8221d92862afdc9316b17df62a), [`2a631f4`](https://github.com/TanStack/virtual/commit/2a631f46f4366227533f45604af3db8e60deb70f)]:
+  - @tanstack/virtual-core@3.18.0
+
 ## 3.14.13
 
 ### Patch Changes
