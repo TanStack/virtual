@@ -415,12 +415,244 @@ test('scrollToIndex(0) should reconcile correctly', () => {
   const calledOffset = scrollToFn.mock.calls[0]![0]
   expect(calledOffset).toBe(0)
 
-  // Flush rAF — reconcileScroll should run and not bail
-  // It should eventually clear scrollState (settle)
-  rafCallbacks.forEach((cb) => cb(0))
+  // The first frame leaves room for pending ResizeObserver measurements.
+  rafCallbacks.shift()!(0)
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.shift()!(0)
 
   // scrollState should be cleared after settling
   expect(virtualizer['scrollState']).toBeNull()
+})
+
+test.each([false, true])(
+  'scrollToIndex waits for pending measurements (deferred observer: %s)',
+  (useAnimationFrameWithResizeObserver) => {
+    const { rafCallbacks, mockScrollElement, scrollToFn } =
+      createMockEnvironment()
+    const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+    virtualizer.setOptions({
+      ...virtualizer.options,
+      useAnimationFrameWithResizeObserver,
+    })
+    virtualizer._willUpdate()
+    virtualizer.getVirtualItems()
+    virtualizer.resizeItem(98, 60)
+    virtualizer.getVirtualItems()
+    virtualizer.scrollOffset = 4400
+    scrollToFn.mockClear()
+
+    virtualizer.scrollToIndex(99, { align: 'end' })
+    expect(scrollToFn).toHaveBeenLastCalledWith(
+      4400,
+      expect.anything(),
+      virtualizer,
+    )
+
+    // rAF runs before ResizeObserver. An optional rAF wrapper defers the
+    // measurement until after the next reconciliation callback as well.
+    rafCallbacks.shift()!(0)
+    if (useAnimationFrameWithResizeObserver) {
+      rafCallbacks.shift()?.(0)
+    }
+    virtualizer.resizeItem(98, 90)
+    Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 5030 })
+    virtualizer.getVirtualItems()
+    rafCallbacks.shift()?.(0)
+
+    expect(scrollToFn).toHaveBeenLastCalledWith(
+      4430,
+      expect.anything(),
+      virtualizer,
+    )
+
+    virtualizer.scrollOffset = 4430
+    // Reconciliation must still retire once the new target is stable.
+    for (let frame = 0; frame < 3; frame++) {
+      rafCallbacks.shift()?.(0)
+    }
+    expect(virtualizer['scrollState']).toBeNull()
+    expect(rafCallbacks).toHaveLength(0)
+  },
+)
+
+test.each([false, true])(
+  'a new scroll away from a reached index target cancels reconciliation (retargeted: %s)',
+  (retargeted) => {
+    const { rafCallbacks, mockScrollElement, scrollToFn } =
+      createMockEnvironment()
+    const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+    let onScroll!: (offset: number, isScrolling: boolean) => void
+    virtualizer.setOptions({
+      ...virtualizer.options,
+      observeElementOffset: (_instance, callback) => {
+        onScroll = callback
+        callback(0, false)
+        return () => {}
+      },
+    })
+    virtualizer._willUpdate()
+    virtualizer.getVirtualItems()
+    virtualizer.scrollOffset = 4400
+    scrollToFn.mockClear()
+
+    virtualizer.scrollToIndex(99, { align: 'end' })
+    rafCallbacks.shift()!(0)
+    if (retargeted) {
+      virtualizer.resizeItem(97, 80)
+      Object.defineProperty(mockScrollElement, 'scrollHeight', {
+        value: 5030,
+        configurable: true,
+      })
+      virtualizer.getVirtualItems()
+      rafCallbacks.shift()!(0)
+      // The target changed before its write produced a scroll event. Arrival
+      // at the previous target must still let an external scroll cancel it.
+    }
+    const writes = scrollToFn.mock.calls.length
+    onScroll(2000, true)
+
+    // Measurements must not pull a reader back to the old target after they leave it.
+    virtualizer.resizeItem(98, 80)
+    Object.defineProperty(mockScrollElement, 'scrollHeight', {
+      value: retargeted ? 5060 : 5030,
+    })
+    virtualizer.getVirtualItems()
+    rafCallbacks.shift()!(0)
+
+    expect(virtualizer['scrollState']).toBeNull()
+    expect(virtualizer.scrollOffset).toBe(2000)
+    expect(scrollToFn).toHaveBeenCalledTimes(writes)
+  },
+)
+
+test.each(['auto', 'smooth'] as const)(
+  'keeps an index scroll active before reaching its target (%s)',
+  (behavior) => {
+    const { mockScrollElement, scrollToFn } = createMockEnvironment()
+    const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+    let onScroll!: (offset: number, isScrolling: boolean) => void
+    virtualizer.setOptions({
+      ...virtualizer.options,
+      observeElementOffset: (_instance, callback) => {
+        onScroll = callback
+        callback(0, false)
+        return () => {}
+      },
+    })
+    virtualizer._willUpdate()
+    virtualizer.getVirtualItems()
+    virtualizer.scrollToIndex(99, { align: 'end', behavior })
+    onScroll(2000, true)
+
+    expect(virtualizer['scrollState']).not.toBeNull()
+  },
+)
+
+test.each([30, 3000])(
+  'measurement compensation does not cancel a reached index target (growth: %s)',
+  (growth) => {
+    const { rafCallbacks, mockScrollElement, scrollToFn } =
+      createMockEnvironment()
+    scrollToFn.mockImplementation((offset, { adjustments }) => {
+      mockScrollElement.scrollTop = Math.min(4400, offset + (adjustments ?? 0))
+    })
+    const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+    let onScroll!: (offset: number, isScrolling: boolean) => void
+    virtualizer.setOptions({
+      ...virtualizer.options,
+      observeElementOffset: (_instance, callback) => {
+        onScroll = callback
+        callback(0, false)
+        return () => {}
+      },
+    })
+    virtualizer._willUpdate()
+    virtualizer.getVirtualItems()
+    virtualizer.scrollOffset = 2500
+    virtualizer.scrollToIndex(50, { align: 'start' })
+    rafCallbacks.shift()!(0)
+
+    // The browser may clamp this adjustment until the consumer grows the sizer.
+    virtualizer.resizeItem(0, 50 + growth)
+    onScroll(mockScrollElement.scrollTop, true)
+
+    expect(virtualizer['scrollState']).not.toBeNull()
+  },
+)
+
+test('a browser clamp to the new max does not cancel a reached scrollToEnd', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+  let onScroll!: (offset: number, isScrolling: boolean) => void
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    paddingEnd: 40,
+    observeElementOffset: (_instance, callback) => {
+      onScroll = callback
+      callback(0, false)
+      return () => {}
+    },
+  })
+  Object.defineProperty(mockScrollElement, 'scrollHeight', {
+    value: 5040,
+    configurable: true,
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+  virtualizer.scrollOffset = 4440
+
+  // Already at the end, so the target counts as reached straight away.
+  virtualizer.scrollToEnd()
+  onScroll(4440, false)
+
+  // The last row shrinks and the browser clamps scrollTop to the new max.
+  // That is the scrollToEnd target (paddingEnd included), not a scroll away.
+  virtualizer.resizeItem(99, 20)
+  Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 5010 })
+  onScroll(4410, false)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.shift()!(0)
+  expect(virtualizer['scrollState']?.lastTargetOffset).toBe(4410)
+})
+
+test('a smooth retarget is not cancelled by its own intermediate scroll events', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+  let onScroll!: (offset: number, isScrolling: boolean) => void
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    observeElementOffset: (_instance, callback) => {
+      onScroll = callback
+      callback(0, false)
+      return () => {}
+    },
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+  virtualizer.scrollOffset = 4400
+
+  // Already at the end, so the target counts as reached straight away.
+  virtualizer.scrollToIndex(99, { align: 'end', behavior: 'smooth' })
+  rafCallbacks.shift()!(0)
+
+  // A visible row grows by more than a viewport, so the retarget stays smooth.
+  virtualizer.resizeItem(98, 1050)
+  Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 6000 })
+  virtualizer.getVirtualItems()
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    5400,
+    { adjustments: undefined, behavior: 'smooth' },
+    virtualizer,
+  )
+
+  // The smooth scroll reports a position on its way to the new target.
+  onScroll(4800, true)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
 })
 
 test('scrollToOffset should reconcile and clear scrollState', () => {

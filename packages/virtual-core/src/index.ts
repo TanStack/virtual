@@ -394,6 +394,8 @@ type ScrollState = {
 
   // settling
   stableFrames: number
+  // Keep arrival across measurement-driven retargets so external scrolls can cancel.
+  hasReachedTarget: boolean
 }
 
 type PendingScrollAnchor = [
@@ -926,6 +928,18 @@ export class Virtualizer<
             Math.abs(offset - this._intendedScrollOffset) < 1.5
           ) {
             offset = this._intendedScrollOffset
+          } else if (
+            this.scrollState?.index != null &&
+            this.scrollState.hasReachedTarget &&
+            !approxEqual(offset, this.scrollState.lastTargetOffset) &&
+            !approxEqual(offset, this.getScrollStateTarget(this.scrollState)) &&
+            (this._clampedAdjustment === null ||
+              Math.abs(offset - this._clampedAdjustment.maxAtWrite) >= 1.5)
+          ) {
+            // The index scroll reached its target, but an external scroll moved
+            // away while we waited for measurements. Our own measurement updates
+            // (including clamped writes) still need to reconcile.
+            this.scrollState = null
           }
           this._intendedScrollOffset = null
 
@@ -1157,6 +1171,14 @@ export class Virtualizer<
       this.reconcileScroll()
     })
   }
+  private getScrollStateTarget(state: ScrollState) {
+    const offsetInfo = state.toEnd
+      ? ([Math.max(this.getMaxScrollOffset(), 0)] as const)
+      : state.index != null
+        ? this.getOffsetForIndex(state.index, state.align)
+        : undefined
+    return offsetInfo ? offsetInfo[0] : state.lastTargetOffset
+  }
   private reconcileScroll() {
     if (!this.scrollState) return
 
@@ -1170,23 +1192,23 @@ export class Virtualizer<
       return
     }
 
-    const offsetInfo = this.scrollState.toEnd
-      ? ([Math.max(this.getMaxScrollOffset(), 0)] as const)
-      : this.scrollState.index != null
-        ? this.getOffsetForIndex(this.scrollState.index, this.scrollState.align)
-        : undefined
-    const targetOffset = offsetInfo
-      ? offsetInfo[0]
-      : this.scrollState.lastTargetOffset
+    const targetOffset = this.getScrollStateTarget(this.scrollState)
 
-    // Require one stable frame where target matches scroll offset.
-    // approxEqual() already tolerates minor fluctuations, so one frame is sufficient
-    // to confirm scroll has reached its target without premature cleanup.
-    const STABLE_FRAMES = 1
+    // Index targets can still depend on cached sizes during the first rAF,
+    // which runs before ResizeObserver delivers pending measurements. Wait
+    // another frame (two when measurements are themselves deferred to rAF)
+    // before retiring an index scroll. Absolute offsets don't need this wait.
+    const STABLE_FRAMES =
+      this.scrollState.index == null
+        ? 1
+        : this.options.useAnimationFrameWithResizeObserver
+          ? 3
+          : 2
 
     const targetChanged = targetOffset !== this.scrollState.lastTargetOffset
 
     if (!targetChanged && approxEqual(targetOffset, this.getScrollOffset())) {
+      this.scrollState.hasReachedTarget = true
       this.scrollState.stableFrames++
       if (this.scrollState.stableFrames >= STABLE_FRAMES) {
         // Final-pass exact landing. The reconcile-stable check uses a 1.01px
@@ -1221,7 +1243,11 @@ export class Virtualizer<
           this.scrollState.behavior === 'smooth' && distance > viewport
 
         this.scrollState.lastTargetOffset = targetOffset
-        if (!keepSmooth) {
+        if (keepSmooth) {
+          // A smooth retarget travels again, so its intermediate scroll
+          // events must not read as an external scroll away from the target.
+          this.scrollState.hasReachedTarget = false
+        } else {
           this.scrollState.behavior = 'auto'
         }
 
@@ -1955,6 +1981,7 @@ export class Virtualizer<
       startedAt: now,
       lastTargetOffset: offset,
       stableFrames: 0,
+      hasReachedTarget: false,
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -1989,6 +2016,7 @@ export class Virtualizer<
       startedAt: now,
       lastTargetOffset: offset,
       stableFrames: 0,
+      hasReachedTarget: approxEqual(offset, this.getScrollOffset()),
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -2010,6 +2038,7 @@ export class Virtualizer<
       startedAt: now,
       lastTargetOffset: offset,
       stableFrames: 0,
+      hasReachedTarget: false,
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -2033,6 +2062,7 @@ export class Virtualizer<
         startedAt: this.now(),
         lastTargetOffset: offset,
         stableFrames: 0,
+        hasReachedTarget: approxEqual(offset, this.getScrollOffset()),
       }
 
       this._scrollToOffset(offset, { adjustments: undefined, behavior })

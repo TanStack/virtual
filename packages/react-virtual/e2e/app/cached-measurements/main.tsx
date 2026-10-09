@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { flushSync } from 'react-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 const items = Array.from({ length: 20 }, (_, i) => ({
@@ -11,14 +12,19 @@ const items = Array.from({ length: 20 }, (_, i) => ({
 const App = () => {
   const parentRef = React.useRef<HTMLDivElement>(null)
   const [hidden, setHidden] = React.useState(false)
+  const [expanded, setExpanded] = React.useState(false)
 
   const rowVirtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (i) => items[i].height,
+    estimateSize: (i) => items[i].height - 10,
     getItemKey: (i) => items[i].id,
     useCachedMeasurements: hidden,
     directDomUpdates: true,
+    overscan: items.length,
+    useAnimationFrameWithResizeObserver: new URLSearchParams(
+      location.search,
+    ).has('raf'),
   })
 
   return (
@@ -26,6 +32,24 @@ const App = () => {
       <button data-testid="toggle" onClick={() => setHidden((h) => !h)}>
         {hidden ? 'Show' : 'Hide'}
       </button>
+      <button
+        onClick={() =>
+          rowVirtualizer.scrollToIndex(items.length - 1, { align: 'end' })
+        }
+      >
+        Scroll to end
+      </button>
+      <button
+        onClick={() => {
+          flushSync(() => setExpanded(true))
+          rowVirtualizer.scrollToIndex(items.length - 1, { align: 'end' })
+        }}
+      >
+        Grow and pin
+      </button>
+      <div data-testid="scrolling">
+        {rowVirtualizer.isScrolling ? 'scrolling' : 'idle'}
+      </div>
       <div
         data-testid="list-wrapper"
         style={{ display: hidden ? 'none' : 'block' }}
@@ -52,7 +76,7 @@ const App = () => {
                     top: 0,
                     left: 0,
                     width: '100%',
-                    height: item.height,
+                    height: item.height + (expanded && v.index === 18 ? 30 : 0),
                   }}
                 >
                   {item.label}
