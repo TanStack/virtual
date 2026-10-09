@@ -4782,18 +4782,48 @@ test('subscribe publishes a scroll direction flip within the same range', () => 
 })
 
 test('_willUpdate publishes options set since the last notify', () => {
-  const virtualizer = createStoreVirtualizer()
+  const onChange = vi.fn()
+  const virtualizer = createStoreVirtualizer({ onChange })
   virtualizer._willUpdate()
 
   const listener = vi.fn()
   virtualizer.subscribe(listener)
   virtualizer._willUpdate()
   listener.mockClear()
+  onChange.mockClear()
 
   virtualizer.setOptions({ ...virtualizer.options, count: 2 })
   expect(listener).not.toHaveBeenCalled()
 
+  // The range moved from 0–3 to 0–1 and nothing read it in between, so the
+  // publish goes through `notify`: `onChange` first, then the listener.
   virtualizer._willUpdate()
+  expect(onChange).toHaveBeenCalledTimes(1)
+  expect(onChange).toHaveBeenCalledWith(virtualizer, false)
   expect(listener).toHaveBeenCalledTimes(1)
+  expect(onChange.mock.invocationCallOrder[0]).toBeLessThan(
+    listener.mock.invocationCallOrder[0]!,
+  )
   expect(virtualizer.getState().totalSize).toBe(100)
+})
+
+test('_willUpdate publishes a change that keeps the range without an onChange', () => {
+  const onChange = vi.fn()
+  const virtualizer = createStoreVirtualizer({ onChange })
+  virtualizer._willUpdate()
+
+  const listener = vi.fn()
+  virtualizer.subscribe(listener)
+  virtualizer._willUpdate()
+  listener.mockClear()
+  onChange.mockClear()
+
+  // Half the rows: the total size changes, the visible range 0–3 does not.
+  virtualizer.setOptions({ ...virtualizer.options, count: 50 })
+  virtualizer._willUpdate()
+
+  expect(listener).toHaveBeenCalledTimes(1)
+  expect(onChange).not.toHaveBeenCalled()
+  expect(virtualizer.getState().totalSize).toBe(2500)
+  expect(virtualizer.getState().range).toEqual({ startIndex: 0, endIndex: 3 })
 })
