@@ -511,6 +511,73 @@ test('cleanup should cancel pending RAF and clear scrollState', () => {
   expect(mockWindow.cancelAnimationFrame).toHaveBeenCalled()
 })
 
+test('cancelScroll stops reconciling toward the old target (#1285)', () => {
+  const { rafCallbacks, mockWindow, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+
+  virtualizer._willUpdate()
+  virtualizer.scrollToIndex(50, { align: 'start' })
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  expect(virtualizer['rafId']).not.toBeNull()
+
+  // The user takes over mid-travel.
+  virtualizer.cancelScroll()
+
+  expect(virtualizer['scrollState']).toBeNull()
+  expect(virtualizer['rafId']).toBeNull()
+  expect(mockWindow.cancelAnimationFrame).toHaveBeenCalled()
+
+  // A measurement above the old target would move it; without the cancel,
+  // reconcile chases the new target and yanks the viewport back.
+  scrollToFn.mockClear()
+  virtualizer.resizeItem(10, 200)
+  rafCallbacks.forEach((cb) => cb(0))
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+})
+
+test('cancelScroll restores size-change compensation after a smooth scroll', () => {
+  const { mockScrollElement, scrollToFn } = createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+
+  virtualizer._willUpdate()
+  virtualizer.scrollOffset = 1000
+  virtualizer.scrollToIndex(50, { behavior: 'smooth' })
+  virtualizer.cancelScroll()
+  scrollToFn.mockClear()
+
+  // First measurement of an item above the fold is compensated again; while
+  // the smooth scrollState was active it would have been skipped.
+  virtualizer.resizeItem(0, 80)
+
+  expect(scrollToFn).toHaveBeenCalledWith(
+    1000,
+    expect.objectContaining({ adjustments: 30 }),
+    virtualizer,
+  )
+})
+
+test('cancelScroll is a no-op when no scroll is in flight', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+
+  virtualizer._willUpdate()
+  scrollToFn.mockClear()
+
+  expect(() => virtualizer.cancelScroll()).not.toThrow()
+  expect(scrollToFn).not.toHaveBeenCalled()
+
+  // A later scroll command still works normally.
+  virtualizer.scrollToOffset(200)
+  expect(virtualizer['scrollState']).not.toBeNull()
+  virtualizer.scrollOffset = 200
+  rafCallbacks.forEach((cb) => cb(0))
+  expect(virtualizer['scrollState']).toBeNull()
+})
+
 // ─── resizeItem / measurement cache invalidation ─────────────────────────────
 // These tests pin down the contract that resizeItem invalidates the
 // getMeasurements memo so subsequent reads reflect the new sizes.

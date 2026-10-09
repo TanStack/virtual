@@ -141,5 +141,6 @@ Use a normal scroll container and normal item order. You do not need `flex-direc
 - [`followOnAppend`](api/virtualizer#followonappend)
 - [`scrollEndThreshold`](api/virtualizer#scrollendthreshold)
 - [`scrollToEnd`](api/virtualizer#scrolltoend)
+- [`cancelScroll`](api/virtualizer#cancelscroll)
 - [`getDistanceFromEnd`](api/virtualizer#getdistancefromend)
 - [`isAtEnd`](api/virtualizer#isatend)

@@ -222,6 +222,7 @@ Both tags expose the same shape. Capture it with `<virtualizer/v .../>` and read
 | `measure`            | `() => void`                                          | Drop all measured sizes and re-measure everything (after a width/font change)                                                                   |
 | `resizeItem`         | `(index: number, size: number) => void`               | Set one item's size directly, without a DOM measure                                                                                             |
 | `scrollToEnd`        | `(options?: { behavior?: ScrollBehavior }) => void`   | Scroll to the very end of the list                                                                                                              |
+| `cancelScroll`       | `() => void`                                          | Stop an in-flight scroll command from correcting toward its target                                                                              |
 | `isAtEnd`            | `(threshold?: number) => boolean`                     | Whether the scroll position is at (or within `threshold` px of) the end. `false` before mount                                                   |
 | `getDistanceFromEnd` | `() => number`                                        | Pixels between the current scroll position and the end. `Infinity` before mount                                                                 |
 
