@@ -853,6 +853,103 @@ test('RO callback should remove disconnected node from elementsCache', () => {
   expect(virtualizer.elementsCache.has(3)).toBe(false)
 })
 
+test('measureElement should not cache a 0 size for a node that is not connected yet', () => {
+  // Vue calls function refs during patch, before the parent is inserted,
+  // so measureElement can receive a node whose offsetHeight is still 0.
+  let roCallback: ResizeObserverCallback | null = null
+  const observe = vi.fn()
+  const MockResizeObserver = vi.fn(function (cb: ResizeObserverCallback) {
+    roCallback = cb
+    return {
+      observe,
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    }
+  })
+
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    performance: { now: () => Date.now() },
+    ResizeObserver: MockResizeObserver,
+  }
+
+  const mockScrollElement = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 1000,
+    scrollHeight: 5000,
+    offsetWidth: 400,
+    offsetHeight: 600,
+    ownerDocument: { defaultView: mockWindow },
+  } as unknown as HTMLDivElement
+
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => mockScrollElement,
+    scrollToFn: vi.fn(),
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+
+  virtualizer._willUpdate()
+
+  const nodes = [0, 1, 2].map(
+    (index) =>
+      ({
+        getAttribute: (name: string) =>
+          name === 'data-index' ? String(index) : null,
+        isConnected: false,
+        offsetHeight: 0,
+        offsetWidth: 0,
+        setAttribute: vi.fn(),
+      }) as unknown as HTMLElement,
+  )
+
+  nodes.forEach((node) => virtualizer.measureElement(node))
+
+  // Observed, but the 0 isn't cached: items keep their estimated positions.
+  expect(observe).toHaveBeenCalledTimes(3)
+  expect(virtualizer.elementsCache.get(1)).toBe(nodes[1])
+  expect(
+    virtualizer
+      .getVirtualItems()
+      .slice(0, 3)
+      .map((item) => item.start),
+  ).toEqual([0, 50, 100])
+
+  nodes.forEach((node) => {
+    ;(node as any).isConnected = true
+  })
+  roCallback!(
+    nodes.map(
+      (node) =>
+        ({
+          target: node,
+          contentRect: { height: 60, width: 400 } as DOMRectReadOnly,
+          borderBoxSize: [{ blockSize: 60, inlineSize: 400 }],
+          contentBoxSize: [{ blockSize: 60, inlineSize: 400 }],
+          devicePixelContentBoxSize: [{ blockSize: 60, inlineSize: 400 }],
+        }) as ResizeObserverEntry,
+    ),
+    {} as ResizeObserver,
+  )
+
+  expect(
+    virtualizer
+      .getVirtualItems()
+      .slice(0, 3)
+      .map((item) => item.start),
+  ).toEqual([0, 60, 120])
+})
+
 test('RO callback should not delete cache entry if node was replaced by React', () => {
   // Edge case: if React unmounts node A and mounts node B for the same key,
   // a delayed RO callback for the now-disconnected node A must not delete
