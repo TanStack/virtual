@@ -383,6 +383,8 @@ type ScrollState = {
   index: number | null
   align: ScrollAlignment
   behavior: ScrollBehavior
+  // scrollToEnd: track the DOM max scroll offset instead of the item's offset
+  toEnd?: boolean
 
   // lifecycle
   startedAt: number
@@ -1188,8 +1190,9 @@ export class Virtualizer<
       return
     }
 
-    const offsetInfo =
-      this.scrollState.index != null
+    const offsetInfo = this.scrollState.toEnd
+      ? ([Math.max(this.getMaxScrollOffset(), 0)] as const)
+      : this.scrollState.index != null
         ? this.getOffsetForIndex(this.scrollState.index, this.scrollState.align)
         : undefined
     const targetOffset = offsetInfo
@@ -1700,7 +1703,12 @@ export class Virtualizer<
     // Sync-measure when idle (initial render) or during programmatic scrolling
     // (scrollToIndex/scrollToOffset) where reconcileScroll needs sizes in the same frame.
     // During normal user scrolling, skip sync measurement — the RO callback handles it async.
+    // Skip nodes that aren't attached yet: they have no layout and would be
+    // cached as 0. Vue calls function refs during patch, before the parent is
+    // inserted. The node is observed above, so the RO reports its size once
+    // it's connected.
     if (
+      node.isConnected &&
       (!this.isScrolling || this.scrollState) &&
       this.shouldMeasureDuringScroll(index)
     ) {
@@ -1931,9 +1939,14 @@ export class Virtualizer<
     }
 
     // For the last item with 'end' alignment, use browser's actual max scroll
-    // to account for borders/padding that aren't in our measurements
+    // to account for borders/padding that aren't in our measurements (#1001),
+    // but swap paddingEnd for scrollPaddingEnd so the last item lands where
+    // any other end-aligned item would instead of overshooting past it (#1257).
     if (align === 'end' && index === this.options.count - 1) {
-      return [this.getMaxScrollOffset(), align] as const
+      const maxOffset = this.getMaxScrollOffset()
+      const toOffset =
+        maxOffset - this.options.paddingEnd + this.options.scrollPaddingEnd
+      return [Math.max(Math.min(toOffset, maxOffset), 0), align] as const
     }
 
     const toOffset =
@@ -2036,16 +2049,43 @@ export class Virtualizer<
 
   scrollToEnd = ({ behavior = 'auto' }: ScrollToEndOptions = {}) => {
     if (this.options.count > 0) {
-      this.scrollToIndex(this.options.count - 1, {
+      // Target the browser's max scroll rather than the last item's end-align
+      // offset, so paddingEnd is included and isAtEnd() holds afterwards.
+      this._iosDeferredAdjustment = 0
+
+      const offset = Math.max(this.getMaxScrollOffset(), 0)
+
+      this.scrollState = {
+        index: this.options.count - 1,
         align: 'end',
         behavior,
-      })
+        toEnd: true,
+        startedAt: this.now(),
+        lastTargetOffset: offset,
+        stableFrames: 0,
+      }
+
+      this._scrollToOffset(offset, { adjustments: undefined, behavior })
+
+      this.scheduleScrollReconcile()
       return
     }
 
     this.scrollToOffset(Math.max(this.getTotalSize() - this.getSize(), 0), {
       behavior,
     })
+  }
+
+  // Drops the target of an in-flight scrollToIndex / scrollToOffset /
+  // scrollBy / scrollToEnd so a user gesture can take over the viewport.
+  // The scroll position is left untouched: writing it would stop iOS
+  // momentum, and a real gesture already interrupts a native smooth scroll.
+  cancelScroll = () => {
+    if (this.rafId != null && this.targetWindow) {
+      this.targetWindow.cancelAnimationFrame(this.rafId)
+      this.rafId = null
+    }
+    this.scrollState = null
   }
 
   getTotalSize = () => {
