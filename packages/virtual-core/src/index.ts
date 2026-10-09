@@ -2046,6 +2046,18 @@ export class Virtualizer<
     })
   }
 
+  // Drops the target of an in-flight scrollToIndex / scrollToOffset /
+  // scrollBy / scrollToEnd so a user gesture can take over the viewport.
+  // The scroll position is left untouched: writing it would stop iOS
+  // momentum, and a real gesture already interrupts a native smooth scroll.
+  cancelScroll = () => {
+    if (this.rafId != null && this.targetWindow) {
+      this.targetWindow.cancelAnimationFrame(this.rafId)
+      this.rafId = null
+    }
+    this.scrollState = null
+  }
+
   getTotalSize = () => {
     const measurements = this.getMeasurements()
 
