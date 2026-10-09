@@ -932,13 +932,7 @@ export class Virtualizer<
             this.scrollState?.index != null &&
             this.scrollState.hasReachedTarget &&
             !approxEqual(offset, this.scrollState.lastTargetOffset) &&
-            !approxEqual(
-              offset,
-              this.getOffsetForIndex(
-                this.scrollState.index,
-                this.scrollState.align,
-              )?.[0] ?? this.scrollState.lastTargetOffset,
-            ) &&
+            !approxEqual(offset, this.getScrollStateTarget(this.scrollState)) &&
             (this._clampedAdjustment === null ||
               Math.abs(offset - this._clampedAdjustment.maxAtWrite) >= 1.5)
           ) {
@@ -1177,6 +1171,14 @@ export class Virtualizer<
       this.reconcileScroll()
     })
   }
+  private getScrollStateTarget(state: ScrollState) {
+    const offsetInfo = state.toEnd
+      ? ([Math.max(this.getMaxScrollOffset(), 0)] as const)
+      : state.index != null
+        ? this.getOffsetForIndex(state.index, state.align)
+        : undefined
+    return offsetInfo ? offsetInfo[0] : state.lastTargetOffset
+  }
   private reconcileScroll() {
     if (!this.scrollState) return
 
@@ -1190,14 +1192,7 @@ export class Virtualizer<
       return
     }
 
-    const offsetInfo = this.scrollState.toEnd
-      ? ([Math.max(this.getMaxScrollOffset(), 0)] as const)
-      : this.scrollState.index != null
-        ? this.getOffsetForIndex(this.scrollState.index, this.scrollState.align)
-        : undefined
-    const targetOffset = offsetInfo
-      ? offsetInfo[0]
-      : this.scrollState.lastTargetOffset
+    const targetOffset = this.getScrollStateTarget(this.scrollState)
 
     // Index targets can still depend on cached sizes during the first rAF,
     // which runs before ResizeObserver delivers pending measurements. Wait
@@ -1248,7 +1243,11 @@ export class Virtualizer<
           this.scrollState.behavior === 'smooth' && distance > viewport
 
         this.scrollState.lastTargetOffset = targetOffset
-        if (!keepSmooth) {
+        if (keepSmooth) {
+          // A smooth retarget travels again, so its intermediate scroll
+          // events must not read as an external scroll away from the target.
+          this.scrollState.hasReachedTarget = false
+        } else {
           this.scrollState.behavior = 'auto'
         }
 
@@ -2063,6 +2062,7 @@ export class Virtualizer<
         startedAt: this.now(),
         lastTargetOffset: offset,
         stableFrames: 0,
+        hasReachedTarget: approxEqual(offset, this.getScrollOffset()),
       }
 
       this._scrollToOffset(offset, { adjustments: undefined, behavior })
