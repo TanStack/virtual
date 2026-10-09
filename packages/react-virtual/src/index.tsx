@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { flushSync } from 'react-dom'
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector'
 import {
   Virtualizer,
   elementScroll,
@@ -13,6 +14,7 @@ import type {
   PartialKeys,
   VirtualItem,
   VirtualizerOptions,
+  VirtualizerState,
 } from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
@@ -98,18 +100,18 @@ function useVirtualizerBase<
     // node — e.g. when `enabled` is toggled off then on) is treated as fresh
     // and gets its style written.
     lastPositions: new WeakMap<HTMLElement, number>(),
-    prevRange: null as {
-      startIndex: number
-      endIndex: number
-      isScrolling: boolean
-    } | null,
+    // The `range` / `isScrolling` last rendered. `undefined` until the first
+    // notify so that one always renders.
+    renderedRange: undefined as VirtualizerState['range'] | undefined,
+    renderedIsScrolling: false,
   })
   directRef.current.enabled = directDomUpdates
   directRef.current.mode = directDomUpdatesMode
 
-  // Set while the virtualizer measures an item through `measureElement`, which is
-  // passed as a ref and therefore runs while React is committing.
-  const measuringFromRef = React.useRef(false)
+  // Set while React is committing and the virtualizer may notify: inside
+  // `measureElement`, which is passed as a ref, and inside `_willUpdate`,
+  // which runs in a layout effect. `flushSync` cannot flush in that window.
+  const committingRef = React.useRef(false)
 
   // Writes the size container's total extent to the DOM. Idempotent — guarded
   // by lastSize. Split out from applyDirectStyles so it can run *before* the
@@ -181,35 +183,30 @@ function useVirtualizerBase<
       if (state.enabled) {
         applyDirectStyles(instance)
 
-        // Only re-render on range / isScrolling changes
-        const range = instance.range
-        const prev = state.prevRange
+        // Only re-render on range / isScrolling changes. The snapshot keeps
+        // `range` referentially stable while its indexes are unchanged.
+        const { range, isScrolling } = instance.getState()
         shouldRerender =
-          !prev ||
-          prev.isScrolling !== instance.isScrolling ||
-          prev.startIndex !== range?.startIndex ||
-          prev.endIndex !== range?.endIndex
+          range !== state.renderedRange ||
+          isScrolling !== state.renderedIsScrolling
         if (shouldRerender) {
-          state.prevRange = range
-            ? {
-                startIndex: range.startIndex,
-                endIndex: range.endIndex,
-                isScrolling: instance.isScrolling,
-              }
-            : null
+          state.renderedRange = range
+          state.renderedIsScrolling = isScrolling
         }
       }
 
       if (shouldRerender) {
-        // A sync notify raised from `measureElement` reaches us while React is
-        // committing, because `measureElement` is a ref callback. `flushSync`
-        // cannot flush there: React still runs the callback at sync priority, but
-        // it skips the flush and warns in development. The commit phase already
-        // runs at discrete (sync) priority, so leaving `flushSync` out for that
-        // window keeps the same lane and the same flush point — without the
-        // warning. Every other sync notify (ResizeObserver re-measures, scroll
-        // adjustments) still flushes synchronously.
-        if (useFlushSync && sync && !measuringFromRef.current) {
+        // A sync notify can reach us while React is committing: from
+        // `measureElement`, a ref callback, or from `_willUpdate`, a layout
+        // effect, when it publishes an option change that moved the range
+        // mid-scroll. `flushSync` cannot flush there: React still runs the
+        // callback at sync priority, but it skips the flush and warns in
+        // development. The commit phase already runs at discrete (sync)
+        // priority, so leaving `flushSync` out for that window keeps the same
+        // lane and the same flush point — without the warning. Every other
+        // sync notify (ResizeObserver re-measures, scroll adjustments) still
+        // flushes synchronously.
+        if (useFlushSync && sync && !committingRef.current) {
           flushSync(rerender)
         } else {
           rerender()
@@ -224,11 +221,11 @@ function useVirtualizerBase<
     const v = new Virtualizer<TScrollElement, TItemElement>(resolvedOptions)
     const measureElement = v.measureElement
     v.measureElement = (node: TItemElement | null) => {
-      measuringFromRef.current = true
+      committingRef.current = true
       try {
         measureElement(node)
       } finally {
-        measuringFromRef.current = false
+        committingRef.current = false
       }
       // A row can mount in a commit that does not include this component — a
       // child re-rendering on its own state, context or a resolved Suspense
@@ -270,7 +267,12 @@ function useVirtualizerBase<
     // top until the next scroll. Positions are written afterwards by the
     // applyDirectStyles effect below.
     applyContainerSize(instance)
-    return instance._willUpdate()
+    committingRef.current = true
+    try {
+      return instance._willUpdate()
+    } finally {
+      committingRef.current = false
+    }
   })
 
   // After every render commit, newly mounted item refs have registered in
@@ -317,4 +319,49 @@ export function useWindowVirtualizer<TItemElement extends Element>(
     initialOffset: () => (typeof document !== 'undefined' ? window.scrollY : 0),
     ...options,
   })
+}
+
+const selectState = (state: VirtualizerState) => state
+
+/**
+ * Subscribes to a virtualizer's render-relevant state (`virtualItems`,
+ * `totalSize`, `range`, `isScrolling`, `scrollDirection`) through
+ * `useSyncExternalStore`. Values read here are safe under the React Compiler,
+ * unlike calling `virtualizer.getVirtualItems()` during render — the instance
+ * is stable, so the compiler may memoise such calls.
+ *
+ * Pass a `selector` to re-render only when the selected value changes, and
+ * `isEqual` when the selector builds a new object each time.
+ */
+export function useVirtualizerState<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+>(virtualizer: Virtualizer<TScrollElement, TItemElement>): VirtualizerState
+export function useVirtualizerState<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+  TSelected,
+>(
+  virtualizer: Virtualizer<TScrollElement, TItemElement>,
+  selector: (state: VirtualizerState) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean,
+): TSelected
+export function useVirtualizerState<
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+  TSelected,
+>(
+  virtualizer: Virtualizer<TScrollElement, TItemElement>,
+  selector: (state: VirtualizerState) => TSelected = selectState as (
+    state: VirtualizerState,
+  ) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean,
+): TSelected {
+  return useSyncExternalStoreWithSelector(
+    virtualizer.subscribe,
+    virtualizer.getState,
+    virtualizer.getState,
+    selector,
+    isEqual,
+  )
 }
