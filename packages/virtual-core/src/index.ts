@@ -299,16 +299,29 @@ export const measureElement = <TItemElement extends Element>(
   ]
 }
 
-const scrollWithAdjustments = (
+const scrollWithAdjustments = <
+  TScrollElement extends Element | Window,
+  TItemElement extends Element,
+>(
   offset: number,
   {
     adjustments = 0,
     behavior,
   }: { adjustments?: number; behavior?: ScrollBehavior },
-  instance: Virtualizer<any, any>,
+  instance: Virtualizer<TScrollElement, TItemElement>,
 ) => {
-  instance.scrollElement?.scrollTo?.({
-    [instance.options.horizontal ? 'left' : 'top']: offset + adjustments,
+  const { scrollElement, options } = instance
+  const adjustedOffset = offset + adjustments
+  const isRtlElement =
+    options.horizontal &&
+    options.isRtl &&
+    scrollElement !== null &&
+    'ownerDocument' in scrollElement
+
+  scrollElement?.scrollTo?.({
+    [options.horizontal ? 'left' : 'top']: isRtlElement
+      ? -adjustedOffset
+      : adjustedOffset,
     behavior,
   })
 }
