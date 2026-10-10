@@ -73,7 +73,7 @@ followOnAppend: 'smooth'
 
 ### Keep streaming output pinned
 
-Streaming chat responses usually grow the last item many times. In end-anchored mode, if the viewport is pinned to the end before the measured size changes, the virtualizer adjusts by the size delta and keeps the bottom stuck to the latest output.
+Streaming chat responses usually grow the last item many times. In end-anchored mode, if the viewport is pinned to the end before the measured size changes, the virtualizer adjusts by the size delta and keeps the bottom stuck to the latest output. The same applies when the scroll element shrinks, for example when the window is resized or the app changes its height.
 
 This works with the normal dynamic measurement pattern:
 

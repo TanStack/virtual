@@ -921,7 +921,28 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
+          // With anchorTo: 'end', keep an end-pinned viewport pinned when the
+          // scroll element shrinks, as resizeItem does when an item grows. The
+          // browser keeps scrollTop, so the end would otherwise drop below the
+          // fold. Judge "pinned" against the size before this change, and
+          // never scroll past the element's real end.
+          const prevSize = this.scrollRect !== null ? this.getSize() : null
+          const wasAtEnd =
+            prevSize !== null &&
+            this.options.anchorTo === 'end' &&
+            this.scrollState?.behavior !== 'smooth' &&
+            this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
           this.scrollRect = rect
+          if (wasAtEnd && prevSize > this.getSize()) {
+            // While a clamped write waits for the sizer to grow, the DOM end
+            // is stale; apply the whole shrink and let the retry land it.
+            const shrink = prevSize - this.getSize()
+            this.applyScrollAdjustment(
+              this._clampedAdjustment !== null
+                ? shrink
+                : Math.min(shrink, this.getDistanceFromEnd()),
+            )
+          }
           this.maybeNotify()
         }),
       )
