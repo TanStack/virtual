@@ -56,6 +56,11 @@ export interface Range {
   endIndex: number
   overscan: number
   count: number
+  /**
+   * Lane count of the virtualizer. When greater than 1, `overscan` counts
+   * rows of `lanes` items rather than single items.
+   */
+  lanes?: number
 }
 
 type Key = number | string | bigint
@@ -84,8 +89,13 @@ const getRect = (element: HTMLElement): Rect => {
 export const defaultKeyExtractor = (index: number) => index
 
 export const defaultRangeExtractor = (range: Range) => {
-  const start = Math.max(range.startIndex - range.overscan, 0)
-  const end = Math.min(range.endIndex + range.overscan, range.count - 1)
+  // With lanes, the visible range is already aligned to whole rows; overscan
+  // by whole rows too, so every lane gets the same number of items rendered
+  // (and measured). Overscanning single items leaves partial rows, letting one
+  // lane collect more measured sizes than the others and drift (#1036).
+  const overscan = range.overscan * Math.max(range.lanes ?? 1, 1)
+  const start = Math.max(range.startIndex - overscan, 0)
+  const end = Math.min(range.endIndex + overscan, range.count - 1)
   const len = end - start + 1
 
   const arr = new Array<number>(len)
@@ -505,6 +515,9 @@ export class Virtualizer<
         instance: Virtualizer<TScrollElement, TItemElement>,
       ) => boolean)
   elementsCache = new Map<Key, TItemElement>()
+  // Set while a ResizeObserver callback measures its entries; `resizeItem`
+  // records the pending notify here instead of firing it per entry.
+  private _resizeBatch: { sync: boolean; notify?: boolean } | null = null
   private now = () => this.targetWindow?.performance?.now?.() ?? Date.now()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
@@ -519,44 +532,58 @@ export class Virtualizer<
       }
 
       return (_ro = new this.targetWindow.ResizeObserver((entries) => {
-        entries.forEach((entry) => {
-          const run = () => {
-            const node = entry.target as TItemElement
-            const index = this.indexFromElement(node)
-
-            if (!node.isConnected) {
-              this.observer.unobserve(node)
-              // Find the cache entry pointing to this exact node and remove
-              // it. We can't call getItemKey(index) here because items may
-              // have been removed since this node was rendered — the index
-              // could be stale and out-of-bounds in the user's data array
-              // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
-              // The === comparison naturally handles the React-replaced-
-              // a-node-for-the-same-key case: that entry now points to a
-              // different node, so this loop won't match.
-              for (const [cacheKey, cachedNode] of this.elementsCache) {
-                if (cachedNode === node) {
-                  this.elementsCache.delete(cacheKey)
-                  break
-                }
-              }
-              return
-            }
-
-            if (!this.isIndexInRange(index)) return
-
-            if (this.shouldMeasureDuringScroll(index)) {
-              this.resizeItem(
-                index,
-                this.options.measureElement(node, entry, this),
-              )
+        const run = () => {
+          // Measure every entry before notifying. A notify that adjusted
+          // scroll re-renders synchronously, and that render can unmount
+          // nodes whose entries are still queued here, leaving them
+          // unmeasured. With lanes, a half-measured row lets one lane drift
+          // away from the others (#1036).
+          const batch: { sync: boolean; notify?: boolean } = { sync: false }
+          this._resizeBatch = batch
+          try {
+            entries.forEach(measureEntry)
+          } finally {
+            this._resizeBatch = null
+            if (batch.notify) {
+              this.notify(batch.sync)
+              this._retryClampedAdjustment()
             }
           }
-          this.options.useAnimationFrameWithResizeObserver
-            ? requestAnimationFrame(run)
-            : run()
-        })
+        }
+        this.options.useAnimationFrameWithResizeObserver
+          ? requestAnimationFrame(run)
+          : run()
       }))
+    }
+
+    const measureEntry = (entry: ResizeObserverEntry) => {
+      const node = entry.target as TItemElement
+      const index = this.indexFromElement(node)
+
+      if (!node.isConnected) {
+        this.observer.unobserve(node)
+        // Find the cache entry pointing to this exact node and remove
+        // it. We can't call getItemKey(index) here because items may
+        // have been removed since this node was rendered — the index
+        // could be stale and out-of-bounds in the user's data array
+        // (regression test in e2e/.../stale-index.spec.ts, fix #1148).
+        // The === comparison naturally handles the React-replaced-
+        // a-node-for-the-same-key case: that entry now points to a
+        // different node, so this loop won't match.
+        for (const [cacheKey, cachedNode] of this.elementsCache) {
+          if (cachedNode === node) {
+            this.elementsCache.delete(cacheKey)
+            break
+          }
+        }
+        return
+      }
+
+      if (!this.isIndexInRange(index)) return
+
+      if (this.shouldMeasureDuringScroll(index)) {
+        this.resizeItem(index, this.options.measureElement(node, entry, this))
+      }
     }
 
     return {
@@ -1610,9 +1637,10 @@ export class Virtualizer<
         this.options.count,
         startIndex,
         endIndex,
+        this.options.lanes,
       ]
     },
-    (rangeExtractor, overscan, count, startIndex, endIndex) => {
+    (rangeExtractor, overscan, count, startIndex, endIndex, lanes) => {
       return startIndex === null || endIndex === null
         ? []
         : rangeExtractor({
@@ -1620,6 +1648,7 @@ export class Virtualizer<
             endIndex,
             overscan,
             count,
+            lanes,
           })
     },
     {
@@ -1718,6 +1747,12 @@ export class Virtualizer<
   resizeItem = (index: number, size: number) => {
     if (!this.isIndexInRange(index)) return
 
+    // An earlier entry in this ResizeObserver batch changed a size (and may
+    // have moved `scrollOffset`), but no re-render has rebuilt the caches
+    // read below. Rebuild them so the anchoring check compares this item's
+    // current start, not a stale one, against the adjusted offset (#1218).
+    if (this._resizeBatch?.notify) this.getMeasurements()
+
     // Fast field reads. For lanes===1 we read raw start/size from the flat
     // typed array, avoiding a Proxy.get + VirtualItem allocation per call.
     // For lanes>1 we fall back to the cached VirtualItem array.
@@ -1809,6 +1844,13 @@ export class Virtualizer<
       // synchronous notify flushes the render in this same callback, so both
       // land in one paint. When nothing moved (or the write was deferred on
       // iOS), keep the cheaper async notify.
+      if (this._resizeBatch) {
+        // Inside a ResizeObserver callback: notify once after every entry
+        // is measured, synchronously if any of them moved `scrollTop`.
+        this._resizeBatch.notify = true
+        this._resizeBatch.sync ||= adjustedSync
+        return
+      }
       this.notify(adjustedSync)
       // A consumer that grows the sizer synchronously inside `onChange`
       // (direct DOM updates) may never re-render when the range is

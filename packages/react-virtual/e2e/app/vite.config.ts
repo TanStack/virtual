@@ -23,6 +23,7 @@ export default defineConfig({
           __dirname,
           'direct-dom-updates/index.html',
         ),
+        'lanes-change': path.resolve(__dirname, 'lanes-change/index.html'),
         'cached-measurements': path.resolve(
           __dirname,
           'cached-measurements/index.html',

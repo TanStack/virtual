@@ -1679,6 +1679,52 @@ test('defaultRangeExtractor: clamps end to count-1 when overscan would go past',
   expect(result[result.length - 1]).toBe(99)
 })
 
+test('defaultRangeExtractor: overscan expands by whole rows when lanes > 1', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 35,
+    endIndex: 54,
+    overscan: 1,
+    count: 100,
+    lanes: 5,
+  })
+  expect(result[0]).toBe(30)
+  expect(result[result.length - 1]).toBe(59)
+  expect(result.length).toBe(30)
+})
+
+test('defaultRangeExtractor: row overscan clamps to the list bounds', () => {
+  const result = defaultRangeExtractor({
+    startIndex: 0,
+    endIndex: 98,
+    overscan: 2,
+    count: 100,
+    lanes: 5,
+  })
+  expect(result[0]).toBe(0)
+  expect(result[result.length - 1]).toBe(99)
+})
+
+test('multi-lane virtualizer renders whole rows with overscan (#1036)', () => {
+  const virtualizer = new Virtualizer({
+    count: 100,
+    lanes: 5,
+    gap: 2,
+    overscan: 1,
+    estimateSize: () => 50,
+    initialRect: { width: 600, height: 200 },
+    initialOffset: 418,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const indexes = virtualizer.getVirtualIndexes()
+  // Every rendered row is complete, so every lane gets the same number of
+  // items measured. A partial row lets one lane drift from the others.
+  expect(indexes[0]! % 5).toBe(0)
+  expect(indexes[indexes.length - 1]! % 5).toBe(4)
+})
+
 test('defaultRangeExtractor: single item range', () => {
   const result = defaultRangeExtractor({
     startIndex: 5,
@@ -4921,4 +4967,122 @@ test('#1257: scrollToEnd() with paddingEnd scrolls to getMaxScrollOffset()', () 
     expect.any(Object),
     expect.any(Object),
   )
+})
+
+// ─── ResizeObserver batching ─────────────────────────────────────────────────
+
+function setupResizeBatch(onChange: (instance: any, sync: boolean) => void) {
+  let roCallback: ResizeObserverCallback | null = null
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    performance: { now: () => Date.now() },
+    ResizeObserver: vi.fn(function (cb: ResizeObserverCallback) {
+      roCallback = cb
+      return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+    }),
+  }
+  const el = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 400,
+    scrollHeight: 100000,
+    offsetWidth: 400,
+    offsetHeight: 300,
+    clientHeight: 300,
+    ownerDocument: { defaultView: mockWindow },
+  } as unknown as HTMLDivElement
+  const sizes = new Map<number, number>()
+  let setOffset: (offset: number, isScrolling: boolean) => void = () => {}
+  const virtualizer = new Virtualizer({
+    count: 20,
+    estimateSize: () => 90,
+    overscan: 0,
+    getScrollElement: () => el,
+    scrollToFn: (offset, { adjustments }) => {
+      el.scrollTop = offset + (adjustments ?? 0)
+    },
+    measureElement: (node) =>
+      sizes.get(Number((node as any).getAttribute('data-index')))!,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 300 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      setOffset = cb
+      cb(0, false)
+      return () => {}
+    },
+    onChange,
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+
+  const nodes = new Map<number, any>()
+  const node = (i: number) => {
+    if (!nodes.has(i)) {
+      nodes.set(i, {
+        getAttribute: (name: string) =>
+          name === 'data-index' ? String(i) : null,
+        isConnected: true,
+      })
+    }
+    return nodes.get(i)
+  }
+  // Measure items 0..9 at 100px while at offset 0, then scroll to 450:
+  // item 3 spans 300..400 (entirely above), item 4 spans 400..500 (across
+  // the fold).
+  for (let i = 0; i < 10; i++) {
+    sizes.set(i, 100)
+    virtualizer.measureElement(node(i))
+  }
+  el.scrollTop = 450
+  setOffset(450, false)
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+
+  const deliver = (indexes: Array<number>) =>
+    roCallback!(
+      indexes.map(
+        (i) => ({ target: node(i) }) as unknown as ResizeObserverEntry,
+      ),
+      {} as ResizeObserver,
+    )
+  return { virtualizer, sizes, node, deliver }
+}
+
+test('ResizeObserver batch: later entries see starts updated by earlier ones (#1218)', () => {
+  const { virtualizer, sizes, deliver } = setupResizeBatch((instance) => {
+    instance.getVirtualItems()
+  })
+  expect(virtualizer.getMeasurements()[4]!.start).toBe(400)
+
+  // Item 3 grows above the fold: compensated (+100). Item 4 spans the fold,
+  // so its growth happens below the anchor point and must not move scroll.
+  sizes.set(3, 200)
+  sizes.set(4, 150)
+  deliver([3, 4])
+
+  expect(virtualizer.scrollOffset).toBe(550)
+})
+
+test('ResizeObserver batch: a sync re-render does not drop queued entries (#1036)', () => {
+  const notifies: Array<boolean> = []
+  const { virtualizer, sizes, node, deliver } = setupResizeBatch(
+    (instance, sync) => {
+      notifies.push(sync)
+      // A synchronous render that moves the range unmounts item 5.
+      if (sync) node(5).isConnected = false
+      instance.getVirtualItems()
+    },
+  )
+
+  notifies.length = 0
+  sizes.set(3, 200)
+  sizes.set(5, 140)
+  deliver([3, 5])
+
+  // Both entries are measured before the single (sync) notify.
+  expect(virtualizer.getMeasurements()[5]!.size).toBe(140)
+  expect(notifies).toEqual([true])
 })
