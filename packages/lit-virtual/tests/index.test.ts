@@ -113,3 +113,86 @@ test('should render virtual items', async () => {
     'Element did not render virtual items',
   )
 })
+
+test('should apply updated options via setOptions', async () => {
+  @customElement('test-list-setoptions' as any)
+  class ListSetOptions extends LitElement {
+    private scrollElementRef: Ref<HTMLDivElement> = createRef()
+
+    private virtualizerController: VirtualizerController<
+      HTMLDivElement,
+      Element
+    >
+
+    constructor() {
+      super()
+      this.virtualizerController = new VirtualizerController(this, {
+        getScrollElement: () => this.scrollElementRef.value,
+        count: 10,
+        estimateSize: () => 50,
+        observeElementRect: (_, cb) => {
+          cb({ height, width })
+        },
+      })
+    }
+
+    render() {
+      this.virtualizerController.setOptions({
+        count: 20,
+      })
+      const virtualizer = this.virtualizerController.getVirtualizer()
+      const virtualRows = virtualizer.getVirtualItems()
+      return html`
+        <div class="list scroll-container" ${ref(this.scrollElementRef)}>
+          <div
+            style="position: relative; height: ${virtualizer.getTotalSize()}px; width: 100%;"
+          >
+            <div
+              style="position:absolute;top:0;left:0;width:100%;transform:translateY(${virtualRows[0]
+                ? virtualRows[0].start
+                : 0}px);"
+            >
+              ${repeat(
+                virtualRows,
+                (virtualRow: any) => virtualRow.key,
+                (virtualRow: any) =>
+                  html` <div
+                    data-index="${virtualRow.index}"
+                    class="${virtualRow.index % 2 === 0
+                      ? 'list-item-even'
+                      : 'list-item-odd'}"
+                  >
+                    <div style="padding: 10px 0;">
+                      <div>Row ${virtualRow.index}</div>
+                      <div>Item ${virtualRow.index}</div>
+                    </div>
+                  </div>`,
+              )}
+            </div>
+          </div>
+        </div>
+        <style>
+          .list {
+            border: 1px solid #e6e4dc;
+            max-width: 100%;
+          }
+          .scroll-container {
+            height: ${height}px;
+            width: ${width}px;
+            overflow-y: auto;
+          }
+        </style>
+      `
+    }
+  }
+
+  const el = await fixture(
+    html`<test-list-setoptions></test-list-setoptions>` as any,
+  )
+  await elementUpdated(el)
+  await waitUntil(
+    () => el.shadowRoot.querySelector('[data-index="15"]'),
+    'Element did not render items beyond initial count of 10',
+  )
+  expect(el.shadowRoot.querySelector('[data-index="15"]')).toBeTruthy()
+})
