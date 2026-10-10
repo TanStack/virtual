@@ -1747,11 +1747,13 @@ export class Virtualizer<
   resizeItem = (index: number, size: number) => {
     if (!this.isIndexInRange(index)) return
 
-    // An earlier entry in this ResizeObserver batch changed a size (and may
-    // have moved `scrollOffset`), but no re-render has rebuilt the caches
-    // read below. Rebuild them so the anchoring check compares this item's
-    // current start, not a stale one, against the adjusted offset (#1218).
-    if (this._resizeBatch?.notify) this.getMeasurements()
+    // An earlier entry in this ResizeObserver batch moved `scrollOffset`.
+    // Outside a batch its sync notify would have re-rendered and rebuilt the
+    // caches read below; rebuild them here so the anchoring check compares
+    // this item's current start, not a stale one, against the adjusted
+    // offset (#1218). Without a scroll move, the caches are exactly as stale
+    // as they were before batching, so skip the rebuild.
+    if (this._resizeBatch?.sync) this.getMeasurements()
 
     // Fast field reads. For lanes===1 we read raw start/size from the flat
     // typed array, avoiding a Proxy.get + VirtualItem allocation per call.
