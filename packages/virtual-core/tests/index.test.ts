@@ -2207,9 +2207,9 @@ test('iOS deferral: a resize during an in-flight scrollToIndex is not replayed a
 
     // An item above the target measures 50px taller while the index scroll
     // is still settling.
+    // No render runs in between (onChange is not set), so reconcile must
+    // pick the resize up itself.
     v.resizeItem(10, 100)
-    // The notify re-renders, rebuilding the measurements.
-    v['getMeasurements']()
     flushFrames()
     expect(el.scrollTop).toBe(1050)
 

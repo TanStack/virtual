@@ -1223,6 +1223,10 @@ export class Virtualizer<
       return
     }
 
+    // A resize since the last render leaves measurementsCache stale until
+    // something reads getMeasurements(); rebuild it (memoized) so an index
+    // target reflects it even when no render ran in between.
+    this.getMeasurements()
     const targetOffset = this.getScrollStateTarget(this.scrollState)
 
     // Index targets can still depend on cached sizes during the first rAF,
