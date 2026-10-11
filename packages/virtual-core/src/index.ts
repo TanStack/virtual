@@ -388,11 +388,19 @@ export interface VirtualizerOptions<
   useCachedMeasurements?: boolean
 }
 
+// Where an in-flight scroll command is in its lifecycle, which decides how
+// its scroll events and measurements are read:
+//   smooth           a smooth animation is travelling to the target
+//   smoothLanded     a smooth scroll is at its target, waiting to retire
+//   smoothFinishing  a smooth scroll switched to instant writes for the
+//                    final approach; its animation can still report positions
+//   instant          instant writes
+type ScrollPhase = 'smooth' | 'smoothLanded' | 'smoothFinishing' | 'instant'
+
 type ScrollState = {
   // what we want
   index: number | null
   align: ScrollAlignment
-  behavior: ScrollBehavior
   // scrollToEnd: track the DOM max scroll offset instead of the item's offset
   toEnd?: boolean
 
@@ -404,12 +412,7 @@ type ScrollState = {
 
   // settling
   stableFrames: number
-  // Keep arrival across measurement-driven retargets so external scrolls can cancel.
-  hasReachedTarget: boolean
-  // The command asked for a smooth scroll. Unlike `behavior`, which reconcile
-  // switches to 'auto' for the final approach, this stays set: the smooth
-  // animation can still deliver scroll events after that switch.
-  startedSmooth: boolean
+  phase: ScrollPhase
 
   // Where our last non-smooth write for this command put the element, until
   // its scroll event arrives. Until then `scrollOffset` still holds the old
@@ -419,6 +422,22 @@ type ScrollState = {
   // does not outlive its command.
   writtenOffset?: number | null
 }
+
+const initialScrollPhase = (
+  behavior: ScrollBehavior,
+  atTarget: boolean,
+): ScrollPhase =>
+  behavior === 'smooth' ? (atTarget ? 'smoothLanded' : 'smooth') : 'instant'
+
+// A smooth scroll owns the position: size compensation, the prepend anchor
+// sync and far measurements hold off until it switches to instant writes.
+const isSmoothScroll = (state: ScrollState | null): state is ScrollState =>
+  state?.phase === 'smooth' || state?.phase === 'smoothLanded'
+
+// The smooth animation may still be reporting positions, so a scroll event
+// that isn't the read-back of our own write may not be the user.
+const isAnimating = (state: ScrollState) =>
+  state.phase === 'smooth' || state.phase === 'smoothFinishing'
 
 type PendingScrollAnchor = [
   key: Key | null,
@@ -984,10 +1003,9 @@ export class Virtualizer<
             // like the user and the scroll stops at the max. That needs the
             // sizer re-rendered before the scroll event, which browsers have
             // not been seen to do (pinned by a `.fails` test).
-            // A smooth scroll's own animation events look like a user's, so
-            // it only yields once it has reached the target.
-            (this.scrollState.hasReachedTarget ||
-              !this.scrollState.startedSmooth) &&
+            // While a smooth scroll's animation may still report, its events
+            // look like a user's, so it yields only once it has landed.
+            !isAnimating(this.scrollState) &&
             !approxEqual(offset, this.scrollState.lastTargetOffset) &&
             !approxEqual(offset, this.getScrollStateTarget(this.scrollState)) &&
             (this._clampedAdjustment === null ||
@@ -1120,7 +1138,7 @@ export class Virtualizer<
             this._iosDeferredAdjustment += anchorDelta
           }
         } else if (
-          this.scrollState?.behavior === 'smooth' &&
+          isSmoothScroll(this.scrollState) &&
           !approxEqual(
             this.getScrollOffset() - anchorDelta,
             this.scrollState.lastTargetOffset,
@@ -1270,7 +1288,13 @@ export class Virtualizer<
     const targetChanged = targetOffset !== this.scrollState.lastTargetOffset
 
     if (!targetChanged && approxEqual(targetOffset, this.getScrollOffset())) {
-      this.scrollState.hasReachedTarget = true
+      // At the target: a travelling smooth scroll has landed, and a
+      // finishing one is now an instant scroll.
+      if (this.scrollState.phase === 'smooth') {
+        this.scrollState.phase = 'smoothLanded'
+      } else if (this.scrollState.phase === 'smoothFinishing') {
+        this.scrollState.phase = 'instant'
+      }
       this.scrollState.stableFrames++
       if (this.scrollState.stableFrames >= STABLE_FRAMES) {
         // Final-pass exact landing. The reconcile-stable check uses a 1.01px
@@ -1302,16 +1326,21 @@ export class Virtualizer<
         const viewport = this.getSize() || 600
         const distance = Math.abs(targetOffset - this.getScrollOffset())
         const keepSmooth =
-          this.scrollState.behavior === 'smooth' && distance > viewport
+          isSmoothScroll(this.scrollState) && distance > viewport
 
         this.scrollState.lastTargetOffset = targetOffset
         if (keepSmooth) {
           // A smooth retarget travels again, so its intermediate scroll
           // events must not read as an external scroll away from the target.
-          this.scrollState.hasReachedTarget = false
-        } else {
-          this.scrollState.behavior = 'auto'
+          this.scrollState.phase = 'smooth'
+        } else if (this.scrollState.phase === 'smooth') {
+          // The final approach is instant, but the animation can still report.
+          this.scrollState.phase = 'smoothFinishing'
+        } else if (this.scrollState.phase === 'smoothLanded') {
+          this.scrollState.phase = 'instant'
         }
+        // 'smoothFinishing' stays as it is (its animation may still report)
+        // until reconcile sees it at the target; 'instant' stays instant.
 
         this._scrollToOffset(targetOffset, {
           adjustments: undefined,
@@ -1713,7 +1742,7 @@ export class Virtualizer<
    */
   private shouldMeasureDuringScroll = (index: number): boolean => {
     // No scroll state or not smooth scroll - always allow measurements
-    if (!this.scrollState || this.scrollState.behavior !== 'smooth') {
+    if (!isSmoothScroll(this.scrollState)) {
       return true
     }
 
@@ -1815,7 +1844,7 @@ export class Virtualizer<
     if (delta !== 0) {
       const wasAtEnd =
         this.options.anchorTo === 'end' &&
-        this.scrollState?.behavior !== 'smooth' &&
+        !isSmoothScroll(this.scrollState) &&
         this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
       const prevTotalSize = wasAtEnd ? this.getTotalSize() : 0
       // Default anchoring predicate (used unless the consumer supplies a
@@ -1838,7 +1867,7 @@ export class Virtualizer<
           itemStart + itemSize <= scrollOffsetWithAdj &&
           this.scrollDirection !== 'backward'
       const shouldAdjustScroll =
-        this.scrollState?.behavior !== 'smooth' &&
+        !isSmoothScroll(this.scrollState) &&
         (this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
           ? this.shouldAdjustScrollPositionOnItemSizeChange(
               // The callback expects a VirtualItem; build one lazily only
@@ -2076,12 +2105,10 @@ export class Virtualizer<
     this.scrollState = {
       index: null,
       align,
-      behavior,
       startedAt: now,
       lastTargetOffset: offset,
       stableFrames: 0,
-      hasReachedTarget: false,
-      startedSmooth: behavior === 'smooth',
+      phase: initialScrollPhase(behavior, false),
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -2112,12 +2139,13 @@ export class Virtualizer<
     this.scrollState = {
       index,
       align,
-      behavior,
       startedAt: now,
       lastTargetOffset: offset,
       stableFrames: 0,
-      hasReachedTarget: approxEqual(offset, this.getScrollOffset()),
-      startedSmooth: behavior === 'smooth',
+      phase: initialScrollPhase(
+        behavior,
+        approxEqual(offset, this.getScrollOffset()),
+      ),
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -2141,12 +2169,10 @@ export class Virtualizer<
     this.scrollState = {
       index: null,
       align: 'start',
-      behavior,
       startedAt: now,
       lastTargetOffset: offset,
       stableFrames: 0,
-      hasReachedTarget: false,
-      startedSmooth: behavior === 'smooth',
+      phase: initialScrollPhase(behavior, false),
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -2165,13 +2191,14 @@ export class Virtualizer<
       this.scrollState = {
         index: this.options.count - 1,
         align: 'end',
-        behavior,
         toEnd: true,
         startedAt: this.now(),
         lastTargetOffset: offset,
         stableFrames: 0,
-        hasReachedTarget: approxEqual(offset, this.getScrollOffset()),
-        startedSmooth: behavior === 'smooth',
+        phase: initialScrollPhase(
+          behavior,
+          approxEqual(offset, this.getScrollOffset()),
+        ),
       }
 
       this._scrollToOffset(offset, { adjustments: undefined, behavior })
