@@ -543,6 +543,13 @@ test.each(['auto', 'smooth'] as const)(
     virtualizer._willUpdate()
     virtualizer.getVirtualItems()
     virtualizer.scrollToIndex(99, { align: 'end', behavior })
+    // The scroll max shrinks to 2000 before the read-back, so the browser
+    // reports 2000 instead of the 4400 we wrote. That is where the fresh
+    // target clamps too, so it isn't mistaken for the user scrolling away.
+    Object.defineProperty(mockScrollElement, 'scrollHeight', {
+      value: 2600,
+      configurable: true,
+    })
     onScroll(2000, true)
 
     expect(virtualizer['scrollState']).not.toBeNull()
@@ -2551,46 +2558,40 @@ test('scrollToIndex (#1307): a resize classified against the stale offset does n
   expect(h.el.scrollTop).toBe(500)
 })
 
-test.fails(
-  'scrollToIndex (#1307): a drag that never reached the target is not pulled back when the target moves',
-  () => {
-    // Seen in iOS Safari: a scrollToIndex issued while a finger is dragging is
-    // ignored by the browser, so the offset never gets near the target.
-    const h = makeDeferralHarness()
-    h.run(() => {
-      h.v.scrollToIndex(50, { align: 'start' })
-      h.scroll(true, 20)
-      h.frame()
-      h.scroll(true, 60)
-      h.frame()
-      // A row measures and moves the target; the user is still at 60.
-      h.v.resizeItem(30, 100)
-      h.frame()
-      expect(h.el.scrollTop).toBe(60)
-    })
-  },
-)
-
-test.fails(
-  'scrollToIndex (#1307): a scroll away from a target that moved before landing is not pulled back, non-iOS',
-  () => {
-    // Not specific to iOS ignoring writes under a finger: a target that moves
-    // before reconcile sees the scroll land leaves the state alive too.
-    const h = makeDeferralHarness({ ios: false })
+test('scrollToIndex (#1307): a drag that never reached the target is not pulled back when the target moves', () => {
+  // Seen in iOS Safari: a scrollToIndex issued while a finger is dragging is
+  // ignored by the browser, so the offset never gets near the target.
+  const h = makeDeferralHarness()
+  h.run(() => {
     h.v.scrollToIndex(50, { align: 'start' })
-    h.scroll(true)
-    h.v.resizeItem(10, 100)
+    h.scroll(true, 20)
     h.frame()
-    h.scroll(true)
-    expect(h.el.scrollTop).toBe(2550)
-    // The user scrolls away, then a row above them measures.
-    h.scroll(true, 1000)
+    h.scroll(true, 60)
     h.frame()
-    h.v.resizeItem(5, 100)
+    // A row measures and moves the target; the user is still at 60.
+    h.v.resizeItem(30, 100)
     h.frame()
-    expect(h.el.scrollTop).toBe(1050)
-  },
-)
+    expect(h.el.scrollTop).toBe(60)
+  })
+})
+
+test('scrollToIndex (#1307): a scroll away from a target that moved before landing is not pulled back, non-iOS', () => {
+  // Not specific to iOS ignoring writes under a finger: a target that moves
+  // before reconcile sees the scroll land leaves the state alive too.
+  const h = makeDeferralHarness({ ios: false })
+  h.v.scrollToIndex(50, { align: 'start' })
+  h.scroll(true)
+  h.v.resizeItem(10, 100)
+  h.frame()
+  h.scroll(true)
+  expect(h.el.scrollTop).toBe(2550)
+  // The user scrolls away, then a row above them measures.
+  h.scroll(true, 1000)
+  h.frame()
+  h.v.resizeItem(5, 100)
+  h.frame()
+  expect(h.el.scrollTop).toBe(1050)
+})
 
 test('iOS deferral: a deferred correction follows the viewport through momentum', () => {
   const h = makeDeferralHarness({ start: 1000 })
@@ -5474,9 +5475,10 @@ function setupHandDrivenScroll(
   v['getMeasurements']()
   const scroll = (offset: number, isScrolling: boolean) =>
     scrollCallback!(offset, isScrolling)
+  const frame = () => rafCallbacks.splice(0).forEach((cb) => cb(0))
   const settle = () => {
     for (let i = 0; i < 10 && rafCallbacks.length > 0; i++) {
-      rafCallbacks.splice(0).forEach((cb) => cb(0))
+      frame()
       scroll(el.scrollTop, true)
     }
     scroll(el.scrollTop, false)
@@ -5488,7 +5490,7 @@ function setupHandDrivenScroll(
       rafCallbacks.splice(0).forEach((cb) => cb(0))
     }
   }
-  return { v, el, scroll, settle, frames, browser }
+  return { v, el, scroll, frame, settle, frames, browser }
 }
 
 test('a resize before the read-back of a scrollToIndex write is left to reconcile', () => {
@@ -5648,4 +5650,29 @@ test('scrollBy after cancelScroll dropped an ignored write builds on the real po
   v.scrollBy(100)
 
   expect(el.scrollTop).toBe(2100)
+})
+
+test('a smooth scrollToIndex switched to auto near the end is not cancelled by a late animation event', () => {
+  // Reconcile switches a smooth scroll to 'auto' for the final approach when
+  // the target moves within a viewport. WebKit can still deliver a scroll
+  // event from the smooth animation after that instant write; it is not the
+  // user and must not end the scroll.
+  const { v, el, scroll, frame, settle } = setupHandDrivenScroll()
+
+  v.scrollToIndex(50, { align: 'start', behavior: 'smooth' })
+  el.scrollTop = 2450 // the animation is almost there
+  scroll(2450, true)
+  v.resizeItem(10, 100) // the target moves to 2550, within a viewport
+  frame() // reconcile switches to 'auto' and writes 2550
+  expect(el.scrollTop).toBe(2550)
+
+  el.scrollTop = 2470 // a late event from the smooth animation
+  scroll(2470, true)
+  expect(v.scrollState).not.toBeNull()
+
+  el.scrollTop = 2550
+  scroll(2550, true)
+  settle()
+  expect(el.scrollTop).toBe(2550)
+  expect(v.scrollState).toBeNull()
 })
