@@ -2572,6 +2572,27 @@ test.fails(
   },
 )
 
+test.fails(
+  'scrollToIndex (#1307): a scroll away from a target that moved before landing is not pulled back, non-iOS',
+  () => {
+    // Not specific to iOS ignoring writes under a finger: a target that moves
+    // before reconcile sees the scroll land leaves the state alive too.
+    const h = makeDeferralHarness({ ios: false })
+    h.v.scrollToIndex(50, { align: 'start' })
+    h.scroll(true)
+    h.v.resizeItem(10, 100)
+    h.frame()
+    h.scroll(true)
+    expect(h.el.scrollTop).toBe(2550)
+    // The user scrolls away, then a row above them measures.
+    h.scroll(true, 1000)
+    h.frame()
+    h.v.resizeItem(5, 100)
+    h.frame()
+    expect(h.el.scrollTop).toBe(1050)
+  },
+)
+
 test('iOS deferral: a deferred correction follows the viewport through momentum', () => {
   const h = makeDeferralHarness({ start: 1000 })
   h.run(() => {
