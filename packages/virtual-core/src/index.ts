@@ -787,7 +787,11 @@ export class Virtualizer<
       isIOSWebKit() &&
       (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
     ) {
-      this._iosDeferredAdjustment += delta
+      // An index scroll retargets from fresh measurements in reconcileScroll;
+      // replaying this delta after it lands would count it twice.
+      if (this.scrollState?.index == null) {
+        this._iosDeferredAdjustment += delta
+      }
       return false
     } else {
       const target = this.getScrollOffset() + this.scrollAdjustments + delta

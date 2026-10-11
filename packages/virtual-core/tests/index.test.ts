@@ -2153,6 +2153,73 @@ test('iOS deferral: an absolute scroll command invalidates a pending deferred ad
   })
 })
 
+test('iOS deferral: a resize during an in-flight scrollToIndex is not replayed after it lands', () => {
+  // reconcileScroll retargets the index scroll from fresh measurements, so a
+  // size correction deferred while it travels is already accounted for —
+  // replaying it on the settle flush would push the list past the target.
+  withFakeIOSUserAgent(() => {
+    const rafCallbacks: Array<FrameRequestCallback> = []
+    const mockWindow = {
+      requestAnimationFrame: (cb: FrameRequestCallback) =>
+        rafCallbacks.push(cb),
+      cancelAnimationFrame: () => {},
+    }
+    const el = {
+      scrollTop: 0,
+      scrollLeft: 0,
+      scrollHeight: 5000,
+      clientHeight: 200,
+      offsetHeight: 200,
+      ownerDocument: { defaultView: mockWindow },
+    }
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 100,
+      estimateSize: () => 50,
+      getScrollElement: () => el as any,
+      scrollToFn: (offset, { adjustments = 0 }) => {
+        el.scrollTop = offset + adjustments
+      },
+      observeElementRect: (_inst, cb) => {
+        cb({ width: 400, height: 200 })
+        return () => {}
+      },
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(0, false)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    const flushFrames = () => {
+      for (let i = 0; i < 10 && rafCallbacks.length > 0; i++) {
+        rafCallbacks.splice(0).forEach((cb) => cb(0))
+        scrollCallback!(el.scrollTop, true)
+      }
+    }
+
+    v.scrollToIndex(20, { align: 'start' })
+    scrollCallback!(el.scrollTop, true)
+    expect(el.scrollTop).toBe(1000)
+
+    // An item above the target measures 50px taller while the index scroll
+    // is still settling.
+    v.resizeItem(10, 100)
+    // The notify re-renders, rebuilding the measurements.
+    v['getMeasurements']()
+    flushFrames()
+    expect(el.scrollTop).toBe(1050)
+
+    // The scroll settles: the landing must stay on the item.
+    scrollCallback!(el.scrollTop, false)
+    expect(el.scrollTop).toBe(v.getOffsetForIndex(20, 'start')![0])
+    expect(el.scrollTop).toBe(1050)
+  })
+})
+
 test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-back resizes stay consistent', () => {
   // Regression: the deferred flush used to write `adjustments: delta`
   // directly without updating `this.scrollAdjustments`. If a second resize
