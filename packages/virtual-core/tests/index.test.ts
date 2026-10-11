@@ -2462,6 +2462,35 @@ test('iOS deferral: a gesture respects a custom shouldAdjustScrollPositionOnItem
   })
 })
 
+test('iOS deferral: with lanes, a gesture does not apply the target drift', () => {
+  // Row 18 (lane 0, 450-500) grows by 50 above the fold. Lane 0 then ends at
+  // 550 and lane 1 at 530 (row 19 is 80px), so row 20 moves to lane 1 and its
+  // start drifts by 30: the drift no longer matches the growth above the
+  // viewport. Lanes keep #1305's no-compensation behaviour.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames } = setupIOSIndexScroll({
+      lanes: 2,
+      laneAssignmentMode: 'measured',
+      estimateSize: (i) => (i === 19 ? 80 : 50),
+    })
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    runFrame() // reached the target, still waiting for stable frames
+    expect(el.scrollTop).toBe(500)
+
+    v.resizeItem(18, 100)
+    // Same frame: the user drags 100px up.
+    el.scrollTop = 400
+    scroll(400, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(el.scrollTop).toBe(400)
+  })
+})
+
 // anchorTo: 'end' with keyed rows, so prepending keeps the visible rows in
 // place through the pendingScrollAnchor sync.
 function setupIOSIndexScrollWithPrepend() {
