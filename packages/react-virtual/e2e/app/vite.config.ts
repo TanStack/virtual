@@ -24,6 +24,7 @@ export default defineConfig({
           'direct-dom-updates/index.html',
         ),
         'lanes-change': path.resolve(__dirname, 'lanes-change/index.html'),
+        'ios-deferral': path.resolve(__dirname, 'ios-deferral/index.html'),
         'cached-measurements': path.resolve(
           __dirname,
           'cached-measurements/index.html',

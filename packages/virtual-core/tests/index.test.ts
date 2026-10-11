@@ -2371,6 +2371,237 @@ test('iOS deferral: a positive delta at the end clamp still replays (growth abov
   })
 })
 
+// ─── #1307: orderings the summed deferral gets wrong, and ones to keep ──────
+//
+// `test.fails` cases document current behaviour that #1307 is meant to fix:
+// each one asserts the wanted outcome and fails today. The plain tests pin
+// behaviour a redesign must not change by accident. 100 rows × 50px, 200px
+// viewport, hand-driven rAF and scroll events.
+
+function makeDeferralHarness({
+  ios = true,
+  start = 0,
+}: { ios?: boolean; start?: number } = {}) {
+  const rafCallbacks: Array<FrameRequestCallback> = []
+  let now = 0
+  const mockWindow = {
+    requestAnimationFrame: (cb: FrameRequestCallback) => rafCallbacks.push(cb),
+    cancelAnimationFrame: () => {
+      rafCallbacks.length = 0
+    },
+    performance: { now: () => now },
+  }
+  const el = {
+    scrollTop: start,
+    scrollLeft: 0,
+    scrollHeight: 5000,
+    clientHeight: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: mockWindow },
+  }
+  let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
+    null
+  const run = <T>(fn: () => T) => (ios ? withFakeIOSUserAgent(fn) : fn())
+  const v = run(() => {
+    const instance = new Virtualizer({
+      count: 100,
+      estimateSize: () => 50,
+      initialOffset: start,
+      getScrollElement: () => el as any,
+      scrollToFn: (offset, { adjustments = 0 }) => {
+        el.scrollTop = offset + adjustments
+      },
+      observeElementRect: (_inst, cb) => {
+        cb({ width: 400, height: 200 })
+        return () => {}
+      },
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(start, false)
+        return () => {}
+      },
+    })
+    instance._willUpdate()
+    instance['getMeasurements']()
+    return instance
+  })
+  return {
+    v,
+    el,
+    run,
+    // A scroll event; moves the element first when `offset` is given.
+    scroll: (isScrolling: boolean, offset = el.scrollTop) => {
+      el.scrollTop = offset
+      scrollCallback!(offset, isScrolling)
+    },
+    frame: () => rafCallbacks.splice(0).forEach((cb) => cb(0)),
+    advance: (ms: number) => {
+      now += ms
+    },
+    // Where a row sits relative to the top of the viewport.
+    rowTop: (index: number) =>
+      v['getMeasurements']()[index]!.start - el.scrollTop,
+  }
+}
+
+// scrollToIndex(20) has landed on 1000 and reconcile has seen it once; row 10
+// (above the target) then grows by 50 and reconcile has not run since.
+function landedIndexScrollWithResizeAbove(ios = true) {
+  const h = makeDeferralHarness({ ios })
+  h.run(() => {
+    h.v.scrollToIndex(20, { align: 'start' })
+    h.scroll(true)
+    h.frame()
+    h.v.resizeItem(10, 100)
+  })
+  return h
+}
+
+test.fails(
+  'iOS deferral (#1307): a gesture before the index scroll retargets keeps the resize correction',
+  () => {
+    const h = landedIndexScrollWithResizeAbove()
+    h.run(() => {
+      h.scroll(true, 1010)
+      h.frame()
+      h.scroll(false)
+      // The user dragged 10px, so row 20 belongs 10px above the viewport top.
+      expect(h.rowTop(20)).toBe(-10)
+    })
+  },
+)
+
+test('non-iOS: a gesture before the index scroll retargets keeps the resize correction', () => {
+  const h = landedIndexScrollWithResizeAbove(false)
+  h.scroll(true, h.el.scrollTop + 10)
+  h.frame()
+  h.scroll(false)
+  expect(h.rowTop(20)).toBe(-10)
+})
+
+test.fails(
+  'iOS deferral (#1307): cancelScroll before the index scroll retargets keeps the resize correction',
+  () => {
+    const h = landedIndexScrollWithResizeAbove()
+    h.run(() => {
+      h.v.cancelScroll()
+      h.frame()
+      h.scroll(false)
+      expect(h.rowTop(20)).toBe(0)
+    })
+  },
+)
+
+test.fails(
+  'iOS deferral (#1307): the reconcile safety valve keeps the resize correction',
+  () => {
+    const h = landedIndexScrollWithResizeAbove()
+    h.run(() => {
+      h.advance(6000)
+      h.frame()
+      h.scroll(false)
+      expect(h.rowTop(20)).toBe(0)
+    })
+  },
+)
+
+test.fails(
+  'iOS deferral (#1307): scrollBy replacing an index scroll keeps the resize correction',
+  () => {
+    const h = landedIndexScrollWithResizeAbove()
+    h.run(() => {
+      h.v.scrollBy(100)
+      h.scroll(true)
+      h.frame()
+      h.scroll(true)
+      h.frame()
+      h.scroll(false)
+      expect(h.rowTop(20)).toBe(-100)
+    })
+  },
+)
+
+test.fails(
+  'iOS deferral (#1307): a correction is not replayed once the viewport is above the resized row',
+  () => {
+    const h = makeDeferralHarness({ start: 2000 })
+    h.run(() => {
+      h.scroll(true, 2010)
+      h.v.resizeItem(30, 100)
+      expect(h.v['_iosDeferredAdjustment']).toBe(50)
+      // The gesture carries the viewport above row 30, then settles.
+      h.scroll(true, 1000)
+      h.scroll(false)
+      expect(h.rowTop(20)).toBe(0)
+    })
+  },
+)
+
+test.fails(
+  'scrollToIndex (#1307): a resize classified against the stale offset does not overwrite the index scroll',
+  () => {
+    // Not iOS-specific. scrollOffset still holds the old position until the
+    // scroll event, so row 38 (below the target) reads as above the viewport.
+    const h = makeDeferralHarness({ ios: false, start: 2000 })
+    h.v.scrollToIndex(10, { align: 'start' })
+    expect(h.el.scrollTop).toBe(500)
+    h.v.resizeItem(38, 100)
+    h.scroll(true)
+    h.frame()
+    expect(h.el.scrollTop).toBe(500)
+  },
+)
+
+test('iOS deferral: a deferred correction follows the viewport through momentum', () => {
+  const h = makeDeferralHarness({ start: 1000 })
+  h.run(() => {
+    h.scroll(true, 1010)
+    h.v.resizeItem(5, 100)
+    h.scroll(true, 3000)
+    h.scroll(false)
+    // Applied where the momentum ended, not where the resize was seen.
+    expect(h.el.scrollTop).toBe(3050)
+    expect(h.rowTop(60)).toBe(0)
+  })
+})
+
+test('iOS deferral: a re-measure above the viewport is deferred scrolling forward, skipped scrolling backward', () => {
+  const h = makeDeferralHarness({ start: 2000 })
+  h.run(() => {
+    h.v.resizeItem(5, 60)
+    h.scroll(false)
+    h.scroll(true, 1990)
+    h.v.resizeItem(5, 100)
+    expect(h.v['_iosDeferredAdjustment']).toBe(0)
+    h.scroll(true, 2020)
+    h.v.resizeItem(5, 120)
+    expect(h.v['_iosDeferredAdjustment']).toBe(20)
+  })
+})
+
+test('iOS deferral: a custom adjust predicate that opts out defers nothing', () => {
+  const h = makeDeferralHarness({ start: 2000 })
+  h.run(() => {
+    h.v.shouldAdjustScrollPositionOnItemSizeChange = () => false
+    h.scroll(true, 2010)
+    h.v.resizeItem(5, 100)
+    expect(h.v['_iosDeferredAdjustment']).toBe(0)
+  })
+})
+
+test('iOS deferral: the first measure of the row spanning the viewport top is compensated', () => {
+  const h = makeDeferralHarness({ start: 2000 })
+  h.run(() => {
+    h.scroll(true, 2010)
+    expect(h.rowTop(41)).toBe(40)
+    // Row 40 starts at 2000, 10px above the viewport top.
+    h.v.resizeItem(40, 100)
+    expect(h.v['_iosDeferredAdjustment']).toBe(50)
+    h.scroll(false)
+    expect(h.rowTop(41)).toBe(40)
+  })
+})
+
 // ─── Phase 1: touch event distinction ────────────────────────────────────────
 
 // Mock EventTarget that records listeners so tests can dispatch events
