@@ -123,7 +123,11 @@ const quiet = () => {
   clearTimeout(quietTimer)
   quietTimer = window.setTimeout(() => {
     t.snap('quiet')
-    t.send(name)
+    t.send(name).then((status: string) => {
+      document.title = status
+      const out = document.getElementById('status')
+      if (out) out.textContent = `${status} (${t.log.length} entries)`
+    })
     t.touchEnded = false
   }, AUTOSEND)
 }
@@ -224,7 +228,7 @@ const Controls = ({ label }: { label: string }) => {
       <button id="clear" onClick={t.clear}>
         clear
       </button>{' '}
-      {label} {status}
+      {label} <span id="status">{status}</span>
     </div>
   )
 }
