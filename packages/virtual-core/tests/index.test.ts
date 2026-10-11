@@ -8,6 +8,7 @@ import {
   observeWindowOffset,
   windowScroll,
 } from '../src/index'
+import type { VirtualizerOptions } from '../src/index'
 
 test('should export the Virtualizer class', () => {
   expect(Virtualizer).toBeDefined()
@@ -2537,20 +2538,18 @@ test.fails(
   },
 )
 
-test.fails(
-  'scrollToIndex (#1307): a resize classified against the stale offset does not overwrite the index scroll',
-  () => {
-    // Not iOS-specific. scrollOffset still holds the old position until the
-    // scroll event, so row 38 (below the target) reads as above the viewport.
-    const h = makeDeferralHarness({ ios: false, start: 2000 })
-    h.v.scrollToIndex(10, { align: 'start' })
-    expect(h.el.scrollTop).toBe(500)
-    h.v.resizeItem(38, 100)
-    h.scroll(true)
-    h.frame()
-    expect(h.el.scrollTop).toBe(500)
-  },
-)
+test('scrollToIndex (#1307): a resize classified against the stale offset does not overwrite the index scroll', () => {
+  // Not iOS-specific. scrollOffset still holds the old position until the
+  // scroll event, so row 38 (below the target) reads as above the viewport;
+  // resizes before the read-back are left to reconcile.
+  const h = makeDeferralHarness({ ios: false, start: 2000 })
+  h.v.scrollToIndex(10, { align: 'start' })
+  expect(h.el.scrollTop).toBe(500)
+  h.v.resizeItem(38, 100)
+  h.scroll(true)
+  h.frame()
+  expect(h.el.scrollTop).toBe(500)
+})
 
 test.fails(
   'scrollToIndex (#1307): a drag that never reached the target is not pulled back when the target moves',
@@ -5424,4 +5423,161 @@ test('ResizeObserver batch: a sync re-render does not drop queued entries (#1036
   // Both entries are measured before the single (sync) notify.
   expect(virtualizer.getMeasurements()[5]!.size).toBe(140)
   expect(notifies).toEqual([true])
+})
+
+// 100 rows estimated at 50px in a 200px viewport. scrollToFn writes the
+// element and clamps like a browser; scroll events are delivered by hand, so a
+// test can resize between a programmatic write and its read-back.
+function setupHandDrivenScroll(
+  extra: Partial<VirtualizerOptions<any, any>> = {},
+) {
+  const rafCallbacks: Array<FrameRequestCallback> = []
+  const mockWindow = {
+    requestAnimationFrame: (cb: FrameRequestCallback) => rafCallbacks.push(cb),
+    cancelAnimationFrame: () => {},
+  }
+  const el = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollHeight: 5000,
+    clientHeight: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: mockWindow },
+  }
+  let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
+    null
+  const v = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => el as any,
+    scrollToFn: (offset, { adjustments = 0 }) => {
+      el.scrollTop = Math.max(
+        0,
+        Math.min(offset + adjustments, el.scrollHeight - el.clientHeight),
+      )
+    },
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      scrollCallback = cb
+      cb(0, false)
+      return () => {}
+    },
+    ...extra,
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+  const scroll = (offset: number, isScrolling: boolean) =>
+    scrollCallback!(offset, isScrolling)
+  const settle = () => {
+    for (let i = 0; i < 10 && rafCallbacks.length > 0; i++) {
+      rafCallbacks.splice(0).forEach((cb) => cb(0))
+      scroll(el.scrollTop, true)
+    }
+    scroll(el.scrollTop, false)
+  }
+  return { v, el, scroll, settle }
+}
+
+test('a resize before the read-back of a scrollToIndex write is left to reconcile', () => {
+  // Scrolling up from 2000 to row 20 (1000), row 30 grows before the scroll
+  // event reports 1000. Compensating it against the stale 2000 used to write
+  // 2050, and reconcile (target unchanged) never rewrote it until the 5s
+  // safety valve.
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+  el.scrollTop = 2000
+  scroll(2000, false)
+
+  v.scrollToIndex(20, { align: 'start' })
+  expect(el.scrollTop).toBe(1000)
+  v.resizeItem(30, 100)
+  expect(el.scrollTop).toBe(1000)
+  settle()
+
+  expect(el.scrollTop).toBe(1000)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a resize above the target before the read-back is picked up by reconcile', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+  el.scrollTop = 2000
+  scroll(2000, false)
+
+  v.scrollToIndex(20, { align: 'start' })
+  v.resizeItem(10, 100)
+  // No compensation write before the read-back...
+  expect(el.scrollTop).toBe(1000)
+  settle()
+  // ...reconcile retargets to the row's new start.
+  expect(el.scrollTop).toBe(1050)
+  expect(v.scrollState).toBeNull()
+})
+
+test('rows at the old position measured during scrollToEnd do not push it off the end', () => {
+  // scrollToEnd writes 4800, but until the read-back the rendered rows are
+  // the ones at the top. They measure 20px smaller each; compensating them
+  // against the written offset would walk the view up from the end while
+  // the end target (the DOM max, sizer not re-rendered) stays put.
+  const { v, el, settle } = setupHandDrivenScroll()
+
+  v.scrollToEnd()
+  expect(el.scrollTop).toBe(4800)
+  for (let i = 0; i < 5; i++) v.resizeItem(i, 30)
+  expect(el.scrollTop).toBe(4800)
+  settle()
+
+  expect(el.scrollTop).toBe(4800)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollBy right after a scrollToIndex builds on the written offset', () => {
+  const { v, el, settle } = setupHandDrivenScroll()
+
+  v.scrollToIndex(20, { align: 'start' })
+  v.scrollBy(100)
+  settle()
+
+  expect(el.scrollTop).toBe(1100)
+})
+
+test('scrollBy after the user scrolled builds on the user position, not an old write', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+
+  v.scrollToIndex(20, { align: 'start' })
+  scroll(el.scrollTop, false) // read-back of 1000
+  el.scrollTop = 1300
+  scroll(1300, false) // the user moved on
+  v.scrollBy(100)
+  settle()
+
+  expect(el.scrollTop).toBe(1400)
+})
+
+test('scrollBy during a smooth scroll builds on the current position', () => {
+  // The element is still travelling, so the destination isn't where it is.
+  const { v, el, settle } = setupHandDrivenScroll()
+
+  v.scrollToIndex(20, { align: 'start', behavior: 'smooth' })
+  v.scrollBy(100)
+  settle()
+
+  expect(el.scrollTop).toBe(100)
+})
+
+test('an anchorTo end list scrolled up by scrollToIndex is not pinned back by a resize before the read-back', () => {
+  // At the end, scrollToIndex(20) writes 1000. The last row grows before the
+  // read-back; against the stale offset the list still looks pinned, and the
+  // end-anchoring compensation used to write 4850 over the index scroll.
+  const { v, el, scroll, settle } = setupHandDrivenScroll({ anchorTo: 'end' })
+  el.scrollTop = 4800
+  scroll(4800, false)
+
+  v.scrollToIndex(20, { align: 'start' })
+  v.resizeItem(99, 100)
+  settle()
+
+  expect(el.scrollTop).toBe(1000)
+  expect(v.scrollState).toBeNull()
 })

@@ -497,6 +497,11 @@ export class Virtualizer<
   // value when the diff is < 1.5 px, distinguishing it from a real user
   // scroll. The +0.5 over Math.abs lets us also absorb the +1 / -1 cases.
   private _intendedScrollOffset: number | null = null
+  // Where our last non-smooth write put the element, until its scroll event
+  // arrives. Until then `scrollOffset` still holds the old position, and the
+  // rows on screen are the ones rendered for it. A smooth write leaves it
+  // null: the element is somewhere between the two offsets.
+  private _lastWrittenOffset: number | null = null
   // A compensation write from `applyScrollAdjustment` whose target exceeded
   // the element's scroll max at the moment of the write. The browser clamps
   // such a write because the consumer's sizer has not grown yet: an
@@ -888,6 +893,7 @@ export class Virtualizer<
     this._iosTouching = false
     this._iosJustTouchEnded = false
     this._clampedAdjustment = null
+    this._lastWrittenOffset = null
     this.scrollElement = null
     this.targetWindow = null
   }
@@ -973,6 +979,7 @@ export class Virtualizer<
             this.scrollState = null
           }
           this._intendedScrollOffset = null
+          this._lastWrittenOffset = null
 
           // A pending clamped compensation write (#1258) survives only its
           // own read-back, which the browser reports at the scroll max we
@@ -1835,13 +1842,31 @@ export class Virtualizer<
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
 
-      let adjustedSync = false
-      if (wasAtEnd) {
-        adjustedSync = this.applyScrollAdjustment(
-          this.getTotalSize() - prevTotalSize,
+      // A scroll command (or reconcile) wrote a new position that neither a
+      // scroll event nor an eager update has reflected in `scrollOffset` yet.
+      // The rows being measured were rendered for the old position, so
+      // "above the viewport" means nothing against either offset; while the
+      // scroll state lives, reconcileScroll retargets from fresh measurements
+      // next frame. Compensation writes and the prepend anchor sync update
+      // `scrollOffset` eagerly, and the iOS flush writes exactly
+      // `scrollOffset + scrollAdjustments`, so none of them count.
+      const awaitingCommandReadBack =
+        this.scrollState !== null &&
+        this._lastWrittenOffset !== null &&
+        !approxEqual(
+          this._lastWrittenOffset,
+          this.getScrollOffset() + this.scrollAdjustments,
         )
-      } else if (shouldAdjustScroll) {
-        adjustedSync = this.applyScrollAdjustment(delta)
+
+      let adjustedSync = false
+      if (!awaitingCommandReadBack) {
+        if (wasAtEnd) {
+          adjustedSync = this.applyScrollAdjustment(
+            this.getTotalSize() - prevTotalSize,
+          )
+        } else if (shouldAdjustScroll) {
+          adjustedSync = this.applyScrollAdjustment(delta)
+        }
       }
 
       // When we just moved `scrollTop` to compensate for an above-viewport
@@ -2080,7 +2105,8 @@ export class Virtualizer<
     delta: number,
     { behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
-    const offset = this.getScrollOffset() + delta
+    // Build on a position we just wrote even before its scroll event arrives.
+    const offset = (this._lastWrittenOffset ?? this.getScrollOffset()) + delta
     const now = this.now()
 
     this.scrollState = {
@@ -2227,6 +2253,8 @@ export class Virtualizer<
     // Record the intended logical scroll target so the next scroll event
     // can reconcile against subpixel rounding by the browser.
     this._intendedScrollOffset = offset + (adjustments ?? 0)
+    this._lastWrittenOffset =
+      behavior === 'smooth' ? null : this._intendedScrollOffset
     this.options.scrollToFn(offset, { behavior, adjustments }, this)
   }
 
