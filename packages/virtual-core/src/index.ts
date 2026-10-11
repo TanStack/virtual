@@ -970,7 +970,7 @@ export class Virtualizer<
             // The index scroll reached its target, but an external scroll moved
             // away while we waited for measurements. Our own measurement updates
             // (including clamped writes) still need to reconcile.
-            this.scrollState = null
+            this.dropScrollState()
           }
           this._intendedScrollOffset = null
 
@@ -1210,6 +1210,28 @@ export class Virtualizer<
         : undefined
     return offsetInfo ? offsetInfo[0] : state.lastTargetOffset
   }
+  // Ends a scroll state before it lands (a gesture, cancelScroll, the safety
+  // valve). While an index scroll runs, applyScrollAdjustment leaves resizes
+  // to reconcileScroll (#1304), so one that moved the target after the last
+  // write would be lost. When the viewport's top sits on a start-aligned
+  // target, the rows above the target are the rows above the viewport, and
+  // the target's drift is exactly what iOS still owes. Anywhere else
+  // (mid-travel, or an end/center/toEnd target that also moves when a row in
+  // view grows) the drift says nothing about the viewport.
+  private dropScrollState() {
+    const state = this.scrollState
+    if (
+      state?.index != null &&
+      state.align === 'start' &&
+      isIOSWebKit() &&
+      approxEqual(this.getScrollOffset(), state.lastTargetOffset)
+    ) {
+      this.getMeasurements()
+      this._iosDeferredAdjustment +=
+        this.getScrollStateTarget(state) - state.lastTargetOffset
+    }
+    this.scrollState = null
+  }
   private reconcileScroll() {
     if (!this.scrollState) return
 
@@ -1219,7 +1241,7 @@ export class Virtualizer<
     // Safety valve: bail out if reconciliation has been running too long
     const MAX_RECONCILE_MS = 5000
     if (this.now() - this.scrollState.startedAt > MAX_RECONCILE_MS) {
-      this.scrollState = null
+      this.dropScrollState()
       return
     }
 
@@ -2137,7 +2159,7 @@ export class Virtualizer<
       this.targetWindow.cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
-    this.scrollState = null
+    this.dropScrollState()
   }
 
   getTotalSize = () => {

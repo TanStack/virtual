@@ -8,6 +8,7 @@ import {
   observeWindowOffset,
   windowScroll,
 } from '../src/index'
+import type { VirtualizerOptions } from '../src/index'
 
 test('should export the Virtualizer class', () => {
   expect(Virtualizer).toBeDefined()
@@ -2153,53 +2154,64 @@ test('iOS deferral: an absolute scroll command invalidates a pending deferred ad
   })
 })
 
+// 100 rows estimated at 50px in a 200px viewport, with rAF and scroll events
+// driven by hand. No onChange, so no render rebuilds measurements in between.
+function setupIOSIndexScroll(
+  extra: Partial<VirtualizerOptions<any, any>> = {},
+) {
+  const rafCallbacks: Array<FrameRequestCallback> = []
+  const mockWindow = {
+    requestAnimationFrame: (cb: FrameRequestCallback) => rafCallbacks.push(cb),
+    cancelAnimationFrame: () => {},
+  }
+  const el = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollHeight: 5000,
+    clientHeight: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: mockWindow },
+  }
+  let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
+    null
+  const v = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => el as any,
+    scrollToFn: (offset, { adjustments = 0 }) => {
+      el.scrollTop = offset + adjustments
+    },
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      scrollCallback = cb
+      cb(0, false)
+      return () => {}
+    },
+    ...extra,
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+  const scroll = (offset: number, isScrolling: boolean) =>
+    scrollCallback!(offset, isScrolling)
+  const runFrame = () => rafCallbacks.splice(0).forEach((cb) => cb(0))
+  const flushFrames = (isScrolling = true) => {
+    for (let i = 0; i < 10 && rafCallbacks.length > 0; i++) {
+      runFrame()
+      scroll(el.scrollTop, isScrolling)
+    }
+  }
+  return { v, el, scroll, runFrame, flushFrames }
+}
+
 test('iOS deferral: a resize during an in-flight scrollToIndex is not replayed after it lands', () => {
   // reconcileScroll retargets the index scroll from fresh measurements, so a
   // size correction deferred while it travels is already accounted for —
   // replaying it on the settle flush would push the list past the target.
   withFakeIOSUserAgent(() => {
-    const rafCallbacks: Array<FrameRequestCallback> = []
-    const mockWindow = {
-      requestAnimationFrame: (cb: FrameRequestCallback) =>
-        rafCallbacks.push(cb),
-      cancelAnimationFrame: () => {},
-    }
-    const el = {
-      scrollTop: 0,
-      scrollLeft: 0,
-      scrollHeight: 5000,
-      clientHeight: 200,
-      offsetHeight: 200,
-      ownerDocument: { defaultView: mockWindow },
-    }
-    let scrollCallback:
-      | ((offset: number, isScrolling: boolean) => void)
-      | null = null
-    const v = new Virtualizer({
-      count: 100,
-      estimateSize: () => 50,
-      getScrollElement: () => el as any,
-      scrollToFn: (offset, { adjustments = 0 }) => {
-        el.scrollTop = offset + adjustments
-      },
-      observeElementRect: (_inst, cb) => {
-        cb({ width: 400, height: 200 })
-        return () => {}
-      },
-      observeElementOffset: (_inst, cb) => {
-        scrollCallback = cb
-        cb(0, false)
-        return () => {}
-      },
-    })
-    v._willUpdate()
-    v['getMeasurements']()
-    const flushFrames = () => {
-      for (let i = 0; i < 10 && rafCallbacks.length > 0; i++) {
-        rafCallbacks.splice(0).forEach((cb) => cb(0))
-        scrollCallback!(el.scrollTop, true)
-      }
-    }
+    const { v, el, scroll: scrollCallback, flushFrames } = setupIOSIndexScroll()
 
     v.scrollToIndex(20, { align: 'start' })
     scrollCallback!(el.scrollTop, true)
@@ -2217,6 +2229,256 @@ test('iOS deferral: a resize during an in-flight scrollToIndex is not replayed a
     scrollCallback!(el.scrollTop, false)
     expect(el.scrollTop).toBe(v.getOffsetForIndex(20, 'start')![0])
     expect(el.scrollTop).toBe(1050)
+  })
+})
+
+test('iOS deferral: a resize the index scroll never reconciled is replayed when a gesture interrupts it', () => {
+  // The resize lands after reconcile's last write, and the user grabs the
+  // list before the next frame. The scroll handler drops the index scroll, so
+  // reconcile never absorbs the delta; the settle flush must still apply it.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames } = setupIOSIndexScroll()
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    runFrame() // reached the target, still waiting for stable frames
+    expect(el.scrollTop).toBe(1000)
+
+    v.resizeItem(10, 100)
+    // Same frame: the user drags 100px up.
+    el.scrollTop = 900
+    scroll(900, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    // Row 20 sat at the top before the drag; 100px later it is 100px down,
+    // not 150px (the uncompensated growth of row 10).
+    expect(v.getOffsetForIndex(20, 'start')![0] - el.scrollTop).toBe(100)
+  })
+})
+
+test('iOS deferral: a resize the index scroll already reconciled is not replayed when a gesture interrupts it', () => {
+  // Reconcile retargets to 1050 and writes it, absorbing the resize. A
+  // gesture then ends the index scroll before it retires; the settle flush
+  // must not apply the same +50 again.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames } = setupIOSIndexScroll()
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    v.resizeItem(10, 100)
+    runFrame()
+    scroll(el.scrollTop, true)
+    expect(el.scrollTop).toBe(1050)
+    runFrame() // reached the new target, still waiting for stable frames
+
+    el.scrollTop = 950
+    scroll(950, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(v.getOffsetForIndex(20, 'start')![0] - el.scrollTop).toBe(100)
+  })
+})
+
+test('iOS deferral: a resize that never moved the index target is not replayed when a gesture interrupts it', () => {
+  // Scrolling up to row 20, the tracked offset is still the old 2000 when
+  // row 30 grows, so the resize reads as above the viewport and is deferred.
+  // It sits below the target, though: the target never moves and nothing is
+  // owed when a gesture ends the index scroll.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames } = setupIOSIndexScroll()
+    el.scrollTop = 2000
+    scroll(2000, true)
+
+    v.scrollToIndex(20, { align: 'start' })
+    v.resizeItem(30, 100)
+    scroll(el.scrollTop, true)
+    runFrame() // reached the target, still waiting for stable frames
+    expect(el.scrollTop).toBe(1000)
+
+    // The user drags 50px up.
+    el.scrollTop = 950
+    scroll(950, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(v.getOffsetForIndex(20, 'start')![0] - el.scrollTop).toBe(50)
+  })
+})
+
+test('iOS deferral: cancelScroll keeps the correction the index scroll never wrote', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, flushFrames } = setupIOSIndexScroll()
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    v.resizeItem(10, 100)
+    v.cancelScroll()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    // Row 20 stays at the top of the viewport.
+    expect(el.scrollTop).toBe(v.getOffsetForIndex(20, 'start')![0])
+  })
+})
+
+test('iOS deferral: the safety valve keeps the correction the index scroll never wrote', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame } = setupIOSIndexScroll()
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    v.resizeItem(10, 100)
+
+    // The next reconcile frame runs past MAX_RECONCILE_MS.
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 6000)
+    try {
+      runFrame()
+    } finally {
+      nowSpy.mockRestore()
+    }
+    expect(v.scrollState).toBeNull()
+    expect(el.scrollTop).toBe(1000)
+
+    scroll(el.scrollTop, false)
+    expect(el.scrollTop).toBe(1050)
+  })
+})
+
+test('iOS deferral: cancelling an index scroll mid-travel does not apply the target drift', () => {
+  // Row 40 grows between the viewport and the target. It moves the target,
+  // but the user's viewport sits above it, so nothing is owed on cancel.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, flushFrames } = setupIOSIndexScroll()
+
+    v.scrollToIndex(80, { align: 'start', behavior: 'smooth' })
+    // The smooth scroll is still travelling.
+    el.scrollTop = 700
+    scroll(700, true)
+    v.resizeItem(40, 100)
+    v.cancelScroll()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(el.scrollTop).toBe(700)
+  })
+})
+
+test('iOS deferral: a gesture leaving a landed scrollToEnd does not apply the target drift', () => {
+  // A toEnd target is the max scroll offset, which grows with any row,
+  // including the ones in view.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames } = setupIOSIndexScroll()
+
+    v.scrollToEnd()
+    scroll(el.scrollTop, true)
+    runFrame() // reached the target, still waiting for stable frames
+    expect(el.scrollTop).toBe(4800)
+
+    v.resizeItem(99, 100)
+    el.scrollHeight = 5050
+    el.scrollTop = 4000
+    scroll(4000, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(el.scrollTop).toBe(4000)
+  })
+})
+
+test('iOS deferral: a gesture leaving an end-aligned index scroll does not apply the target drift', () => {
+  // Row 19 grows inside the viewport. It moves an end-aligned target, but no
+  // row above the viewport changed, so nothing is owed.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames } = setupIOSIndexScroll()
+
+    v.scrollToIndex(20, { align: 'end' })
+    scroll(el.scrollTop, true)
+    runFrame() // reached the target, still waiting for stable frames
+    expect(el.scrollTop).toBe(850)
+
+    v.resizeItem(19, 100)
+    // Same frame: the user drags 100px up.
+    el.scrollTop = 750
+    scroll(750, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(el.scrollTop).toBe(750)
+  })
+})
+
+// anchorTo: 'end' with keyed rows, so prepending keeps the visible rows in
+// place through the pendingScrollAnchor sync.
+function setupIOSIndexScrollWithPrepend() {
+  let ids = Array.from({ length: 100 }, (_, i) => i)
+  const ctx = setupIOSIndexScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => ids[i]!,
+  })
+  const prepend = (n: number) => {
+    ids = [...Array.from({ length: n }, (_, i) => i - n), ...ids]
+    ctx.v.setOptions({
+      ...ctx.v.options,
+      count: ids.length,
+      getItemKey: (i) => ids[i]!,
+    })
+    ctx.v._willUpdate()
+  }
+  // Key of the row at the top of the viewport.
+  const topKey = () =>
+    ids[
+      ctx.v['getMeasurements']().findIndex(
+        (item: { end: number }) => item.end > ctx.el.scrollTop,
+      )
+    ]
+  return { ...ctx, prepend, topKey }
+}
+
+test('iOS deferral: a prepend during an index scroll keeps the visible rows in place', () => {
+  // The prepend anchor sync is deferred like any other iOS correction. The
+  // index target does not absorb it (index 20 is a different row after the
+  // prepend), so it must still flush once the scroll settles.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames, prepend, topKey } =
+      setupIOSIndexScrollWithPrepend()
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    runFrame()
+    expect(topKey()).toBe(20)
+
+    prepend(10)
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(topKey()).toBe(20)
+  })
+})
+
+test('iOS deferral: a gesture interrupting an index scroll keeps a deferred prepend', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames, prepend } =
+      setupIOSIndexScrollWithPrepend()
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    runFrame() // reached the target, still waiting for stable frames
+
+    prepend(10) // +500, deferred
+    // Same frame: the user drags 100px up.
+    el.scrollTop = 900
+    scroll(900, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(el.scrollTop).toBe(900 + 500)
   })
 })
 
