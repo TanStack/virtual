@@ -1214,15 +1214,18 @@ export class Virtualizer<
   // valve). While an index scroll runs, applyScrollAdjustment leaves resizes
   // to reconcileScroll (#1304), so one that moved the target after the last
   // write would be lost. When the viewport's top sits on a start-aligned
-  // target, the rows above the target are the rows above the viewport, and
-  // the target's drift is exactly what iOS still owes. Anywhere else
-  // (mid-travel, or an end/center/toEnd target that also moves when a row in
-  // view grows) the drift says nothing about the viewport.
+  // target with no scrollPaddingStart, the rows above the target are the rows
+  // above the viewport, and the target's drift is exactly what resizeItem's
+  // default predicate would have compensated. Anywhere else (mid-travel,
+  // padding or an end/center/toEnd target that also moves when a row in view
+  // grows, or a custom predicate) the drift says nothing about what is owed.
   private dropScrollState() {
     const state = this.scrollState
     if (
       state?.index != null &&
       state.align === 'start' &&
+      this.options.scrollPaddingStart === 0 &&
+      this.shouldAdjustScrollPositionOnItemSizeChange === undefined &&
       isIOSWebKit() &&
       approxEqual(this.getScrollOffset(), state.lastTargetOffset)
     ) {

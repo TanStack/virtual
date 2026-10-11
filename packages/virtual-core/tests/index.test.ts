@@ -2414,6 +2414,54 @@ test('iOS deferral: a gesture leaving an end-aligned index scroll does not apply
   })
 })
 
+test('iOS deferral: with scrollPaddingStart, a gesture does not apply drift from a visible row', () => {
+  // The padding shows rows 18-19 above the target row. Row 19 grows inside
+  // the viewport: it moves the target, but nothing above the viewport changed.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames } = setupIOSIndexScroll({
+      scrollPaddingStart: 100,
+    })
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    runFrame() // reached the target, still waiting for stable frames
+    expect(el.scrollTop).toBe(900)
+
+    v.resizeItem(19, 100)
+    // Same frame: the user drags 100px up.
+    el.scrollTop = 800
+    scroll(800, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(el.scrollTop).toBe(800)
+  })
+})
+
+test('iOS deferral: a gesture respects a custom shouldAdjustScrollPositionOnItemSizeChange', () => {
+  // The consumer opted out of compensation, so an interrupted index scroll
+  // must not add it back through the target drift.
+  withFakeIOSUserAgent(() => {
+    const { v, el, scroll, runFrame, flushFrames } = setupIOSIndexScroll()
+    v.shouldAdjustScrollPositionOnItemSizeChange = () => false
+
+    v.scrollToIndex(20, { align: 'start' })
+    scroll(el.scrollTop, true)
+    runFrame() // reached the target, still waiting for stable frames
+
+    v.resizeItem(10, 100)
+    // Same frame: the user drags 100px up.
+    el.scrollTop = 900
+    scroll(900, true)
+    expect(v.scrollState).toBeNull()
+
+    flushFrames()
+    scroll(el.scrollTop, false)
+    expect(el.scrollTop).toBe(900)
+  })
+})
+
 // anchorTo: 'end' with keyed rows, so prepending keeps the visible rows in
 // place through the pendingScrollAnchor sync.
 function setupIOSIndexScrollWithPrepend() {
