@@ -2552,6 +2552,26 @@ test.fails(
   },
 )
 
+test.fails(
+  'scrollToIndex (#1307): a drag that never reached the target is not pulled back when the target moves',
+  () => {
+    // Seen in iOS Safari: a scrollToIndex issued while a finger is dragging is
+    // ignored by the browser, so the offset never gets near the target.
+    const h = makeDeferralHarness()
+    h.run(() => {
+      h.v.scrollToIndex(50, { align: 'start' })
+      h.scroll(true, 20)
+      h.frame()
+      h.scroll(true, 60)
+      h.frame()
+      // A row measures and moves the target; the user is still at 60.
+      h.v.resizeItem(30, 100)
+      h.frame()
+      expect(h.el.scrollTop).toBe(60)
+    })
+  },
+)
+
 test('iOS deferral: a deferred correction follows the viewport through momentum', () => {
   const h = makeDeferralHarness({ start: 1000 })
   h.run(() => {

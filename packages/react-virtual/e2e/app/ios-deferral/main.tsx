@@ -37,7 +37,7 @@ const t: any = {
   el: null as HTMLElement | null,
   v: null as any,
   watch: [] as Array<number>,
-  hooks: [] as Array<{ left: number; momentum: boolean; fn: () => void }>,
+  hooks: [] as Array<{ left: number; when: string; fn: () => void }>,
   touching: false,
   touchEnded: false,
 }
@@ -88,9 +88,12 @@ t.snap = (label: string, rows: Array<number> = t.watch) =>
 // Run `fn` on the n-th scroll event from now, or on the n-th one after the
 // next touchend (i.e. during momentum).
 t.onScroll = (n: number, fn: () => void) =>
-  t.hooks.push({ left: n, momentum: false, fn })
+  t.hooks.push({ left: n, when: 'any', fn })
 t.onMomentumScroll = (n: number, fn: () => void) =>
-  t.hooks.push({ left: n, momentum: true, fn })
+  t.hooks.push({ left: n, when: 'momentum', fn })
+// Same, counting only scroll events while a finger is down.
+t.onTouchScroll = (n: number, fn: () => void) =>
+  t.hooks.push({ left: n, when: 'touching', fn })
 t.frames = (n: number) =>
   new Promise<void>((resolve) => {
     const step = () => (n-- > 0 ? requestAnimationFrame(step) : resolve())
@@ -132,7 +135,8 @@ const attach = (el: HTMLElement) => {
     () => {
       log('scroll')
       for (const hook of t.hooks.slice()) {
-        if (hook.momentum && (!t.touchEnded || t.touching)) continue
+        if (hook.when === 'momentum' && (!t.touchEnded || t.touching)) continue
+        if (hook.when === 'touching' && !t.touching) continue
         if (--hook.left > 0) continue
         t.hooks.splice(t.hooks.indexOf(hook), 1)
         hook.fn()
@@ -181,11 +185,23 @@ const arm = () => {
       t.setH(num('row', above), num('px', EST * 2), true)
     })
   } else if (preset === 'index') {
-    // `any=1` counts every scroll event (wheel), not only momentum ones.
-    const on = params.has('any') ? t.onScroll : t.onMomentumScroll
+    // `any=1` counts every scroll event (wheel), `touching=1` only those
+    // under a finger, instead of momentum ones.
+    const on = params.has('any')
+      ? t.onScroll
+      : params.has('touching')
+        ? t.onTouchScroll
+        : t.onMomentumScroll
     on(n, () => {
       log('scrollToIndex', { index: num('to', 0) })
       t.v.scrollToIndex(num('to', 0), { align: 'start' })
+      // `late=ms` then grows the first mounted row, which moves the target.
+      if (params.has('late')) {
+        window.setTimeout(
+          () => t.setH(t.v.getVirtualItems()[0].index, EST * 3),
+          num('late', 0),
+        )
+      }
     })
   } else if (preset === 'smooth') {
     window.setTimeout(
