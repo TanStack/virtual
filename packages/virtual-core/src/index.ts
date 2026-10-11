@@ -787,7 +787,11 @@ export class Virtualizer<
       isIOSWebKit() &&
       (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
     ) {
-      this._iosDeferredAdjustment += delta
+      // An index scroll retargets from fresh measurements in reconcileScroll;
+      // replaying this delta after it lands would count it twice.
+      if (this.scrollState?.index == null) {
+        this._iosDeferredAdjustment += delta
+      }
       return false
     } else {
       const target = this.getScrollOffset() + this.scrollAdjustments + delta
@@ -1219,6 +1223,10 @@ export class Virtualizer<
       return
     }
 
+    // A resize since the last render leaves measurementsCache stale until
+    // something reads getMeasurements(); rebuild it (memoized) so an index
+    // target reflects it even when no render ran in between.
+    this.getMeasurements()
     const targetOffset = this.getScrollStateTarget(this.scrollState)
 
     // Index targets can still depend on cached sizes during the first rAF,
