@@ -110,7 +110,7 @@ t.send = (label: string) =>
       log: t.log,
     }),
   }).then(
-    () => 'sent',
+    (response) => (response.ok ? 'sent' : `failed: HTTP ${response.status}`),
     (e) => `failed: ${e}`,
   )
 
