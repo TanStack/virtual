@@ -1,5 +1,17 @@
 # @tanstack/virtual-core
 
+## 3.19.0
+
+### Minor Changes
+
+- [#1302](https://github.com/TanStack/virtual/pull/1302) [`92c697f`](https://github.com/TanStack/virtual/commit/92c697f7b9c5189137b14f0b0fb41a29eddedbc6) - fix(virtual-core): keep lanes aligned after changing `lanes` with `measureElement` ([#1036](https://github.com/TanStack/virtual/issues/1036))
+  - `overscan` now counts whole rows when `lanes > 1`, so every lane renders (and measures) the same number of extra items. This renders more items than before: `lanes: 4, overscan: 2` now adds 8 items on each side instead of 2. `Range` gains an optional `lanes` field that `defaultRangeExtractor` reads; a custom `rangeExtractor` gets row overscan only if it delegates to `defaultRangeExtractor`.
+  - A ResizeObserver callback now measures all of its entries before notifying, so a synchronous re-render can no longer unmount part of a row before it is measured.
+
+### Patch Changes
+
+- [#1305](https://github.com/TanStack/virtual/pull/1305) [`28a2174`](https://github.com/TanStack/virtual/commit/28a21741bcc5055bbda9891655630989dc6b7517) - fix(virtual-core): don't replay iOS-deferred size corrections after an in-flight `scrollToIndex` lands
+
 ## 3.18.0
 
 ### Minor Changes
