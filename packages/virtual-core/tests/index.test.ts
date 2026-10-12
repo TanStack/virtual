@@ -2703,17 +2703,18 @@ function dispatchTouchEvent(
   el._dispatch(type)
 }
 
-test('iOS Phase 1: touchstart sets _iosTouching=true and clears justTouchEnded', () => {
+test('iOS Phase 1: touchstart enters the `down` phase and ends a prior tail', () => {
   withFakeIOSUserAgent(() => {
     const mockWindow = {
       setTimeout: globalThis.setTimeout.bind(globalThis),
       clearTimeout: globalThis.clearTimeout.bind(globalThis),
     }
     const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
-    ;(v as any)._iosJustTouchEnded = true // pretend a prior touchend left this set
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouching']).toBe(true)
-    expect(v['_iosJustTouchEnded']).toBe(false)
+    dispatchTouchEvent(el, 'touchend') // leaves a tail armed
+    expect(v['_iosTouch']?.phase).toBe('tail')
+    dispatchTouchEvent(el, 'touchstart')
+    expect(v['_iosTouch']).toEqual({ phase: 'down' })
   })
 })
 
@@ -2733,11 +2734,9 @@ test('iOS Phase 1: touchcancel clears touching the same as touchend, and cleanup
     expect(el._hasListener('touchcancel')).toBe(true)
 
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouching']).toBe(true)
+    expect(v['_iosTouch']).toEqual({ phase: 'down' })
     dispatchTouchEvent(el, 'touchcancel')
-    expect(v['_iosTouching']).toBe(false)
-    expect(v['_iosJustTouchEnded']).toBe(true)
-    expect(v['_iosTouchEndTimerId']).not.toBeNull()
+    expect(v['_iosTouch']?.phase).toBe('tail')
 
     const unmount = v._didMount()
     unmount()
@@ -2762,15 +2761,13 @@ test('iOS Phase 1: touchend sets justTouchEnded + starts grace timer, then expir
     const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    expect(v['_iosTouching']).toBe(false)
-    expect(v['_iosJustTouchEnded']).toBe(true)
-    expect(v['_iosTouchEndTimerId']).not.toBeNull()
+    const touch = v['_iosTouch']
+    expect(touch?.phase).toBe('tail')
 
     // Fire the timer manually (simulating 150ms elapsing).
-    const fn = timers.get(v['_iosTouchEndTimerId']!)!
+    const fn = timers.get((touch as { timerId: number }).timerId)!
     fn()
-    expect(v['_iosJustTouchEnded']).toBe(false)
-    expect(v['_iosTouchEndTimerId']).toBeNull()
+    expect(v['_iosTouch']).toBeNull()
   })
 })
 
@@ -2809,7 +2806,8 @@ test('iOS Phase 1: resize in post-touchend grace window defers; flushes when tim
     const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    expect(v['_iosJustTouchEnded']).toBe(true)
+    const touch = v['_iosTouch']
+    expect(touch?.phase).toBe('tail')
     scrollToFn.mockClear()
 
     // Items measure during the grace window — must defer
@@ -2819,9 +2817,9 @@ test('iOS Phase 1: resize in post-touchend grace window defers; flushes when tim
     expect(v['_iosDeferredAdjustment']).toBe(50 + 15)
 
     // Expire the grace timer; the timer callback flushes the accumulated delta.
-    const fn = timers.get(v['_iosTouchEndTimerId']!)!
+    const fn = timers.get((touch as { timerId: number }).timerId)!
     fn()
-    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(v['_iosTouch']).toBeNull()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_iosDeferredAdjustment']).toBe(0)
   })
@@ -2865,8 +2863,8 @@ test('iOS Phase 1: scroll-event after touchend timer cleanup also flushes', () =
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(50)
 
-    // Scroll ends. Touch never started here, so the flush gate's
-    // !isScrolling && !_iosTouching && !_iosJustTouchEnded all hold.
+    // Scroll ends. Touch never started here, so nothing is in motion and
+    // the flush gate opens.
     scrollCallback!(100, false)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_iosDeferredAdjustment']).toBe(0)
@@ -2889,15 +2887,14 @@ test('iOS Phase 1: new touchstart during grace window cancels pending flush time
     const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    const firstTimerId = v['_iosTouchEndTimerId']!
+    const firstTimerId = (v['_iosTouch'] as { timerId: number }).timerId
     expect(timers.has(firstTimerId)).toBe(true)
 
     // User puts finger back down before grace window expired.
     dispatchTouchEvent(el, 'touchstart')
     // The pending timer must have been canceled.
     expect(timers.has(firstTimerId)).toBe(false)
-    expect(v['_iosTouchEndTimerId']).toBeNull()
-    expect(v['_iosTouching']).toBe(true)
+    expect(v['_iosTouch']).toEqual({ phase: 'down' })
   })
 })
 
@@ -2976,7 +2973,7 @@ test('iOS Phase 1: scroll-element swap does not replay a stale deferred adjustme
   })
 })
 
-test('iOS Phase 1: scroll-element swap mid-touch does not strand _iosTouching', () => {
+test('iOS Phase 1: scroll-element swap mid-touch does not strand the `down` phase', () => {
   withFakeIOSUserAgent(() => {
     const mockWindow = {
       setTimeout: globalThis.setTimeout.bind(globalThis),
@@ -2987,7 +2984,7 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand _iosTouching', 
       mockWindow,
     )
     dispatchTouchEvent(holder.el, 'touchstart')
-    expect(v['_iosTouching']).toBe(true)
+    expect(v['_iosTouch']).toEqual({ phase: 'down' })
 
     // The in-flight touch keeps targeting the old element (implicit touch
     // capture), so the new element will never deliver its touchend. Without
@@ -2995,11 +2992,11 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand _iosTouching', 
     // the flush blocked until the user's next full touch cycle.
     holder.el = makeEl()
     v._willUpdate()
-    expect(v['_iosTouching']).toBe(false)
+    expect(v['_iosTouch']).toBeNull()
   })
 })
 
-test('iOS Phase 1: scroll-element swap during grace window does not strand _iosJustTouchEnded', () => {
+test('iOS Phase 1: scroll-element swap during grace window does not strand the tail', () => {
   withFakeIOSUserAgent(() => {
     let timerId = 0
     const timers = new Map<number, () => void>()
@@ -3017,14 +3014,14 @@ test('iOS Phase 1: scroll-element swap during grace window does not strand _iosJ
     )
     dispatchTouchEvent(holder.el, 'touchstart')
     dispatchTouchEvent(holder.el, 'touchend')
-    expect(v['_iosJustTouchEnded']).toBe(true)
+    expect(v['_iosTouch']?.phase).toBe('tail')
 
     // Swapping inside the grace window removes the listeners and clears the
-    // grace timer — which was the only pending reset of the flag. Without
-    // the cleanup reset the flag would stay true indefinitely.
+    // grace timer — which was the only pending reset of the record. Without
+    // the cleanup reset the tail would stay set indefinitely.
     holder.el = makeEl()
     v._willUpdate()
-    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(v['_iosTouch']).toBeNull()
     expect(timers.size).toBe(0)
   })
 })
@@ -3289,11 +3286,10 @@ test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
 
   dispatchTouchEvent(el, 'touchstart')
-  expect(v['_iosTouching']).toBe(true) // touchstart still flips the flag (cheap)
+  expect(v['_iosTouch']).toEqual({ phase: 'down' }) // touchstart still records (cheap)
   dispatchTouchEvent(el, 'touchend')
-  // Non-iOS path returns before setting justTouchEnded / arming timer
-  expect(v['_iosJustTouchEnded']).toBe(false)
-  expect(v['_iosTouchEndTimerId']).toBeNull()
+  // Non-iOS path returns before arming a tail
+  expect(v['_iosTouch']).toBeNull()
 })
 
 test('non-iOS: adjustment is applied immediately during scroll (no regression)', () => {
