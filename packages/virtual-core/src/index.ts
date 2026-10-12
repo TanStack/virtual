@@ -926,6 +926,8 @@ export class Virtualizer<
     this._iosTouching = false
     this._iosJustTouchEnded = false
     this._clampedAdjustment = null
+    // A write to the old element will never be read back.
+    this.pendingWrite = null
     this.scrollElement = null
     this.targetWindow = null
   }
