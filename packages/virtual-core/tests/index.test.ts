@@ -2106,6 +2106,51 @@ test('iOS deferral: multiple resizes during scroll accumulate and flush as one',
   })
 })
 
+test('iOS deferral: scrollToIndex with no target still drops a pending deferred adjustment', () => {
+  // An absolute command drops the deferral even when it has no target to
+  // write (an empty list), as it did before the commands shared an entry
+  // point; otherwise the stale delta replays once the list refills (found by
+  // @phcorp's differential run on #1316).
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({
+          scrollTop: 200,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(200, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    v.resizeItem(0, 90) // above the fold while scrolling: deferred
+    v.setOptions({ ...v.options, count: 0 })
+    v['getMeasurements']() // the render for the empty list
+    v.scrollToIndex(0) // no target, nothing to write
+    v.setOptions({ ...v.options, count: 10 })
+    v['getMeasurements']()
+    scrollCallback!(200, false) // settles: the flush would replay the delta
+
+    expect(scrollToFn).not.toHaveBeenCalled()
+  })
+})
+
 test('iOS deferral: an absolute scroll command invalidates a pending deferred adjustment', () => {
   // Regression (#1233 manifestation A): scrollToOffset/scrollToIndex derive
   // their target from CURRENT measurements, so any deferred compensation still
@@ -2279,6 +2324,50 @@ test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-ba
     // resize landing before the resulting scroll event fires has to see
     // the correct effective offset.
     expect(v['scrollAdjustments']).toBe(50)
+  })
+})
+
+test('iOS deferral: a write before the flush is read back keeps the flushed adjustment', () => {
+  // `scrollAdjustments` tracks compensation written but not yet reported.
+  // A later write that passes no adjustments (a command, a reconcile, the
+  // anchor sync) does not report anything, so the flushed delta stays until
+  // the scroll event (found by @phcorp's mutation run on #1316).
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({
+          scrollTop: 200,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(200, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+
+    v.resizeItem(0, 100) // deferred while scrolling
+    scrollCallback!(200, false) // settles: the flush writes +50
+    expect(v.scrollAdjustments).toBe(50)
+
+    v.scrollToOffset(150) // a write with no adjustments of its own
+    expect(v.scrollAdjustments).toBe(50)
+
+    scrollCallback!(150, false) // its read-back
+    expect(v.scrollAdjustments).toBe(0)
   })
 })
 
@@ -2703,17 +2792,18 @@ function dispatchTouchEvent(
   el._dispatch(type)
 }
 
-test('iOS Phase 1: touchstart sets _iosTouching=true and clears justTouchEnded', () => {
+test('iOS Phase 1: touchstart enters the `down` phase and ends a prior tail', () => {
   withFakeIOSUserAgent(() => {
     const mockWindow = {
       setTimeout: globalThis.setTimeout.bind(globalThis),
       clearTimeout: globalThis.clearTimeout.bind(globalThis),
     }
     const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
-    ;(v as any)._iosJustTouchEnded = true // pretend a prior touchend left this set
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouching']).toBe(true)
-    expect(v['_iosJustTouchEnded']).toBe(false)
+    dispatchTouchEvent(el, 'touchend') // leaves a tail armed
+    expect(v['_iosTouch']?.phase).toBe('tail')
+    dispatchTouchEvent(el, 'touchstart')
+    expect(v['_iosTouch']).toEqual({ phase: 'down' })
   })
 })
 
@@ -2733,11 +2823,9 @@ test('iOS Phase 1: touchcancel clears touching the same as touchend, and cleanup
     expect(el._hasListener('touchcancel')).toBe(true)
 
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouching']).toBe(true)
+    expect(v['_iosTouch']).toEqual({ phase: 'down' })
     dispatchTouchEvent(el, 'touchcancel')
-    expect(v['_iosTouching']).toBe(false)
-    expect(v['_iosJustTouchEnded']).toBe(true)
-    expect(v['_iosTouchEndTimerId']).not.toBeNull()
+    expect(v['_iosTouch']?.phase).toBe('tail')
 
     const unmount = v._didMount()
     unmount()
@@ -2762,15 +2850,13 @@ test('iOS Phase 1: touchend sets justTouchEnded + starts grace timer, then expir
     const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    expect(v['_iosTouching']).toBe(false)
-    expect(v['_iosJustTouchEnded']).toBe(true)
-    expect(v['_iosTouchEndTimerId']).not.toBeNull()
+    const touch = v['_iosTouch']
+    expect(touch?.phase).toBe('tail')
 
     // Fire the timer manually (simulating 150ms elapsing).
-    const fn = timers.get(v['_iosTouchEndTimerId']!)!
+    const fn = timers.get((touch as { timerId: number }).timerId)!
     fn()
-    expect(v['_iosJustTouchEnded']).toBe(false)
-    expect(v['_iosTouchEndTimerId']).toBeNull()
+    expect(v['_iosTouch']).toBeNull()
   })
 })
 
@@ -2809,7 +2895,8 @@ test('iOS Phase 1: resize in post-touchend grace window defers; flushes when tim
     const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    expect(v['_iosJustTouchEnded']).toBe(true)
+    const touch = v['_iosTouch']
+    expect(touch?.phase).toBe('tail')
     scrollToFn.mockClear()
 
     // Items measure during the grace window — must defer
@@ -2819,9 +2906,9 @@ test('iOS Phase 1: resize in post-touchend grace window defers; flushes when tim
     expect(v['_iosDeferredAdjustment']).toBe(50 + 15)
 
     // Expire the grace timer; the timer callback flushes the accumulated delta.
-    const fn = timers.get(v['_iosTouchEndTimerId']!)!
+    const fn = timers.get((touch as { timerId: number }).timerId)!
     fn()
-    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(v['_iosTouch']).toBeNull()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_iosDeferredAdjustment']).toBe(0)
   })
@@ -2865,8 +2952,8 @@ test('iOS Phase 1: scroll-event after touchend timer cleanup also flushes', () =
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_iosDeferredAdjustment']).toBe(50)
 
-    // Scroll ends. Touch never started here, so the flush gate's
-    // !isScrolling && !_iosTouching && !_iosJustTouchEnded all hold.
+    // Scroll ends. Touch never started here, so nothing is in motion and
+    // the flush gate opens.
     scrollCallback!(100, false)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_iosDeferredAdjustment']).toBe(0)
@@ -2889,15 +2976,14 @@ test('iOS Phase 1: new touchstart during grace window cancels pending flush time
     const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    const firstTimerId = v['_iosTouchEndTimerId']!
+    const firstTimerId = (v['_iosTouch'] as { timerId: number }).timerId
     expect(timers.has(firstTimerId)).toBe(true)
 
     // User puts finger back down before grace window expired.
     dispatchTouchEvent(el, 'touchstart')
     // The pending timer must have been canceled.
     expect(timers.has(firstTimerId)).toBe(false)
-    expect(v['_iosTouchEndTimerId']).toBeNull()
-    expect(v['_iosTouching']).toBe(true)
+    expect(v['_iosTouch']).toEqual({ phase: 'down' })
   })
 })
 
@@ -2976,7 +3062,7 @@ test('iOS Phase 1: scroll-element swap does not replay a stale deferred adjustme
   })
 })
 
-test('iOS Phase 1: scroll-element swap mid-touch does not strand _iosTouching', () => {
+test('iOS Phase 1: scroll-element swap mid-touch does not strand the `down` phase', () => {
   withFakeIOSUserAgent(() => {
     const mockWindow = {
       setTimeout: globalThis.setTimeout.bind(globalThis),
@@ -2987,7 +3073,7 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand _iosTouching', 
       mockWindow,
     )
     dispatchTouchEvent(holder.el, 'touchstart')
-    expect(v['_iosTouching']).toBe(true)
+    expect(v['_iosTouch']).toEqual({ phase: 'down' })
 
     // The in-flight touch keeps targeting the old element (implicit touch
     // capture), so the new element will never deliver its touchend. Without
@@ -2995,11 +3081,11 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand _iosTouching', 
     // the flush blocked until the user's next full touch cycle.
     holder.el = makeEl()
     v._willUpdate()
-    expect(v['_iosTouching']).toBe(false)
+    expect(v['_iosTouch']).toBeNull()
   })
 })
 
-test('iOS Phase 1: scroll-element swap during grace window does not strand _iosJustTouchEnded', () => {
+test('iOS Phase 1: scroll-element swap during grace window does not strand the tail', () => {
   withFakeIOSUserAgent(() => {
     let timerId = 0
     const timers = new Map<number, () => void>()
@@ -3017,14 +3103,14 @@ test('iOS Phase 1: scroll-element swap during grace window does not strand _iosJ
     )
     dispatchTouchEvent(holder.el, 'touchstart')
     dispatchTouchEvent(holder.el, 'touchend')
-    expect(v['_iosJustTouchEnded']).toBe(true)
+    expect(v['_iosTouch']?.phase).toBe('tail')
 
     // Swapping inside the grace window removes the listeners and clears the
-    // grace timer — which was the only pending reset of the flag. Without
-    // the cleanup reset the flag would stay true indefinitely.
+    // grace timer — which was the only pending reset of the record. Without
+    // the cleanup reset the tail would stay set indefinitely.
     holder.el = makeEl()
     v._willUpdate()
-    expect(v['_iosJustTouchEnded']).toBe(false)
+    expect(v['_iosTouch']).toBeNull()
     expect(timers.size).toBe(0)
   })
 })
@@ -3057,7 +3143,7 @@ test('Phase 2a: browser-rounded scrollTop after self-write is reconciled to inte
 
   // Simulate a self-write to 123.5 (subpixel target).
   v.scrollToOffset(123.5, { behavior: 'auto' })
-  expect(v['_intendedScrollOffset']).toBe(123.5)
+  expect(v['pendingWrite']?.target ?? null).toBe(123.5)
 
   // Browser fires a scroll event reporting 123 (integer-rounded).
   scrollCallback!(123, false)
@@ -3065,7 +3151,7 @@ test('Phase 2a: browser-rounded scrollTop after self-write is reconciled to inte
   // We should have reconciled the offset back to the intended 123.5,
   // not stored the browser's rounded 123.
   expect(v.scrollOffset).toBe(123.5)
-  expect(v['_intendedScrollOffset']).toBeNull()
+  expect(v['pendingWrite']?.target ?? null).toBeNull()
 })
 
 test('Phase 2a: user-initiated scroll (large delta) is NOT reconciled to intended value', () => {
@@ -3092,13 +3178,13 @@ test('Phase 2a: user-initiated scroll (large delta) is NOT reconciled to intende
   })
   v._willUpdate()
   v.scrollToOffset(100, { behavior: 'auto' })
-  expect(v['_intendedScrollOffset']).toBe(100)
+  expect(v['pendingWrite']?.target ?? null).toBe(100)
 
   // User then scrolls way past — browser reports 500. Diff (400) > 1.5 px
   // tolerance, so we trust the browser-reported value.
   scrollCallback!(500, true)
   expect(v.scrollOffset).toBe(500)
-  expect(v['_intendedScrollOffset']).toBeNull()
+  expect(v['pendingWrite']?.target ?? null).toBeNull()
 })
 
 // ─── Phase 2b: scrollTopMax elastic-overscroll clamp ─────────────────────────
@@ -3270,7 +3356,7 @@ test('Phase 2a: a second self-write replaces the intended target', () => {
   v._willUpdate()
   v.scrollToOffset(100, { behavior: 'auto' })
   v.scrollToOffset(200.7, { behavior: 'auto' })
-  expect(v['_intendedScrollOffset']).toBe(200.7)
+  expect(v['pendingWrite']?.target ?? null).toBe(200.7)
   // First scrollTo's offset (100) was overwritten — a scroll event near it
   // would NOT reconcile.
   scrollCallback!(101, true)
@@ -3289,11 +3375,10 @@ test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
 
   dispatchTouchEvent(el, 'touchstart')
-  expect(v['_iosTouching']).toBe(true) // touchstart still flips the flag (cheap)
+  expect(v['_iosTouch']).toEqual({ phase: 'down' }) // touchstart still records (cheap)
   dispatchTouchEvent(el, 'touchend')
-  // Non-iOS path returns before setting justTouchEnded / arming timer
-  expect(v['_iosJustTouchEnded']).toBe(false)
-  expect(v['_iosTouchEndTimerId']).toBeNull()
+  // Non-iOS path returns before arming a tail
+  expect(v['_iosTouch']).toBeNull()
 })
 
 test('non-iOS: adjustment is applied immediately during scroll (no regression)', () => {
@@ -3482,7 +3567,7 @@ test('scroll-up jank: idle (scrollDirection=null) still applies adjustment', () 
 // `applyScrollAdjustment` folds the pending adjustment into `scrollOffset`
 // eagerly, so the browser's scroll event for our own `scrollTop` write
 // arrives at exactly the offset we already hold (directly, or snapped there
-// by the `_intendedScrollOffset` sub-pixel reconciliation). That equality
+// by the `pendingWrite` sub-pixel reconciliation). That equality
 // carries no directional information — it must not be classified as a
 // `'backward'` gesture, or the default
 // `shouldAdjustScrollPositionOnItemSizeChange` skips above-viewport
@@ -3572,7 +3657,7 @@ test('self-write read-back rounded by the browser still does not latch a directi
   v['applyScrollAdjustment'](40.5)
   expect(v.scrollOffset).toBe(640.5)
 
-  // The browser rounds the write to an integer; the `_intendedScrollOffset`
+  // The browser rounds the write to an integer; the `pendingWrite`
   // reconciliation snaps the read-back to the held value.
   emitScroll(640, true)
 
@@ -5736,3 +5821,39 @@ test.fails(
     expect(el.scrollTop).toBe(3900)
   },
 )
+
+test('a write to a scroll element that went away is not adopted by the next one', () => {
+  // A write is matched to its read-back within 1.5px. After the element is
+  // swapped (or the virtualizer disabled), the old write is never read back,
+  // so the new element's first report is taken as it is.
+  const mk = (top: number) => ({
+    scrollTop: top,
+    scrollLeft: 0,
+    scrollHeight: 5000,
+    clientHeight: 200,
+    offsetHeight: 200,
+  })
+  let el = mk(0)
+  const v = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => el as any,
+    scrollToFn: () => {},
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      cb(el.scrollTop, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+
+  v.scrollToOffset(1000.5) // written, never read back on the old element
+  el = mk(1001)
+  v._willUpdate()
+
+  expect(v.scrollOffset).toBe(1001)
+})

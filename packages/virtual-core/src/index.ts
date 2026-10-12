@@ -413,14 +413,6 @@ type ScrollState = {
   // settling
   stableFrames: number
   phase: ScrollPhase
-
-  // Where our last non-smooth write for this command put the element, until
-  // its scroll event arrives. Until then `scrollOffset` still holds the old
-  // position, and the rows on screen are the ones rendered for it. A smooth
-  // write leaves it null: the element is somewhere between the two offsets.
-  // It goes with the scroll state, so a write the browser ignored (no read-back)
-  // does not outlive its command.
-  writtenOffset?: number | null
 }
 
 const initialScrollPhase = (
@@ -439,12 +431,14 @@ const isSmoothScroll = (state: ScrollState | null): state is ScrollState =>
 const isAnimating = (state: ScrollState) =>
   state.phase === 'smooth' || state.phase === 'smoothFinishing'
 
-type PendingScrollAnchor = [
-  key: Key | null,
-  offset: number,
-  followOnAppend: ScrollBehavior | null,
-  anchorDelta: number,
-]
+// What `setOptions` decided about the scroll position for `_willUpdate` to
+// carry out once the consumer has rendered: keep the reading anchor in place
+// after a prepend (`scrollOffset` already moved by `delta`, the element has
+// not), or follow an append to the end. A prepend that qualifies for both
+// only follows.
+type PendingScrollAnchor =
+  | { kind: 'anchor'; delta: number }
+  | { kind: 'follow'; behavior: ScrollBehavior }
 
 function isAppendWithTrim(
   prevCount: number,
@@ -505,30 +499,49 @@ export class Virtualizer<
   scrollRect: Rect | null = null
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
-  scrollAdjustments = 0
+  // Size compensation written to the element but not yet reflected in
+  // `scrollOffset`: the element is expected at `scrollOffset +
+  // scrollAdjustments` until the next scroll event reports it.
+  get scrollAdjustments() {
+    return this.pendingWrite?.adjustments ?? 0
+  }
   // Sum of size-change deltas above-viewport that were skipped during
   // iOS momentum scroll (writing scrollTop mid-momentum cancels it).
   // Flushed in a single scrollTo when iOS is fully settled.
   private _iosDeferredAdjustment = 0
-  // Touch state. iOS WebKit cancels momentum when scrollTop is written, so
-  // we defer adjustments not only during `isScrolling` but also through the
-  // touchstart→touchend/touchcancel window (active drag) and a short tail
-  // after the touch ends (early-momentum window — iOS only fires touch
-  // events once at the start of momentum, so we use a timer rather than
-  // another event).
-  private _iosTouching = false
-  private _iosJustTouchEnded = false
-  private _iosTouchEndTimerId: number | null = null
-  // Subpixel reconciliation. Safari (and Chrome/Firefox under certain DPRs)
-  // round scrollTop/scrollLeft writes to integer pixels. If we wrote 12345.5
-  // but the browser reports back 12346, the next reconcileScroll sees a
-  // "target changed" and re-fires scrollTo — a feedback loop that the
-  // approxEqual(<1.01) tolerance otherwise absorbs as a workaround.
-  // By remembering the intended value of our most-recent self-driven
-  // scrollTo, we can match the browser's rounded read back to the intended
-  // value when the diff is < 1.5 px, distinguishing it from a real user
-  // scroll. The +0.5 over Math.abs lets us also absorb the +1 / -1 cases.
-  private _intendedScrollOffset: number | null = null
+  // The touch gesture in progress. iOS WebKit cancels momentum when
+  // scrollTop is written, so adjustments are deferred not only during
+  // `isScrolling` but through the whole gesture: `down` from touchstart to
+  // touchend/touchcancel (active drag), then `tail` for a short grace window
+  // after the finger lifts (early momentum — iOS fires touch events only
+  // once at the start of momentum, so the tail is a timer rather than
+  // another event). Null between gestures, and after touchend on non-iOS,
+  // which arms no tail. The tail record owns its timer: `_endIosTouch` is
+  // the only way to drop either, so a cleared record never leaves a timer
+  // behind, and a live timer always has its record.
+  private _iosTouch:
+    | { phase: 'down' }
+    | { phase: 'tail'; timerId: number }
+    | null = null
+  // Our last write to the element, from `_scrollToOffset` until the next
+  // scroll event reports it (the only place it is cleared). Until then
+  // `scrollOffset` may still hold the old position.
+  //
+  // - `target`: where the write puts the element (offset + adjustments).
+  //   Safari (and Chrome/Firefox under certain DPRs) round writes to whole
+  //   pixels: wrote 12345.5, read back 12346. A read-back within 1.5px of
+  //   `target` is taken as our own and adopts the exact value, so reconcile
+  //   does not see a moved target and write again; a user scroll has moved
+  //   further by the time it reports.
+  // - `smooth`: the write animates, so until it lands the element is
+  //   somewhere between the old offset and `target`.
+  // - `adjustments`: see `scrollAdjustments`. Writes that pass none keep the
+  //   previous value.
+  private pendingWrite: {
+    target: number
+    smooth: boolean
+    adjustments: number
+  } | null = null
   // A compensation write from `applyScrollAdjustment` whose target exceeded
   // the element's scroll max at the moment of the write. The browser clamps
   // such a write because the consumer's sizer has not grown yet: an
@@ -759,8 +772,7 @@ export class Virtualizer<
     // the virtualizer would render the wrong items for one frame (the
     // estimate-based positions are stale) and then correct in the next
     // frame, producing a visible "jump" on prepend with dynamic sizes.
-    let anchorResolved = false
-    let anchorDelta = 0
+    let anchorDelta: number | null = null
     if (anchor && this.scrollOffset !== null) {
       const [anchorKey, anchorOffset] = anchor
       const newMeasurements = this.getMeasurements()
@@ -781,19 +793,15 @@ export class Virtualizer<
           if (!followOnAppend && newOffset !== this.scrollOffset) {
             anchorDelta = newOffset - this.scrollOffset
             this.scrollOffset = newOffset
-            anchorResolved = true
           }
         }
       }
     }
 
-    if (anchorResolved || followOnAppend) {
-      this.pendingScrollAnchor = [
-        anchorResolved ? anchor![0] : null,
-        anchorResolved ? anchor![1] : 0,
-        followOnAppend,
-        anchorDelta,
-      ]
+    if (followOnAppend) {
+      this.pendingScrollAnchor = { kind: 'follow', behavior: followOnAppend }
+    } else if (anchorDelta !== null) {
+      this.pendingScrollAnchor = { kind: 'anchor', delta: anchorDelta }
     }
   }
 
@@ -815,10 +823,7 @@ export class Virtualizer<
       console.info('correction', delta)
     }
 
-    if (
-      isIOSWebKit() &&
-      (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
-    ) {
+    if (isIOSWebKit() && this._iosInMotion()) {
       // An index scroll retargets from fresh measurements in reconcileScroll;
       // replaying this delta after it lands would count it twice.
       if (this.scrollState?.index == null) {
@@ -839,7 +844,7 @@ export class Virtualizer<
           ? { target, maxAtWrite }
           : null
       this._scrollToOffset(this.getScrollOffset(), {
-        adjustments: (this.scrollAdjustments += delta),
+        adjustments: this.scrollAdjustments + delta,
         behavior,
       })
       // Eagerly carry the intended target in `scrollOffset` so callers that
@@ -860,7 +865,7 @@ export class Virtualizer<
         // Upper-bound overflow stays untouched — it is transiently
         // legitimate mid-prepend while the consumer's sizer catches up.
         if (this.scrollOffset < 0) this.scrollOffset = 0
-        this.scrollAdjustments = 0
+        if (this.pendingWrite) this.pendingWrite.adjustments = 0
       }
       return true
     }
@@ -912,14 +917,14 @@ export class Virtualizer<
     // capture), so the new element never reports it. Carrying the state
     // over would replay a stale deferred delta on the new element's first
     // flush, and a cleanup that lands mid-touch or inside the post-touchend
-    // grace window would strand _iosTouching / _iosJustTouchEnded as true
-    // (the listener unsub clears the grace timer, and with it the only
-    // pending reset of the flag), deferring every adjustment on the new
-    // element until its next touch cycle.
+    // grace window would strand `_iosTouch` (the listeners that end it were
+    // just removed), deferring every adjustment on the new element until
+    // its next touch cycle.
     this._iosDeferredAdjustment = 0
-    this._iosTouching = false
-    this._iosJustTouchEnded = false
+    this._endIosTouch()
     this._clampedAdjustment = null
+    // A write to the old element will never be read back.
+    this.pendingWrite = null
     this.scrollElement = null
     this.targetWindow = null
   }
@@ -969,28 +974,21 @@ export class Virtualizer<
           // no-op re-emit that Safari/Firefox fire after a re-render's layout
           // (Chrome doesn't). Treating it as scrolling re-arms `isScrolling`,
           // which forces a render that triggers another such event: an
-          // infinite re-render loop. Ignore it. (Self-writes are handled by
-          // the `_intendedScrollOffset` reconciliation just below.)
+          // infinite re-render loop. Ignore it. (Self-writes are matched to
+          // `pendingWrite` just below.)
           if (
             isScrolling &&
-            this._intendedScrollOffset === null &&
+            this.pendingWrite === null &&
             offset === this.scrollOffset
           ) {
             return
           }
 
-          // If this scroll event looks like the browser's read-back of a
-          // value we just wrote, prefer our intended (sub-pixel-accurate)
-          // value over the browser's rounded one. The 1.5 px tolerance is
-          // tight enough to avoid mistaking a real user scroll for a
-          // self-write — by the time the user has moved 1.5 px, the
-          // intended value will already have been consumed by a prior
-          // scroll event and cleared.
-          if (
-            this._intendedScrollOffset !== null &&
-            Math.abs(offset - this._intendedScrollOffset) < 1.5
-          ) {
-            offset = this._intendedScrollOffset
+          // The read-back of our own write: adopt the exact target over the
+          // browser's rounded value (see `pendingWrite`).
+          const pending = this.pendingWrite
+          if (pending !== null && Math.abs(offset - pending.target) < 1.5) {
+            offset = pending.target
           } else if (
             this.scrollState?.index != null &&
             // A non-smooth write lands at once, so any other scroll event is
@@ -1017,8 +1015,7 @@ export class Virtualizer<
             // need to reconcile.
             this.scrollState = null
           }
-          this._intendedScrollOffset = null
-          if (this.scrollState) this.scrollState.writtenOffset = null
+          this.pendingWrite = null
 
           // A pending clamped compensation write (#1258) survives only its
           // own read-back, which the browser reports at the scroll max we
@@ -1031,7 +1028,6 @@ export class Virtualizer<
             this._clampedAdjustment = null
           }
 
-          this.scrollAdjustments = 0
           // If the offset hasn't moved, this is the echo of our own
           // adjustment write — `applyScrollAdjustment` already folded it
           // into `scrollOffset`. There's no direction to infer, so leave
@@ -1066,28 +1062,27 @@ export class Virtualizer<
       if ('addEventListener' in this.scrollElement) {
         const scrollEl = this.scrollElement as unknown as EventTarget
         const onTouchStart = () => {
-          this._iosTouching = true
-          this._iosJustTouchEnded = false
-          if (this._iosTouchEndTimerId !== null && this.targetWindow != null) {
-            this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
-            this._iosTouchEndTimerId = null
-          }
+          // A finger back down inside the grace window cancels its tail.
+          this._endIosTouch()
+          this._iosTouch = { phase: 'down' }
         }
         const onTouchEnd = () => {
-          this._iosTouching = false
+          this._endIosTouch()
           if (!isIOSWebKit() || this.targetWindow == null) {
-            // Non-iOS: nothing more to track. Just clear the touching flag.
+            // Non-iOS: nothing more to track.
             return
           }
-          this._iosJustTouchEnded = true
           // After ~150 ms with no scroll/touch events, momentum is done.
-          this._iosTouchEndTimerId = this.targetWindow.setTimeout(() => {
-            this._iosJustTouchEnded = false
-            this._iosTouchEndTimerId = null
-            // After the grace window, attempt to flush. The scroll event
-            // for momentum decay may have already fired before our timer.
-            this._flushIosDeferredIfReady()
-          }, 150)
+          const tail = {
+            phase: 'tail' as const,
+            timerId: this.targetWindow.setTimeout(() => {
+              if (this._iosTouch === tail) this._iosTouch = null
+              // After the grace window, attempt to flush. The scroll event
+              // for momentum decay may have already fired before our timer.
+              this._flushIosDeferredIfReady()
+            }, 150),
+          }
+          this._iosTouch = tail
         }
         scrollEl.addEventListener(
           'touchstart',
@@ -1110,10 +1105,7 @@ export class Virtualizer<
           scrollEl.removeEventListener('touchstart', onTouchStart)
           scrollEl.removeEventListener('touchend', onTouchEnd)
           scrollEl.removeEventListener('touchcancel', onTouchEnd)
-          if (this._iosTouchEndTimerId !== null && this.targetWindow != null) {
-            this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
-            this._iosTouchEndTimerId = null
-          }
+          this._endIosTouch()
         })
       }
 
@@ -1127,29 +1119,21 @@ export class Virtualizer<
     this.pendingScrollAnchor = null
 
     if (anchor && this.scrollElement && this.options.enabled) {
-      const [key, _offset, followOnAppend, anchorDelta] = anchor
-
-      if (key !== null && !followOnAppend) {
+      if (anchor.kind === 'anchor') {
         // scrollOffset was eagerly adjusted in setOptions so the
         // virtualizer already computed the correct range during render.
         // Now sync the browser's actual scroll position to match.
-        // Skip when followOnAppend is set — scrollToEnd will handle it.
         //
         // On iOS WebKit, writing scrollTop during touch/momentum cancels
         // the in-flight scroll. Defer the DOM sync the same way
         // applyScrollAdjustment does — accumulate the delta and let
         // _flushIosDeferredIfReady handle it once the scroll settles.
-        if (
-          isIOSWebKit() &&
-          (this.isScrolling || this._iosTouching || this._iosJustTouchEnded)
-        ) {
-          if (anchorDelta !== 0) {
-            this._iosDeferredAdjustment += anchorDelta
-          }
+        if (isIOSWebKit() && this._iosInMotion()) {
+          this._iosDeferredAdjustment += anchor.delta
         } else if (
           isSmoothScroll(this.scrollState) &&
           !approxEqual(
-            this.getScrollOffset() - anchorDelta,
+            this.getScrollOffset() - anchor.delta,
             this.scrollState.lastTargetOffset,
           )
         ) {
@@ -1167,10 +1151,8 @@ export class Virtualizer<
             behavior: undefined,
           })
         }
-      }
-
-      if (followOnAppend) {
-        this.scrollToEnd({ behavior: followOnAppend })
+      } else {
+        this.scrollToEnd({ behavior: anchor.behavior })
       }
     }
 
@@ -1208,15 +1190,25 @@ export class Virtualizer<
     }
   }
 
+  // The element is moving or about to: a scroll in progress, or a touch
+  // gesture that may still turn into one (see `_iosTouch`). On iOS a write
+  // now would cancel the momentum, so adjustments wait for the flush below.
+  private _iosInMotion = () => this.isScrolling || this._iosTouch !== null
+
+  private _endIosTouch = () => {
+    if (this._iosTouch?.phase === 'tail' && this.targetWindow != null) {
+      this.targetWindow.clearTimeout(this._iosTouch.timerId)
+    }
+    this._iosTouch = null
+  }
+
   // Apply any accumulated iOS-deferred scroll adjustment, but only when we're
   // truly settled — not actively scrolling, not under an active touch, and
   // past the post-touchend grace window. Called from the scroll callback
   // and the touchend grace-timer.
   private _flushIosDeferredIfReady = () => {
     if (this._iosDeferredAdjustment === 0) return
-    if (this.isScrolling) return
-    if (this._iosTouching) return
-    if (this._iosJustTouchEnded) return
+    if (this._iosInMotion()) return
     // Phase 2b: Safari elastic-overscroll (rubber-band) lets scrollTop go
     // negative or beyond scrollHeight - clientHeight. Writing scrollTop
     // while in that zone snaps the page back to the clamped value at the
@@ -1239,7 +1231,7 @@ export class Virtualizer<
     // landing between now and the resulting scroll event computes from the
     // post-flush offset rather than the stale one.
     this._scrollToOffset(cur, {
-      adjustments: (this.scrollAdjustments += delta),
+      adjustments: this.scrollAdjustments + delta,
       behavior: undefined,
     })
   }
@@ -1911,10 +1903,11 @@ export class Virtualizer<
       // command. Compensation writes and the prepend anchor sync update
       // `scrollOffset` eagerly, and the iOS flush writes exactly
       // `scrollOffset + scrollAdjustments`, so none of them count.
+      const writtenOffset = this.getCommandWrittenOffset()
       const awaitingCommandReadBack =
-        this.scrollState?.writtenOffset != null &&
+        writtenOffset !== null &&
         !approxEqual(
-          this.scrollState.writtenOffset,
+          writtenOffset,
           this.getScrollOffset() + this.scrollAdjustments,
         )
 
@@ -2100,29 +2093,12 @@ export class Virtualizer<
     toOffset: number,
     { align = 'start', behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
-    // An absolute scroll command derives its target from current
-    // measurements, so any iOS-deferred compensation still pending is stale by
-    // definition — the command already accounts for the measurements the delta
-    // was compensating for. Drop it so _flushIosDeferredIfReady doesn't replay
-    // it onto the just-established position (relative commands like scrollBy
-    // intentionally keep the deferral, since they build on the current offset).
-    this._iosDeferredAdjustment = 0
-
-    const offset = this.getOffsetForAlignment(toOffset, align)
-
-    const now = this.now()
-    this.scrollState = {
-      index: null,
-      align,
-      startedAt: now,
-      lastTargetOffset: offset,
-      stableFrames: 0,
-      phase: initialScrollPhase(behavior, false),
-    }
-
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-    this.scheduleScrollReconcile()
+    this._startScroll(
+      { index: null, align },
+      this.getOffsetForAlignment(toOffset, align),
+      behavior,
+      'absolute',
+    )
   }
 
   scrollToIndex = (
@@ -2132,34 +2108,19 @@ export class Virtualizer<
       behavior = 'auto',
     }: ScrollToIndexOptions = {},
   ) => {
-    // See scrollToOffset: an absolute target invalidates any pending
-    // iOS-deferred compensation.
-    this._iosDeferredAdjustment = 0
-
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
     const offsetInfo = this.getOffsetForIndex(index, initialAlign)
     if (!offsetInfo) {
+      // No target (an empty list), so nothing is written; still drop the
+      // deferral like every absolute command, or it replays once the list
+      // refills.
+      this._iosDeferredAdjustment = 0
       return
     }
     const [offset, align] = offsetInfo
 
-    const now = this.now()
-    this.scrollState = {
-      index,
-      align,
-      startedAt: now,
-      lastTargetOffset: offset,
-      stableFrames: 0,
-      phase: initialScrollPhase(
-        behavior,
-        approxEqual(offset, this.getScrollOffset()),
-      ),
-    }
-
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-    this.scheduleScrollReconcile()
+    this._startScroll({ index, align }, offset, behavior, 'absolute')
   }
 
   scrollBy = (
@@ -2170,55 +2131,70 @@ export class Virtualizer<
     // Clamp: a write past either edge that leaves the element where it was
     // fires no scroll event, so nothing would clear an unreachable offset.
     const offset = this.getOffsetForAlignment(
-      (this.scrollState?.writtenOffset ?? this.getScrollOffset()) + delta,
+      (this.getCommandWrittenOffset() ?? this.getScrollOffset()) + delta,
       'start',
     )
-    const now = this.now()
 
-    this.scrollState = {
-      index: null,
-      align: 'start',
-      startedAt: now,
-      lastTargetOffset: offset,
-      stableFrames: 0,
-      phase: initialScrollPhase(behavior, false),
-    }
-
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-    this.scheduleScrollReconcile()
+    this._startScroll(
+      { index: null, align: 'start' },
+      offset,
+      behavior,
+      'relative',
+    )
   }
 
   scrollToEnd = ({ behavior = 'auto' }: ScrollToEndOptions = {}) => {
     if (this.options.count > 0) {
       // Target the browser's max scroll rather than the last item's end-align
       // offset, so paddingEnd is included and isAtEnd() holds afterwards.
-      this._iosDeferredAdjustment = 0
-
-      const offset = Math.max(this.getMaxScrollOffset(), 0)
-
-      this.scrollState = {
-        index: this.options.count - 1,
-        align: 'end',
-        toEnd: true,
-        startedAt: this.now(),
-        lastTargetOffset: offset,
-        stableFrames: 0,
-        phase: initialScrollPhase(
-          behavior,
-          approxEqual(offset, this.getScrollOffset()),
-        ),
-      }
-
-      this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-      this.scheduleScrollReconcile()
+      this._startScroll(
+        { index: this.options.count - 1, align: 'end', toEnd: true },
+        Math.max(this.getMaxScrollOffset(), 0),
+        behavior,
+        'absolute',
+      )
       return
     }
 
     this.scrollToOffset(Math.max(this.getTotalSize() - this.getSize(), 0), {
       behavior,
     })
+  }
+
+  // Every scroll command starts here: it becomes the in-flight command,
+  // writes its first target and leaves reconcile to retarget and retire it.
+  //
+  // An absolute command derives its target from current measurements, so
+  // any iOS-deferred compensation still pending is stale by definition —
+  // the command already accounts for the measurements the delta was
+  // compensating for. Drop it so _flushIosDeferredIfReady doesn't replay it
+  // onto the just-established position. A relative command (scrollBy)
+  // builds on the current offset, so it keeps the deferral.
+  //
+  // An index or end target that is already at its offset starts a smooth
+  // scroll as landed; an offset target never does, so its first scroll
+  // event is read as the user's (see the scroll handler in `_willUpdate`).
+  private _startScroll(
+    target: Pick<ScrollState, 'index' | 'align' | 'toEnd'>,
+    offset: number,
+    behavior: ScrollBehavior,
+    kind: 'absolute' | 'relative',
+  ) {
+    if (kind === 'absolute') {
+      this._iosDeferredAdjustment = 0
+    }
+    this.scrollState = {
+      ...target,
+      startedAt: this.now(),
+      lastTargetOffset: offset,
+      stableFrames: 0,
+      phase: initialScrollPhase(
+        behavior,
+        target.index != null && approxEqual(offset, this.getScrollOffset()),
+      ),
+    }
+    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+    this.scheduleScrollReconcile()
   }
 
   // Drops the target of an in-flight scrollToIndex / scrollToOffset /
@@ -2317,15 +2293,25 @@ export class Virtualizer<
       behavior: ScrollBehavior | undefined
     },
   ) => {
-    // Record the intended logical scroll target so the next scroll event
-    // can reconcile against subpixel rounding by the browser.
-    this._intendedScrollOffset = offset + (adjustments ?? 0)
-    if (this.scrollState) {
-      this.scrollState.writtenOffset =
-        behavior === 'smooth' ? null : this._intendedScrollOffset
+    this.pendingWrite = {
+      target: offset + (adjustments ?? 0),
+      smooth: behavior === 'smooth',
+      adjustments: adjustments ?? this.scrollAdjustments,
     }
     this.options.scrollToFn(offset, { behavior, adjustments }, this)
   }
+
+  // Where the in-flight command's last instant write put the element, until
+  // its scroll event arrives; the rows on screen are still the ones rendered
+  // for the old `scrollOffset`. Null after a smooth write (the element is
+  // somewhere on the way) and without a command, so a write the browser
+  // ignored (no read-back) does not outlive its command.
+  private getCommandWrittenOffset = () =>
+    this.scrollState !== null &&
+    this.pendingWrite !== null &&
+    !this.pendingWrite.smooth
+      ? this.pendingWrite.target
+      : null
 
   measure = () => {
     // Reset pendingMin so the next getMeasurements rebuilds from index 0.
