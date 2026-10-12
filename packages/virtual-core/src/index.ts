@@ -431,12 +431,14 @@ const isSmoothScroll = (state: ScrollState | null): state is ScrollState =>
 const isAnimating = (state: ScrollState) =>
   state.phase === 'smooth' || state.phase === 'smoothFinishing'
 
-type PendingScrollAnchor = [
-  key: Key | null,
-  offset: number,
-  followOnAppend: ScrollBehavior | null,
-  anchorDelta: number,
-]
+// What `setOptions` decided about the scroll position for `_willUpdate` to
+// carry out once the consumer has rendered: keep the reading anchor in place
+// after a prepend (`scrollOffset` already moved by `delta`, the element has
+// not), or follow an append to the end. A prepend that qualifies for both
+// only follows.
+type PendingScrollAnchor =
+  | { kind: 'anchor'; delta: number }
+  | { kind: 'follow'; behavior: ScrollBehavior }
 
 function isAppendWithTrim(
   prevCount: number,
@@ -770,8 +772,7 @@ export class Virtualizer<
     // the virtualizer would render the wrong items for one frame (the
     // estimate-based positions are stale) and then correct in the next
     // frame, producing a visible "jump" on prepend with dynamic sizes.
-    let anchorResolved = false
-    let anchorDelta = 0
+    let anchorDelta: number | null = null
     if (anchor && this.scrollOffset !== null) {
       const [anchorKey, anchorOffset] = anchor
       const newMeasurements = this.getMeasurements()
@@ -792,19 +793,15 @@ export class Virtualizer<
           if (!followOnAppend && newOffset !== this.scrollOffset) {
             anchorDelta = newOffset - this.scrollOffset
             this.scrollOffset = newOffset
-            anchorResolved = true
           }
         }
       }
     }
 
-    if (anchorResolved || followOnAppend) {
-      this.pendingScrollAnchor = [
-        anchorResolved ? anchor![0] : null,
-        anchorResolved ? anchor![1] : 0,
-        followOnAppend,
-        anchorDelta,
-      ]
+    if (followOnAppend) {
+      this.pendingScrollAnchor = { kind: 'follow', behavior: followOnAppend }
+    } else if (anchorDelta !== null) {
+      this.pendingScrollAnchor = { kind: 'anchor', delta: anchorDelta }
     }
   }
 
@@ -1122,26 +1119,21 @@ export class Virtualizer<
     this.pendingScrollAnchor = null
 
     if (anchor && this.scrollElement && this.options.enabled) {
-      const [key, _offset, followOnAppend, anchorDelta] = anchor
-
-      if (key !== null && !followOnAppend) {
+      if (anchor.kind === 'anchor') {
         // scrollOffset was eagerly adjusted in setOptions so the
         // virtualizer already computed the correct range during render.
         // Now sync the browser's actual scroll position to match.
-        // Skip when followOnAppend is set — scrollToEnd will handle it.
         //
         // On iOS WebKit, writing scrollTop during touch/momentum cancels
         // the in-flight scroll. Defer the DOM sync the same way
         // applyScrollAdjustment does — accumulate the delta and let
         // _flushIosDeferredIfReady handle it once the scroll settles.
         if (isIOSWebKit() && this._iosInMotion()) {
-          if (anchorDelta !== 0) {
-            this._iosDeferredAdjustment += anchorDelta
-          }
+          this._iosDeferredAdjustment += anchor.delta
         } else if (
           isSmoothScroll(this.scrollState) &&
           !approxEqual(
-            this.getScrollOffset() - anchorDelta,
+            this.getScrollOffset() - anchor.delta,
             this.scrollState.lastTargetOffset,
           )
         ) {
@@ -1159,10 +1151,8 @@ export class Virtualizer<
             behavior: undefined,
           })
         }
-      }
-
-      if (followOnAppend) {
-        this.scrollToEnd({ behavior: followOnAppend })
+      } else {
+        this.scrollToEnd({ behavior: anchor.behavior })
       }
     }
 
