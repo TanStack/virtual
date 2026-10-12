@@ -406,6 +406,14 @@ type ScrollState = {
   stableFrames: number
   // Keep arrival across measurement-driven retargets so external scrolls can cancel.
   hasReachedTarget: boolean
+
+  // Where our last non-smooth write for this command put the element, until
+  // its scroll event arrives. Until then `scrollOffset` still holds the old
+  // position, and the rows on screen are the ones rendered for it. A smooth
+  // write leaves it null: the element is somewhere between the two offsets.
+  // It goes with the scroll state, so a write the browser ignored (no read-back)
+  // does not outlive its command.
+  writtenOffset?: number | null
 }
 
 type PendingScrollAnchor = [
@@ -973,6 +981,7 @@ export class Virtualizer<
             this.scrollState = null
           }
           this._intendedScrollOffset = null
+          if (this.scrollState) this.scrollState.writtenOffset = null
 
           // A pending clamped compensation write (#1258) survives only its
           // own read-back, which the browser reports at the scroll max we
@@ -1835,13 +1844,33 @@ export class Virtualizer<
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
 
-      let adjustedSync = false
-      if (wasAtEnd) {
-        adjustedSync = this.applyScrollAdjustment(
-          this.getTotalSize() - prevTotalSize,
+      // A scroll command (or reconcile) wrote a new position that neither a
+      // scroll event nor an eager update has reflected in `scrollOffset` yet.
+      // The rows being measured were rendered for the old position, so
+      // "above the viewport" means nothing against either offset. An index
+      // or end target is retargeted from fresh measurements by
+      // reconcileScroll next frame; an offset target (scrollToOffset,
+      // scrollBy) lands where it was written and the delta is not applied,
+      // since compensating against the stale offset would overwrite the
+      // command. Compensation writes and the prepend anchor sync update
+      // `scrollOffset` eagerly, and the iOS flush writes exactly
+      // `scrollOffset + scrollAdjustments`, so none of them count.
+      const awaitingCommandReadBack =
+        this.scrollState?.writtenOffset != null &&
+        !approxEqual(
+          this.scrollState.writtenOffset,
+          this.getScrollOffset() + this.scrollAdjustments,
         )
-      } else if (shouldAdjustScroll) {
-        adjustedSync = this.applyScrollAdjustment(delta)
+
+      let adjustedSync = false
+      if (!awaitingCommandReadBack) {
+        if (wasAtEnd) {
+          adjustedSync = this.applyScrollAdjustment(
+            this.getTotalSize() - prevTotalSize,
+          )
+        } else if (shouldAdjustScroll) {
+          adjustedSync = this.applyScrollAdjustment(delta)
+        }
       }
 
       // When we just moved `scrollTop` to compensate for an above-viewport
@@ -2080,7 +2109,13 @@ export class Virtualizer<
     delta: number,
     { behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
-    const offset = this.getScrollOffset() + delta
+    // Build on a position we just wrote even before its scroll event arrives.
+    // Clamp: a write past either edge that leaves the element where it was
+    // fires no scroll event, so nothing would clear an unreachable offset.
+    const offset = this.getOffsetForAlignment(
+      (this.scrollState?.writtenOffset ?? this.getScrollOffset()) + delta,
+      'start',
+    )
     const now = this.now()
 
     this.scrollState = {
@@ -2227,6 +2262,10 @@ export class Virtualizer<
     // Record the intended logical scroll target so the next scroll event
     // can reconcile against subpixel rounding by the browser.
     this._intendedScrollOffset = offset + (adjustments ?? 0)
+    if (this.scrollState) {
+      this.scrollState.writtenOffset =
+        behavior === 'smooth' ? null : this._intendedScrollOffset
+    }
     this.options.scrollToFn(offset, { behavior, adjustments }, this)
   }
 
