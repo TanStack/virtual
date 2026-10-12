@@ -512,9 +512,10 @@ export class Virtualizer<
   private _iosDeferredAdjustment = 0
   // Touch state. iOS WebKit cancels momentum when scrollTop is written, so
   // we defer adjustments not only during `isScrolling` but also through the
-  // touchstart→touchend window (active drag) and a short tail after
-  // touchend (early-momentum window — iOS only fires touch events once at
-  // the start of momentum, so we use a timer rather than another event).
+  // touchstart→touchend/touchcancel window (active drag) and a short tail
+  // after the touch ends (early-momentum window — iOS only fires touch
+  // events once at the start of momentum, so we use a timer rather than
+  // another event).
   private _iosTouching = false
   private _iosJustTouchEnded = false
   private _iosTouchEndTimerId: number | null = null
@@ -1098,9 +1099,17 @@ export class Virtualizer<
           onTouchEnd,
           addEventListenerOptions,
         )
+        // Same handler as touchend: iOS can end a touch with touchcancel
+        // (system gesture, interrupted scroll) and never fire touchend.
+        scrollEl.addEventListener(
+          'touchcancel',
+          onTouchEnd,
+          addEventListenerOptions,
+        )
         this.unsubs.push(() => {
           scrollEl.removeEventListener('touchstart', onTouchStart)
           scrollEl.removeEventListener('touchend', onTouchEnd)
+          scrollEl.removeEventListener('touchcancel', onTouchEnd)
           if (this._iosTouchEndTimerId !== null && this.targetWindow != null) {
             this.targetWindow.clearTimeout(this._iosTouchEndTimerId)
             this._iosTouchEndTimerId = null
