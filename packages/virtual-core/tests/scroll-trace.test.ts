@@ -8,7 +8,8 @@ type ScrollAlignment = NonNullable<ScrollToOptions['align']>
 //
 // Seeded random event sequences (scroll commands, read-backs, smooth
 // animation steps, content resizes delivered by ResizeObserver, prepends,
-// user drags, touches, renders, frames, timers, the reconcile safety valve)
+// user drags, touches, renders, frames, waits that fire due timers, the
+// reconcile safety valve)
 // run against a simulated browser, on iOS and non-iOS, across a set of layout
 // options. Each sequence records only what a consumer can observe: every
 // write to the element, where it rests after each step, and what the adapter
@@ -45,7 +46,7 @@ type Step =
   | { t: 'touchend' }
   | { t: 'touchcancel' }
   | { t: 'frame' }
-  | { t: 'timers' } // time passes: pending timeouts fire
+  | { t: 'wait'; ms: number } // time passes: timeouts due by then fire
   | { t: 'valve' } // jump past the reconcile safety valve, then a frame
 
 type Options = Partial<VirtualizerOptions<any, any>>
@@ -158,7 +159,8 @@ function makeSteps(seed: number, smooth: number): Array<Step> {
     [3, () => ({ t: 'touchend' })],
     [1, () => ({ t: 'touchcancel' })],
     [12, () => ({ t: 'frame' })],
-    [2, () => ({ t: 'timers' })],
+    // Either side of the 150ms post-touch tail.
+    [2, () => ({ t: 'wait', ms: [40, 100, 160, 400][int(4)]! })],
     [1, () => ({ t: 'valve' })],
   ]
   const total = table.reduce((sum, [w]) => sum + w, 0)
@@ -205,7 +207,7 @@ function simulate(
 ): Array<string> {
   const options = config.options ?? {}
   const rafs: Array<FrameRequestCallback> = []
-  const timers = new Map<number, () => void>()
+  const timers = new Map<number, { fn: () => void; due: number }>()
   let timerId = 0
   let clock = 0
   // The ResizeObserver callback the virtualizer registers.
@@ -215,8 +217,8 @@ function simulate(
   const win = {
     requestAnimationFrame: (cb: FrameRequestCallback) => rafs.push(cb),
     cancelAnimationFrame: () => {},
-    setTimeout: (fn: () => void) => {
-      timers.set(++timerId, fn)
+    setTimeout: (fn: () => void, ms = 0) => {
+      timers.set(++timerId, { fn, due: clock + ms })
       return timerId
     },
     clearTimeout: (id: number) => timers.delete(id),
@@ -365,6 +367,23 @@ function simulate(
   }
   const scroll = (isScrolling: boolean) => scrollCallback!(el.pos, isScrolling)
   const frame = () => rafs.splice(0).forEach((cb) => cb(clock))
+  // Move the clock forward, firing each timeout at its due time in order.
+  const advance = (ms: number) => {
+    const until = clock + ms
+    for (;;) {
+      let next: [number, { fn: () => void; due: number }] | undefined
+      for (const entry of timers) {
+        if (entry[1].due <= until && (!next || entry[1].due < next[1].due)) {
+          next = entry
+        }
+      }
+      if (!next) break
+      timers.delete(next[0])
+      clock = Math.max(clock, next[1].due)
+      next[1].fn()
+    }
+    clock = until
+  }
   const fire = (type: string) => listeners[type]?.forEach((fn) => fn())
 
   const trace: Array<string> = []
@@ -471,18 +490,15 @@ function simulate(
       case 'frame':
         frame()
         break
-      case 'timers': {
-        const due = [...timers.values()]
-        timers.clear()
-        due.forEach((fn) => fn())
+      case 'wait':
+        advance(step.ms)
         break
-      }
       case 'valve':
-        clock += 6000
+        advance(6000)
         frame()
         break
     }
-    clock += 16
+    advance(16)
     record(step.t, extra)
   }
 
@@ -504,8 +520,7 @@ function simulate(
     scroll(true)
   }
   scroll(false)
-  timers.forEach((fn) => fn())
-  timers.clear()
+  advance(1000)
   for (let i = 0; i < 20 && rafs.length > 0; i++) {
     frame()
     render()
