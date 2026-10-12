@@ -3057,7 +3057,7 @@ test('Phase 2a: browser-rounded scrollTop after self-write is reconciled to inte
 
   // Simulate a self-write to 123.5 (subpixel target).
   v.scrollToOffset(123.5, { behavior: 'auto' })
-  expect(v['_intendedScrollOffset']).toBe(123.5)
+  expect(v['pendingWrite']?.target ?? null).toBe(123.5)
 
   // Browser fires a scroll event reporting 123 (integer-rounded).
   scrollCallback!(123, false)
@@ -3065,7 +3065,7 @@ test('Phase 2a: browser-rounded scrollTop after self-write is reconciled to inte
   // We should have reconciled the offset back to the intended 123.5,
   // not stored the browser's rounded 123.
   expect(v.scrollOffset).toBe(123.5)
-  expect(v['_intendedScrollOffset']).toBeNull()
+  expect(v['pendingWrite']?.target ?? null).toBeNull()
 })
 
 test('Phase 2a: user-initiated scroll (large delta) is NOT reconciled to intended value', () => {
@@ -3092,13 +3092,13 @@ test('Phase 2a: user-initiated scroll (large delta) is NOT reconciled to intende
   })
   v._willUpdate()
   v.scrollToOffset(100, { behavior: 'auto' })
-  expect(v['_intendedScrollOffset']).toBe(100)
+  expect(v['pendingWrite']?.target ?? null).toBe(100)
 
   // User then scrolls way past — browser reports 500. Diff (400) > 1.5 px
   // tolerance, so we trust the browser-reported value.
   scrollCallback!(500, true)
   expect(v.scrollOffset).toBe(500)
-  expect(v['_intendedScrollOffset']).toBeNull()
+  expect(v['pendingWrite']?.target ?? null).toBeNull()
 })
 
 // ─── Phase 2b: scrollTopMax elastic-overscroll clamp ─────────────────────────
@@ -3270,7 +3270,7 @@ test('Phase 2a: a second self-write replaces the intended target', () => {
   v._willUpdate()
   v.scrollToOffset(100, { behavior: 'auto' })
   v.scrollToOffset(200.7, { behavior: 'auto' })
-  expect(v['_intendedScrollOffset']).toBe(200.7)
+  expect(v['pendingWrite']?.target ?? null).toBe(200.7)
   // First scrollTo's offset (100) was overwritten — a scroll event near it
   // would NOT reconcile.
   scrollCallback!(101, true)
@@ -3482,7 +3482,7 @@ test('scroll-up jank: idle (scrollDirection=null) still applies adjustment', () 
 // `applyScrollAdjustment` folds the pending adjustment into `scrollOffset`
 // eagerly, so the browser's scroll event for our own `scrollTop` write
 // arrives at exactly the offset we already hold (directly, or snapped there
-// by the `_intendedScrollOffset` sub-pixel reconciliation). That equality
+// by the `pendingWrite` sub-pixel reconciliation). That equality
 // carries no directional information — it must not be classified as a
 // `'backward'` gesture, or the default
 // `shouldAdjustScrollPositionOnItemSizeChange` skips above-viewport
@@ -3572,7 +3572,7 @@ test('self-write read-back rounded by the browser still does not latch a directi
   v['applyScrollAdjustment'](40.5)
   expect(v.scrollOffset).toBe(640.5)
 
-  // The browser rounds the write to an integer; the `_intendedScrollOffset`
+  // The browser rounds the write to an integer; the `pendingWrite`
   // reconciliation snaps the read-back to the held value.
   emitScroll(640, true)
 
