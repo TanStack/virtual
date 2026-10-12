@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.19.1
+
+### Patch Changes
+
+- [#1310](https://github.com/TanStack/virtual/pull/1310) [`7aa34f6`](https://github.com/TanStack/virtual/commit/7aa34f62587aab20938dbc84ba88a25e59552036) - fix(virtual-core): let a user scroll end a non-smooth `scrollToIndex` before reconcile has seen it land, so a later measurement no longer pulls the user back to the old target
+
+- [#1309](https://github.com/TanStack/virtual/pull/1309) [`e7a0a92`](https://github.com/TanStack/virtual/commit/e7a0a92e4bec5ecd0a37659e951c8e8ff72e0207) - fix(virtual-core): leave resizes measured before a scroll command's write is read back to reconcile, so an upward `scrollToIndex` no longer jumps back and stalls until the safety valve, and build `scrollBy` on a just-written offset
+
 ## 3.19.0
 
 ### Minor Changes
