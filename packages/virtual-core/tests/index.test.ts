@@ -5018,7 +5018,7 @@ test('a prepend mid-flight leaves a travelling smooth scrollToIndex alone', () =
   // No instant scrollTop write that would cancel the animation...
   expect(scrollToFn).not.toHaveBeenCalled()
   // ...and the journey is still live.
-  expect(v['scrollState']).toMatchObject({ index: 0, behavior: 'smooth' })
+  expect(v['scrollState']).toMatchObject({ index: 0, phase: 'smooth' })
 })
 
 test('a prepend right after a smooth scroll landed still syncs the anchor', () => {

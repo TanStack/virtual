@@ -54,9 +54,7 @@ const state = () => {
     entry.def = v._iosDeferredAdjustment
     entry.adj = v.scrollAdjustments
     const s = v.scrollState
-    entry.st = s
-      ? [s.index, s.lastTargetOffset, s.hasReachedTarget, s.stableFrames]
-      : null
+    entry.st = s ? [s.index, s.lastTargetOffset, s.phase, s.stableFrames] : null
     if (t.watch.length > 0 && el) {
       const m = v.getMeasurements()
       entry.rows = t.watch.map((i: number) => m[i].start - el.scrollTop)
