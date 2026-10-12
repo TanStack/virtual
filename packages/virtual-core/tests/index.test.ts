@@ -5446,11 +5446,14 @@ function setupHandDrivenScroll(
   }
   let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
     null
+  // Like iOS during a touch: drop programmatic writes on the floor.
+  const browser = { ignoreWrites: false }
   const v = new Virtualizer({
     count: 100,
     estimateSize: () => 50,
     getScrollElement: () => el as any,
     scrollToFn: (offset, { adjustments = 0 }) => {
+      if (browser.ignoreWrites) return
       el.scrollTop = Math.max(
         0,
         Math.min(offset + adjustments, el.scrollHeight - el.clientHeight),
@@ -5478,7 +5481,14 @@ function setupHandDrivenScroll(
     }
     scroll(el.scrollTop, false)
   }
-  return { v, el, scroll, settle }
+  // Runs frames without scroll events, as a browser does when a write leaves
+  // the element where it was.
+  const frames = (n = 10) => {
+    for (let i = 0; i < n && rafCallbacks.length > 0; i++) {
+      rafCallbacks.splice(0).forEach((cb) => cb(0))
+    }
+  }
+  return { v, el, scroll, settle, frames, browser }
 }
 
 test('a resize before the read-back of a scrollToIndex write is left to reconcile', () => {
@@ -5580,4 +5590,62 @@ test('an anchorTo end list scrolled up by scrollToIndex is not pinned back by a 
 
   expect(el.scrollTop).toBe(1000)
   expect(v.scrollState).toBeNull()
+})
+
+test('scrollBy past the end does not leave the next scrollBy building on an unreachable offset', () => {
+  // A write the browser clamps to where the element already is fires no
+  // scroll event, so nothing reads it back.
+  const { v, el, scroll, frames } = setupHandDrivenScroll()
+  el.scrollTop = 4800
+  scroll(4800, false)
+
+  v.scrollBy(100)
+  frames()
+  expect(el.scrollTop).toBe(4800)
+  v.scrollBy(-100)
+
+  expect(el.scrollTop).toBe(4700)
+})
+
+test('scrollBy past the start does not leave the next scrollBy building on an unreachable offset', () => {
+  const { v, el, frames } = setupHandDrivenScroll()
+
+  v.scrollBy(-100)
+  frames()
+  expect(el.scrollTop).toBe(0)
+  v.scrollBy(100)
+
+  expect(el.scrollTop).toBe(100)
+})
+
+test('scrollBy after the safety valve dropped an ignored write builds on the real position', () => {
+  const { v, el, scroll, frames, browser } = setupHandDrivenScroll()
+  el.scrollTop = 2000
+  scroll(2000, false)
+  let now = 0
+  v['now'] = () => now
+
+  browser.ignoreWrites = true
+  v.scrollToIndex(20, { align: 'start' })
+  now = 6000
+  frames()
+  expect(v.scrollState).toBeNull()
+  browser.ignoreWrites = false
+  v.scrollBy(100)
+
+  expect(el.scrollTop).toBe(2100)
+})
+
+test('scrollBy after cancelScroll dropped an ignored write builds on the real position', () => {
+  const { v, el, scroll, browser } = setupHandDrivenScroll()
+  el.scrollTop = 2000
+  scroll(2000, false)
+
+  browser.ignoreWrites = true
+  v.scrollToIndex(20, { align: 'start' })
+  v.cancelScroll()
+  browser.ignoreWrites = false
+  v.scrollBy(100)
+
+  expect(el.scrollTop).toBe(2100)
 })

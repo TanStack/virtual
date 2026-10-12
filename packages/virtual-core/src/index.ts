@@ -500,7 +500,8 @@ export class Virtualizer<
   // Where our last non-smooth write put the element, until its scroll event
   // arrives. Until then `scrollOffset` still holds the old position, and the
   // rows on screen are the ones rendered for it. A smooth write leaves it
-  // null: the element is somewhere between the two offsets.
+  // null: the element is somewhere between the two offsets. Cleared with the
+  // scroll state too, since a write the browser ignored never reads back.
   private _lastWrittenOffset: number | null = null
   // A compensation write from `applyScrollAdjustment` whose target exceeded
   // the element's scroll max at the moment of the write. The browser clamps
@@ -1201,6 +1202,7 @@ export class Virtualizer<
   private scheduleScrollReconcile() {
     if (!this.targetWindow) {
       this.scrollState = null
+      this._lastWrittenOffset = null
       return
     }
     if (this.rafId != null) return
@@ -1227,6 +1229,7 @@ export class Virtualizer<
     const MAX_RECONCILE_MS = 5000
     if (this.now() - this.scrollState.startedAt > MAX_RECONCILE_MS) {
       this.scrollState = null
+      this._lastWrittenOffset = null
       return
     }
 
@@ -1266,6 +1269,7 @@ export class Virtualizer<
           })
         }
         this.scrollState = null
+        this._lastWrittenOffset = null
         return
       }
     } else {
@@ -1845,9 +1849,12 @@ export class Virtualizer<
       // A scroll command (or reconcile) wrote a new position that neither a
       // scroll event nor an eager update has reflected in `scrollOffset` yet.
       // The rows being measured were rendered for the old position, so
-      // "above the viewport" means nothing against either offset; while the
-      // scroll state lives, reconcileScroll retargets from fresh measurements
-      // next frame. Compensation writes and the prepend anchor sync update
+      // "above the viewport" means nothing against either offset. An index
+      // or end target is retargeted from fresh measurements by
+      // reconcileScroll next frame; an offset target (scrollToOffset,
+      // scrollBy) lands where it was written and the delta is not applied,
+      // since compensating against the stale offset would overwrite the
+      // command. Compensation writes and the prepend anchor sync update
       // `scrollOffset` eagerly, and the iOS flush writes exactly
       // `scrollOffset + scrollAdjustments`, so none of them count.
       const awaitingCommandReadBack =
@@ -2106,7 +2113,12 @@ export class Virtualizer<
     { behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
     // Build on a position we just wrote even before its scroll event arrives.
-    const offset = (this._lastWrittenOffset ?? this.getScrollOffset()) + delta
+    // Clamp: a write past either edge that leaves the element where it was
+    // fires no scroll event, so nothing would clear an unreachable offset.
+    const offset = this.getOffsetForAlignment(
+      (this._lastWrittenOffset ?? this.getScrollOffset()) + delta,
+      'start',
+    )
     const now = this.now()
 
     this.scrollState = {
@@ -2164,6 +2176,7 @@ export class Virtualizer<
       this.rafId = null
     }
     this.scrollState = null
+    this._lastWrittenOffset = null
   }
 
   getTotalSize = () => {
