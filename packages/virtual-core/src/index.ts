@@ -406,6 +406,10 @@ type ScrollState = {
   stableFrames: number
   // Keep arrival across measurement-driven retargets so external scrolls can cancel.
   hasReachedTarget: boolean
+  // The command asked for a smooth scroll. Unlike `behavior`, which reconcile
+  // switches to 'auto' for the final approach, this stays set: the smooth
+  // animation can still deliver scroll events after that switch.
+  startedSmooth: boolean
 
   // Where our last non-smooth write for this command put the element, until
   // its scroll event arrives. Until then `scrollOffset` still holds the old
@@ -969,15 +973,29 @@ export class Virtualizer<
             offset = this._intendedScrollOffset
           } else if (
             this.scrollState?.index != null &&
-            this.scrollState.hasReachedTarget &&
+            // A non-smooth write lands at once, so any other scroll event is
+            // the user's, even before reconcile saw the target reached (the
+            // target may keep moving, or iOS ignored the write under a
+            // finger). A write the browser clamped because the sizer hasn't
+            // grown yet reads back at the max, which is also where the fresh
+            // target clamps, so the check below keeps it reconciling (#1294).
+            // Not when rows above the target shrink before the read-back and
+            // pull the target below the new max: the read-back then looks
+            // like the user and the scroll stops at the max. That needs the
+            // sizer re-rendered before the scroll event, which browsers have
+            // not been seen to do (pinned by a `.fails` test).
+            // A smooth scroll's own animation events look like a user's, so
+            // it only yields once it has reached the target.
+            (this.scrollState.hasReachedTarget ||
+              !this.scrollState.startedSmooth) &&
             !approxEqual(offset, this.scrollState.lastTargetOffset) &&
             !approxEqual(offset, this.getScrollStateTarget(this.scrollState)) &&
             (this._clampedAdjustment === null ||
               Math.abs(offset - this._clampedAdjustment.maxAtWrite) >= 1.5)
           ) {
-            // The index scroll reached its target, but an external scroll moved
-            // away while we waited for measurements. Our own measurement updates
-            // (including clamped writes) still need to reconcile.
+            // An external scroll moved away from the index scroll's target.
+            // Our own measurement updates (including clamped writes) still
+            // need to reconcile.
             this.scrollState = null
           }
           this._intendedScrollOffset = null
@@ -2063,6 +2081,7 @@ export class Virtualizer<
       lastTargetOffset: offset,
       stableFrames: 0,
       hasReachedTarget: false,
+      startedSmooth: behavior === 'smooth',
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -2098,6 +2117,7 @@ export class Virtualizer<
       lastTargetOffset: offset,
       stableFrames: 0,
       hasReachedTarget: approxEqual(offset, this.getScrollOffset()),
+      startedSmooth: behavior === 'smooth',
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -2126,6 +2146,7 @@ export class Virtualizer<
       lastTargetOffset: offset,
       stableFrames: 0,
       hasReachedTarget: false,
+      startedSmooth: behavior === 'smooth',
     }
 
     this._scrollToOffset(offset, { adjustments: undefined, behavior })
@@ -2150,6 +2171,7 @@ export class Virtualizer<
         lastTargetOffset: offset,
         stableFrames: 0,
         hasReachedTarget: approxEqual(offset, this.getScrollOffset()),
+        startedSmooth: behavior === 'smooth',
       }
 
       this._scrollToOffset(offset, { adjustments: undefined, behavior })
