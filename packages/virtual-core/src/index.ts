@@ -2093,29 +2093,12 @@ export class Virtualizer<
     toOffset: number,
     { align = 'start', behavior = 'auto' }: ScrollToOffsetOptions = {},
   ) => {
-    // An absolute scroll command derives its target from current
-    // measurements, so any iOS-deferred compensation still pending is stale by
-    // definition — the command already accounts for the measurements the delta
-    // was compensating for. Drop it so _flushIosDeferredIfReady doesn't replay
-    // it onto the just-established position (relative commands like scrollBy
-    // intentionally keep the deferral, since they build on the current offset).
-    this._iosDeferredAdjustment = 0
-
-    const offset = this.getOffsetForAlignment(toOffset, align)
-
-    const now = this.now()
-    this.scrollState = {
-      index: null,
-      align,
-      startedAt: now,
-      lastTargetOffset: offset,
-      stableFrames: 0,
-      phase: initialScrollPhase(behavior, false),
-    }
-
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-    this.scheduleScrollReconcile()
+    this._startScroll(
+      { index: null, align },
+      this.getOffsetForAlignment(toOffset, align),
+      behavior,
+      'absolute',
+    )
   }
 
   scrollToIndex = (
@@ -2125,10 +2108,6 @@ export class Virtualizer<
       behavior = 'auto',
     }: ScrollToIndexOptions = {},
   ) => {
-    // See scrollToOffset: an absolute target invalidates any pending
-    // iOS-deferred compensation.
-    this._iosDeferredAdjustment = 0
-
     index = Math.max(0, Math.min(index, this.options.count - 1))
 
     const offsetInfo = this.getOffsetForIndex(index, initialAlign)
@@ -2137,22 +2116,7 @@ export class Virtualizer<
     }
     const [offset, align] = offsetInfo
 
-    const now = this.now()
-    this.scrollState = {
-      index,
-      align,
-      startedAt: now,
-      lastTargetOffset: offset,
-      stableFrames: 0,
-      phase: initialScrollPhase(
-        behavior,
-        approxEqual(offset, this.getScrollOffset()),
-      ),
-    }
-
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-    this.scheduleScrollReconcile()
+    this._startScroll({ index, align }, offset, behavior, 'absolute')
   }
 
   scrollBy = (
@@ -2166,52 +2130,67 @@ export class Virtualizer<
       (this.getCommandWrittenOffset() ?? this.getScrollOffset()) + delta,
       'start',
     )
-    const now = this.now()
 
-    this.scrollState = {
-      index: null,
-      align: 'start',
-      startedAt: now,
-      lastTargetOffset: offset,
-      stableFrames: 0,
-      phase: initialScrollPhase(behavior, false),
-    }
-
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-    this.scheduleScrollReconcile()
+    this._startScroll(
+      { index: null, align: 'start' },
+      offset,
+      behavior,
+      'relative',
+    )
   }
 
   scrollToEnd = ({ behavior = 'auto' }: ScrollToEndOptions = {}) => {
     if (this.options.count > 0) {
       // Target the browser's max scroll rather than the last item's end-align
       // offset, so paddingEnd is included and isAtEnd() holds afterwards.
-      this._iosDeferredAdjustment = 0
-
-      const offset = Math.max(this.getMaxScrollOffset(), 0)
-
-      this.scrollState = {
-        index: this.options.count - 1,
-        align: 'end',
-        toEnd: true,
-        startedAt: this.now(),
-        lastTargetOffset: offset,
-        stableFrames: 0,
-        phase: initialScrollPhase(
-          behavior,
-          approxEqual(offset, this.getScrollOffset()),
-        ),
-      }
-
-      this._scrollToOffset(offset, { adjustments: undefined, behavior })
-
-      this.scheduleScrollReconcile()
+      this._startScroll(
+        { index: this.options.count - 1, align: 'end', toEnd: true },
+        Math.max(this.getMaxScrollOffset(), 0),
+        behavior,
+        'absolute',
+      )
       return
     }
 
     this.scrollToOffset(Math.max(this.getTotalSize() - this.getSize(), 0), {
       behavior,
     })
+  }
+
+  // Every scroll command starts here: it becomes the in-flight command,
+  // writes its first target and leaves reconcile to retarget and retire it.
+  //
+  // An absolute command derives its target from current measurements, so
+  // any iOS-deferred compensation still pending is stale by definition —
+  // the command already accounts for the measurements the delta was
+  // compensating for. Drop it so _flushIosDeferredIfReady doesn't replay it
+  // onto the just-established position. A relative command (scrollBy)
+  // builds on the current offset, so it keeps the deferral.
+  //
+  // An index or end target that is already at its offset starts a smooth
+  // scroll as landed; an offset target never does, so its first scroll
+  // event is read as the user's (see the scroll handler in `_willUpdate`).
+  private _startScroll(
+    target: Pick<ScrollState, 'index' | 'align' | 'toEnd'>,
+    offset: number,
+    behavior: ScrollBehavior,
+    kind: 'absolute' | 'relative',
+  ) {
+    if (kind === 'absolute') {
+      this._iosDeferredAdjustment = 0
+    }
+    this.scrollState = {
+      ...target,
+      startedAt: this.now(),
+      lastTargetOffset: offset,
+      stableFrames: 0,
+      phase: initialScrollPhase(
+        behavior,
+        target.index != null && approxEqual(offset, this.getScrollOffset()),
+      ),
+    }
+    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+    this.scheduleScrollReconcile()
   }
 
   // Drops the target of an in-flight scrollToIndex / scrollToOffset /
