@@ -2662,6 +2662,9 @@ function makeMockScrollElement(props: Record<string, any>) {
     _dispatch(name: string) {
       listeners.get(name)?.forEach((fn) => fn({} as Event))
     },
+    _hasListener(name: string) {
+      return (listeners.get(name)?.size ?? 0) > 0
+    },
   } as any
 }
 
@@ -2693,7 +2696,10 @@ function makeIOSVirtualizerWithRealEl(
   return { v, el }
 }
 
-function dispatchTouchEvent(el: any, type: 'touchstart' | 'touchend') {
+function dispatchTouchEvent(
+  el: any,
+  type: 'touchstart' | 'touchend' | 'touchcancel',
+) {
   el._dispatch(type)
 }
 
@@ -2708,6 +2714,36 @@ test('iOS Phase 1: touchstart sets _iosTouching=true and clears justTouchEnded',
     dispatchTouchEvent(el, 'touchstart')
     expect(v['_iosTouching']).toBe(true)
     expect(v['_iosJustTouchEnded']).toBe(false)
+  })
+})
+
+test('iOS Phase 1: touchcancel clears touching the same as touchend, and cleanup removes the listener', () => {
+  withFakeIOSUserAgent(() => {
+    let timerId = 0
+    const timers = new Map<number, () => void>()
+    const mockWindow = {
+      setTimeout: (fn: () => void, _ms: number) => {
+        const id = ++timerId
+        timers.set(id, fn)
+        return id
+      },
+      clearTimeout: (id: number) => timers.delete(id),
+    }
+    const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
+    expect(el._hasListener('touchcancel')).toBe(true)
+
+    dispatchTouchEvent(el, 'touchstart')
+    expect(v['_iosTouching']).toBe(true)
+    dispatchTouchEvent(el, 'touchcancel')
+    expect(v['_iosTouching']).toBe(false)
+    expect(v['_iosJustTouchEnded']).toBe(true)
+    expect(v['_iosTouchEndTimerId']).not.toBeNull()
+
+    const unmount = v._didMount()
+    unmount()
+    expect(el._hasListener('touchcancel')).toBe(false)
+    expect(el._hasListener('touchend')).toBe(false)
+    expect(el._hasListener('touchstart')).toBe(false)
   })
 })
 
