@@ -979,6 +979,11 @@ export class Virtualizer<
             // finger). A write the browser clamped because the sizer hasn't
             // grown yet reads back at the max, which is also where the fresh
             // target clamps, so the check below keeps it reconciling (#1294).
+            // Not when rows above the target shrink before the read-back and
+            // pull the target below the new max: the read-back then looks
+            // like the user and the scroll stops at the max. That needs the
+            // sizer re-rendered before the scroll event, which browsers have
+            // not been seen to do (pinned by a `.fails` test).
             // A smooth scroll's own animation events look like a user's, so
             // it only yields once it has reached the target.
             (this.scrollState.hasReachedTarget ||

@@ -5676,3 +5676,27 @@ test('a smooth scrollToIndex switched to auto near the end is not cancelled by a
   expect(el.scrollTop).toBe(2550)
   expect(v.scrollState).toBeNull()
 })
+
+test.fails(
+  'a scrollToIndex write clamped by a sizer that shrank below it still reaches the fresh target',
+  () => {
+    // Not seen in a real browser: the sizer has to re-render before the
+    // scroll event reports the write. Rows above the target shrink by 600px,
+    // so the max drops from 4800 to 4200 and the target from 4500 to 3900.
+    // The read-back at the new max is neither our write nor the target, so it
+    // reads as a user scroll and the index scroll stops at 4200.
+    const { v, el, scroll, settle } = setupHandDrivenScroll()
+
+    v.scrollToIndex(90, { align: 'start' })
+    expect(el.scrollTop).toBe(4500)
+    for (let i = 0; i < 20; i++) v.resizeItem(i, 20)
+    // The re-render that shrinks the sizer also rebuilds the measurements.
+    v.getVirtualItems()
+    el.scrollHeight = 4400
+    el.scrollTop = 4200
+    scroll(4200, true)
+    settle()
+
+    expect(el.scrollTop).toBe(3900)
+  },
+)
