@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.19.2
+
+### Patch Changes
+
+- [#1314](https://github.com/TanStack/virtual/pull/1314) [`3800fb3`](https://github.com/TanStack/virtual/commit/3800fb3e76aa7e86bc8a8eba7ddde84aef3066eb) - fix(virtual-core): treat iOS `touchcancel` like `touchend` so interrupted gestures cannot leave touch state stuck and keep scroll anchoring suppressed
+
+- [#1311](https://github.com/TanStack/virtual/pull/1311) [`cb510cb`](https://github.com/TanStack/virtual/commit/cb510cbb50a3e10eaaa7ff8c3c51f320d1224c79) - refactor(virtual-core): track an in-flight scroll command's lifecycle as one phase instead of several flags (no behaviour change)
+
 ## 3.19.1
 
 ### Patch Changes
