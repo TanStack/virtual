@@ -465,25 +465,10 @@ const cases: Array<Case> = [
   },
 ]
 
-// Cases where iOS still diverges, by id. All but P drop a correction deferred
-// while an index scroll runs (#1305) instead of applying it the way non-iOS
-// does; P misses the pending deferral when classifying the next resize.
-// #1307 fixes them and must remove them from this list: the test asserts
-// that each one still diverges, so a fix can't go unnoticed.
-const KNOWN_DIVERGENT = new Set([
-  'B',
-  'G',
-  'H',
-  'I',
-  'K',
-  'M',
-  'M2',
-  'N',
-  'N2',
-  'O3',
-  'P',
-  'Z',
-])
+// Cases where iOS still diverges, by id. Programmatic scrolls no longer defer
+// on iOS (only touch-driven ones do), so none of the scripted cases diverge;
+// a case added here must still diverge, so a fix can't go unnoticed.
+const KNOWN_DIVERGENT = new Set<string>([])
 
 describe('iOS deferral settles where non-iOS does', () => {
   for (const c of cases) {

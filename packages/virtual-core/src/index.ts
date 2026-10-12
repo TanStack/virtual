@@ -505,18 +505,17 @@ export class Virtualizer<
   get scrollAdjustments() {
     return this.pendingWrite?.adjustments ?? 0
   }
-  // Sum of size-change deltas above-viewport that were skipped during
-  // iOS momentum scroll (writing scrollTop mid-momentum cancels it).
-  // Flushed in a single scrollTo when iOS is fully settled.
+  // Sum of size-change deltas above-viewport that were skipped during a
+  // touch-driven iOS scroll (writing scrollTop mid-momentum cancels it,
+  // #884). Flushed in a single scrollTo once the gesture has settled.
   private _iosDeferredAdjustment = 0
-  // The touch gesture in progress. iOS WebKit cancels momentum when
-  // scrollTop is written, so adjustments are deferred not only during
-  // `isScrolling` but through the whole gesture: `down` from touchstart to
-  // touchend/touchcancel (active drag), then `tail` for a short grace window
-  // after the finger lifts (early momentum — iOS fires touch events only
-  // once at the start of momentum, so the tail is a timer rather than
-  // another event). Null between gestures, and after touchend on non-iOS,
-  // which arms no tail. The tail record owns its timer: `_endIosTouch` is
+  // The touch gesture in progress. iOS WebKit ignores a scrollTop write
+  // while a finger is down and cancels momentum on one after it, so
+  // adjustments are deferred through the whole gesture: `down` from
+  // touchstart to touchend/touchcancel, then `tail` while momentum runs. iOS
+  // fires no touch events during momentum, so every scroll event re-arms the
+  // tail and it closes ~150ms after the last one. Null between gestures, and
+  // after touchend on non-iOS, which arms no tail. The tail record owns its timer: `_endIosTouch` is
   // the only way to drop either, so a cleared record never leaves a timer
   // behind, and a live timer always has its record.
   private _iosTouch:
@@ -824,11 +823,12 @@ export class Virtualizer<
     }
 
     if (isIOSWebKit() && this._iosInMotion()) {
-      // An index scroll retargets from fresh measurements in reconcileScroll;
-      // replaying this delta after it lands would count it twice.
-      if (this.scrollState?.index == null) {
-        this._iosDeferredAdjustment += delta
-      }
+      // Only a touch defers, so an index scroll meets this only with a finger
+      // down. If the finger scrolls, its first scroll event ends the index
+      // scroll and the flush applies what was deferred; if it lifts without
+      // moving, reconcile's next retarget already contains the correction
+      // and clears it (see reconcileScroll).
+      this._iosDeferredAdjustment += delta
       return false
     } else {
       const target = this.getScrollOffset() + this.scrollAdjustments + delta
@@ -1043,9 +1043,15 @@ export class Virtualizer<
           this.scrollOffset = offset
           this.isScrolling = isScrolling
 
-          // Flush deferred iOS adjustments if we're now fully settled.
-          // "Fully settled" means: not actively scrolling, no finger on
-          // screen, and the post-touchend grace window has expired.
+          // Momentum after touchend fires a scroll event per frame but no
+          // touch events, so each one re-arms the tail to span the fling.
+          // Only an open tail is extended: a scroll event with no touch before
+          // it (our own write's read-back) never opens one.
+          if (isScrolling && this._iosTouch?.phase === 'tail') {
+            this._openIosTail()
+          }
+
+          // Flush deferred iOS adjustments once the gesture has settled.
           this._flushIosDeferredIfReady()
 
           if (this.scrollState) {
@@ -1068,21 +1074,7 @@ export class Virtualizer<
         }
         const onTouchEnd = () => {
           this._endIosTouch()
-          if (!isIOSWebKit() || this.targetWindow == null) {
-            // Non-iOS: nothing more to track.
-            return
-          }
-          // After ~150 ms with no scroll/touch events, momentum is done.
-          const tail = {
-            phase: 'tail' as const,
-            timerId: this.targetWindow.setTimeout(() => {
-              if (this._iosTouch === tail) this._iosTouch = null
-              // After the grace window, attempt to flush. The scroll event
-              // for momentum decay may have already fired before our timer.
-              this._flushIosDeferredIfReady()
-            }, 150),
-          }
-          this._iosTouch = tail
+          this._openIosTail()
         }
         scrollEl.addEventListener(
           'touchstart',
@@ -1190,10 +1182,28 @@ export class Virtualizer<
     }
   }
 
-  // The element is moving or about to: a scroll in progress, or a touch
-  // gesture that may still turn into one (see `_iosTouch`). On iOS a write
-  // now would cancel the momentum, so adjustments wait for the flush below.
-  private _iosInMotion = () => this.isScrolling || this._iosTouch !== null
+  // A touch gesture owns the scroll (see `_iosTouch`): on iOS a write now
+  // would be ignored or would cancel the momentum, so adjustments wait for
+  // the flush below. `isScrolling` is not part of it: any scroll event sets
+  // it, including the read-back of our own write, and a programmatic scroll
+  // has no momentum to protect (#1250).
+  private _iosInMotion = () => this._iosTouch !== null
+
+  // (Re)open the tail after the finger lifts, closing ~150ms after the last
+  // touchend or momentum frame. On non-iOS there is nothing to protect.
+  private _openIosTail = () => {
+    if (!isIOSWebKit() || this.targetWindow == null) return
+    this._endIosTouch()
+    const tail = {
+      phase: 'tail' as const,
+      timerId: this.targetWindow.setTimeout(() => {
+        if (this._iosTouch === tail) this._iosTouch = null
+        // The last momentum frame may have come before the timer.
+        this._flushIosDeferredIfReady()
+      }, 150),
+    }
+    this._iosTouch = tail
+  }
 
   private _endIosTouch = () => {
     if (this._iosTouch?.phase === 'tail' && this.targetWindow != null) {
@@ -1347,6 +1357,10 @@ export class Virtualizer<
           adjustments: undefined,
           behavior: keepSmooth ? 'smooth' : 'auto',
         })
+        // The new target is computed from current sizes, so this write
+        // already contains any correction deferred on iOS. With a finger
+        // down iOS ignores the write, so the deferral stays for the flush.
+        if (this._iosTouch?.phase !== 'down') this._iosDeferredAdjustment = 0
       }
     }
 
@@ -1902,9 +1916,12 @@ export class Virtualizer<
       // since compensating against the stale offset would overwrite the
       // command. Compensation writes and the prepend anchor sync update
       // `scrollOffset` eagerly, and the iOS flush writes exactly
-      // `scrollOffset + scrollAdjustments`, so none of them count.
+      // `scrollOffset + scrollAdjustments`, so none of them count. With a
+      // finger down iOS ignores the write, so no read-back will come and the
+      // touch deferral below takes the correction instead.
       const writtenOffset = this.getCommandWrittenOffset()
       const awaitingCommandReadBack =
+        !(isIOSWebKit() && this._iosTouch?.phase === 'down') &&
         writtenOffset !== null &&
         !approxEqual(
           writtenOffset,
@@ -2182,6 +2199,11 @@ export class Virtualizer<
   ) {
     if (kind === 'absolute') {
       this._iosDeferredAdjustment = 0
+      // The write stops any momentum, so the tail has nothing left to
+      // protect; closing it lets the landing's corrections apply before
+      // paint, even for a command issued from a tap handler inside the tail
+      // (#1250). With a finger down the user owns the scroll: leave it.
+      if (this._iosTouch?.phase === 'tail') this._endIosTouch()
     }
     this.scrollState = {
       ...target,
