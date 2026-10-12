@@ -2112,6 +2112,10 @@ export class Virtualizer<
 
     const offsetInfo = this.getOffsetForIndex(index, initialAlign)
     if (!offsetInfo) {
+      // No target (an empty list), so nothing is written; still drop the
+      // deferral like every absolute command, or it replays once the list
+      // refills.
+      this._iosDeferredAdjustment = 0
       return
     }
     const [offset, align] = offsetInfo

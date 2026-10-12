@@ -2106,6 +2106,51 @@ test('iOS deferral: multiple resizes during scroll accumulate and flush as one',
   })
 })
 
+test('iOS deferral: scrollToIndex with no target still drops a pending deferred adjustment', () => {
+  // An absolute command drops the deferral even when it has no target to
+  // write (an empty list), as it did before the commands shared an entry
+  // point; otherwise the stale delta replays once the list refills (found by
+  // @phcorp's differential run on #1316).
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({
+          scrollTop: 200,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(200, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+    scrollToFn.mockClear()
+
+    v.resizeItem(0, 90) // above the fold while scrolling: deferred
+    v.setOptions({ ...v.options, count: 0 })
+    v['getMeasurements']() // the render for the empty list
+    v.scrollToIndex(0) // no target, nothing to write
+    v.setOptions({ ...v.options, count: 10 })
+    v['getMeasurements']()
+    scrollCallback!(200, false) // settles: the flush would replay the delta
+
+    expect(scrollToFn).not.toHaveBeenCalled()
+  })
+})
+
 test('iOS deferral: an absolute scroll command invalidates a pending deferred adjustment', () => {
   // Regression (#1233 manifestation A): scrollToOffset/scrollToIndex derive
   // their target from CURRENT measurements, so any deferred compensation still
@@ -2279,6 +2324,50 @@ test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-ba
     // resize landing before the resulting scroll event fires has to see
     // the correct effective offset.
     expect(v['scrollAdjustments']).toBe(50)
+  })
+})
+
+test('iOS deferral: a write before the flush is read back keeps the flushed adjustment', () => {
+  // `scrollAdjustments` tracks compensation written but not yet reported.
+  // A later write that passes no adjustments (a command, a reconcile, the
+  // anchor sync) does not report anything, so the flushed delta stays until
+  // the scroll event (found by @phcorp's mutation run on #1316).
+  withFakeIOSUserAgent(() => {
+    const scrollToFn = vi.fn()
+    let scrollCallback:
+      | ((offset: number, isScrolling: boolean) => void)
+      | null = null
+    const v = new Virtualizer({
+      count: 10,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({
+          scrollTop: 200,
+          scrollLeft: 0,
+          scrollHeight: 500,
+          clientHeight: 200,
+          offsetHeight: 200,
+        }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_inst, cb) => {
+        scrollCallback = cb
+        cb(200, true)
+        return () => {}
+      },
+    })
+    v._willUpdate()
+    v['getMeasurements']()
+
+    v.resizeItem(0, 100) // deferred while scrolling
+    scrollCallback!(200, false) // settles: the flush writes +50
+    expect(v.scrollAdjustments).toBe(50)
+
+    v.scrollToOffset(150) // a write with no adjustments of its own
+    expect(v.scrollAdjustments).toBe(50)
+
+    scrollCallback!(150, false) // its read-back
+    expect(v.scrollAdjustments).toBe(0)
   })
 })
 
@@ -5732,3 +5821,39 @@ test.fails(
     expect(el.scrollTop).toBe(3900)
   },
 )
+
+test('a write to a scroll element that went away is not adopted by the next one', () => {
+  // A write is matched to its read-back within 1.5px. After the element is
+  // swapped (or the virtualizer disabled), the old write is never read back,
+  // so the new element's first report is taken as it is.
+  const mk = (top: number) => ({
+    scrollTop: top,
+    scrollLeft: 0,
+    scrollHeight: 5000,
+    clientHeight: 200,
+    offsetHeight: 200,
+  })
+  let el = mk(0)
+  const v = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => el as any,
+    scrollToFn: () => {},
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      cb(el.scrollTop, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+
+  v.scrollToOffset(1000.5) // written, never read back on the old element
+  el = mk(1001)
+  v._willUpdate()
+
+  expect(v.scrollOffset).toBe(1001)
+})
