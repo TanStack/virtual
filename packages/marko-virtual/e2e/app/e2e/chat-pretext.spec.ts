@@ -225,6 +225,7 @@ test(
     await expect(page.locator('[data-key^="message-4"]').last()).toBeVisible()
   },
 )
+
 test('a reply streamed from the server grows progressively and stays pinned', async ({
   page,
 }) => {
