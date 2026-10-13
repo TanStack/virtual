@@ -34,6 +34,7 @@ function App() {
   const nextMessageIndexRef = React.useRef(initialMessages.length)
   const streamTimerRef = React.useRef<number | null>(null)
   const loadingHistoryRef = React.useRef(false)
+  const lastScrollTopRef = React.useRef(0)
   const [messages, setMessages] = React.useState(initialMessages)
   const [loadingHistory, setLoadingHistory] = React.useState(false)
   const [didInitialScroll, setDidInitialScroll] = React.useState(false)
@@ -178,7 +179,14 @@ function App() {
           className="Messages"
           onScroll={(event) => {
             if (!autoHistoryEnabled || virtualizer.isAtEnd(80)) return
-            if (event.currentTarget.scrollTop < 120) {
+            const { scrollTop } = event.currentTarget
+            const movingUp = scrollTop < lastScrollTopRef.current
+            lastScrollTopRef.current = scrollTop
+            // Load only while the reader scrolls up into the top. Safari's
+            // rubber band reports negative positions past the top and then
+            // settles back down to 0; neither is the reader asking for more
+            // history, and loading on the settle would load twice per bounce.
+            if (movingUp && scrollTop >= 0 && scrollTop < 120) {
               prependHistory()
             }
           }}
