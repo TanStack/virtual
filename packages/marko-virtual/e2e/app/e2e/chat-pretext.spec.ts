@@ -172,10 +172,10 @@ test('prepending history keeps the visible message anchored in place', async ({
   expect(Math.abs(afterBox!.y - beforeBox!.y)).toBeLessThanOrEqual(2)
 })
 
-test('scrolling near the top auto-loads older history', async ({ page }) => {
-  await page.goto('/chat-pretext')
-  await waitForPin(page)
-  await page.waitForTimeout(400)
+test('scrolling near the top auto-loads older history', async ({ page   }) => {
+    await page.goto('/chat-pretext')
+    await waitForPin(page)
+    await page.waitForTimeout(400)
   const heightBefore = await page
     .locator('.messages')
     .evaluate((el) => el.scrollHeight)
@@ -193,7 +193,9 @@ test('scrolling near the top auto-loads older history', async ({ page }) => {
     .toBeGreaterThan(heightBefore)
 })
 
-test('Latest returns to the bottom and status flips back to At latest after an in-flight prepend', async ({
+test(
+  'Latest returns to the bottom and status flips back to At latest after an in-flight prepend',
+  async ({
   page,
 }) => {
   await page.goto('/chat-pretext')
@@ -202,7 +204,9 @@ test('Latest returns to the bottom and status flips back to At latest after an i
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = 0
   })
-  await expect(page.locator('[data-testid="status"]')).toHaveText('Loading history')
+  await expect(page.locator('[data-testid="status"]')).toHaveText(
+    'Loading history',
+  )
 
   const heightBeforeClick = await page
     .locator('.messages')
