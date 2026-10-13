@@ -1152,9 +1152,7 @@ export class Virtualizer<
           const target = this.getScrollOffset()
           const maxAtWrite = this.getMaxScrollOffset()
           this._clampedAdjustment =
-            maxAtWrite !== null && target > maxAtWrite + 0.5
-              ? { target, maxAtWrite }
-              : null
+            target > maxAtWrite + 0.5 ? { target, maxAtWrite } : null
           this._scrollToOffset(target, {
             adjustments: undefined,
             behavior: undefined,
