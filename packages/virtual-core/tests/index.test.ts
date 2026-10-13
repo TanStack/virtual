@@ -3950,6 +3950,33 @@ test('#1267: end-anchor sync retries after the sizer grows following a prepend',
   expect(virtualizer['_clampedAdjustment']).toBeNull()
 })
 
+test('#1267: a new explicit scroll cancels a pending clamped anchor retry', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, setMessages } =
+    createChatVirtualizer({
+      messages,
+      offset: 50,
+    })
+
+  setMessages([{ id: 'm--2' }, { id: 'm--1' }, ...messages], {
+    growSizer: false,
+  })
+  expect(virtualizer['_clampedAdjustment']).not.toBeNull()
+
+  // A newer explicit command must take ownership rather than be overwritten
+  // when the old prepend's sizer eventually grows.
+  virtualizer.scrollToOffset(20)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+
+  ;(scrollElement as any).scrollHeight = 350
+  virtualizer._willUpdate()
+
+  // No third write to the stale prepend target is allowed.
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(20)
+})
+
 test('anchorTo:end keeps visible content stable when older items are prepended', () => {
   const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
   const { setMessages, scrollToFn } = createChatVirtualizer({
