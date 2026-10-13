@@ -202,12 +202,17 @@ test(
     await page.addInitScript(() => {
       const nativeSetTimeout = window.setTimeout.bind(window)
       const testWindow = window as typeof window & {
+        __armHistoryPrependHold?: () => void
         __historyPrependIsHeld?: () => boolean
         __releaseHistoryPrepend?: () => void
       }
+      let shouldHoldPrepend = false
       let releasePrepend: (() => void) | null = null
       let holdingTimer: number | null = null
 
+      testWindow.__armHistoryPrependHold = () => {
+        shouldHoldPrepend = true
+      }
       testWindow.__historyPrependIsHeld = () => releasePrepend !== null
       testWindow.__releaseHistoryPrepend = () => {
         if (!releasePrepend) {
@@ -226,10 +231,12 @@ test(
         ...args: unknown[]
       ) => {
         if (
+          shouldHoldPrepend &&
           timeout === 180 &&
           typeof handler === 'function' &&
           releasePrepend === null
         ) {
+          shouldHoldPrepend = false
           const callback = handler as (...callbackArgs: unknown[]) => void
           releasePrepend = () => callback(...args)
           holdingTimer = nativeSetTimeout(() => {}, 60_000)
@@ -242,6 +249,15 @@ test(
     await page.goto('/chat-pretext')
     await waitForPin(page)
     await page.waitForTimeout(400)
+    // Arm the hook only immediately before scrolling to the top, so unrelated
+    // 180ms timers during app startup cannot be mistaken for this prepend.
+    await page.evaluate(() => {
+      ;(
+        window as Window & {
+          __armHistoryPrependHold?: () => void
+        }
+      ).__armHistoryPrependHold?.()
+    })
     await page.locator('.messages').evaluate((el) => {
       el.scrollTop = 0
     })
