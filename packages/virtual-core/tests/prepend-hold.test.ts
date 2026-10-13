@@ -60,6 +60,8 @@ function makeHarness(ios: boolean) {
   let ids = Array.from({ length: 45 }, (_, i) => i)
   let nextId = 0
   const writes: Array<number> = []
+  // The reader row's rendered start at the moment of each write.
+  const writeViews: Array<{ to: number; readerStart: number | null }> = []
   let touching = false
   let dragged = false
   // The bounce stalled after a discarded write: no more scroll events.
@@ -100,6 +102,11 @@ function makeHarness(ios: boolean) {
     scrollToFn: (offset, { adjustments = 0 }) => {
       const to = offset + adjustments
       writes.push(to)
+      writeViews.push({
+        to,
+        readerStart:
+          rendered.find((item) => ids[item.index] === 0)?.start ?? null,
+      })
       // iOS ignores a write while a finger drags the content.
       if (ios && touching && dragged) return
       // WebKit discards a write made while the element is overscrolled, and
@@ -199,6 +206,12 @@ function makeHarness(ios: boolean) {
       v.setOptions({ ...v.options, count: ids.length })
       render()
     },
+    // The options change alone, before the adapter commits.
+    prependOptions: () => {
+      ids = [...Array.from({ length: PREPEND }, () => --nextId), ...ids]
+      v.setOptions({ ...v.options, count: ids.length })
+    },
+    writeViews,
     // The screen: the viewport position of the reader's row (the first row
     // of the original list) and the viewport pixels no rendered row covers.
     // The gap a bounce opens above the content is not blank.
@@ -237,6 +250,8 @@ function run(ios: boolean, script: (h: Harness, prepend: () => void) => void) {
     // The mount-time write of the initial offset is not under test.
     h.writes.length = 0
     control.writes.length = 0
+    h.writeViews.length = 0
+    control.writeViews.length = 0
     const steps: Array<string> = []
     const both = (label: string, fn: (x: Harness) => void) => {
       fn(h)
@@ -251,6 +266,11 @@ function run(ios: boolean, script: (h: Harness, prepend: () => void) => void) {
         `${label}: reader row moved\n${steps.join('\n')}`,
       ).toBe(b.readerTop)
       expect(a.blank, `${label}: blank viewport\n${steps.join('\n')}`).toBe(0)
+      // The comparison above is vacuous when neither run renders the
+      // reader's row; at the prepend it must be on screen.
+      if (label === 'prepend') {
+        expect(a.readerTop, `${label}: reader row not rendered`).not.toBeNull()
+      }
     }
     const proxy: Harness = {
       ...h,
@@ -296,13 +316,15 @@ test('desktop: a prepend during the top rubber-band bounce holds the reader row 
 })
 
 test('desktop: a prepend at rest is written at once (no hold)', () => {
+  // At rest at the top, with the reader's row on screen, so the per-step
+  // comparison checks the row through the immediate write as well.
   const { h } = run(false, (h, prepend) => {
-    h.scroll(100, false)
+    h.scroll(0, false)
     prepend()
-    expect(h.writes).toEqual([100 + PREPEND * ROW])
+    expect(h.writes).toEqual([PREPEND * ROW])
     h.readBack()
   })
-  expect(h.el.pos).toBe(100 + PREPEND * ROW)
+  expect(h.el.pos).toBe(PREPEND * ROW)
 })
 
 test('iOS: a prepend during a momentum bounce holds the reader row and lands when the tail closes (#1307)', () => {
@@ -352,4 +374,92 @@ test('iOS: two prepends in one tail hold together and land as one write', () => 
   })
   expect(h.writes).toEqual([2 * PREPEND * ROW])
   expect(h.el.pos).toBe(2 * PREPEND * ROW)
+})
+
+test('desktop: the flush re-renders the rows in layout coordinates before it writes', () => {
+  const { h } = run(false, (h, prepend) => {
+    h.scroll(0)
+    h.scroll(-94)
+    prepend()
+    h.scroll(-40)
+    h.scroll(0)
+    h.readBack()
+  })
+  // The write that releases the hold must find the rows already re-rendered
+  // in layout coordinates (a synchronous notify), or one paint shows the
+  // element moved under rows that have not.
+  expect(h.writeViews).toEqual([
+    { to: PREPEND * ROW, readerStart: PREPEND * ROW },
+  ])
+})
+
+test('desktop: a user scroll back into bounds during a hold releases it where the user is', () => {
+  const { h, control } = run(false, (h, prepend) => {
+    h.scroll(0)
+    h.scroll(-94)
+    prepend()
+    expect(h.writes).toEqual([])
+    // The user drags down through the top, past the bounce, into the list.
+    h.scroll(-20)
+    h.scroll(30)
+    h.readBack()
+  })
+  // Released by the first in-bounds event, at the user's position.
+  expect(h.writes).toEqual([30 + PREPEND * ROW])
+  expect(h.el.pos).toBe(30 + PREPEND * ROW)
+  expect(control.el.pos).toBe(30)
+})
+
+// Known gap in the `_willUpdate` fallback: a scroll event between
+// `setOptions` and `_willUpdate` overwrites the eagerly bumped `scrollOffset`
+// with the element's offset before the hold is applied, and the fallback
+// then adds the hold without restoring the layout offset. For one event the
+// range is computed from an element offset while the rows are shifted by the
+// hold: rows 0-3 render at -600 and the viewport is blank (106px). The next
+// scroll event self-heals. Without the fallback the old stall would return,
+// so it stays; this pins the glitch.
+test.fails(
+  'desktop: an overscroll event between the options change and the commit still holds',
+  () => {
+    const { h, control } = run(false, (h, prepend) => {
+      h.scroll(0, false)
+      // The options change finds the element writable (at rest, in bounds)...
+      h.prependOptions()
+      // ...but a bounce event lands before the adapter commits (`_willUpdate`
+      // runs inside the render this event triggers).
+      h.scroll(-94)
+      expect(h.writes).toEqual([])
+      h.scroll(-40)
+      h.scroll(0)
+      h.readBack()
+      void prepend
+    })
+    expect(h.writes).toEqual([PREPEND * ROW])
+    expect(h.el.pos).toBe(PREPEND * ROW)
+    expect(control.el.pos).toBe(0)
+    expect(h.v.scrollOffset).toBe(PREPEND * ROW)
+  },
+)
+
+test('desktop: an above-viewport grow during a bottom bounce holds and lands once in bounds', () => {
+  const max = (45 - 4) * ROW // 2050
+  const { h, control } = run(false, (h) => {
+    h.scroll(max, false)
+    h.scroll(max + 30)
+    h.scroll(max + 70)
+    // Row 0 (above the viewport, at the end) grows by 30: held.
+    h.v.resizeItem(0, ROW + 30)
+    h.render()
+    expect(h.writes).toEqual([])
+    h.scroll(max + 35)
+    h.scroll(max)
+    h.readBack()
+  })
+  expect(h.writes).toEqual([max + 30])
+  expect(h.el.pos).toBe(max + 30)
+  expect(control.el.pos).toBe(max)
+  // The last row sits where it did on the control.
+  const last = (x: Harness) =>
+    x.v.getVirtualItems().find((i) => i.index === 44)!.start - x.el.pos
+  expect(last(h)).toBe(last(control))
 })

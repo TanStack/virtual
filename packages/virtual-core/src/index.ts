@@ -1328,9 +1328,7 @@ export class Virtualizer<
   // A write that is unwanted for another reason (a travelling smooth scroll
   // owns the position) is a separate check at the call sites.
   private _canWriteScroll = () =>
-    !(isIOSWebKit() && this._iosInMotion()) && !this._isOverscrolled()
-
-  private _isOverscrolled = () => this._reportedOverscroll
+    !(isIOSWebKit() && this._iosInMotion()) && !this._reportedOverscroll
 
   // Write a held correction once a write is possible, from the scroll
   // handler, the touch tail timer, `_willUpdate` and a resize notify. The
