@@ -195,37 +195,36 @@ test('scrolling near the top auto-loads older history', async ({ page   }) => {
 
 test(
   'Latest returns to the bottom and status flips back to At latest after an in-flight prepend',
-  async ({
-  page,
-}) => {
-  await page.goto('/chat-pretext')
-  await waitForPin(page)
-  await page.waitForTimeout(400)
-  await page.locator('.messages').evaluate((el) => {
-    el.scrollTop = 0
-  })
-  await expect(page.locator('[data-testid="status"]')).toHaveText(
-    'Loading history',
-  )
-
-  const heightBeforeClick = await page
-    .locator('.messages')
-    .evaluate((el) => el.scrollHeight)
-  // Click before the delayed history prepend resolves, reproducing the race.
-  await page.waitForTimeout(30)
-  await page.locator('[data-testid="latest"]').click()
-
-  // Confirm that the prepend actually landed after Latest was clicked before
-  // checking the final scroll position; otherwise the test could pass early.
-  await expect
-    .poll(() => page.locator('.messages').evaluate((el) => el.scrollHeight), {
-      timeout: 3000,
+  async ({ page }) => {
+    await page.goto('/chat-pretext')
+    await waitForPin(page)
+    await page.waitForTimeout(400)
+    await page.locator('.messages').evaluate((el) => {
+      el.scrollTop = 0
     })
-    .toBeGreaterThan(heightBeforeClick)
-  await waitForPin(page)
-  await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
-  await expect(page.locator('[data-key^="message-4"]').last()).toBeVisible()
-})
+    await expect(page.locator('[data-testid="status"]')).toHaveText(
+      'Loading history',
+    )
+
+    const heightBeforeClick = await page
+      .locator('.messages')
+      .evaluate((el) => el.scrollHeight)
+    // Click before the delayed history prepend resolves, reproducing the race.
+    await page.waitForTimeout(30)
+    await page.locator('[data-testid="latest"]').click()
+
+    // Confirm that the prepend actually landed after Latest was clicked before
+    // checking the final scroll position; otherwise the test could pass early.
+    await expect
+      .poll(() => page.locator('.messages').evaluate((el) => el.scrollHeight), {
+        timeout: 3000,
+      })
+      .toBeGreaterThan(heightBeforeClick)
+    await waitForPin(page)
+    await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
+    await expect(page.locator('[data-key^="message-4"]').last()).toBeVisible()
+  },
+)
 test('a reply streamed from the server grows progressively and stays pinned', async ({
   page,
 }) => {
