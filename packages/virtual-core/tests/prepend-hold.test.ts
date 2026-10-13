@@ -288,7 +288,9 @@ test('desktop: a prepend during the top rubber-band bounce holds the reader row 
   expect(h.el.pos).toBe(PREPEND * ROW)
   expect(control.el.pos).toBe(0)
   // The rows are back in layout coordinates and the sizer holds them all.
-  expect(h.v.getVirtualItems()[0]?.start).toBe(0)
+  expect(
+    h.v.getVirtualItems().find((item) => item.index === PREPEND)?.start,
+  ).toBe(PREPEND * ROW)
   expect(h.v.getTotalSize()).toBe(control.v.getTotalSize() + PREPEND * ROW)
   expect(h.v.scrollOffset).toBe(PREPEND * ROW)
 })
@@ -327,7 +329,9 @@ test('iOS: a prepend during a momentum bounce holds the reader row and lands whe
   expect(h.writes).toEqual([PREPEND * ROW])
   expect(h.el.pos).toBe(PREPEND * ROW)
   expect(control.el.pos).toBe(0)
-  expect(h.v.getVirtualItems()[0]?.start).toBe(0)
+  expect(
+    h.v.getVirtualItems().find((item) => item.index === PREPEND)?.start,
+  ).toBe(PREPEND * ROW)
   expect(h.v.scrollOffset).toBe(PREPEND * ROW)
 })
 

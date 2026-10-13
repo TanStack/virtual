@@ -2093,12 +2093,12 @@ test('iOS deferral: compensation is deferred during a touch-driven scroll and fl
     // iOS that cancels momentum (#884) — so it must defer.
     v.resizeItem(0, 100) // item 0 was at start=0; now 50→100 grows by 50
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
 
     // The tail armed by the last momentum frame expires: gesture settled.
     expireTouchTail()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
@@ -2116,70 +2116,80 @@ test('iOS deferral: multiple resizes during a fling accumulate and flush as one'
     v.resizeItem(2, 70)
 
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(45)
+    expect(v['_holdOffset']).toBe(45)
 
     expireTouchTail()
     // Single flush call
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
-test('iOS deferral: scrollToIndex with no target still drops a pending deferred adjustment', () => {
-  // An absolute command drops the deferral even when it has no target to
-  // write (an empty list), as it did before the commands shared an entry
-  // point; otherwise the stale delta replays once the list refills (found by
-  // @phcorp's differential run on #1316).
+test('iOS deferral: scrollToIndex with no target keeps the held correction for the flush', () => {
+  // A held correction is a shift between the layout and the element, not a
+  // pending replay: `scrollOffset` already carries it. A command with no
+  // target (an empty list) writes nothing and leaves it; the flush writes
+  // the layout position once the list has refilled (cf. @phcorp's
+  // differential run on #1316, which pinned the replay of the old model).
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, touch, expireTouchTail } = makeIOSTouchVirtualizer()
 
     touch('touchstart')
-    v.resizeItem(0, 90) // above the fold under a finger: deferred
+    v.resizeItem(0, 90) // above the fold under a finger: held
+    expect(v['_holdOffset']).toBe(40)
+    expect(v.scrollOffset).toBe(140)
     v.setOptions({ ...v.options, count: 0 })
     v['getMeasurements']() // the render for the empty list
     v.scrollToIndex(0) // no target, nothing to write
+    expect(scrollToFn).not.toHaveBeenCalled()
     v.setOptions({ ...v.options, count: 10 })
     v['getMeasurements']()
     touch('touchend')
-    expireTouchTail() // settles: the flush would replay the delta
+    expireTouchTail() // settles: the flush writes the layout position
 
-    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(140)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
-test('iOS deferral: an absolute scroll command invalidates a pending deferred adjustment', () => {
-  // Regression (#1233 manifestation A): scrollToOffset/scrollToIndex derive
-  // their target from CURRENT measurements, so any deferred compensation still
-  // pending is stale — replaying it on the next flush shifts the list off the
-  // just-established target by the accumulated delta. The absolute commands
-  // must drop the deferral.
+test('iOS deferral: an absolute scroll command targets the layout and the hold moves the element short of it', () => {
+  // (#1233 manifestation A in the old model: a deferred delta replayed on
+  // top of a command's target.) A held correction is not dropped by a
+  // command; the command's target is a layout offset, the element is
+  // written the hold short of it under the shifted rows, and the flush
+  // moves both to the target together once a write is possible.
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, scroll, touch, expireTouchTail } =
       makeIOSTouchVirtualizer({ scrollTop: 200 })
     touch('touchstart')
     scroll(190, true) // the finger drags: the user owns the scroll
 
-    // Accumulate a deferred adjustment during the drag.
+    // Hold a correction during the drag.
     v.resizeItem(0, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
+    expect(v.scrollOffset).toBe(240)
 
-    // An absolute command should clear the stale deferral.
+    // The command writes the element 50 short of its layout target.
     v.scrollToOffset(300)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(50)
+    expect(scrollToFn.mock.calls.at(-1)![0]).toBe(250)
 
-    // scrollToIndex clears it too (finger still down, so the resize defers).
-    v.resizeItem(1, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    v.resizeItem(1, 100) // held too (finger still down)
+    expect(v['_holdOffset']).toBe(100)
     v.scrollToIndex(5)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn.mock.calls.at(-1)![0]).toBe(250 - 100 + 50)
     scrollToFn.mockClear()
 
-    // Settling must not replay any (now dropped) delta.
+    // The finger lifts and the writes it ignored have no read-back; the
+    // flush writes the layout position, which the scroll event confirms.
     touch('touchend')
     expireTouchTail()
-    scroll(300, false)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
-    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(v.scrollOffset)
+    expect(v['_holdOffset']).toBe(0)
+    scroll(scrollToFn.mock.calls[0]![0], false)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
@@ -2250,13 +2260,12 @@ test('iOS deferral: a resize during an in-flight scrollToIndex is not replayed a
   })
 })
 
-test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-back resizes stay consistent', () => {
-  // Regression: the deferred flush used to write `adjustments: delta`
-  // directly without updating `this.scrollAdjustments`. If a second resize
-  // landed before the resulting scroll event fired (and reset the
-  // accumulator), the comparison `itemStart < getScrollOffset() +
-  // scrollAdjustments` would miss the flushed delta and the next correction
-  // would compute from the stale offset.
+test('iOS deferral: a held correction is in scrollOffset, so back-to-back resizes stay consistent', () => {
+  // (In the old model the flush wrote `adjustments: delta` and had to roll
+  // it into `scrollAdjustments` for a resize landing before the read-back.)
+  // A held correction is folded into `scrollOffset` at once, like a written
+  // one, so the flush writes the plain layout position and a resize before
+  // its read-back compares against the right offset.
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, scroll, touch, expireTouchTail } =
       makeIOSTouchVirtualizer({ scrollTop: 200 })
@@ -2264,54 +2273,61 @@ test('iOS deferral: flushed delta is rolled into scrollAdjustments so back-to-ba
     touch('touchend')
     scroll(200, true)
 
-    // Build up a deferred adjustment of 50 during the fling.
     v.resizeItem(0, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
+    expect(v.scrollOffset).toBe(250)
     expect(v['scrollAdjustments']).toBe(0)
 
-    // Settle: the flush must roll the deferred delta into scrollAdjustments.
     expireTouchTail()
 
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    const [, opts] = scrollToFn.mock.calls[0]!
-    expect(opts.adjustments).toBe(50)
-    // The running accumulator must now reflect the flushed delta — any
-    // resize landing before the resulting scroll event fires has to see
-    // the correct effective offset.
-    expect(v['scrollAdjustments']).toBe(50)
+    const [offset, opts] = scrollToFn.mock.calls[0]!
+    expect(offset).toBe(250)
+    expect(opts.adjustments).toBeUndefined()
+    expect(v['scrollAdjustments']).toBe(0)
+    expect(v.scrollOffset).toBe(250)
+
+    // Row 1 (layout 100..150, above the fold at 250) grows before the
+    // read-back: compensated from the flushed offset.
+    v.resizeItem(1, 80)
+    expect(
+      scrollToFn.mock.calls.at(-1)![0] +
+        (scrollToFn.mock.calls.at(-1)![1].adjustments ?? 0),
+    ).toBe(280)
+    expect(v.scrollOffset).toBe(280)
   })
 })
 
-test('iOS deferral: a write before the flush is read back keeps the flushed adjustment', () => {
-  // `scrollAdjustments` tracks compensation written but not yet reported.
-  // A later write that passes no adjustments (a command, a reconcile, the
-  // anchor sync) does not report anything, so the flushed delta stays until
-  // the scroll event (found by @phcorp's mutation run on #1316).
+test('iOS deferral: a write before the flush is read back carries no adjustment', () => {
+  // (Found by @phcorp's mutation run on #1316 in the old model, where the
+  // flush's delta lived in `scrollAdjustments` until its read-back.) The
+  // flush writes a plain offset, so nothing is pending afterwards.
   withFakeIOSUserAgent(() => {
     const { v, scroll, touch, expireTouchTail } = makeIOSTouchVirtualizer()
 
     touch('touchstart')
-    v.resizeItem(0, 100) // deferred under the finger
+    v.resizeItem(0, 100) // held under the finger
     touch('touchend')
-    expireTouchTail() // settles: the flush writes +50
-    expect(v.scrollAdjustments).toBe(50)
+    expireTouchTail() // settles: the flush writes 150
+    expect(v.scrollAdjustments).toBe(0)
+    expect(v.scrollOffset).toBe(150)
 
     v.scrollToOffset(150) // a write with no adjustments of its own
-    expect(v.scrollAdjustments).toBe(50)
+    expect(v.scrollAdjustments).toBe(0)
 
     scroll(150, false) // its read-back
     expect(v.scrollAdjustments).toBe(0)
+    expect(v.scrollOffset).toBe(150)
   })
 })
 
-test('iOS deferral: a negative delta at the end clamp is dropped, not replayed', () => {
-  // Regression (#1233 manifestation B): with anchorTo: 'end' and the reader
-  // pinned at the bottom, a row above the viewport re-measuring *smaller*
-  // during a fling shrinks maxScrollOffset; the browser clamps scrollTop
-  // onto the new bottom, which is already the correct end-anchored position.
-  // The library also deferred a negative compensation for that same shrink —
-  // replaying it on the settled, already-correct position lifts the view off
-  // the bottom. The flush must drop the negative delta at the end clamp.
+test('iOS deferral: a shrink above the viewport at the end is held, and the sizer does not shrink under the element', () => {
+  // (#1233 manifestation B in the old model: the sizer shrank under the
+  // element, the browser clamped scrollTop onto the new bottom, and the
+  // deferred negative delta had to be dropped at the flush.) With the
+  // correction held, the exposed total stays what it was, so the element is
+  // not clamped; the flush writes the layout position, 20 up, which is the
+  // same rows under the viewport.
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, scroll, touch, expireTouchTail } =
       makeIOSTouchVirtualizer(
@@ -2321,18 +2337,20 @@ test('iOS deferral: a negative delta at the end clamp is dropped, not replayed',
     touch('touchstart')
     touch('touchend')
     scroll(300, true) // at the bottom, flinging
+    const totalBefore = v.getTotalSize()
 
     // A row above the viewport re-measures smaller while at the end.
     v.resizeItem(0, 30) // 50 → 30: total shrinks by 20
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(-20)
+    expect(v['_holdOffset']).toBe(-20)
+    expect(v.scrollOffset).toBe(280)
+    expect(v.getTotalSize()).toBe(totalBefore)
 
-    // Settle. The browser already clamped scrollTop onto the new bottom
-    // (cur === max), so the deferred negative delta is stale and must not
-    // replay.
     expireTouchTail()
-    expect(v['_iosDeferredAdjustment']).toBe(0)
-    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_holdOffset']).toBe(0)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(280)
+    expect(v.getTotalSize()).toBe(totalBefore - 20)
   })
 })
 
@@ -2351,11 +2369,11 @@ test('iOS deferral: a positive delta at the end clamp still replays (growth abov
     // A row above the viewport re-measures larger while at the end.
     v.resizeItem(0, 70) // 50 → 70: total grows by 20
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(20)
+    expect(v['_holdOffset']).toBe(20)
 
     // Settle. Growth doesn't clamp, so the positive delta must replay.
     expireTouchTail()
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
   })
 })
@@ -2610,10 +2628,10 @@ test('iOS deferral: a re-measure above the viewport is deferred scrolling forwar
     h.el._dispatch('touchstart')
     h.scroll(true, 1990)
     h.v.resizeItem(5, 100)
-    expect(h.v['_iosDeferredAdjustment']).toBe(0)
+    expect(h.v['_holdOffset']).toBe(0)
     h.scroll(true, 2020)
     h.v.resizeItem(5, 120)
-    expect(h.v['_iosDeferredAdjustment']).toBe(20)
+    expect(h.v['_holdOffset']).toBe(20)
   })
 })
 
@@ -2624,7 +2642,7 @@ test('iOS deferral: a custom adjust predicate that opts out defers nothing', () 
     h.el._dispatch('touchstart')
     h.scroll(true, 2010)
     h.v.resizeItem(5, 100)
-    expect(h.v['_iosDeferredAdjustment']).toBe(0)
+    expect(h.v['_holdOffset']).toBe(0)
   })
 })
 
@@ -2636,7 +2654,7 @@ test('iOS deferral: the first measure of the row spanning the viewport top is co
     expect(h.rowTop(41)).toBe(40)
     // Row 40 starts at 2000, 10px above the viewport top.
     h.v.resizeItem(40, 100)
-    expect(h.v['_iosDeferredAdjustment']).toBe(50)
+    expect(h.v['_holdOffset']).toBe(50)
   })
   h.touch('touchend')
   h.run(() => h.scroll(false))
@@ -2787,7 +2805,7 @@ test('iOS Phase 1: resize during active touch defers (no scrollTop write)', () =
     // Above-viewport item resizes mid-drag. Must defer.
     v.resizeItem(0, 100)
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
   })
 })
 
@@ -2815,14 +2833,14 @@ test('iOS Phase 1: resize in post-touchend grace window defers; flushes when tim
     v.resizeItem(0, 100)
     v.resizeItem(1, 65)
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(50 + 15)
+    expect(v['_holdOffset']).toBe(50 + 15)
 
     // Expire the grace timer; the timer callback flushes the accumulated delta.
     const fn = timers.get((touch as { timerId: number }).timerId)!
     fn()
     expect(v['_iosTouch']).toBeNull()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
@@ -2848,7 +2866,7 @@ test('iOS Phase 1: momentum scroll events re-arm the post-touchend tail until th
 
     v.resizeItem(0, 100)
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
 
     scroll(140, true) // still flinging: re-armed again, still deferred
     expect(v['_iosTouch']?.phase).toBe('tail')
@@ -2861,7 +2879,7 @@ test('iOS Phase 1: momentum scroll events re-arm the post-touchend tail until th
       (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null,
     ).toBeNull()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
@@ -2950,14 +2968,14 @@ test('iOS Phase 1: scroll-element swap does not replay a stale deferred adjustme
     dispatchTouchEvent(holder.el, 'touchstart')
     v.resizeItem(0, 100)
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
 
     // The scroll element is swapped while the deferral is pending — the
     // delta was computed against the old element's content and must not
     // survive into the new element.
     holder.el = makeEl()
     v._willUpdate()
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
 
     // The new element's first quiescence must not write the stale delta.
     scrollToFn.mockClear()
@@ -3101,7 +3119,7 @@ test('Phase 2b: flush skipped when scrollTop is in elastic-overscroll zone (nega
 
     // Resize during the drag: defers
     v.resizeItem(0, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
 
     // User rubber-bands past the top and lets go: scrollTop is negative
     // when the gesture settles. The elastic-zone check blocks the flush so
@@ -3111,13 +3129,13 @@ test('Phase 2b: flush skipped when scrollTop is in elastic-overscroll zone (nega
     touch('touchend')
     expireTouchTail()
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(50) // still deferred
+    expect(v['_holdOffset']).toBe(50) // still deferred
 
     // Bounce-back resolves in-bounds. The next scroll event flushes.
     el.scrollTop = 100
     scroll(100, false)
     expect(scrollToFn).toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
@@ -3128,7 +3146,7 @@ test('Phase 2b: flush skipped when scrollTop > scrollHeight-clientHeight (oversc
     touch('touchstart')
 
     v.resizeItem(0, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
 
     // User pulls past the bottom and lets go: scrollTop is 350 (> max 300)
     // when the tail expires, so the flush is skipped.
@@ -3182,7 +3200,7 @@ test('Phase 2b: in-bounds flush proceeds normally (no regression)', () => {
     el.scrollTop = 150
     scrollCb!(150, false) // in-bounds (0..300)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
@@ -3266,7 +3284,7 @@ test('non-iOS: adjustment is applied immediately during scroll (no regression)',
 
   // Should have fired immediately
   expect(scrollToFn).toHaveBeenCalled()
-  expect(v['_iosDeferredAdjustment']).toBe(0)
+  expect(v['_holdOffset']).toBe(0)
 })
 
 test('scroll-up jank: backward-scroll skips adjustment on re-measurement by default', () => {
@@ -5876,7 +5894,7 @@ test('#1250: a programmatic scrollToIndex landing compensates synchronously with
     // Newly mounted rows measure. Item 0 sits above the fold, so its first
     // measurement must compensate pre-paint — not defer past it.
     v.resizeItem(0, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
   })
 })
@@ -5898,7 +5916,7 @@ test('#1250: a tap that never scrolls does not latch the deferral gate', () => {
     // Every piece of touch state is timer-bounded, so the next compensation
     // is applied synchronously rather than deferred by a stuck gate.
     v.resizeItem(0, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
   })
 })
@@ -5924,7 +5942,7 @@ test('#1250: a scrollToIndex issued from a tap handler lands compensated', () =>
     scrollToFn.mockClear()
 
     v.resizeItem(0, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(0)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
   })
 })
@@ -5941,11 +5959,11 @@ test('#1250: an absolute command under a dragging finger keeps deferring', () =>
 
     v.resizeItem(0, 100)
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
   })
 })
 
-test('#1250: a scrollToIndex with no target leaves the fling running and drops a stale deferral', () => {
+test('#1250: a scrollToIndex with no target leaves the fling running and the held correction', () => {
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, scroll, touch, expireTouchTail } =
       makeIOSTouchVirtualizer()
@@ -5953,33 +5971,34 @@ test('#1250: a scrollToIndex with no target leaves the fling running and drops a
     touch('touchend')
     scroll(120, true) // momentum
     v.resizeItem(0, 100)
-    expect(v['_iosDeferredAdjustment']).toBe(50)
+    expect(v['_holdOffset']).toBe(50)
     const timer =
       (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null
     expect(timer).not.toBeNull()
 
     // getOffsetForIndex finds no measurement for the index (e.g. the list was
     // emptied), so scrollToIndex writes nothing. Nothing stopped the fling,
-    // so the tail stays open; the deferral is dropped like on every absolute
-    // command, since it may describe rows that are gone (as in 3.19.2).
+    // so the tail stays open. The held correction is already in
+    // `scrollOffset` and stays for the flush.
     v.measurementsCache = []
     v.scrollToIndex(5)
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(v['_holdOffset']).toBe(50)
     expect(v['_iosTouch']?.phase).toBe('tail')
     expect(
       (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null,
     ).toBe(timer)
 
-    // A resize during the remaining momentum still defers rather than
-    // writing scrollTop into the fling.
+    // A resize during the remaining momentum is held too rather than
+    // written into the fling.
     v.resizeItem(1, 80)
     expect(scrollToFn).not.toHaveBeenCalled()
-    expect(v['_iosDeferredAdjustment']).toBe(30)
+    expect(v['_holdOffset']).toBe(80)
 
     expireTouchTail()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    expect(v['_iosDeferredAdjustment']).toBe(0)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(200)
+    expect(v['_holdOffset']).toBe(0)
   })
 })
 
@@ -6023,7 +6042,7 @@ test.each([
       scrollToFn.mockClear()
 
       v.resizeItem(0, 100)
-      expect(v['_iosDeferredAdjustment']).toBe(0)
+      expect(v['_holdOffset']).toBe(0)
       expect(scrollToFn).toHaveBeenCalledTimes(1)
     })
   },
