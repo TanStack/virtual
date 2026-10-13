@@ -2181,12 +2181,13 @@ test('iOS deferral: an absolute scroll command targets the layout and the hold m
     expect(scrollToFn.mock.calls.at(-1)![0]).toBe(250 - 100 + 50)
     scrollToFn.mockClear()
 
-    // The finger lifts and the writes it ignored have no read-back; the
-    // flush writes the layout position, which the scroll event confirms.
+    // The finger lifts and the writes it ignored have no read-back, so the
+    // last command still owns the target: the flush writes it (300, which
+    // the command wrote 100 short of), not the pre-command offset (290).
     touch('touchend')
     expireTouchTail()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    expect(scrollToFn.mock.calls[0]![0]).toBe(v.scrollOffset)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(300)
     expect(v['_holdOffset']).toBe(0)
     scroll(scrollToFn.mock.calls[0]![0], false)
     expect(v['_holdOffset']).toBe(0)
@@ -6171,4 +6172,63 @@ test('iOS touch: a row that stops touch propagation does not hide the gesture', 
   } finally {
     window.ResizeObserver = prevRO
   }
+})
+
+// FAILS on the PR: `scrollToOffset` closes the tail, so `_canWriteScroll()`
+// is true while the command's write (270) has no read-back yet. The next
+// `_willUpdate` runs `_flushHoldIfReady`, which writes `getScrollOffset()`
+// (250, the pre-command layout offset) over the command: the element ends at
+// 250 and the read-back retires the command as an external scroll.
+test('iOS hold: a command that closes the tail is not overwritten by a flush before its read-back', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll, touch } = makeIOSTouchVirtualizer({
+      scrollTop: 200,
+    })
+    touch('touchstart')
+    touch('touchend')
+    scroll(200, true) // momentum tail
+    v.resizeItem(0, 100) // above the viewport: held
+    expect(v['_holdOffset']).toBe(50)
+    expect(v.scrollOffset).toBe(250)
+
+    // The command closes the tail and writes its target the hold short.
+    v.scrollToOffset(320)
+    expect(scrollToFn.mock.calls.at(-1)![0]).toBe(270)
+    scrollToFn.mockClear()
+
+    // The adapter renders (a layout effect) before the scroll event of that
+    // write arrives. Whatever is written now must not undo the command.
+    v._willUpdate()
+    for (const [offset, opts] of scrollToFn.mock.calls) {
+      expect(offset + (opts.adjustments ?? 0)).toBe(320)
+    }
+    // The element reports the command's position; the read-back must not be
+    // taken for a user scroll away from the target.
+    scroll(scrollToFn.mock.calls.at(-1)?.[0] ?? 270, false)
+    expect(v.scrollOffset).toBe(320)
+  })
+})
+
+// FAILS on the PR: same as above through the flush in `resizeItem`, which
+// ignores the `awaitingCommandReadBack` guard right above it.
+test('iOS hold: a resize landing between a command and its read-back does not flush the stale offset', () => {
+  withFakeIOSUserAgent(() => {
+    const { v, scrollToFn, scroll, touch } = makeIOSTouchVirtualizer({
+      scrollTop: 200,
+    })
+    touch('touchstart')
+    touch('touchend')
+    scroll(200, true)
+    v.resizeItem(0, 100) // held: 50
+    v.scrollToOffset(320) // closes the tail, writes 270
+    scrollToFn.mockClear()
+    // A row below the viewport re-measures before the read-back: no
+    // compensation, but `resizeItem` runs the flush.
+    v.resizeItem(9, 80)
+    for (const [offset, opts] of scrollToFn.mock.calls) {
+      expect(offset + (opts.adjustments ?? 0)).toBe(320)
+    }
+    scroll(scrollToFn.mock.calls.at(-1)?.[0] ?? 270, false)
+    expect(v.scrollOffset).toBe(320)
+  })
 })

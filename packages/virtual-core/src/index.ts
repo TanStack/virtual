@@ -1352,7 +1352,11 @@ export class Virtualizer<
       this.scrollOffset = 0
     }
     this.notify(sync)
-    const target = this.getScrollOffset()
+    // A command whose write has not been reported back yet owns the target:
+    // `scrollOffset` is still the pre-command position until its read-back,
+    // and a command that closes the touch tail makes a write possible with
+    // no scroll event in between, so this flush can run first.
+    const target = this.getCommandWrittenOffset() ?? this.getScrollOffset()
     // A consumer that sizes the container after this write gets the retry
     // (#1258).
     this._clampedAdjustment = this._clampedBy(target)
