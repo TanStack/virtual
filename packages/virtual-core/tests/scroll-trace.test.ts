@@ -8,8 +8,8 @@ type ScrollAlignment = NonNullable<ScrollToOptions['align']>
 //
 // Seeded random event sequences (scroll commands, read-backs, smooth
 // animation steps, content resizes delivered by ResizeObserver, prepends,
-// user drags, touches, renders, frames, waits that fire due timers, the
-// reconcile safety valve)
+// user drags that rubber-band past an edge, touches, renders, frames, waits
+// that fire due timers, the reconcile safety valve)
 // run against a simulated browser, on iOS and non-iOS, across a set of layout
 // options. Each sequence records only what a consumer can observe: every
 // write to the element, where it rests after each step, and what the adapter
@@ -271,6 +271,17 @@ function simulate(
   // The browser keeps whole pixels, so a read-back can differ from a
   // fractional write.
   const clamp = (x: number) => Math.round(Math.max(0, Math.min(x, max())))
+  // A drag past an edge rubber-bands by a share of the excess; each
+  // following frame springs half way back, and a rest report lands on the
+  // edge. WebKit discards a write made while the element is overscrolled and
+  // the bounce stalls: no scroll event comes until the user scrolls again
+  // (#1287).
+  const overscrolled = () => el.pos < 0 || el.pos > max()
+  let stalled = false
+  const spring = () => {
+    if (el.pos < 0) el.pos = Math.ceil(el.pos / 2)
+    else if (el.pos > max()) el.pos = max() + Math.floor((el.pos - max()) / 2)
+  }
   let ids = Array.from({ length: 100 }, (_, i) => i)
   let nextId = 100
   const content = new Map<number, number>()
@@ -303,6 +314,12 @@ function simulate(
       // iOS ignores a programmatic write while a finger drags; under a
       // finger resting on the content the write lands.
       if (ios && touching && dragged) return
+      if (overscrolled()) {
+        stalled = true
+        return
+      }
+      // A write that lands is reported like any other move.
+      stalled = false
       if (behavior === 'smooth') {
         smoothTarget = clamp(to)
         lateFrame = null
@@ -365,10 +382,14 @@ function simulate(
     if (unmounted) v.measureElement(null)
     v._willUpdate()
     el.size = v.getTotalSize() + (v.options.scrollMargin ?? 0)
-    el.pos = clamp(el.pos)
+    // A bounce past the top is left alone: the content cannot clamp it.
+    el.pos = Math.min(el.pos, max())
     return `r${rendered[0] ?? '-'}-${rendered[rendered.length - 1] ?? '-'}/${el.size}`
   }
-  const scroll = (isScrolling: boolean) => scrollCallback!(el.pos, isScrolling)
+  // A stalled bounce reports nothing.
+  const scroll = (isScrolling: boolean) => {
+    if (!stalled) scrollCallback!(el.pos, isScrolling)
+  }
   const frame = () => rafs.splice(0).forEach((cb) => cb(clock))
   // Move the clock forward, firing each timeout at its due time in order.
   const advance = (ms: number) => {
@@ -449,12 +470,15 @@ function simulate(
         extra = render()
         break
       case 'event':
+        spring()
         scroll(true)
         break
       case 'idle':
+        el.pos = clamp(el.pos)
         scroll(false)
         break
       case 'anim':
+        if (stalled) break
         if (lateFrame !== null) {
           el.pos = clamp(lateFrame)
           lateFrame = null
@@ -469,14 +493,23 @@ function simulate(
           scroll(true)
         }
         break
-      case 'drag':
+      case 'drag': {
         // A user scroll stops a native smooth animation.
         smoothTarget = null
         lateFrame = null
         if (touching) dragged = true
-        el.pos = clamp(el.pos + step.d)
+        // The user scrolls: a stalled bounce reports again.
+        stalled = false
+        const to = el.pos + step.d
+        el.pos =
+          to < 0
+            ? -Math.min(Math.round(-to / 3), 100)
+            : to > max()
+              ? max() + Math.min(Math.round((to - max()) / 3), 100)
+              : to
         scroll(true)
         break
+      }
       case 'touchstart':
         touching = true
         dragged = false
@@ -522,8 +555,10 @@ function simulate(
   for (let i = 0; i < 20 && rafs.length > 0; i++) {
     frame()
     render()
+    spring()
     scroll(true)
   }
+  el.pos = clamp(el.pos)
   scroll(false)
   advance(1000)
   for (let i = 0; i < 20 && rafs.length > 0; i++) {
