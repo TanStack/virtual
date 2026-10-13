@@ -5906,6 +5906,30 @@ test('iOS deferral: under a resting finger the retarget lands and the correction
   expect(h.rowTop(20)).toBe(0)
 })
 
+test('iOS deferral: a scroll report at rest under a resting finger is not a drag', () => {
+  // The command lands under a resting finger and the browser reports it,
+  // then reports the scroll at rest without the position moving. That is no
+  // drag, so a later retarget still lands and the correction is applied once
+  // (CodeRabbit on #1318).
+  const h = makeDeferralHarness({ start: 2000 })
+  h.touch('touchstart')
+  h.run(() => {
+    h.v.scrollToIndex(20, { align: 'start' })
+    h.scroll(true) // the write's read-back
+    h.scroll(false) // at rest, same position
+    h.v.resizeItem(10, 100)
+    for (let i = 0; i < 5; i++) {
+      h.frame()
+      h.scroll(true)
+    }
+  })
+  h.touch('touchend')
+  h.run(() => h.scroll(false))
+  h.expireTail()
+  expect(h.el.scrollTop).toBe(1050)
+  expect(h.rowTop(20)).toBe(0)
+})
+
 test('iOS deferral: a retarget iOS ignores under a finger keeps the deferred correction', () => {
   // Same start, but the finger drags and reconcile retargets under it: iOS
   // ignores that write, so the correction must survive it. The finger

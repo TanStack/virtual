@@ -1062,9 +1062,15 @@ export class Virtualizer<
           if (isScrolling && this._iosTouch?.phase === 'tail') {
             this._openIosTail()
           }
-          // A finger that moved the content is dragging; our own write
-          // landing under a resting finger is not.
-          if (!isReadBack && this._iosTouch?.phase === 'down') {
+          // A finger that moved the content is dragging. Our own write landing
+          // under a resting finger is not, and neither is a report at rest
+          // that leaves the position where it was.
+          if (
+            !isReadBack &&
+            isScrolling &&
+            offset !== prevOffset &&
+            this._iosTouch?.phase === 'down'
+          ) {
             this._iosTouch.dragged = true
           }
 
