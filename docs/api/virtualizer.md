@@ -600,6 +600,8 @@ The callback receives the resized `item`, the size `delta`, and the `instance`; 
 
 On iOS WebKit, scroll-position writes are deferred regardless of this callback while a finger is on screen, during momentum-scroll, and during elastic-overscroll bounce. The cumulative delta is flushed in a single write once the scroll settles, preserving iOS's native momentum physics.
 
+On iOS 27 and later a write no longer stops a fling but is overridden by it within a frame, so a `scrollToIndex`, `scrollToOffset` or `scrollToEnd` issued during a fling is written once the fling ends (about 150ms after its last frame) rather than being lost; a drag before then cancels it, a tap does not.
+
 ### `isScrolling`
 
 ```tsx
