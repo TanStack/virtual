@@ -193,22 +193,24 @@ test('scrolling near the top auto-loads older history', async ({ page }) => {
     .toBeGreaterThan(heightBefore)
 })
 
-// FIXME(#1267): deterministic on CI. The click lands before the 180ms auto history
-// load fires, the prepend then resolves after the jump, and the adapter's anchor
-// write is clamped against the not-yet-grown sizer — the view strands one prepend
-// (~870px) above the bottom. Re-enable once #1267 is fixed.
-test.fixme('Latest returns to the bottom and status flips back to At latest', async ({
+test('Latest returns to the bottom and status flips back to At latest after an in-flight prepend', async ({
   page,
 }) => {
   await page.goto('/chat-pretext')
   await waitForPin(page)
+
+  // Arm the automatic history load, then trigger it and click Latest before
+  // the delayed prepend lands. This reproduces the stale-sizer scroll clamp.
+  await page.waitForTimeout(400)
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = 0
   })
+  await page.waitForTimeout(30)
   await expect(page.locator('[data-testid="status"]')).toHaveText(
     /Reading history|Loading history/,
   )
   await page.locator('[data-testid="latest"]').click()
+
   await waitForPin(page)
   await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
   await expect(page.locator('[data-key^="message-4"]').last()).toBeVisible()
