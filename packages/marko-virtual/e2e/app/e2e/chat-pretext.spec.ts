@@ -196,6 +196,45 @@ test('scrolling near the top auto-loads older history', async ({ page }) => {
 test(
   'Latest returns to the bottom and status flips back to At latest after an in-flight prepend',
   async ({ page }) => {
+    // Hold the example's 180ms history timer so the test controls the ordering:
+    // click Latest first, then release the prepend. A wall-clock sleep alone can
+    // let the prepend finish before the click on a slow CI worker.
+    await page.addInitScript(() => {
+      const nativeSetTimeout = window.setTimeout.bind(window)
+      const testWindow = window as typeof window & {
+        __historyPrependIsHeld?: () => boolean
+        __releaseHistoryPrepend?: () => void
+      }
+      let releasePrepend: (() => void) | null = null
+      let holdingTimer: number | null = null
+
+      testWindow.__historyPrependIsHeld = () => releasePrepend !== null
+      testWindow.__releaseHistoryPrepend = () => {
+        if (!releasePrepend) {
+          throw new Error('No history prepend timer is being held')
+        }
+        if (holdingTimer !== null) window.clearTimeout(holdingTimer)
+        const callback = releasePrepend
+        releasePrepend = null
+        holdingTimer = null
+        callback()
+      }
+
+      window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+        if (
+          timeout === 180 &&
+          typeof handler === 'function' &&
+          releasePrepend === null
+        ) {
+          const callback = handler as (...callbackArgs: unknown[]) => void
+          releasePrepend = () => callback(...args)
+          holdingTimer = nativeSetTimeout(() => {}, 60_000)
+          return holdingTimer
+        }
+        return nativeSetTimeout(handler, timeout, ...args)
+      }) as typeof window.setTimeout
+    })
+
     await page.goto('/chat-pretext')
     await waitForPin(page)
     await page.waitForTimeout(400)
@@ -205,16 +244,32 @@ test(
     await expect(page.locator('[data-testid="status"]')).toHaveText(
       'Loading history',
     )
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & {
+              __historyPrependIsHeld?: () => boolean
+            }).__historyPrependIsHeld?.() ?? false,
+        ),
+      )
+      .toBe(true)
 
     const heightBeforeClick = await page
       .locator('.messages')
       .evaluate((el) => el.scrollHeight)
-    // Click before the delayed history prepend resolves, reproducing the race.
-    await page.waitForTimeout(30)
     await page.locator('[data-testid="latest"]').click()
 
-    // Confirm that the prepend actually landed after Latest was clicked before
-    // checking the final scroll position; otherwise the test could pass early.
+    // Release the prepend only after Latest has been clicked, guaranteeing the
+    // delayed content growth happens after the explicit end-scroll command.
+    await page.evaluate(() => {
+      ;(
+        window as Window & {
+          __releaseHistoryPrepend?: () => void
+        }
+      ).__releaseHistoryPrepend?.()
+    })
+
     await expect
       .poll(() => page.locator('.messages').evaluate((el) => el.scrollHeight), {
         timeout: 3000,
