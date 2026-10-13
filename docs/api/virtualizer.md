@@ -623,3 +623,7 @@ scrollOffset: number
 ```
 
 This option represents the current scroll position along the scrolling axis. It is measured in pixels from the starting point of the scrollable area.
+
+It is a position in the list's layout, and it stays consistent with `getOffsetForIndex`, the argument to `scrollToOffset`, and `initialOffset`: saving it and restoring it later lands on the same item.
+
+While a scroll correction is held, because a write to the element is impossible at that moment (a touch gesture or its momentum on iOS, or the element rubber-banding past an edge), `getVirtualItems()` and `getTotalSize()` describe what is rendered, shifted by the held amount so the rows on screen do not move, while `scrollOffset` keeps the layout position. The hold ends with a single write once the element can take it. Prefer `getVirtualItems()` positions over `item.start - scrollOffset` for where a row sits in the viewport, since that difference is off by the held amount for the length of the gesture or bounce.

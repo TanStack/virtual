@@ -526,6 +526,13 @@ export class Virtualizer<
   private lanesSettling = false
   private pendingScrollAnchor: PendingScrollAnchor | null = null
   scrollRect: Rect | null = null
+  /**
+   * The scroll position in the list's layout, consistent with
+   * `getOffsetForIndex`, `scrollToOffset` and `initialOffset`. While a
+   * correction is held (`_holdOffset`), `getVirtualItems()` and
+   * `getTotalSize()` describe what is rendered, shifted by the held amount;
+   * this stays the layout position.
+   */
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
   // Size compensation written to the element but not yet reflected in
