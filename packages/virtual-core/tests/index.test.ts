@@ -2426,6 +2426,8 @@ function makeDeferralHarness({
     null
   const run = <T>(fn: () => T) => (ios ? withFakeIOSUserAgent(fn, ios27) : fn())
   const writes: Array<number> = []
+  // Like iOS under a dragging finger: drop programmatic writes on the floor.
+  const browser = { ignoreWrites: false }
   const v = run(() => {
     const instance = new Virtualizer({
       count: 100,
@@ -2434,6 +2436,7 @@ function makeDeferralHarness({
       getScrollElement: () => el as any,
       scrollToFn: (offset, { adjustments = 0 }) => {
         writes.push(offset + adjustments)
+        if (browser.ignoreWrites) return
         el.scrollTop = offset + adjustments
       },
       observeElementRect: (_inst, cb) => {
@@ -2455,6 +2458,7 @@ function makeDeferralHarness({
     el,
     run,
     writes,
+    browser,
     // A scroll event; moves the element first when `offset` is given.
     scroll: (isScrolling: boolean, offset = el.scrollTop) => {
       el.scrollTop = offset
@@ -5845,6 +5849,34 @@ test('scrollToOffset: a prepend after the read-back moves the target with the an
   expect(v.scrollState).toBeNull()
 })
 
+test('scrollToOffset: a prepend held by a bounce before the commit moves the target with it', () => {
+  // At the max (4800). The options change finds the element writable, a
+  // bounce past the max lands before the commit, and `_willUpdate` holds
+  // the prepend instead; the target follows there too, so the command
+  // retires once the hold lands.
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  v.scrollToOffset(4800)
+  scroll(4800, true)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  el.scrollTop = 4810
+  scroll(4810, true)
+  v._willUpdate()
+  expect(el.scrollTop).toBe(4810)
+  // The bounce returns; the sizer has grown by the prepend.
+  el.scrollHeight = 5600
+  el.scrollTop = 4800
+  scroll(4800, true)
+  expect(el.scrollTop).toBe(5400)
+  settle()
+
+  expect(el.scrollTop).toBe(5400)
+  expect(v.scrollState).toBeNull()
+})
+
 test('a prepend before the read-back of a scrollToIndex write is left to reconcile', () => {
   // scrollToIndex(20) wrote 1000 while `scrollOffset` still holds 2000. The
   // anchor sync used to write the stale offset plus the prepend (2600) over
@@ -5983,12 +6015,17 @@ test('a user scroll to the max while a write above it is pending is still the us
   // The clamped read-back is only a read-back when the pending write sits
   // past the max. A write within the range that the user overtakes to the
   // bottom reads as the user's and retires the command.
-  const { v, el, scroll, settle } = setupHandDrivenScroll()
+  const { v, el, scroll, frame, settle } = setupHandDrivenScroll()
 
   v.scrollToIndex(20, { align: 'start' })
   expect(el.scrollTop).toBe(1000)
   el.scrollTop = 4800
   scroll(4800, true)
+  // A row above grows while the user is still scrolling: a command still
+  // alive would retarget to 1050 and pull the user back.
+  v.resizeItem(5, 100)
+  frame()
+  expect(el.scrollTop).toBe(4800)
   settle()
 
   expect(el.scrollTop).toBe(4800)

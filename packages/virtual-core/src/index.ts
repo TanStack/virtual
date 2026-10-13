@@ -1117,14 +1117,15 @@ export class Virtualizer<
           // ours, clamped because the sizer shrank between the write and the
           // report (rows above the target measured smaller in a same-task
           // render, #1310). The element is where it says; the command is
-          // not retired by it, and reconcile retargets below the new max.
-          // Not under a dragging finger, where our write was ignored.
+          // not retired by it, and reconcile retargets below the new max. A
+          // finger that drags to the max while such a write is pending (iOS
+          // ignored it) is read the same way; the command then retires at
+          // the next frame, its target clamped to the same max.
           const isClampedReadBack =
             !isReadBack &&
             pending !== null &&
             !pending.smooth &&
             elementMax !== null &&
-            !(isIOSWebKit() && this._iosDragging()) &&
             pending.target > elementMax + this._holdOffset + 0.5 &&
             Math.abs(offset - (elementMax + this._holdOffset)) < 1.5
           if (isReadBack) {
