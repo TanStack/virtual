@@ -5,6 +5,7 @@ import {
   defaultRangeExtractor,
   elementScroll,
   observeElementOffset,
+  observeElementRect,
   observeWindowOffset,
   windowScroll,
 } from '../src/index'
@@ -5856,4 +5857,149 @@ test('a write to a scroll element that went away is not adopted by the next one'
   v._willUpdate()
 
   expect(v.scrollOffset).toBe(1001)
+})
+
+// ─── useAnimationFrameWithResizeObserver: frames of the scroll element's window
+
+// A window other than the global one, as for a list rendered into a
+// `window.open` popup of the same realm. Its frames run only on `flush`.
+function createOwnWindow() {
+  const frames = new Map<number, FrameRequestCallback>()
+  let nextId = 0
+  let roCallback: ResizeObserverCallback | null = null
+  const ownWindow = {
+    requestAnimationFrame: vi.fn((cb: FrameRequestCallback) => {
+      frames.set(++nextId, cb)
+      return nextId
+    }),
+    cancelAnimationFrame: vi.fn((id: number) => {
+      frames.delete(id)
+    }),
+    performance: { now: () => Date.now() },
+    ResizeObserver: vi.fn(function (cb: ResizeObserverCallback) {
+      roCallback = cb
+      return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+    }),
+  }
+  const flush = () => {
+    const queued = [...frames.values()]
+    frames.clear()
+    queued.forEach((cb) => cb(0))
+  }
+  const resize = (target: Element, blockSize: number) =>
+    roCallback!(
+      [
+        {
+          target,
+          borderBoxSize: [{ blockSize, inlineSize: 400 }],
+        } as unknown as ResizeObserverEntry,
+      ],
+      {} as ResizeObserver,
+    )
+  const el = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 400,
+    scrollHeight: 5000,
+    offsetWidth: 400,
+    offsetHeight: 600,
+    ownerDocument: { defaultView: ownWindow },
+  } as unknown as HTMLDivElement
+  return { ownWindow, frames, flush, resize, el }
+}
+
+function withGlobalRaf(fn: (globalRaf: ReturnType<typeof vi.fn>) => void) {
+  const globalRaf = vi.fn()
+  vi.stubGlobal('requestAnimationFrame', globalRaf)
+  try {
+    fn(globalRaf)
+  } finally {
+    vi.unstubAllGlobals()
+  }
+}
+
+function createDeferredVirtualizer(el: HTMLDivElement) {
+  const virtualizer = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => el,
+    scrollToFn: vi.fn(),
+    useAnimationFrameWithResizeObserver: true,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 600 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+  const node = {
+    getAttribute: (name: string) => (name === 'data-index' ? '3' : null),
+    getBoundingClientRect: () => ({ height: 50, width: 400 }),
+    isConnected: true,
+  } as unknown as HTMLElement
+  virtualizer.measureElement(node)
+  return { virtualizer, node }
+}
+
+test('deferred item measurements wait for a frame of the scroll element window', () => {
+  withGlobalRaf((globalRaf) => {
+    const { ownWindow, flush, resize, el } = createOwnWindow()
+    const { virtualizer, node } = createDeferredVirtualizer(el)
+    expect(virtualizer.getTotalSize()).toBe(500)
+
+    resize(node, 80)
+    expect(ownWindow.requestAnimationFrame).toHaveBeenCalledTimes(1)
+    expect(globalRaf).not.toHaveBeenCalled()
+    expect(virtualizer.getTotalSize()).toBe(500)
+
+    flush()
+    expect(virtualizer.getTotalSize()).toBe(530)
+  })
+})
+
+test('cleanup cancels a deferred item measurement still waiting for its frame', () => {
+  const { ownWindow, frames, flush, resize, el } = createOwnWindow()
+  const { virtualizer, node } = createDeferredVirtualizer(el)
+  const unmount = virtualizer._didMount()
+
+  resize(node, 80)
+  expect(frames.size).toBe(1)
+
+  unmount()
+  expect(ownWindow.cancelAnimationFrame).toHaveBeenCalledTimes(1)
+  expect(frames.size).toBe(0)
+  flush()
+  expect(virtualizer.getTotalSize()).toBe(500)
+})
+
+test('observeElementRect defers to a frame of the scroll element window and cancels it on unsubscribe', () => {
+  withGlobalRaf((globalRaf) => {
+    const { frames, flush, resize, el } = createOwnWindow()
+    const instance = {
+      scrollElement: el,
+      targetWindow: el.ownerDocument.defaultView,
+      options: { useAnimationFrameWithResizeObserver: true },
+    } as unknown as Virtualizer<HTMLDivElement, Element>
+    const cb = vi.fn()
+
+    const unsubscribe = observeElementRect(instance, cb)!
+    expect(cb).toHaveBeenLastCalledWith({ width: 400, height: 600 })
+
+    resize(el, 700)
+    expect(cb).toHaveBeenCalledTimes(1)
+    flush()
+    expect(cb).toHaveBeenCalledTimes(2)
+    expect(cb).toHaveBeenLastCalledWith({ width: 400, height: 700 })
+
+    resize(el, 800)
+    unsubscribe()
+    expect(frames.size).toBe(0)
+    flush()
+    expect(cb).toHaveBeenCalledTimes(2)
+    expect(globalRaf).not.toHaveBeenCalled()
+  })
 })
