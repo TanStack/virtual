@@ -6174,11 +6174,11 @@ test('iOS touch: a row that stops touch propagation does not hide the gesture', 
   }
 })
 
-// FAILS on the PR: `scrollToOffset` closes the tail, so `_canWriteScroll()`
-// is true while the command's write (270) has no read-back yet. The next
-// `_willUpdate` runs `_flushHoldIfReady`, which writes `getScrollOffset()`
-// (250, the pre-command layout offset) over the command: the element ends at
-// 250 and the read-back retires the command as an external scroll.
+// `scrollToOffset` closes the tail, so `_canWriteScroll()` is true while the
+// command's write (270) has no read-back yet. The flush in the next
+// `_willUpdate` must write the command's target (`getCommandWrittenOffset`),
+// not the pre-command layout offset (250), which the read-back would then
+// retire the command with as an external scroll.
 test('iOS hold: a command that closes the tail is not overwritten by a flush before its read-back', () => {
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, scroll, touch } = makeIOSTouchVirtualizer({
@@ -6209,8 +6209,8 @@ test('iOS hold: a command that closes the tail is not overwritten by a flush bef
   })
 })
 
-// FAILS on the PR: same as above through the flush in `resizeItem`, which
-// ignores the `awaitingCommandReadBack` guard right above it.
+// The same invariant through the flush in `resizeItem`, which runs even when
+// `awaitingCommandReadBack` skips the compensation.
 test('iOS hold: a resize landing between a command and its read-back does not flush the stale offset', () => {
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, scroll, touch } = makeIOSTouchVirtualizer({
