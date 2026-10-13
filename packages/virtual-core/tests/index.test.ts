@@ -2546,25 +2546,54 @@ test('iOS deferral (#1307): scrollBy replacing an index scroll keeps the resize 
   })
 })
 
-test.fails(
-  'iOS deferral (#1307): a correction is not replayed once the viewport is above the resized row',
-  () => {
-    const h = makeDeferralHarness({ start: 2000 })
-    h.touch('touchstart')
-    h.run(() => {
-      h.scroll(true, 2010)
-      h.v.resizeItem(30, 100)
-    })
-    h.touch('touchend')
-    // The fling carries the viewport above row 30, then settles.
-    h.run(() => {
-      h.scroll(true, 1000)
-      h.scroll(false)
-    })
-    h.expireTail()
-    expect(h.rowTop(20)).toBe(0)
-  },
-)
+// The reverse flick. Written against the old deferral (#1306), this asserted
+// `rowTop(20) === 0` after the flush: the rows were rendered in layout
+// coordinates through the deferral, so the write at the end (+50) moved the
+// screen, and the fix was to skip it once the fling had carried the viewport
+// above row 30 (#1307, step 4). The hold (#1319) changes what the user sees:
+// from the resize on, the rows are exposed shifted back by the held delta, the
+// fling runs over that layout, and the flush moves the element and the rows
+// together, so the row at the top of the viewport when the fling ends is
+// still there after the flush. Skipping the correction would move the screen
+// by the 50px instead, and the final position would differ from non-iOS,
+// where the same gesture over the same content ends at 1050. The assertion
+// is now on the screen and on that parity; `rowTop(20)` is -50 on both.
+test('iOS deferral (#1307): the flush after a reverse flick moves nothing on screen and lands where non-iOS does', () => {
+  // The screen: the first rendered row and where the viewport cuts it.
+  const screen = (h: ReturnType<typeof makeDeferralHarness>) => {
+    const first = h.v.getVirtualItems()[0]!
+    return { index: first.index, top: first.start - h.el.scrollTop }
+  }
+
+  const h = makeDeferralHarness({ start: 2000 })
+  h.touch('touchstart')
+  h.run(() => {
+    h.scroll(true, 2010)
+    h.v.resizeItem(30, 100)
+  })
+  h.touch('touchend')
+  // The fling carries the viewport above row 30, then settles.
+  h.run(() => {
+    h.scroll(true, 1000)
+    h.scroll(false)
+  })
+  const before = screen(h)
+  h.expireTail()
+  expect(screen(h)).toEqual(before)
+  expect(h.el.scrollTop).toBe(1050)
+
+  // Non-iOS: the correction is written at once and the same gesture (1010px
+  // of content) lands at the same place.
+  const web = makeDeferralHarness({ ios: false, start: 2000 })
+  web.scroll(true, 2010)
+  web.v.resizeItem(30, 100)
+  expect(web.el.scrollTop).toBe(2060)
+  web.scroll(true, 2060 - 1010)
+  web.scroll(false)
+  expect(web.el.scrollTop).toBe(1050)
+  expect(screen(web)).toEqual(screen(h))
+  expect(h.rowTop(20)).toBe(web.rowTop(20))
+})
 
 test('scrollToIndex (#1307): a resize classified against the stale offset does not overwrite the index scroll', () => {
   // Not iOS-specific. scrollOffset still holds the old position until the
