@@ -891,11 +891,7 @@ export class Virtualizer<
       return true
     } else {
       const target = this.getScrollOffset() + this.scrollAdjustments + delta
-      const maxAtWrite = this._maxScrollOffsetIfMeasurable()
-      this._clampedAdjustment =
-        maxAtWrite !== null && target > maxAtWrite + 0.5
-          ? { target, maxAtWrite }
-          : null
+      this._clampedAdjustment = this._clampedBy(target)
       this._scrollToOffset(this.getScrollOffset(), {
         adjustments: this.scrollAdjustments + delta,
         behavior,
@@ -1345,11 +1341,7 @@ export class Virtualizer<
     const target = this.getScrollOffset()
     // A consumer that sizes the container after this write gets the retry
     // (#1258).
-    const maxAtWrite = this._maxScrollOffsetIfMeasurable()
-    this._clampedAdjustment =
-      maxAtWrite !== null && target > maxAtWrite + 0.5
-        ? { target, maxAtWrite }
-        : null
+    this._clampedAdjustment = this._clampedBy(target)
     this._scrollToOffset(target, {
       adjustments: undefined,
       behavior: undefined,
@@ -2126,35 +2118,35 @@ export class Virtualizer<
   // The element's scroll range in layout coordinates: while a correction is
   // held the sizer is short by the hold, so the element's own max is too.
   private getMaxScrollOffset = () =>
-    this._getElementMaxScrollOffset() + this._holdOffset
+    (this._elementMaxScrollOffset() ?? 0) + this._holdOffset
 
-  private _getElementMaxScrollOffset = () => {
-    if (!this.scrollElement) return 0
-
-    if ('scrollHeight' in this.scrollElement) {
-      // Element
-      return this.options.horizontal
-        ? this.scrollElement.scrollWidth - this.scrollElement.clientWidth
-        : this.scrollElement.scrollHeight - this.scrollElement.clientHeight
-    } else {
-      // Window
-      const doc = this.scrollElement.document.documentElement
-      return this.options.horizontal
-        ? doc.scrollWidth - this.scrollElement.innerWidth
-        : doc.scrollHeight - this.scrollElement.innerHeight
-    }
-  }
-
-  // Guarded so a bare test double without `scrollHeight` / `document` does
-  // not crash in the max reads.
-  private _measurable = () => {
+  // The element's own scroll range, or null where it cannot be read (no
+  // element, or a bare test double without `scrollHeight` / `document`).
+  private _elementMaxScrollOffset = (): number | null => {
     const el = this.scrollElement
-    return el !== null && ('scrollHeight' in el || 'document' in el)
+    if (el === null) return null
+    if ('scrollHeight' in el) {
+      return this.options.horizontal
+        ? el.scrollWidth - el.clientWidth
+        : el.scrollHeight - el.clientHeight
+    }
+    if ('document' in el) {
+      const doc = el.document.documentElement
+      return this.options.horizontal
+        ? doc.scrollWidth - el.innerWidth
+        : doc.scrollHeight - el.innerHeight
+    }
+    return null
   }
-  private _elementMaxScrollOffset = () =>
-    this._measurable() ? this._getElementMaxScrollOffset() : null
-  private _maxScrollOffsetIfMeasurable = () =>
-    this._measurable() ? this.getMaxScrollOffset() : null
+
+  // A compensation write past the element's current max (the sizer has not
+  // grown yet) is clamped by the browser; record it for the retry (#1258).
+  private _clampedBy = (target: number) => {
+    const elementMax = this._elementMaxScrollOffset()
+    if (elementMax === null) return null
+    const maxAtWrite = elementMax + this._holdOffset
+    return target > maxAtWrite + 0.5 ? { target, maxAtWrite } : null
+  }
 
   private getVirtualDistanceFromEnd = () => {
     return Math.max(
