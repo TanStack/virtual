@@ -384,7 +384,10 @@ function simulate(
     el.size = v.getTotalSize() + (v.options.scrollMargin ?? 0)
     // A bounce past the top is left alone: the content cannot clamp it.
     el.pos = Math.min(el.pos, max())
-    return `r${rendered[0] ?? '-'}-${rendered[rendered.length - 1] ?? '-'}/${el.size}`
+    // The first row's exposed start as well as its index: a correction held
+    // while a write is impossible shifts what the rows render at, not which
+    // rows render, and this is where that shows.
+    return `r${rendered[0] ?? '-'}@${items[0]?.start ?? '-'}-${rendered[rendered.length - 1] ?? '-'}/${el.size}`
   }
   // A stalled bounce reports nothing.
   const scroll = (isScrolling: boolean) => {
