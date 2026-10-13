@@ -5957,29 +5957,43 @@ test('a smooth scrollToIndex switched to auto near the end is not cancelled by a
   expect(v.scrollState).toBeNull()
 })
 
-test.fails(
-  'a scrollToIndex write clamped by a sizer that shrank below it still reaches the fresh target',
-  () => {
-    // Not seen in a real browser: the sizer has to re-render before the
-    // scroll event reports the write. Rows above the target shrink by 600px,
-    // so the max drops from 4800 to 4200 and the target from 4500 to 3900.
-    // The read-back at the new max is neither our write nor the target, so it
-    // reads as a user scroll and the index scroll stops at 4200.
-    const { v, el, scroll, settle } = setupHandDrivenScroll()
+test('a scrollToIndex write clamped by a sizer that shrank below it still reaches the fresh target', () => {
+  // The sizer re-renders before the scroll event reports the write (a
+  // same-task render after the command). Rows above the target shrink by
+  // 600px, so the max drops from 4800 to 4200 and the target from 4500 to
+  // 3900. The read-back at the new max is our write, clamped: it used to
+  // read as a user scroll and the index scroll stopped at 4200.
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
 
-    v.scrollToIndex(90, { align: 'start' })
-    expect(el.scrollTop).toBe(4500)
-    for (let i = 0; i < 20; i++) v.resizeItem(i, 20)
-    // The re-render that shrinks the sizer also rebuilds the measurements.
-    v.getVirtualItems()
-    el.scrollHeight = 4400
-    el.scrollTop = 4200
-    scroll(4200, true)
-    settle()
+  v.scrollToIndex(90, { align: 'start' })
+  expect(el.scrollTop).toBe(4500)
+  for (let i = 0; i < 20; i++) v.resizeItem(i, 20)
+  // The re-render that shrinks the sizer also rebuilds the measurements.
+  v.getVirtualItems()
+  el.scrollHeight = 4400
+  el.scrollTop = 4200
+  scroll(4200, true)
+  settle()
 
-    expect(el.scrollTop).toBe(3900)
-  },
-)
+  expect(el.scrollTop).toBe(3900)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a user scroll to the max while a write above it is pending is still the user', () => {
+  // The clamped read-back is only a read-back when the pending write sits
+  // past the max. A write within the range that the user overtakes to the
+  // bottom reads as the user's and retires the command.
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+
+  v.scrollToIndex(20, { align: 'start' })
+  expect(el.scrollTop).toBe(1000)
+  el.scrollTop = 4800
+  scroll(4800, true)
+  settle()
+
+  expect(el.scrollTop).toBe(4800)
+  expect(v.scrollState).toBeNull()
+})
 
 test('a write to a scroll element that went away is not adopted by the next one', () => {
   // A write is matched to its read-back within 1.5px. After the element is

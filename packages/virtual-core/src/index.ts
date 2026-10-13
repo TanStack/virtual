@@ -1113,6 +1113,20 @@ export class Virtualizer<
           const pending = this.pendingWrite
           const isReadBack =
             pending !== null && Math.abs(offset - pending.target) < 1.5
+          // A non-smooth write past the element's max reads back at the max:
+          // ours, clamped because the sizer shrank between the write and the
+          // report (rows above the target measured smaller in a same-task
+          // render, #1310). The element is where it says; the command is
+          // not retired by it, and reconcile retargets below the new max.
+          // Not under a dragging finger, where our write was ignored.
+          const isClampedReadBack =
+            !isReadBack &&
+            pending !== null &&
+            !pending.smooth &&
+            elementMax !== null &&
+            !(isIOSWebKit() && this._iosDragging()) &&
+            pending.target > elementMax + this._holdOffset + 0.5 &&
+            Math.abs(offset - (elementMax + this._holdOffset)) < 1.5
           if (isReadBack) {
             offset = pending.target
           } else if (
@@ -1120,17 +1134,13 @@ export class Virtualizer<
             // Nothing has been written for a command waiting for the tail;
             // these are the fling's events.
             this.scrollState.awaitingTail === undefined &&
+            !isClampedReadBack &&
             // A non-smooth write lands at once, so any other scroll event is
             // the user's, even before reconcile saw the target reached (the
             // target may keep moving, or iOS ignored the write under a
             // finger). A write the browser clamped because the sizer hasn't
             // grown yet reads back at the max, which is also where the fresh
             // target clamps, so the check below keeps it reconciling (#1294).
-            // Not when rows above the target shrink before the read-back and
-            // pull the target below the new max: the read-back then looks
-            // like the user and the scroll stops at the max. That needs the
-            // sizer re-rendered before the scroll event, which browsers have
-            // not been seen to do (pinned by a `.fails` test).
             // While a smooth scroll's animation may still report, its events
             // look like a user's, so it yields only once it has landed.
             !isAnimating(this.scrollState) &&
