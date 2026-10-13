@@ -220,7 +220,11 @@ test(
         callback()
       }
 
-      window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+      window.setTimeout = ((
+        handler: TimerHandler,
+        timeout?: number,
+        ...args: unknown[]
+      ) => {
         if (
           timeout === 180 &&
           typeof handler === 'function' &&
