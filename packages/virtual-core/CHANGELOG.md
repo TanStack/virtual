@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.19.4
+
+### Patch Changes
+
+- [#1320](https://github.com/TanStack/virtual/pull/1320) [`269e8ed`](https://github.com/TanStack/virtual/commit/269e8ed12db0b9ce55543da5b0bb1082a6296aac) - fix(virtual-core): with `useAnimationFrameWithResizeObserver`, request frames from the scroll element's window instead of the global one, and cancel frames still queued on cleanup, so a list rendered into another window does not stall while the opener is minimized or occluded
+
 ## 3.19.3
 
 ### Patch Changes
