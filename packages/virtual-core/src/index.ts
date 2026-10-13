@@ -86,6 +86,25 @@ const getRect = (element: HTMLElement): Rect => {
   return { width: offsetWidth, height: offsetHeight }
 }
 
+// Animation frames for `useAnimationFrameWithResizeObserver`, requested from
+// the scroll element's own window rather than the global one.
+const createFrameQueue = (targetWindow: Window) => {
+  const ids = new Set<number>()
+  return {
+    schedule: (fn: () => void) => {
+      const id = targetWindow.requestAnimationFrame(() => {
+        ids.delete(id)
+        fn()
+      })
+      ids.add(id)
+    },
+    cancel: () => {
+      ids.forEach((id) => targetWindow.cancelAnimationFrame(id))
+      ids.clear()
+    },
+  }
+}
+
 export const defaultKeyExtractor = (index: number) => index
 
 export const defaultRangeExtractor = (range: Range) => {
@@ -129,6 +148,7 @@ export const observeElementRect = <T extends Element>(
     return () => {}
   }
 
+  const frames = createFrameQueue(targetWindow)
   const observer = new targetWindow.ResizeObserver((entries) => {
     const run = () => {
       const entry = entries[0]
@@ -143,7 +163,7 @@ export const observeElementRect = <T extends Element>(
     }
 
     instance.options.useAnimationFrameWithResizeObserver
-      ? requestAnimationFrame(run)
+      ? frames.schedule(run)
       : run()
   })
 
@@ -151,6 +171,7 @@ export const observeElementRect = <T extends Element>(
 
   return () => {
     observer.unobserve(element)
+    frames.cancel()
   }
 }
 
@@ -566,17 +587,20 @@ export class Virtualizer<
   private now = () => this.targetWindow?.performance?.now?.() ?? Date.now()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
+    let _frames: ReturnType<typeof createFrameQueue> | null = null
 
     const get = () => {
       if (_ro) {
         return _ro
       }
 
-      if (!this.targetWindow || !this.targetWindow.ResizeObserver) {
+      const targetWindow = this.targetWindow
+      if (!targetWindow || !targetWindow.ResizeObserver) {
         return null
       }
 
-      return (_ro = new this.targetWindow.ResizeObserver((entries) => {
+      const frames = (_frames = createFrameQueue(targetWindow))
+      return (_ro = new targetWindow.ResizeObserver((entries) => {
         const run = () => {
           // Measure every entry before notifying. A notify that adjusted
           // scroll re-renders synchronously, and that render can unmount
@@ -596,7 +620,7 @@ export class Virtualizer<
           }
         }
         this.options.useAnimationFrameWithResizeObserver
-          ? requestAnimationFrame(run)
+          ? frames.schedule(run)
           : run()
       }))
     }
@@ -634,7 +658,9 @@ export class Virtualizer<
     return {
       disconnect: () => {
         get()?.disconnect()
+        _frames?.cancel()
         _ro = null
+        _frames = null
       },
       observe: (target: Element) =>
         get()?.observe(target, { box: 'border-box' }),
