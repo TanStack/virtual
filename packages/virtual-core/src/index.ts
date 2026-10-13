@@ -20,9 +20,28 @@ const isIOSWebKit = (): boolean => {
     navigator.platform === 'MacIntel' && mtp !== undefined && mtp > 0)
 }
 
-// Test hook: reset the iOS detection cache. Not exported.
+// iOS 27 changed what a scrollTop write does to a fling: it no longer stops
+// the momentum, the fling carries on along its own path and the write shows
+// for one frame (measured on the 27.0 simulator in #1307, device check still
+// open). WebKit shipped `overflow-anchor` in the same release, so that is
+// the feature check; iOS 26 and earlier report false. Cached like the iOS
+// check; SSR-safe.
+let _iosMomentumOverridesWritesResult: boolean | undefined
+const iosMomentumOverridesWrites = (): boolean => {
+  if (_iosMomentumOverridesWritesResult !== undefined) {
+    return _iosMomentumOverridesWritesResult
+  }
+  return (_iosMomentumOverridesWritesResult =
+    isIOSWebKit() &&
+    typeof CSS !== 'undefined' &&
+    typeof CSS.supports === 'function' &&
+    CSS.supports('overflow-anchor: auto'))
+}
+
+// Test hook: reset the iOS detection caches. Not exported.
 export const _resetIOSDetectionForTests = () => {
   _isIOSResult = undefined
+  _iosMomentumOverridesWritesResult = undefined
 }
 
 export { approxEqual, debounce, memo, notUndefined } from './utils'
@@ -442,6 +461,12 @@ type ScrollState = {
   // settling
   stableFrames: number
   phase: ScrollPhase
+
+  // The command's first write waits for the momentum tail to close (iOS 27,
+  // see `_startScroll`). Until then nothing has been written: the fling's
+  // scroll events do not retire the command, a drag does, and reconcile only
+  // keeps the safety valve.
+  awaitingTail?: { behavior: ScrollBehavior }
 }
 
 const initialScrollPhase = (
@@ -580,9 +605,12 @@ export class Virtualizer<
   // touchend on non-iOS, which arms no tail. The tail record owns its timer:
   // `_endIosTouch` is the only way to drop either, so a cleared record never
   // leaves a timer behind, and a live timer always has its record.
+  // `momentum` says a fling can be running: the finger dragged before it
+  // lifted, or a scroll event other than our own read-back re-armed the
+  // tail; a tap's tail has none.
   private _iosTouch:
     | { phase: 'down'; dragged: boolean }
-    | { phase: 'tail'; timerId: number }
+    | { phase: 'tail'; timerId: number; momentum: boolean }
     | null = null
   // Our last write to the element, from `_scrollToOffset` until the next
   // scroll event reports it (the only place it is cleared). Until then
@@ -1084,6 +1112,9 @@ export class Virtualizer<
             offset = pending.target
           } else if (
             this.scrollState?.index != null &&
+            // Nothing has been written for a command waiting for the tail;
+            // these are the fling's events.
+            this.scrollState.awaitingTail === undefined &&
             // A non-smooth write lands at once, so any other scroll event is
             // the user's, even before reconcile saw the target reached (the
             // target may keep moving, or iOS ignored the write under a
@@ -1141,7 +1172,7 @@ export class Virtualizer<
           // Only an open tail is extended: a scroll event with no touch before
           // it (our own write's read-back) never opens one.
           if (isScrolling && this._iosTouch?.phase === 'tail') {
-            this._openIosTail()
+            this._openIosTail(this._iosTouch.momentum || !isReadBack)
           }
           // A finger that moved the content is dragging. Our own write landing
           // under a resting finger is not, and neither is a report at rest
@@ -1153,6 +1184,9 @@ export class Virtualizer<
             this._iosTouch?.phase === 'down'
           ) {
             this._iosTouch.dragged = true
+            // The user scrolls: a command still waiting for the tail is
+            // theirs to override, like a written one would be.
+            if (this.scrollState?.awaitingTail) this.scrollState = null
           }
 
           // A held correction is written once a write is possible.
@@ -1177,8 +1211,10 @@ export class Virtualizer<
           this._iosTouch = { phase: 'down', dragged: false }
         }
         const onTouchEnd = () => {
+          const dragged =
+            this._iosTouch?.phase === 'down' && this._iosTouch.dragged
           this._endIosTouch()
-          this._openIosTail()
+          this._openIosTail(dragged)
         }
         scrollEl.addEventListener(
           'touchstart',
@@ -1316,18 +1352,41 @@ export class Virtualizer<
 
   // (Re)open the tail after the finger lifts, closing ~150ms after the last
   // touchend or momentum frame. On non-iOS there is nothing to protect.
-  private _openIosTail = () => {
+  private _openIosTail = (momentum: boolean) => {
     if (!isIOSWebKit() || this.targetWindow == null) return
     this._endIosTouch()
     const tail = {
       phase: 'tail' as const,
+      momentum,
       timerId: this.targetWindow.setTimeout(() => {
         if (this._iosTouch === tail) this._iosTouch = null
-        // The last momentum frame may have come before the timer.
+        // The last momentum frame may have come before the timer. The hold
+        // is released first, so a command that waited for the tail is
+        // written over rows already back in layout coordinates.
         this._flushHoldIfReady(true)
+        this._writeAwaitingCommand()
       }, 150),
     }
     this._iosTouch = tail
+  }
+
+  // Write the command that `_startScroll` left waiting for the momentum
+  // tail, against the layout as it is now (rows measured during the fling
+  // have moved an index target).
+  private _writeAwaitingCommand = () => {
+    const state = this.scrollState
+    if (state === null || state.awaitingTail === undefined) return
+    const { behavior } = state.awaitingTail
+    delete state.awaitingTail
+    this.getMeasurements()
+    const offset = this.getScrollStateTarget(state)
+    state.lastTargetOffset = offset
+    state.phase = initialScrollPhase(
+      behavior,
+      state.index != null && approxEqual(offset, this.getScrollOffset()),
+    )
+    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+    this.scheduleScrollReconcile()
   }
 
   private _endIosTouch = () => {
@@ -1340,7 +1399,8 @@ export class Virtualizer<
   // Whether a scrollTop write made now would reach the element and stay:
   // - not on iOS while a touch gesture owns the scroll (`_iosTouch`): a
   //   dragging finger ignores the write, momentum is cancelled by it on
-  //   iOS 26 and earlier and overrides it on 27 (#884, #1307);
+  //   iOS 26 and earlier and overrides it within a frame on 27 (#884,
+  //   #1307), so a correction is held through the tail on every version;
   // - not while the element is overscrolled past either edge (the
   //   rubber-band bounce): WebKit discards the write and the bounce can
   //   stall where it was (#1287).
@@ -1413,6 +1473,13 @@ export class Virtualizer<
     const MAX_RECONCILE_MS = 5000
     if (this.now() - this.scrollState.startedAt > MAX_RECONCILE_MS) {
       this.scrollState = null
+      return
+    }
+
+    // Nothing to reconcile until the tail closes and the command is written;
+    // only the safety valve above applies.
+    if (this.scrollState.awaitingTail !== undefined) {
+      this.scheduleScrollReconcile()
       return
     }
 
@@ -2331,14 +2398,32 @@ export class Virtualizer<
     behavior: ScrollBehavior,
     kind: 'absolute' | 'relative',
   ) {
-    if (kind === 'absolute') {
+    if (kind === 'absolute' && this._iosTouch?.phase === 'tail') {
+      if (this._iosTouch.momentum && iosMomentumOverridesWrites()) {
+        // iOS 27: a write now shows for one frame and the fling carries on
+        // along its own path, so the command would be lost (#1307, step 3).
+        // Leave the tail open and write when it closes, ~150ms after the
+        // last fling frame; a drag before then cancels the command (see the
+        // scroll handler), a tap does not. A relative command (`scrollBy`)
+        // is not postponed: its target is taken from the position at the
+        // call, which the fling leaves behind either way.
+        this.scrollState = {
+          ...target,
+          startedAt: this.now(),
+          lastTargetOffset: offset,
+          stableFrames: 0,
+          phase: 'instant',
+          awaitingTail: { behavior },
+        }
+        this.scheduleScrollReconcile()
+        return
+      }
       // The command takes over the scroll, so close the tail: the landing's
       // corrections then apply before paint, even for a command issued from
       // a tap handler inside the tail (#1250). On iOS 26 and earlier the
-      // write stops the momentum; on 27 momentum can continue past it, but
-      // a write there does not stop momentum either (#1307, step 3). With a
-      // finger down the user owns the scroll: leave it.
-      if (this._iosTouch?.phase === 'tail') this._endIosTouch()
+      // write stops the momentum. With a finger down the user owns the
+      // scroll: leave it.
+      this._endIosTouch()
     }
     this.scrollState = {
       ...target,
