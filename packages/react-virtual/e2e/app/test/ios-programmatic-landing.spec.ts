@@ -13,8 +13,10 @@ test.use({
 
 // /scroll/ has 1002 rows of random height against a 50px estimate, so a
 // landing far down the list measures rows above the fold that differ from
-// their estimate and need compensation.
-for (const button of ['#scroll-to-1000', '#scroll-to-offset']) {
+// their estimate and need compensation. Only an offset landing: an index
+// landing is retargeted by reconcile in the next frame on every platform, so
+// it settled within this window before the fix too and would detect nothing.
+for (const button of ['#scroll-to-offset']) {
   test(`a programmatic landing (${button}) with no touch doesn't snap after it lands (#1250)`, async ({
     page,
     browserName,

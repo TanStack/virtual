@@ -2155,7 +2155,8 @@ test('iOS deferral: an absolute scroll command invalidates a pending deferred ad
   withFakeIOSUserAgent(() => {
     const { v, scrollToFn, scroll, touch, expireTouchTail } =
       makeIOSTouchVirtualizer({ scrollTop: 200 })
-    touch('touchstart') // finger down: the user owns the scroll
+    touch('touchstart')
+    scroll(190, true) // the finger drags: the user owns the scroll
 
     // Accumulate a deferred adjustment during the drag.
     v.resizeItem(0, 100)
@@ -2713,7 +2714,7 @@ test('iOS Phase 1: touchstart enters the `down` phase and ends a prior tail', ()
     dispatchTouchEvent(el, 'touchend') // leaves a tail armed
     expect(v['_iosTouch']?.phase).toBe('tail')
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down' })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
   })
 })
 
@@ -2733,7 +2734,7 @@ test('iOS Phase 1: touchcancel clears touching the same as touchend, and cleanup
     expect(el._hasListener('touchcancel')).toBe(true)
 
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down' })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
     dispatchTouchEvent(el, 'touchcancel')
     expect(v['_iosTouch']?.phase).toBe('tail')
 
@@ -2886,7 +2887,7 @@ test('iOS Phase 1: new touchstart during grace window cancels pending flush time
     dispatchTouchEvent(el, 'touchstart')
     // The pending timer must have been canceled.
     expect(timers.has(firstTimerId)).toBe(false)
-    expect(v['_iosTouch']).toEqual({ phase: 'down' })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
   })
 })
 
@@ -2975,7 +2976,7 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand the `down` phas
       mockWindow,
     )
     dispatchTouchEvent(holder.el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down' })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
 
     // The in-flight touch keeps targeting the old element (implicit touch
     // capture), so the new element will never deliver its touchend. Without
@@ -3228,7 +3229,7 @@ test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
 
   dispatchTouchEvent(el, 'touchstart')
-  expect(v['_iosTouch']).toEqual({ phase: 'down' }) // touchstart still records (cheap)
+  expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false }) // touchstart still records (cheap)
   dispatchTouchEvent(el, 'touchend')
   // Non-iOS path returns before arming a tail
   expect(v['_iosTouch']).toBeNull()
@@ -5782,12 +5783,13 @@ test('#1250: a scrollToIndex issued from a tap handler lands compensated', () =>
   })
 })
 
-test('#1250: an absolute command with the finger still down keeps deferring', () => {
+test('#1250: an absolute command under a dragging finger keeps deferring', () => {
   withFakeIOSUserAgent(() => {
-    const { v, scrollToFn, touch } = makeIOSTouchVirtualizer()
+    const { v, scrollToFn, scroll, touch } = makeIOSTouchVirtualizer()
 
     touch('touchstart')
-    v.scrollToIndex(8) // finger down: the user still owns the scroll
+    scroll(90, true) // the finger drags
+    v.scrollToIndex(8) // the dragging finger still owns the scroll
     expect(v['_iosTouch']?.phase).toBe('down')
     scrollToFn.mockClear()
 
@@ -5881,53 +5883,43 @@ test.each([
   },
 )
 
-test('iOS deferral: a finger that lifts without moving does not double a correction reconcile already applied', () => {
-  // scrollToIndex issued with a finger down (a touchstart handler, a long
-  // press): iOS ignores the write and the resize defers. The finger lifts
-  // without scrolling, so the index scroll lives on and reconcile retargets
-  // from the grown row; that write already contains the correction, so the
-  // flush must not apply it again.
+test('iOS deferral: under a resting finger the retarget lands and the correction is applied once', () => {
+  // scrollToIndex issued with a finger resting on the list (a touchstart
+  // handler, a long press). iOS ignores writes only under a dragging finger,
+  // so the command and reconcile's retarget from the grown row both land,
+  // and that retarget already contains the correction: the flush after the
+  // lift must not apply it again (@phcorp on #1318: row 20 ended 210px off).
   const h = makeDeferralHarness({ start: 2000 })
-  let ignore = true
-  const write = h.v.options.scrollToFn
-  h.v.setOptions({
-    ...h.v.options,
-    scrollToFn: (offset, opts, inst) => {
-      if (!ignore) write(offset, opts, inst)
-    },
-  })
   h.touch('touchstart')
   h.run(() => {
     h.v.scrollToIndex(20, { align: 'start' })
     h.v.resizeItem(10, 100)
-  })
-  ignore = false
-  h.touch('touchend')
-  h.run(() => {
     for (let i = 0; i < 5; i++) {
       h.frame()
       h.scroll(true)
     }
-    h.scroll(false)
   })
+  h.touch('touchend')
+  h.run(() => h.scroll(false))
   h.expireTail()
   expect(h.el.scrollTop).toBe(1050)
   expect(h.rowTop(20)).toBe(0)
 })
 
 test('iOS deferral: a retarget iOS ignores under a finger keeps the deferred correction', () => {
-  // Same start, but reconcile retargets while the finger is still down: iOS
-  // ignores that write too, so the correction must survive it. The finger
+  // Same start, but the finger drags and reconcile retargets under it: iOS
+  // ignores that write, so the correction must survive it. The finger
   // then scrolls, which ends the index scroll, and the flush applies it.
   const h = makeDeferralHarness({ start: 2000 })
   const write = h.v.options.scrollToFn
   h.v.setOptions({
     ...h.v.options,
     scrollToFn: (offset, opts, inst) => {
-      if (h.v['_iosTouch']?.phase !== 'down') write(offset, opts, inst)
+      if (!h.v['_iosDragging']()) write(offset, opts, inst)
     },
   })
   h.touch('touchstart')
+  h.run(() => h.scroll(true, 1990)) // the finger drags
   h.run(() => {
     h.v.scrollToIndex(20, { align: 'start' })
     h.v.resizeItem(10, 100)
@@ -5939,4 +5931,55 @@ test('iOS deferral: a retarget iOS ignores under a finger keeps the deferred cor
   h.expireTail()
   // Row 10 grew above the reader, so the content they were on moved down 50.
   expect(h.el.scrollTop).toBe(2050)
+})
+
+test('iOS touch: a row that stops touch propagation does not hide the gesture', () => {
+  // The listeners run in the capture phase on the scroll element, before a
+  // descendant's handler can stop the event (@phcorp on #1318: a fling was
+  // cut short and a drag lost a correction when touches went unseen).
+  // Another test leaves a non-constructor ResizeObserver on window; this one
+  // runs on the real window, so give it a working one for its lifetime.
+  const prevRO = window.ResizeObserver
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver
+  try {
+    withFakeIOSUserAgent(() => {
+      const scrollEl = document.createElement('div')
+      const row = document.createElement('div')
+      scrollEl.appendChild(row)
+      document.body.appendChild(scrollEl)
+      const stop = (e: Event) => e.stopPropagation()
+      row.addEventListener('touchstart', stop)
+      row.addEventListener('touchend', stop)
+
+      const v = new Virtualizer({
+        count: 10,
+        estimateSize: () => 50,
+        getScrollElement: () => scrollEl,
+        scrollToFn: () => {},
+        observeElementRect: () => () => {},
+        observeElementOffset: (_inst, cb) => {
+          cb(0, false)
+          return () => {}
+        },
+      })
+      const unmount = v._didMount()
+      v._willUpdate()
+
+      row.dispatchEvent(new Event('touchstart', { bubbles: true }))
+      expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+      row.dispatchEvent(new Event('touchend', { bubbles: true }))
+      expect(v['_iosTouch']?.phase).toBe('tail')
+
+      unmount()
+      row.dispatchEvent(new Event('touchstart', { bubbles: true }))
+      expect(v['_iosTouch']).toBeNull()
+      scrollEl.remove()
+    })
+  } finally {
+    window.ResizeObserver = prevRO
+  }
 })
