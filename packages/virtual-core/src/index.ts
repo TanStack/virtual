@@ -1085,8 +1085,13 @@ export class Virtualizer<
           this._reportedOverscroll =
             offset < 0 || (elementMax !== null && offset > elementMax + 1)
           // Everything below works in layout coordinates: the element is
-          // `_holdOffset` behind them while a correction is held.
+          // `_holdOffset` behind them while a correction is held, and a
+          // prepend's anchor delta behind them from `setOptions` (which moved
+          // `scrollOffset` by it) until `_willUpdate` writes or holds it.
           offset += this._holdOffset
+          if (this.pendingScrollAnchor?.kind === 'anchor') {
+            offset += this.pendingScrollAnchor.delta
+          }
 
           // A scroll event that reports movement but lands on the offset we
           // already hold — and isn't a self-write read-back — is a spurious
