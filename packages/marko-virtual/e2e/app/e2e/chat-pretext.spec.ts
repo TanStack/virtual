@@ -172,10 +172,10 @@ test('prepending history keeps the visible message anchored in place', async ({
   expect(Math.abs(afterBox!.y - beforeBox!.y)).toBeLessThanOrEqual(2)
 })
 
-test('scrolling near the top auto-loads older history', async ({ page   }) => {
-    await page.goto('/chat-pretext')
-    await waitForPin(page)
-    await page.waitForTimeout(400)
+test('scrolling near the top auto-loads older history', async ({ page }) => {
+  await page.goto('/chat-pretext')
+  await waitForPin(page)
+  await page.waitForTimeout(400)
   const heightBefore = await page
     .locator('.messages')
     .evaluate((el) => el.scrollHeight)
