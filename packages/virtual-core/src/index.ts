@@ -1146,7 +1146,16 @@ export class Virtualizer<
           // A smooth scroll that has already landed (offset at its target,
           // reconcile not yet retired it) still gets the anchor sync.
         } else {
-          this._scrollToOffset(this.getScrollOffset(), {
+          // The consumer may not have committed the new sizer size yet. If the
+          // browser clamps this anchor sync to the old scroll max, keep the
+          // intended target so _willUpdate can retry after the sizer grows.
+          const target = this.getScrollOffset()
+          const maxAtWrite = this.getMaxScrollOffset()
+          this._clampedAdjustment =
+            maxAtWrite !== null && target > maxAtWrite + 0.5
+              ? { target, maxAtWrite }
+              : null
+          this._scrollToOffset(target, {
             adjustments: undefined,
             behavior: undefined,
           })
