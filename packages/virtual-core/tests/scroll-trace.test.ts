@@ -282,6 +282,8 @@ function simulate(
   let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
     null
   let touching = false
+  // The finger has moved the content since it touched down.
+  let dragged = false
   // A native smooth scroll in flight, and a frame of it computed before an
   // instant write replaced it, which WebKit can still apply and report.
   let smoothTarget: number | null = null
@@ -298,8 +300,9 @@ function simulate(
     scrollToFn: (offset, { adjustments = 0, behavior }) => {
       const to = offset + adjustments
       writes.push(`${behavior === 'smooth' ? 's' : 'w'}${to}`)
-      // iOS ignores a programmatic write while a finger is down.
-      if (ios && touching) return
+      // iOS ignores a programmatic write while a finger drags; under a
+      // finger resting on the content the write lands.
+      if (ios && touching && dragged) return
       if (behavior === 'smooth') {
         smoothTarget = clamp(to)
         lateFrame = null
@@ -470,11 +473,13 @@ function simulate(
         // A user scroll stops a native smooth animation.
         smoothTarget = null
         lateFrame = null
+        if (touching) dragged = true
         el.pos = clamp(el.pos + step.d)
         scroll(true)
         break
       case 'touchstart':
         touching = true
+        dragged = false
         smoothTarget = null
         lateFrame = null
         fire('touchstart')
