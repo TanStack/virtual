@@ -2187,6 +2187,10 @@ export class Virtualizer<
     behavior: ScrollBehavior,
     kind: 'absolute' | 'relative',
   ) {
+    // A new explicit scroll command takes ownership of the viewport. Do not
+    // let a previously clamped prepend/resize compensation retry later and
+    // pull the user back toward its stale target.
+    this._clampedAdjustment = null
     if (kind === 'absolute') {
       this._iosDeferredAdjustment = 0
     }
