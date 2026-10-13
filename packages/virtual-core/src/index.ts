@@ -551,6 +551,13 @@ export class Virtualizer<
   // sizer that shrinks after the report (a trim) is not a bounce, and
   // `scrollOffset` is no judge either, since an eager bump past the max while
   // the sizer has not grown yet (#1258) is not one.
+  //
+  // Stored rather than read from the element when a write is decided: the
+  // two differ once a write has landed but not been reported back, and in
+  // that window the element reads in bounds while `scrollOffset` is still
+  // the pre-write value, so an anchor sync would write that stale offset
+  // over the command (the step 5 stall in #1307; 56 of 1080 snapshot seeds).
+  // Reading the element there is a behaviour change to take with that fix.
   private _reportedOverscroll = false
   // The touch gesture in progress. iOS WebKit ignores a scrollTop write
   // while a finger drags the content (one resting on it does not stop the
