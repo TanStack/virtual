@@ -49,6 +49,12 @@ const App = () => {
       <button id="scroll-to-0" onClick={() => rowVirtualizer.scrollToIndex(0)}>
         Scroll to 0
       </button>
+      <button
+        id="scroll-to-offset"
+        onClick={() => rowVirtualizer.scrollToOffset(40000)}
+      >
+        Scroll to offset 40000
+      </button>
 
       <div
         ref={parentRef}
