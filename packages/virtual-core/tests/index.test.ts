@@ -5604,6 +5604,101 @@ test('scrollBy past the end does not leave the next scrollBy building on an unre
   expect(el.scrollTop).toBe(4700)
 })
 
+// ─── #1307 step 5: an offset target follows the corrections made after its
+// read-back, and a prepend before a command's read-back is left to reconcile
+
+test('scrollToOffset: a row above growing after the read-back moves the target with it, and the command retires', () => {
+  // The compensation moved the element to 2050 while the target stayed 2000:
+  // reconcile saw neither a moved target nor a reached one and kept running
+  // until the 5s safety valve.
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+
+  v.scrollToOffset(2000)
+  scroll(2000, true)
+  v.resizeItem(10, 100)
+  expect(el.scrollTop).toBe(2050)
+  settle()
+
+  expect(el.scrollTop).toBe(2050)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollBy: a row above growing after the read-back moves the target with it, and the command retires', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+  el.scrollTop = 1500
+  scroll(1500, false)
+
+  v.scrollBy(500)
+  scroll(2000, true)
+  v.resizeItem(10, 100)
+  expect(el.scrollTop).toBe(2050)
+  settle()
+
+  expect(el.scrollTop).toBe(2050)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollToOffset: a prepend after the read-back moves the target with the anchor sync, and the command retires', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  v.scrollToOffset(2000)
+  scroll(2000, true)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  expect(el.scrollTop).toBe(2600)
+  settle()
+
+  expect(el.scrollTop).toBe(2600)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a prepend before the read-back of a scrollToIndex write is left to reconcile', () => {
+  // scrollToIndex(20) wrote 1000 while `scrollOffset` still holds 2000. The
+  // anchor sync used to write the stale offset plus the prepend (2600) over
+  // the command, and reconcile (index target unchanged at 1000) never wrote
+  // again until the safety valve.
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+  el.scrollTop = 2000
+  scroll(2000, false)
+
+  v.scrollToIndex(20, { align: 'start' })
+  expect(el.scrollTop).toBe(1000)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  // No anchor write before the read-back...
+  expect(el.scrollTop).toBe(1000)
+  scroll(1000, true)
+  settle()
+  // ...the index scroll lands on index 20 of the new list.
+  expect(el.scrollTop).toBe(1000)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a prepend before the read-back of a scrollToOffset write is left to reconcile', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+  el.scrollTop = 2000
+  scroll(2000, false)
+
+  v.scrollToOffset(1000)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  expect(el.scrollTop).toBe(1000)
+  scroll(1000, true)
+  settle()
+
+  expect(el.scrollTop).toBe(1000)
+  expect(v.scrollState).toBeNull()
+})
+
 test('scrollBy past the start does not leave the next scrollBy building on an unreachable offset', () => {
   const { v, el, frames } = setupHandDrivenScroll()
 

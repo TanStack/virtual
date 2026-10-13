@@ -836,8 +836,18 @@ export class Virtualizer<
     // the virtualizer would render the wrong items for one frame (the
     // estimate-based positions are stale) and then correct in the next
     // frame, producing a visible "jump" on prepend with dynamic sizes.
+    // Not before a scroll command's write has been read back: `scrollOffset`
+    // is still the pre-command position, so the anchor would be resolved
+    // against rows that are no longer where the command put the element, and
+    // the sync would write that stale offset over the command. Reconcile
+    // retargets an index or end command from the new layout; an offset
+    // command lands where it was written (#1307, step 5).
     let anchorDelta: number | null = null
-    if (anchor && this.scrollOffset !== null) {
+    if (
+      anchor &&
+      this.scrollOffset !== null &&
+      !this._awaitingCommandReadBack()
+    ) {
       const [anchorKey, anchorOffset] = anchor
       const newMeasurements = this.getMeasurements()
       const { count, getItemKey } = this.options
@@ -894,6 +904,10 @@ export class Virtualizer<
     if (process.env.NODE_ENV !== 'production' && this.options.debug) {
       console.info('correction', delta)
     }
+
+    // The correction moves the content the viewport is on; an offset target
+    // moves with it, or reconcile would wait for a position it can never see.
+    this._followOffsetTarget(delta)
 
     if (!this._canWriteScroll()) {
       // Hold the correction: `scrollOffset` takes it as if written, the rows
@@ -1217,6 +1231,7 @@ export class Virtualizer<
         // an update scheduled from a layout effect commits before paint.
         if (!this._canWriteScroll()) {
           this._holdOffset += anchor.delta
+          this._followOffsetTarget(anchor.delta)
           this.notify(false)
         } else if (
           isSmoothScroll(this.scrollState) &&
@@ -1234,6 +1249,7 @@ export class Virtualizer<
           // A smooth scroll that has already landed (offset at its target,
           // reconcile not yet retired it) still gets the anchor sync.
         } else {
+          this._followOffsetTarget(anchor.delta)
           this._scrollToOffset(this.getScrollOffset(), {
             adjustments: undefined,
             behavior: undefined,
@@ -2020,30 +2036,11 @@ export class Virtualizer<
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
 
-      // A scroll command (or reconcile) wrote a new position that neither a
-      // scroll event nor an eager update has reflected in `scrollOffset` yet.
-      // The rows being measured were rendered for the old position, so
-      // "above the viewport" means nothing against either offset. An index
-      // or end target is retargeted from fresh measurements by
-      // reconcileScroll next frame; an offset target (scrollToOffset,
-      // scrollBy) lands where it was written and the delta is not applied,
-      // since compensating against the stale offset would overwrite the
-      // command. Compensation writes and the prepend anchor sync update
-      // `scrollOffset` eagerly, and the iOS flush writes exactly
-      // `scrollOffset + scrollAdjustments`, so none of them count. Under a
-      // dragging finger iOS ignores the write, so no read-back will come and
-      // the touch deferral below takes the correction instead.
-      const writtenOffset = this.getCommandWrittenOffset()
-      const awaitingCommandReadBack =
-        !(isIOSWebKit() && this._iosDragging()) &&
-        writtenOffset !== null &&
-        !approxEqual(
-          writtenOffset,
-          this.getScrollOffset() + this.scrollAdjustments,
-        )
-
+      // Before a command's read-back, an index or end target is retargeted
+      // from fresh measurements by reconcileScroll next frame; an offset
+      // target lands where it was written and the delta is not applied.
       let adjustedSync = false
-      if (!awaitingCommandReadBack) {
+      if (!this._awaitingCommandReadBack()) {
         if (wasAtEnd) {
           adjustedSync = this.applyScrollAdjustment(
             this._getLayoutTotalSize() - prevTotalSize,
@@ -2481,6 +2478,38 @@ export class Virtualizer<
     !this.pendingWrite.smooth
       ? this.pendingWrite.target
       : null
+
+  // A scroll command (or reconcile) wrote a new position that neither a
+  // scroll event nor an eager update has reflected in `scrollOffset` yet.
+  // The rows on screen were rendered for the old position, so "above the
+  // viewport" means nothing against either offset: a correction decided now
+  // would be written over the command. Compensation writes and the prepend
+  // anchor sync update `scrollOffset` eagerly, and the hold's flush writes
+  // exactly `scrollOffset + scrollAdjustments`, so none of them count. Under
+  // a dragging finger iOS ignores the write, so no read-back will come and
+  // the hold takes the correction instead.
+  private _awaitingCommandReadBack = () => {
+    const writtenOffset = this.getCommandWrittenOffset()
+    return (
+      !(isIOSWebKit() && this._iosDragging()) &&
+      writtenOffset !== null &&
+      !approxEqual(
+        writtenOffset,
+        this.getScrollOffset() + this.scrollAdjustments,
+      )
+    )
+  }
+
+  // An offset target (scrollToOffset, scrollBy) is a layout position. A
+  // correction for content above the viewport moves the viewport's layout
+  // position by `delta`, and the target moves with it, so reconcile sees the
+  // command reached rather than waiting for a position it can never see
+  // (#1307, step 5). Index and end targets are recomputed from the layout.
+  private _followOffsetTarget = (delta: number) => {
+    if (this.scrollState !== null && this.scrollState.index == null) {
+      this.scrollState.lastTargetOffset += delta
+    }
+  }
 
   measure = () => {
     // Reset pendingMin so the next getMeasurements rebuilds from index 0.
