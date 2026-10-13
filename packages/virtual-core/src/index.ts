@@ -2188,8 +2188,9 @@ export class Virtualizer<
     kind: 'absolute' | 'relative',
   ) {
     // A new explicit scroll command takes ownership of the viewport. Do not
-    // let a previously clamped prepend/resize compensation retry later and
-    // pull the user back toward its stale target.
+    // let a queued prepend/follow anchor or a previously clamped adjustment
+    // retry later and pull the user back toward its stale target.
+    this.pendingScrollAnchor = null
     this._clampedAdjustment = null
     if (kind === 'absolute') {
       this._iosDeferredAdjustment = 0
