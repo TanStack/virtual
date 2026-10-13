@@ -2386,12 +2386,12 @@ test('iOS deferral: a positive delta at the end clamp still replays (growth abov
   })
 })
 
-// ─── #1307: orderings the summed deferral gets wrong, and ones to keep ──────
+// ─── #1307: orderings the hold has to get right, and ones to keep ───────────
 //
-// `test.fails` cases document current behaviour that #1307 is meant to fix:
-// each one asserts the wanted outcome and fails today. The plain tests pin
-// behaviour a redesign must not change by accident. 100 rows × 50px, 200px
-// viewport, hand-driven rAF and scroll events.
+// Each case asserts what the user sees (row positions, the element) through
+// one ordering of touches, scroll events, resizes and commands; the plain
+// tests pin behaviour a redesign must not change by accident. 100 rows ×
+// 50px, 200px viewport, hand-driven rAF and scroll events.
 
 function makeDeferralHarness({
   ios = true,
