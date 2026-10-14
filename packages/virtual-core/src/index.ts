@@ -598,19 +598,21 @@ export class Virtualizer<
   // while a finger drags the content (one resting on it does not stop the
   // write) and cancels momentum on one after it, so adjustments are deferred
   // through the whole gesture: `down` from touchstart to touchend/
-  // touchcancel, with `dragged` set by the first scroll event that is not our
-  // own write's read-back, then `tail` while momentum runs. iOS fires no
-  // touch events during momentum, so every scroll event re-arms the tail and
-  // it closes ~150ms after the last one. Null between gestures, and after
-  // touchend on non-iOS, which arms no tail. The tail record owns its timer:
+  // touchcancel, then `tail` while momentum runs. iOS fires no touch events
+  // during momentum, so every scroll event re-arms the tail and it closes
+  // ~150ms after the last one. Null between gestures, and after touchend on
+  // non-iOS, which arms no tail. The tail record owns its timer:
   // `_endIosTouch` is the only way to drop either, so a cleared record never
   // leaves a timer behind, and a live timer always has its record.
-  // `momentum` says a fling can be running: the finger dragged before it
-  // lifted, or a scroll event other than our own read-back re-armed the
-  // tail; a tap's tail has none.
+  //
+  // `moved`: the content moved under or after the finger other than by our
+  // own write's read-back. While `down`, a scroll event that changed the
+  // position sets it: the finger is dragging. The tail inherits it from the
+  // drag, and any other scroll event re-arming the tail sets it: a fling
+  // can be running. A tap's tail has it unset.
   private _iosTouch:
-    | { phase: 'down'; dragged: boolean }
-    | { phase: 'tail'; timerId: number; momentum: boolean }
+    | { phase: 'down'; moved: boolean }
+    | { phase: 'tail'; moved: boolean; timerId: number }
     | null = null
   // Our last write to the element, from `_scrollToOffset` until the next
   // scroll event reports it (the only place it is cleared). Until then
@@ -1185,7 +1187,7 @@ export class Virtualizer<
           // Only an open tail is extended: a scroll event with no touch before
           // it (our own write's read-back) never opens one.
           if (isScrolling && this._iosTouch?.phase === 'tail') {
-            this._openIosTail(this._iosTouch.momentum || !isReadBack)
+            this._openIosTail(this._iosTouch.moved || !isReadBack)
           }
           // A finger that moved the content is dragging. Our own write landing
           // under a resting finger is not, and neither is a report at rest
@@ -1196,7 +1198,7 @@ export class Virtualizer<
             offset !== prevOffset &&
             this._iosTouch?.phase === 'down'
           ) {
-            this._iosTouch.dragged = true
+            this._iosTouch.moved = true
             // The user scrolls: a command still waiting for the tail is
             // theirs to override, like a written one would be.
             if (this.scrollState?.awaitingTail) this.scrollState = null
@@ -1221,13 +1223,12 @@ export class Virtualizer<
         const onTouchStart = () => {
           // A finger back down inside the grace window cancels its tail.
           this._endIosTouch()
-          this._iosTouch = { phase: 'down', dragged: false }
+          this._iosTouch = { phase: 'down', moved: false }
         }
         const onTouchEnd = () => {
-          const dragged =
-            this._iosTouch?.phase === 'down' && this._iosTouch.dragged
+          const moved = this._iosTouch?.phase === 'down' && this._iosTouch.moved
           this._endIosTouch()
-          this._openIosTail(dragged)
+          this._openIosTail(moved)
         }
         scrollEl.addEventListener(
           'touchstart',
@@ -1361,16 +1362,16 @@ export class Virtualizer<
   // A finger is dragging the content, so iOS ignores our writes and no
   // read-back will come. A resting finger does not: the write lands.
   private _iosDragging = () =>
-    this._iosTouch?.phase === 'down' && this._iosTouch.dragged
+    this._iosTouch?.phase === 'down' && this._iosTouch.moved
 
   // (Re)open the tail after the finger lifts, closing ~150ms after the last
   // touchend or momentum frame. On non-iOS there is nothing to protect.
-  private _openIosTail = (momentum: boolean) => {
+  private _openIosTail = (moved: boolean) => {
     if (!isIOSWebKit() || this.targetWindow == null) return
     this._endIosTouch()
     const tail = {
       phase: 'tail' as const,
-      momentum,
+      moved,
       timerId: this.targetWindow.setTimeout(() => {
         if (this._iosTouch === tail) this._iosTouch = null
         // The last momentum frame may have come before the timer. The hold
@@ -2411,7 +2412,7 @@ export class Virtualizer<
     kind: 'absolute' | 'relative',
   ) {
     if (kind === 'absolute' && this._iosTouch?.phase === 'tail') {
-      if (this._iosTouch.momentum && iosMomentumOverridesWrites()) {
+      if (this._iosTouch.moved && iosMomentumOverridesWrites()) {
         // iOS 27: a write now shows for one frame and the fling carries on
         // along its own path, so the command would be lost (#1307, step 3).
         // Leave the tail open and write when it closes, ~150ms after the

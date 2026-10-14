@@ -2928,7 +2928,7 @@ test('iOS Phase 1: touchstart enters the `down` phase and ends a prior tail', ()
     dispatchTouchEvent(el, 'touchend') // leaves a tail armed
     expect(v['_iosTouch']?.phase).toBe('tail')
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
   })
 })
 
@@ -2948,7 +2948,7 @@ test('iOS Phase 1: touchcancel clears touching the same as touchend, and cleanup
     expect(el._hasListener('touchcancel')).toBe(true)
 
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
     dispatchTouchEvent(el, 'touchcancel')
     expect(v['_iosTouch']?.phase).toBe('tail')
 
@@ -3101,7 +3101,7 @@ test('iOS Phase 1: new touchstart during grace window cancels pending flush time
     dispatchTouchEvent(el, 'touchstart')
     // The pending timer must have been canceled.
     expect(timers.has(firstTimerId)).toBe(false)
-    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
   })
 })
 
@@ -3190,7 +3190,7 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand the `down` phas
       mockWindow,
     )
     dispatchTouchEvent(holder.el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
 
     // The in-flight touch keeps targeting the old element (implicit touch
     // capture), so the new element will never deliver its touchend. Without
@@ -3443,7 +3443,7 @@ test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
 
   dispatchTouchEvent(el, 'touchstart')
-  expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false }) // touchstart still records (cheap)
+  expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false }) // touchstart still records (cheap)
   dispatchTouchEvent(el, 'touchend')
   // Non-iOS path returns before arming a tail
   expect(v['_iosTouch']).toBeNull()
@@ -6496,7 +6496,7 @@ test('iOS touch: a row that stops touch propagation does not hide the gesture', 
       v._willUpdate()
 
       row.dispatchEvent(new Event('touchstart', { bubbles: true }))
-      expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+      expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
       row.dispatchEvent(new Event('touchend', { bubbles: true }))
       expect(v['_iosTouch']?.phase).toBe('tail')
 
