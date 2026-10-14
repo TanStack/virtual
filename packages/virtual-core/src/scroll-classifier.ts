@@ -1,3 +1,5 @@
+import { approxEqual } from './utils'
+
 // Why a scroll event arrived, decided from the virtualizer's state as it was
 // before the event, before the scroll handler mutates anything. The first
 // match in this order wins:
@@ -79,4 +81,80 @@ export function classifyScrollEvent({
     return 'clampedEcho'
   }
   return 'external'
+}
+
+// Where an in-flight scroll command is in its lifecycle, which decides how
+// its scroll events and measurements are read:
+//   queued           the first write waits for the momentum tail to close
+//                    (iOS 27, see `_startScroll`). Nothing has been written:
+//                    the fling's scroll events do not retire the command, a
+//                    drag does, and reconcile only keeps the safety valve
+//   smooth           a smooth animation is travelling to the target
+//   smoothLanded     a smooth scroll is at its target, waiting to retire
+//   smoothFinishing  a smooth scroll switched to instant writes for the
+//                    final approach; its animation can still report positions
+//   instant          instant writes
+export type ScrollPhase =
+  | 'queued'
+  | 'smooth'
+  | 'smoothLanded'
+  | 'smoothFinishing'
+  | 'instant'
+
+// The smooth animation may still be reporting positions, so a scroll event
+// that isn't the read-back of our own write may not be the user.
+const isAnimating = (phase: ScrollPhase) =>
+  phase === 'smooth' || phase === 'smoothFinishing'
+
+export interface RetireInput {
+  kind: ScrollEventKind
+  // The reported position in layout coordinates, as classified.
+  offset: number
+  // The in-flight scroll command, or null.
+  command: {
+    index: number | null
+    phase: ScrollPhase
+    lastTargetOffset: number
+  } | null
+  // The command's target recomputed against the current layout. Called
+  // only once every cheaper clause has passed, and at most once.
+  target: () => number
+}
+
+// Whether a scroll event that is not the read-back of our own write retires
+// the in-flight index command: an external scroll moved away from its
+// target. Our own measurement updates (including clamped writes) still need
+// to reconcile.
+export function externalRetiresCommand({
+  kind,
+  offset,
+  command,
+  target,
+}: RetireInput): boolean {
+  return (
+    kind !== 'spurious' &&
+    kind !== 'readBack' &&
+    // Our own write, clamped (`clampedReadBack`, #1310): the command is not
+    // retired by it, and reconcile retargets below the new max.
+    kind !== 'clampedReadBack' &&
+    command?.index != null &&
+    // Nothing has been written for a command waiting for the tail; these
+    // are the fling's events.
+    command.phase !== 'queued' &&
+    // A non-smooth write lands at once, so any other scroll event is the
+    // user's, even before reconcile saw the target reached (the target may
+    // keep moving, or iOS ignored the write under a finger). A write the
+    // browser clamped because the sizer hasn't grown yet reads back at the
+    // max, which is also where the fresh target clamps, so the check below
+    // keeps it reconciling (#1294). While a smooth scroll's animation may
+    // still report, its events look like a user's, so it yields only once it
+    // has landed.
+    !isAnimating(command.phase) &&
+    !approxEqual(offset, command.lastTargetOffset) &&
+    !approxEqual(offset, target()) &&
+    // A compensation write's clamped echo (#1258) keeps the command; checked
+    // last, like `clampedReadBack` first, so the target is computed for
+    // exactly the events it always was.
+    kind !== 'clampedEcho'
+  )
 }

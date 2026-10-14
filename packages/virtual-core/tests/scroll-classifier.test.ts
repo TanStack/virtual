@@ -1,6 +1,9 @@
-import { describe, expect, test } from 'vitest'
-import { classifyScrollEvent } from '../src/scroll-classifier'
-import type { ScrollEventInput } from '../src/scroll-classifier'
+import { describe, expect, test, vi } from 'vitest'
+import {
+  classifyScrollEvent,
+  externalRetiresCommand,
+} from '../src/scroll-classifier'
+import type { RetireInput, ScrollEventInput } from '../src/scroll-classifier'
 
 const at = (input: Partial<ScrollEventInput>) =>
   classifyScrollEvent({
@@ -182,6 +185,84 @@ describe('classifyScrollEvent', () => {
       expect(
         at({ offset: 1000, isScrolling: false, clampedMaxAtWrite: 1000 }),
       ).toBe('clampedEcho')
+    })
+  })
+})
+
+describe('externalRetiresCommand', () => {
+  const command: NonNullable<RetireInput['command']> = {
+    index: 20,
+    phase: 'instant',
+    lastTargetOffset: 1000,
+  }
+  const retires = (input: Partial<RetireInput>, targetAt = 1000) => {
+    const target = vi.fn(() => targetAt)
+    const result = externalRetiresCommand({
+      kind: 'external',
+      offset: 500,
+      command,
+      target,
+      ...input,
+    })
+    return { result, targetCalls: target.mock.calls.length }
+  }
+
+  test('an external scroll away from an index command retires it', () => {
+    expect(retires({})).toEqual({ result: true, targetCalls: 1 })
+  })
+
+  test.each(['spurious', 'readBack', 'clampedReadBack'] as const)(
+    'a %s event never retires, without computing the target',
+    (kind) => {
+      expect(retires({ kind })).toEqual({ result: false, targetCalls: 0 })
+    },
+  )
+
+  test('a clamped echo keeps the command, but only after the target check', () => {
+    expect(retires({ kind: 'clampedEcho' })).toEqual({
+      result: false,
+      targetCalls: 1,
+    })
+  })
+
+  test('no command, or an offset or end command, is not retired here', () => {
+    expect(retires({ command: null })).toEqual({
+      result: false,
+      targetCalls: 0,
+    })
+    expect(retires({ command: { ...command, index: null } })).toEqual({
+      result: false,
+      targetCalls: 0,
+    })
+  })
+
+  test.each(['queued', 'smooth', 'smoothFinishing'] as const)(
+    'a %s command is not retired',
+    (phase) => {
+      expect(retires({ command: { ...command, phase } })).toEqual({
+        result: false,
+        targetCalls: 0,
+      })
+    },
+  )
+
+  test('a landed smooth command is retired like an instant one', () => {
+    expect(retires({ command: { ...command, phase: 'smoothLanded' } })).toEqual(
+      { result: true, targetCalls: 1 },
+    )
+  })
+
+  test('an event at the last target keeps the command', () => {
+    expect(retires({ offset: 1000.5 })).toEqual({
+      result: false,
+      targetCalls: 0,
+    })
+  })
+
+  test('an event at the recomputed target keeps the command', () => {
+    expect(retires({ offset: 1200.5 }, 1200)).toEqual({
+      result: false,
+      targetCalls: 1,
     })
   })
 })
