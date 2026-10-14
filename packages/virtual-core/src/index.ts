@@ -560,11 +560,11 @@ export class Virtualizer<
    */
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
-  // Size compensation written to the element but not yet reflected in
-  // `scrollOffset`: the element is expected at `scrollOffset +
-  // scrollAdjustments` until the next scroll event reports it.
+  // Kept for `shouldAdjustScrollPositionOnItemSizeChange` callers
+  // (docs/api/virtualizer.md); corrections are folded into `scrollOffset` at
+  // once, so there is never an outstanding adjustment to add to it.
   get scrollAdjustments() {
-    return this.pendingWrite?.adjustments ?? 0
+    return 0
   }
   // Scroll corrections (a prepend's anchor delta, size changes above the
   // viewport) that could not be written to the element because a write was
@@ -616,7 +616,8 @@ export class Virtualizer<
   // scroll event reports it (the only place it is cleared). Until then
   // `scrollOffset` may still hold the old position.
   //
-  // - `target`: where the write puts the element (offset + adjustments).
+  // - `target`: where the write puts the element (offset + the adjustment
+  //   passed to `scrollToFn`).
   //   Safari (and Chrome/Firefox under certain DPRs) round writes to whole
   //   pixels: wrote 12345.5, read back 12346. A read-back within 1.5px of
   //   `target` is taken as our own and adopts the exact value, so reconcile
@@ -624,12 +625,9 @@ export class Virtualizer<
   //   further by the time it reports.
   // - `smooth`: the write animates, so until it lands the element is
   //   somewhere between the old offset and `target`.
-  // - `adjustments`: see `scrollAdjustments`. Writes that pass none keep the
-  //   previous value.
   private pendingWrite: {
     target: number
     smooth: boolean
-    adjustments: number
   } | null = null
   // A compensation write from `applyScrollAdjustment` whose target exceeded
   // the element's scroll max at the moment of the write. The browser clamps
@@ -949,10 +947,10 @@ export class Virtualizer<
       if (this.scrollOffset !== null) this.scrollOffset += delta
       return true
     } else {
-      const target = this.getScrollOffset() + this.scrollAdjustments + delta
-      this._clampedAdjustment = this._clampedBy(target)
-      this._scrollToOffset(this.getScrollOffset(), {
-        adjustments: this.scrollAdjustments + delta,
+      const offset = this.getScrollOffset()
+      this._clampedAdjustment = this._clampedBy(offset + delta)
+      const write = this._scrollToOffset(offset, {
+        adjustments: delta,
         behavior,
       })
       // Eagerly carry the intended target in `scrollOffset` so callers that
@@ -961,11 +959,11 @@ export class Virtualizer<
       // post-adjustment position even when the DOM `scrollTop` write was
       // clamped because the consumer hasn't grown the sizer yet (`notify()`
       // runs after this in `resizeItem`). Same idea as the eager
-      // `scrollOffset` adjustment for prepend in `setOptions` (#1176). The
-      // adjustment is now baked into `scrollOffset`, so zero
-      // `scrollAdjustments` to keep their sum invariant.
+      // `scrollOffset` adjustment for prepend in `setOptions` (#1176). A
+      // `scrollToFn` that reports the write synchronously has already set
+      // `scrollOffset` to the read-back (and cleared `pendingWrite`).
       if (this.scrollOffset !== null) {
-        this.scrollOffset += this.scrollAdjustments
+        if (this.pendingWrite === write) this.scrollOffset += delta
         // Clamp only the lower bound: a negative offset is unreachable, and
         // on an unscrollable element (content fits the viewport) no scroll
         // event ever fires to correct it, permanently skewing
@@ -973,7 +971,6 @@ export class Virtualizer<
         // Upper-bound overflow stays untouched — it is transiently
         // legitimate mid-prepend while the consumer's sizer catches up.
         if (this.scrollOffset < 0) this.scrollOffset = 0
-        if (this.pendingWrite) this.pendingWrite.adjustments = 0
       }
       return true
     }
@@ -2080,14 +2077,13 @@ export class Virtualizer<
       const prevTotalSize = wasAtEnd ? this._getLayoutTotalSize() : 0
       // Default anchoring predicate (used unless the consumer supplies a
       // custom shouldAdjustScrollPositionOnItemSizeChange).
-      const scrollOffsetWithAdj =
-        this.getScrollOffset() + this.scrollAdjustments
+      const scrollOffset = this.getScrollOffset()
       const isFirstMeasure = !this.itemSizeCache.has(key)
       const defaultShouldAdjust = isFirstMeasure
         ? // First measurement: compensate any item whose top sits above the
           // fold — the estimate→actual delta must be corrected regardless of
           // scroll direction, since the whole estimated block was above it.
-          itemStart < scrollOffsetWithAdj
+          itemStart < scrollOffset
         : // Re-measurement: only compensate an item that is ENTIRELY above the
           // fold. An item that merely *spans* the fold (top above, bottom
           // below — e.g. a streaming chat message growing at its bottom)
@@ -2095,7 +2091,7 @@ export class Virtualizer<
           // delta would drag the viewport downward on every growth (#1218).
           // Also skip during backward scroll to avoid the "items jump while
           // scrolling up" cascade.
-          itemStart + itemSize <= scrollOffsetWithAdj &&
+          itemStart + itemSize <= scrollOffset &&
           this.scrollDirection !== 'backward'
       const shouldAdjustScroll =
         !isSmoothScroll(this.scrollState) &&
@@ -2557,11 +2553,11 @@ export class Virtualizer<
       behavior: ScrollBehavior | undefined
     },
   ) => {
-    this.pendingWrite = {
+    const write = {
       target: offset + (adjustments ?? 0),
       smooth: behavior === 'smooth',
-      adjustments: adjustments ?? this.scrollAdjustments,
     }
+    this.pendingWrite = write
     // The element sits `_holdOffset` behind the layout while a correction
     // is held; `target` and the read-back stay in layout coordinates.
     this.options.scrollToFn(
@@ -2569,6 +2565,7 @@ export class Virtualizer<
       { behavior, adjustments },
       this,
     )
+    return write
   }
 
   // Where the in-flight command's last instant write put the element, until
@@ -2589,18 +2586,15 @@ export class Virtualizer<
   // viewport" means nothing against either offset: a correction decided now
   // would be written over the command. Compensation writes and the prepend
   // anchor sync update `scrollOffset` eagerly, and the hold's flush writes
-  // exactly `scrollOffset + scrollAdjustments`, so none of them count. Under
-  // a dragging finger iOS ignores the write, so no read-back will come and
-  // the hold takes the correction instead.
+  // exactly `scrollOffset`, so none of them count. Under a dragging finger
+  // iOS ignores the write, so no read-back will come and the hold takes the
+  // correction instead.
   private _awaitingCommandReadBack = () => {
     const writtenOffset = this.getCommandWrittenOffset()
     return (
       !(isIOSWebKit() && this._iosDragging()) &&
       writtenOffset !== null &&
-      !approxEqual(
-        writtenOffset,
-        this.getScrollOffset() + this.scrollAdjustments,
-      )
+      !approxEqual(writtenOffset, this.getScrollOffset())
     )
   }
 
