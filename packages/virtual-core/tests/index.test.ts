@@ -1,4 +1,4 @@
-import { expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   Virtualizer,
   _resetIOSDetectionForTests,
@@ -3732,6 +3732,40 @@ test('self-write read-back rounded by the browser still does not latch a directi
   expect(v.isScrolling).toBe(true)
   expect(v.scrollDirection).toBeNull()
   expect(v.scrollOffset).toBe(640.5)
+})
+
+describe('a scrollToFn that reports its write back synchronously', () => {
+  // The read-back runs inside `applyScrollAdjustment`, before it folds the
+  // delta into `scrollOffset`; the read-back has already put `scrollOffset`
+  // at the target, so the delta must not be added a second time.
+  const setup = (offset: number) => {
+    const harness = createAdjustmentVirtualizer({ offset })
+    harness.scrollToFn.mockImplementation(
+      (to: number, { adjustments }: { adjustments?: number }) =>
+        harness.emitScroll(to + (adjustments ?? 0), true),
+    )
+    return harness
+  }
+
+  test('a positive adjustment lands on its target once', () => {
+    const { v, scrollToFn } = setup(600)
+    v['applyScrollAdjustment'](40)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(v.scrollOffset).toBe(640)
+    expect(v['pendingWrite']).toBeNull()
+  })
+
+  test('a negative adjustment lands on its target once', () => {
+    const { v } = setup(600)
+    v['applyScrollAdjustment'](-40)
+    expect(v.scrollOffset).toBe(560)
+  })
+
+  test('a read-back above the top is still clamped to 0', () => {
+    const { v } = setup(20)
+    v['applyScrollAdjustment'](-50)
+    expect(v.scrollOffset).toBe(0)
+  })
 })
 
 test('real scroll gestures still latch forward/backward and reset to null', () => {
