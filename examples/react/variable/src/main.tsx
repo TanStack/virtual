@@ -54,13 +54,13 @@ function App() {
   )
 }
 
-function RowVirtualizerVariable({ rows }: { rows: Array<number> }) {
+function RowVirtualizerVariable({ rows: rowSizes }: { rows: Array<number> }) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
-    count: rows.length,
+    count: rowSizes.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (i) => rows[i],
+    estimateSize: (i) => rowSizes[i],
     overscan: 5,
   })
 
@@ -91,7 +91,7 @@ function RowVirtualizerVariable({ rows }: { rows: Array<number> }) {
                 top: 0,
                 left: 0,
                 width: '100%',
-                height: `${rows[virtualRow.index]}px`,
+                height: `${rowSizes[virtualRow.index]}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
@@ -104,14 +104,18 @@ function RowVirtualizerVariable({ rows }: { rows: Array<number> }) {
   )
 }
 
-function ColumnVirtualizerVariable({ columns }: { columns: Array<number> }) {
+function ColumnVirtualizerVariable({
+  columns: columnSizes,
+}: {
+  columns: Array<number>
+}) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
-    count: columns.length,
+    count: columnSizes.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (i) => columns[i],
+    estimateSize: (i) => columnSizes[i],
     overscan: 5,
   })
 
@@ -144,7 +148,7 @@ function ColumnVirtualizerVariable({ columns }: { columns: Array<number> }) {
                 top: 0,
                 left: 0,
                 height: '100%',
-                width: `${columns[virtualColumn.index]}px`,
+                width: `${columnSizes[virtualColumn.index]}px`,
                 transform: `translateX(${virtualColumn.start}px)`,
               }}
             >
@@ -158,8 +162,8 @@ function ColumnVirtualizerVariable({ columns }: { columns: Array<number> }) {
 }
 
 function GridVirtualizerVariable({
-  rows,
-  columns,
+  rows: rowSizes,
+  columns: columnSizes,
 }: {
   rows: Array<number>
   columns: Array<number>
@@ -167,17 +171,17 @@ function GridVirtualizerVariable({
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
-    count: rows.length,
+    count: rowSizes.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (i) => rows[i],
+    estimateSize: (i) => rowSizes[i],
     overscan: 5,
   })
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
-    count: columns.length,
+    count: columnSizes.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (i) => columns[i],
+    estimateSize: (i) => columnSizes[i],
     overscan: 5,
   })
 
@@ -217,8 +221,8 @@ function GridVirtualizerVariable({
                     position: 'absolute',
                     top: 0,
                     left: 0,
-                    width: `${columns[virtualColumn.index]}px`,
-                    height: `${rows[virtualRow.index]}px`,
+                    width: `${columnSizes[virtualColumn.index]}px`,
+                    height: `${rowSizes[virtualRow.index]}px`,
                     transform: `translateX(${virtualColumn.start}px) translateY(${virtualRow.start}px)`,
                   }}
                 >
@@ -233,13 +237,17 @@ function GridVirtualizerVariable({
   )
 }
 
-function MasonryVerticalVirtualizerVariable({ rows }: { rows: Array<number> }) {
+function MasonryVerticalVirtualizerVariable({
+  rows: rowSizes,
+}: {
+  rows: Array<number>
+}) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
-    count: rows.length,
+    count: rowSizes.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (i) => rows[i],
+    estimateSize: (i) => rowSizes[i],
     overscan: 5,
     lanes: 4,
   })
@@ -271,7 +279,7 @@ function MasonryVerticalVirtualizerVariable({ rows }: { rows: Array<number> }) {
                 top: 0,
                 left: `${virtualRow.lane * 25}%`,
                 width: '25%',
-                height: `${rows[virtualRow.index]}px`,
+                height: `${rowSizes[virtualRow.index]}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
@@ -285,7 +293,7 @@ function MasonryVerticalVirtualizerVariable({ rows }: { rows: Array<number> }) {
 }
 
 function MasonryHorizontalVirtualizerVariable({
-  rows,
+  rows: columnSizes,
 }: {
   rows: Array<number>
 }) {
@@ -293,9 +301,9 @@ function MasonryHorizontalVirtualizerVariable({
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
-    count: columns.length,
+    count: columnSizes.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (i) => columns[i],
+    estimateSize: (i) => columnSizes[i],
     overscan: 5,
     lanes: 4,
   })
@@ -329,7 +337,7 @@ function MasonryHorizontalVirtualizerVariable({
                 top: `${virtualColumn.lane * 25}%`,
                 left: 0,
                 height: '25%',
-                width: `${columns[virtualColumn.index]}px`,
+                width: `${columnSizes[virtualColumn.index]}px`,
                 transform: `translateX(${virtualColumn.start}px)`,
               }}
             >
