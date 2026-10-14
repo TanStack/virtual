@@ -2495,6 +2495,36 @@ function landedIndexScrollWithResizeAbove(ios = true) {
   return h
 }
 
+test('iOS deferral (#1307): scrollToOffset, then a prepend during a tap tail moves the target with the held delta', () => {
+  // The options change finds the tail open and holds the prepend. The
+  // target used to stay 2000 while the flush wrote 2600, so reconcile ran
+  // until the safety valve.
+  const h = makeDeferralHarness()
+  h.run(() => {
+    h.v.setOptions({ ...h.v.options, anchorTo: 'end', getItemKey: (i) => i })
+    h.v._willUpdate()
+    h.v.scrollToOffset(2000)
+    h.scroll(true)
+  })
+  h.touch('touchstart')
+  h.touch('touchend')
+  h.run(() => {
+    h.v.setOptions({ ...h.v.options, count: 112, getItemKey: (i) => i - 12 })
+    h.v._willUpdate()
+  })
+  expect(h.el.scrollTop).toBe(2000)
+  h.expireTail()
+  expect(h.el.scrollTop).toBe(2600)
+  h.run(() => {
+    h.scroll(true)
+    for (let i = 0; i < 5; i++) h.frame()
+    h.scroll(false)
+  })
+
+  expect(h.el.scrollTop).toBe(2600)
+  expect(h.v.scrollState).toBeNull()
+})
+
 test('iOS deferral (#1307): a gesture before the index scroll retargets keeps the resize correction', () => {
   const h = landedIndexScrollWithResizeAbove()
   h.touch('touchstart')
@@ -5901,6 +5931,31 @@ test('scrollToOffset: a prepend held by a bounce before the commit moves the tar
   v._willUpdate()
   expect(el.scrollTop).toBe(4810)
   // The bounce returns; the sizer has grown by the prepend.
+  el.scrollHeight = 5600
+  el.scrollTop = 4800
+  scroll(4800, true)
+  expect(el.scrollTop).toBe(5400)
+  settle()
+
+  expect(el.scrollTop).toBe(5400)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollToOffset: a prepend held by a bounce before the options change moves the target with it', () => {
+  // As above, but the bounce lands first, so `setOptions` itself holds the
+  // prepend. The target stayed 4800 and reconcile ran until the safety valve.
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  v.scrollToOffset(4800)
+  scroll(4800, true)
+  el.scrollTop = 4810
+  scroll(4810, true)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  expect(el.scrollTop).toBe(4810)
   el.scrollHeight = 5600
   el.scrollTop = 4800
   scroll(4800, true)

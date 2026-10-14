@@ -5,7 +5,7 @@ exports[`scroll behaviour snapshot > anchorEnd ios 1`] = `
   "0: 9c30ad29 85b526da ed35961e 0a69fa03 86e37173 a7c6a294 33f6e53e 2a95e498 9d2aaa43 79c0b972",
   "10: 56c43525 67a48d7b 56c4a6ad 8aad82fb 3952ce1c 83082b83 8b6948e0 7081e813 d1336903 7f3041e0",
   "20: 8e4723f5 f780f908 13bd300f d53e7a2d ddda056c ebb40e0f 7533b661 6408933e 9f3ec27c 09a1874e",
-  "30: d0da31f6 f0a38d34 beba95dc b0cf23fd 436c1d33 9b9b908c c8c87f50 d9749dba 552b4b5b 93ac03b2",
+  "30: d0da31f6 2a263abe beba95dc b0cf23fd 436c1d33 9b9b908c c8c87f50 d9749dba 552b4b5b 93ac03b2",
   "40: 351e701d 2f446794 d8e6a0e3 4d60c709 0b280b4f ac75fa53 868d9e7b 7f5b2824 780cae35 8f0a8fe9",
   "50: d2429922 8cc11ea8 810e9f05 8861b4ff 8fcc29b1 aee1412a bccee2e5 e46aa4df e9fb7a13 ef6352c1",
 ]
@@ -13,10 +13,10 @@ exports[`scroll behaviour snapshot > anchorEnd ios 1`] = `
 
 exports[`scroll behaviour snapshot > anchorEnd ios27 1`] = `
 [
-  "0: 9c30ad29 85b526da ed35961e a0c8a633 86e37173 a7c6a294 33f6e53e 2a95e498 9d2aaa43 acc6eeb9",
+  "0: 9c30ad29 85b526da ed35961e a0c8a633 86e37173 a7c6a294 33f6e53e 2a95e498 9d2aaa43 da12bd22",
   "10: 56c43525 321ccf6c 56c4a6ad 8aad82fb 341cd88e 83082b83 ad77153a fd903c9c d1336903 7f3041e0",
   "20: 8e4723f5 b7484e9f 13bd300f d53e7a2d 4c85db64 ebb40e0f ec059677 6408933e a8bfc9cf 09a1874e",
-  "30: 3825d5d2 f0a38d34 beba95dc 6e007e5d 3ab04872 9b9b908c c8c87f50 4acd8bac 552b4b5b 93ac03b2",
+  "30: 3825d5d2 2a263abe beba95dc 6e007e5d 3ab04872 9b9b908c c8c87f50 4acd8bac 552b4b5b 93ac03b2",
   "40: 351e701d 81b41eab d8e6a0e3 4d60c709 0018ede1 ac75fa53 868d9e7b 7f5b2824 3e95ee0d 8f0a8fe9",
   "50: d2429922 8cc11ea8 90e19d07 7c8d21a0 11d479bb 15403d2b bccee2e5 e46aa4df e9fb7a13 ef6352c1",
 ]

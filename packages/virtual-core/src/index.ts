@@ -903,6 +903,7 @@ export class Virtualizer<
         // the rows and the total shifted back by it, so the reader's row
         // stays put, and the flush writes it once a write is possible.
         this._holdOffset += anchorDelta
+        this._followOffsetTarget(anchorDelta)
       }
     }
   }
