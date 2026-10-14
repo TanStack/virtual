@@ -592,7 +592,7 @@ virtualizer.shouldAdjustScrollPositionOnItemSizeChange = (
   delta,
   instance,
 ) => {
-  return item.start < instance.getScrollOffset() + instance.scrollAdjustments
+  return item.start < instance.getScrollOffset()
 }
 ```
 

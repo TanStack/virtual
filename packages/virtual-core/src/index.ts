@@ -566,9 +566,11 @@ export class Virtualizer<
    */
   scrollOffset: number | null = null
   scrollDirection: ScrollDirection | null = null
-  // Kept for `shouldAdjustScrollPositionOnItemSizeChange` callers
-  // (docs/api/virtualizer.md); corrections are folded into `scrollOffset` at
-  // once, so there is never an outstanding adjustment to add to it.
+  /**
+   * @deprecated Always 0: a scroll correction is folded into `scrollOffset`
+   * at once, so there is never an outstanding adjustment to add to it. Read
+   * `scrollOffset` alone.
+   */
   get scrollAdjustments() {
     return 0
   }
