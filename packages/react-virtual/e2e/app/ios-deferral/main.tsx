@@ -51,7 +51,6 @@ const state = () => {
     entry.off = v.scrollOffset
     entry.scrolling = v.isScrolling
     entry.dir = v.scrollDirection
-    entry.def = v._iosDeferredAdjustment
     const s = v.scrollState
     entry.st = s ? [s.index, s.lastTargetOffset, s.phase, s.stableFrames] : null
     if (t.watch.length > 0 && el) {
