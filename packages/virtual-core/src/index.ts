@@ -6,8 +6,10 @@ import { approxEqual, debounce, memo, notUndefined } from './utils'
 import {
   classifyScrollEvent,
   externalRetiresCommand,
+  flingCaught,
+  flingSpedUp,
 } from './scroll-classifier'
-import type { ScrollPhase } from './scroll-classifier'
+import type { ScrollPhase, ScrollSample } from './scroll-classifier'
 
 // Browser-aware iOS detection. Programmatic `scrollTo`/`scrollTop` writes
 // during a momentum-scroll cancel the momentum on iOS WebKit, so we defer
@@ -603,6 +605,13 @@ export class Virtualizer<
     | { phase: 'down'; moved: boolean }
     | { phase: 'tail'; moved: boolean; timerId: number }
     | null = null
+  // The last position the scroll handler was given, in the element's own
+  // coordinates. The tail timer compares it with the element (see
+  // `_openIosTail`).
+  private _lastElementOffset: number | null = null
+  // The scroll events since a command started waiting for the tail, at
+  // most the last 200ms, for `flingSpedUp`.
+  private _flingSamples: Array<ScrollSample> = []
   // Our last write to the element, from `_scrollToOffset` until the next
   // scroll event reports it (the only place it is cleared). Until then
   // `scrollOffset` may still hold the old position.
@@ -1071,8 +1080,11 @@ export class Virtualizer<
           // judged only while scrolling: at rest the element has clamped,
           // and a stale sizer makes no bounce.
           const elementMax = isScrolling ? this._elementMaxScrollOffset() : null
+          const wasOverscrolled = this._reportedOverscroll
           this._reportedOverscroll =
             offset < 0 || (elementMax !== null && offset > elementMax + 1)
+          const elementOffset = offset
+          this._lastElementOffset = elementOffset
           // Everything below works in layout coordinates.
           offset = this._toLayoutOffset(offset)
 
@@ -1118,6 +1130,7 @@ export class Virtualizer<
           // into `scrollOffset`. There's no direction to infer, so leave
           // it alone; a real gesture always moves the offset.
           const prevOffset = this.getScrollOffset()
+          const prevDirection = this.scrollDirection
           this.scrollDirection = isScrolling
             ? prevOffset === offset
               ? this.scrollDirection
@@ -1134,6 +1147,33 @@ export class Virtualizer<
           // it (our own write's read-back) never opens one.
           if (isScrolling && this._iosTouch?.phase === 'tail') {
             this._openIosTail(this._iosTouch.moved || kind !== 'readBack')
+          }
+          // A finger that lands on a fling fires no touch events (#1307), so
+          // while a command waits for the fling, the scroll events are all
+          // that show the user taking over: the scroll turns back, or speeds
+          // up (`flingSpedUp`). Momentum does neither inside the scroll
+          // range; a bounce does both, so no part of one counts.
+          if (
+            this.scrollState?.phase === 'queued' &&
+            kind === 'external' &&
+            isScrolling
+          ) {
+            if (wasOverscrolled || this._reportedOverscroll) {
+              this._flingSamples = []
+            } else {
+              const t = this.now()
+              this._flingSamples = this._flingSamples.filter(
+                (sample) => t - sample.t <= 200,
+              )
+              this._flingSamples.push({ t, offset: elementOffset })
+              if (
+                (prevDirection !== null &&
+                  this.scrollDirection !== prevDirection) ||
+                flingSpedUp(this._flingSamples)
+              ) {
+                this.scrollState = null
+              }
+            }
           }
           // A finger that moved the content is dragging. Our own write landing
           // under a resting finger is not, and neither is a report at rest
@@ -1329,7 +1369,35 @@ export class Virtualizer<
       phase: 'tail' as const,
       moved,
       timerId: this.targetWindow.setTimeout(() => {
+        // The end of a fling can move less than a pixel per scroll event, so
+        // events can stop for 150ms while the fling is still running (seen
+        // on an iPhone, 27.0.1). A command waiting for it would then be
+        // written into the fling and overridden. The element having moved
+        // since the last event means it has not ended: wait again. Not while
+        // our own write has yet to report: that moved it.
+        const now = this._readElementOffset()
+        if (
+          this._iosTouch === tail &&
+          this.scrollState?.phase === 'queued' &&
+          this.pendingWrite === null &&
+          now !== null &&
+          this._lastElementOffset !== null &&
+          Math.abs(now - this._lastElementOffset) >= 1
+        ) {
+          this._lastElementOffset = now
+          this._openIosTail(tail.moved)
+          return
+        }
         if (this._iosTouch === tail) this._iosTouch = null
+        // A fling that stopped at speed was caught by a finger that is still
+        // down, with no touch events: the user has taken over, as with a
+        // drag, and iOS would undo the write anyway.
+        if (
+          this.scrollState?.phase === 'queued' &&
+          flingCaught(this._flingSamples)
+        ) {
+          this.scrollState = null
+        }
         // The last momentum frame may have come before the timer. The hold
         // is released first, so a command that waited for the tail is
         // written over rows already back in layout coordinates.
@@ -1350,12 +1418,32 @@ export class Virtualizer<
     this.getMeasurements()
     const offset = this.getScrollStateTarget(state)
     state.lastTargetOffset = offset
+    // The hold flushed just before can leave a clamp retry (#1258); it
+    // would write its old target over this command.
+    this._clampedAdjustment = null
     state.phase = initialScrollPhase(
       behavior,
       state.index != null && approxEqual(offset, this.getScrollOffset()),
     )
     this._scrollToOffset(offset, { behavior })
     this.scheduleScrollReconcile()
+  }
+
+  // The element's position as the offset observers report it, or null for a
+  // scroll element that is neither an element nor a window.
+  private _readElementOffset = (): number | null => {
+    const el = this.scrollElement as unknown as Partial<
+      Element & Pick<Window, 'scrollX' | 'scrollY'>
+    > | null
+    if (el == null) return null
+    const { horizontal, isRtl } = this.options
+    if (typeof el.scrollTop === 'number') {
+      return horizontal ? el.scrollLeft! * ((isRtl && -1) || 1) : el.scrollTop
+    }
+    if (typeof el.scrollY === 'number') {
+      return horizontal ? el.scrollX! : el.scrollY
+    }
+    return null
   }
 
   private _endIosTouch = () => {
@@ -2392,6 +2480,7 @@ export class Virtualizer<
           phase: 'queued',
           behavior,
         }
+        this._flingSamples = []
         this.scheduleScrollReconcile()
         return
       }

@@ -159,3 +159,54 @@ export function externalRetiresCommand({
     kind !== 'clampedEcho'
   )
 }
+
+// A scroll position reported at a time, in the element's own coordinates.
+export interface ScrollSample {
+  t: number
+  offset: number
+}
+
+const FLING_WINDOW_MS = 40
+
+// Whether the scroll sped up: a finger flicked again or dragged on during a
+// fling. iOS fires no touch events for a touch that lands on a fling
+// (#1307), so this, and a turn against the fling, is all that shows it.
+// Momentum only slows down. Scroll events arrive 7–26ms apart and some
+// carry two frames, so one event can read 2–3× faster than its neighbours;
+// the speed is taken over the last 40ms and compared with the 40ms before.
+// On an iPhone (27.0.1) the flicks read 2.4–6× faster than the window before
+// and at least 1.5px/ms more, momentum alone at most 1.7× (#1307).
+export function flingSpedUp(samples: ReadonlyArray<ScrollSample>): boolean {
+  const last = samples[samples.length - 1]
+  if (last === undefined) return false
+  let j = samples.length - 2
+  while (j >= 0 && last.t - samples[j]!.t < FLING_WINDOW_MS) j--
+  if (j < 0) return false
+  const mid = samples[j]!
+  let k = j - 1
+  while (k >= 0 && mid.t - samples[k]!.t < FLING_WINDOW_MS) k--
+  if (k < 0) return false
+  const first = samples[k]!
+  const recent = (last.offset - mid.offset) / (last.t - mid.t)
+  const before = (mid.offset - first.offset) / (mid.t - first.t)
+  return (
+    recent * before >= 0 &&
+    Math.abs(recent) >= 2 * Math.abs(before) &&
+    Math.abs(recent) - Math.abs(before) >= 0.8
+  )
+}
+
+// Whether a fling that sent its last scroll event was still going at
+// 0.5px/ms or more over its last 40ms: a finger caught it. A fling that ends
+// on its own fades to about 0.01px/ms first; a tap stopped one at
+// 0.83–1.43px/ms (iPhone, 27.0.1, #1307). The finger stays down with no
+// touch events, and iOS undoes a write made under it.
+export function flingCaught(samples: ReadonlyArray<ScrollSample>): boolean {
+  const last = samples[samples.length - 1]
+  if (last === undefined) return false
+  let j = samples.length - 2
+  while (j >= 0 && last.t - samples[j]!.t < FLING_WINDOW_MS) j--
+  if (j < 0) return false
+  const from = samples[j]!
+  return Math.abs(last.offset - from.offset) / (last.t - from.t) >= 0.5
+}

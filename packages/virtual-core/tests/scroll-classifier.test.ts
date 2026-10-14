@@ -2,8 +2,15 @@ import { describe, expect, test, vi } from 'vitest'
 import {
   classifyScrollEvent,
   externalRetiresCommand,
+  flingCaught,
+  flingSpedUp,
 } from '../src/scroll-classifier'
-import type { RetireInput, ScrollEventInput } from '../src/scroll-classifier'
+import type {
+  RetireInput,
+  ScrollEventInput,
+  ScrollSample,
+} from '../src/scroll-classifier'
+import flings from './fixtures/ios27-flings.json'
 
 const at = (input: Partial<ScrollEventInput>) =>
   classifyScrollEvent({
@@ -264,5 +271,105 @@ describe('externalRetiresCommand', () => {
       result: false,
       targetCalls: 1,
     })
+  })
+})
+
+// Scroll events recorded on an iPhone (iOS 27.0.1) while a `scrollToIndex`
+// waited for the fling (#1307): `[time ms, scrollTop]`. A second flick during
+// a fling fires no touch events, so these are the only trace of it.
+describe('flingSpedUp', () => {
+  // When `flingSpedUp` first holds, fed one event at a time with the last
+  // 200ms kept, as the scroll handler does.
+  const firstSpeedUp = (name: string) => {
+    const recorded = flings.find((fling) => fling.name === name)!.samples
+    let samples: Array<ScrollSample> = []
+    for (const [t, offset] of recorded) {
+      samples = samples.filter((sample) => t! - sample.t <= 200)
+      samples.push({ t: t!, offset: offset! })
+      if (flingSpedUp(samples)) return t
+    }
+    return null
+  }
+
+  test('a fling alone never speeds up, down to rest', () => {
+    expect(firstSpeedUp('one flick, glide to rest (reflick run)')).toBeNull()
+  })
+
+  test.each([
+    // [fling, when the second flick shows in the events, when it is seen]
+    ['glide, flicked again the same way (back run)', 2417, 2468],
+    ['glide, flicked again the same way (free run)', 5773, 5793],
+    ['glide almost at rest, flicked again (free run)', 8708, 8708],
+  ])('a second flick is seen within 60ms: %s', (name, flick, seen) => {
+    expect(firstSpeedUp(name)).toBe(seen)
+    expect(seen - flick).toBeLessThanOrEqual(60)
+  })
+
+  const samples = (...points: Array<[number, number]>) =>
+    points.map(([t, offset]) => ({ t, offset }))
+
+  test('needs two 40ms windows', () => {
+    expect(flingSpedUp(samples([0, 0], [20, 0], [40, 200]))).toBe(false)
+    expect(flingSpedUp(samples([0, 0], [40, 0], [80, 200]))).toBe(true)
+  })
+
+  test('a turn back is not a speed-up (handled as a reversal)', () => {
+    expect(flingSpedUp(samples([0, 0], [40, 40], [80, -200]))).toBe(false)
+  })
+
+  test('a 2x rise of less than 0.8px/ms is not one', () => {
+    expect(flingSpedUp(samples([0, 0], [40, 20], [80, 60]))).toBe(false)
+    expect(flingSpedUp(samples([0, 0], [40, 20], [80, 100]))).toBe(true)
+  })
+
+  test('a 1.7x rise, as from a merged frame, is not one', () => {
+    expect(flingSpedUp(samples([0, 0], [40, 80], [80, 216]))).toBe(false)
+  })
+})
+
+describe('flingCaught', () => {
+  // The last 200ms of a recorded fling, as the scroll handler keeps them.
+  const tail = (name: string) => {
+    const recorded = flings.find((fling) => fling.name === name)!.samples
+    const [end] = recorded[recorded.length - 1]!
+    return recorded
+      .filter(([t]) => end! - t! <= 200)
+      .map(([t, offset]) => ({ t: t!, offset: offset! }))
+  }
+
+  test.each([
+    'glide stopped by a tap 1',
+    'glide stopped by a tap 2',
+    'glide stopped by a tap 3',
+  ])('a fling stopped by a finger: %s', (name) => {
+    expect(flingCaught(tail(name))).toBe(true)
+  })
+
+  test('a fling that ends on its own is not caught', () => {
+    expect(flingCaught(tail('one flick, glide to rest (reflick run)'))).toBe(
+      false,
+    )
+  })
+
+  test('needs a 40ms window', () => {
+    expect(flingCaught([])).toBe(false)
+    expect(
+      flingCaught([
+        { t: 0, offset: 0 },
+        { t: 20, offset: 40 },
+      ]),
+    ).toBe(false)
+    expect(
+      flingCaught([
+        { t: 0, offset: 0 },
+        { t: 40, offset: 20 },
+      ]),
+    ).toBe(true)
+    expect(
+      flingCaught([
+        { t: 0, offset: 0 },
+        { t: 40, offset: 19 },
+      ]),
+    ).toBe(false)
   })
 })
