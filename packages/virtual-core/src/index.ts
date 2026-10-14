@@ -1242,10 +1242,7 @@ export class Virtualizer<
         })
       }
 
-      this._scrollToOffset(this.getScrollOffset(), {
-        adjustments: undefined,
-        behavior: undefined,
-      })
+      this._scrollToOffset(this.getScrollOffset())
     }
 
     const anchor = this.pendingScrollAnchor
@@ -1282,10 +1279,7 @@ export class Virtualizer<
           // reconcile not yet retired it) still gets the anchor sync.
         } else {
           this._followOffsetTarget(anchor.delta)
-          this._scrollToOffset(this.getScrollOffset(), {
-            adjustments: undefined,
-            behavior: undefined,
-          })
+          this._scrollToOffset(this.getScrollOffset())
         }
       } else {
         this.scrollToEnd({ behavior: anchor.behavior })
@@ -1343,10 +1337,7 @@ export class Virtualizer<
       // the new max so the next opportunity retries.
       this._clampedAdjustment =
         target > max + 0.5 ? { target, maxAtWrite: max } : null
-      this._scrollToOffset(target, {
-        adjustments: undefined,
-        behavior: undefined,
-      })
+      this._scrollToOffset(target)
     }
   }
 
@@ -1396,7 +1387,7 @@ export class Virtualizer<
       behavior,
       state.index != null && approxEqual(offset, this.getScrollOffset()),
     )
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+    this._scrollToOffset(offset, { behavior })
     this.scheduleScrollReconcile()
   }
 
@@ -1448,10 +1439,7 @@ export class Virtualizer<
     // A consumer that sizes the container after this write gets the retry
     // (#1258).
     this._clampedAdjustment = this._clampedBy(target)
-    this._scrollToOffset(target, {
-      adjustments: undefined,
-      behavior: undefined,
-    })
+    this._scrollToOffset(target)
   }
 
   private rafId: number | null = null
@@ -1530,10 +1518,7 @@ export class Virtualizer<
         // end up at the EXACT computed position of item N — matching
         // virtuoso's 0px landing accuracy rather than our prior 0.5-1px.
         if (this.getScrollOffset() !== targetOffset) {
-          this._scrollToOffset(targetOffset, {
-            adjustments: undefined,
-            behavior: 'auto',
-          })
+          this._scrollToOffset(targetOffset, { behavior: 'auto' })
         }
         this.scrollState = null
         return
@@ -1569,7 +1554,6 @@ export class Virtualizer<
         // until reconcile sees it at the target; 'instant' stays instant.
 
         this._scrollToOffset(targetOffset, {
-          adjustments: undefined,
           behavior: keepSmooth ? 'smooth' : 'auto',
         })
       }
@@ -2461,7 +2445,7 @@ export class Virtualizer<
         target.index != null && approxEqual(offset, this.getScrollOffset()),
       ),
     }
-    this._scrollToOffset(offset, { adjustments: undefined, behavior })
+    this._scrollToOffset(offset, { behavior })
     this.scheduleScrollReconcile()
   }
 
@@ -2562,10 +2546,7 @@ export class Virtualizer<
     {
       adjustments,
       behavior,
-    }: {
-      adjustments: number | undefined
-      behavior: ScrollBehavior | undefined
-    },
+    }: { adjustments?: number; behavior?: ScrollBehavior } = {},
   ) => {
     const write = {
       target: offset + (adjustments ?? 0),
