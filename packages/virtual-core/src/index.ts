@@ -499,6 +499,24 @@ type PendingScrollAnchor =
   | { kind: 'anchor'; delta: number }
   | { kind: 'follow'; behavior: ScrollBehavior }
 
+// Why a scroll event arrived, decided before the handler mutates anything.
+//   spurious         Safari/Firefox re-emit at the position we hold, nothing
+//                    pending
+//   readBack         our last write reporting back (within 1.5px of its
+//                    target)
+//   clampedReadBack  our last non-smooth write, clamped at the element's
+//                    current max
+//   clampedEcho      a compensation write the browser clamped (#1258)
+//                    reporting at the max seen at write time
+//   external         anything else: the user, a fling, a smooth animation
+//                    frame
+type ScrollEventKind =
+  | 'spurious'
+  | 'readBack'
+  | 'clampedReadBack'
+  | 'clampedEcho'
+  | 'external'
+
 function isAppendWithTrim(
   prevCount: number,
   nextCount: number,
@@ -1097,49 +1115,26 @@ export class Virtualizer<
             offset += this.pendingScrollAnchor.delta
           }
 
-          // A scroll event that reports movement but lands on the offset we
-          // already hold — and isn't a self-write read-back — is a spurious
-          // no-op re-emit that Safari/Firefox fire after a re-render's layout
-          // (Chrome doesn't). Treating it as scrolling re-arms `isScrolling`,
-          // which forces a render that triggers another such event: an
-          // infinite re-render loop. Ignore it. (Self-writes are matched to
-          // `pendingWrite` just below.)
-          if (
-            isScrolling &&
-            this.pendingWrite === null &&
-            offset === this.scrollOffset
-          ) {
-            return
-          }
+          const kind = this._classifyScrollEvent(
+            offset,
+            isScrolling,
+            elementMax,
+          )
+          if (kind === 'spurious') return
 
-          // The read-back of our own write: adopt the exact target over the
-          // browser's rounded value (see `pendingWrite`).
-          const pending = this.pendingWrite
-          const isReadBack =
-            pending !== null && Math.abs(offset - pending.target) < 1.5
-          // A non-smooth write past the element's max reads back at the max:
-          // ours, clamped because the sizer shrank between the write and the
-          // report (rows above the target measured smaller in a same-task
-          // render, #1310). The element is where it says; the command is
-          // not retired by it, and reconcile retargets below the new max. A
-          // finger that drags to the max while such a write is pending (iOS
-          // ignored it) is read the same way; the command then retires at
-          // the next frame, its target clamped to the same max.
-          const isClampedReadBack =
-            !isReadBack &&
-            pending !== null &&
-            !pending.smooth &&
-            elementMax !== null &&
-            pending.target > elementMax + this._holdOffset + 0.5 &&
-            Math.abs(offset - (elementMax + this._holdOffset)) < 1.5
-          if (isReadBack) {
-            offset = pending.target
+          if (kind === 'readBack') {
+            // Adopt the exact target over the browser's rounded value (see
+            // `pendingWrite`).
+            offset = this.pendingWrite!.target
           } else if (
+            // Our own write, clamped (`clampedReadBack`, #1310): the command
+            // is not retired by it, and reconcile retargets below the new
+            // max.
+            kind !== 'clampedReadBack' &&
             this.scrollState?.index != null &&
             // Nothing has been written for a command waiting for the tail;
             // these are the fling's events.
             this.scrollState.phase !== 'queued' &&
-            !isClampedReadBack &&
             // A non-smooth write lands at once, so any other scroll event is
             // the user's, even before reconcile saw the target reached (the
             // target may keep moving, or iOS ignored the write under a
@@ -1151,8 +1146,10 @@ export class Virtualizer<
             !isAnimating(this.scrollState) &&
             !approxEqual(offset, this.scrollState.lastTargetOffset) &&
             !approxEqual(offset, this.getScrollStateTarget(this.scrollState)) &&
-            (this._clampedAdjustment === null ||
-              Math.abs(offset - this._clampedAdjustment.maxAtWrite) >= 1.5)
+            // A compensation write's clamped echo (#1258) keeps the command;
+            // checked last, like `clampedReadBack` first, so the target is
+            // computed for exactly the events it always was.
+            kind !== 'clampedEcho'
           ) {
             // An external scroll moved away from the index scroll's target.
             // Our own measurement updates (including clamped writes) still
@@ -1192,13 +1189,13 @@ export class Virtualizer<
           // Only an open tail is extended: a scroll event with no touch before
           // it (our own write's read-back) never opens one.
           if (isScrolling && this._iosTouch?.phase === 'tail') {
-            this._openIosTail(this._iosTouch.moved || !isReadBack)
+            this._openIosTail(this._iosTouch.moved || kind !== 'readBack')
           }
           // A finger that moved the content is dragging. Our own write landing
           // under a resting finger is not, and neither is a report at rest
           // that leaves the position where it was.
           if (
-            !isReadBack &&
+            kind !== 'readBack' &&
             isScrolling &&
             offset !== prevOffset &&
             this._iosTouch?.phase === 'down'
@@ -1326,6 +1323,57 @@ export class Virtualizer<
     // The consumer has committed the new total size by now, so a clamped
     // compensation write may have room (#1258).
     this._retryClampedAdjustment()
+  }
+
+  // Classify a scroll event (see `ScrollEventKind`) from the state as it was
+  // before the event. `offset` is the reported position in layout
+  // coordinates; `elementMax` is the element's own max, read only while
+  // scrolling (null otherwise). Reads, never writes.
+  private _classifyScrollEvent = (
+    offset: number,
+    isScrolling: boolean,
+    elementMax: number | null,
+  ): ScrollEventKind => {
+    // A scroll event that reports movement but lands on the offset we
+    // already hold — and isn't a self-write read-back — is a spurious no-op
+    // re-emit that Safari/Firefox fire after a re-render's layout (Chrome
+    // doesn't). Treating it as scrolling re-arms `isScrolling`, which forces
+    // a render that triggers another such event: an infinite re-render
+    // loop.
+    if (
+      isScrolling &&
+      this.pendingWrite === null &&
+      offset === this.scrollOffset
+    ) {
+      return 'spurious'
+    }
+    const pending = this.pendingWrite
+    if (pending !== null && Math.abs(offset - pending.target) < 1.5) {
+      return 'readBack'
+    }
+    // A non-smooth write past the element's max reads back at the max:
+    // ours, clamped because the sizer shrank between the write and the
+    // report (rows above the target measured smaller in a same-task render,
+    // #1310). The element is where it says. A finger that drags to the max
+    // while such a write is pending (iOS ignored it) is read the same way;
+    // the command then retires at the next frame, its target clamped to the
+    // same max.
+    if (
+      pending !== null &&
+      !pending.smooth &&
+      elementMax !== null &&
+      pending.target > elementMax + this._holdOffset + 0.5 &&
+      Math.abs(offset - (elementMax + this._holdOffset)) < 1.5
+    ) {
+      return 'clampedReadBack'
+    }
+    if (
+      this._clampedAdjustment !== null &&
+      Math.abs(offset - this._clampedAdjustment.maxAtWrite) < 1.5
+    ) {
+      return 'clampedEcho'
+    }
+    return 'external'
   }
 
   // Re-issue a compensation write the browser clamped because the sizer had
