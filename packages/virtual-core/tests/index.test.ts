@@ -3773,12 +3773,20 @@ function createChatVirtualizer({
     virtualizer,
     scrollElement,
     scrollToFn,
-    setMessages(nextMessages: Array<{ id: string }>) {
+    setMessages(
+      nextMessages: Array<{ id: string }>,
+      {
+        growSizer = true,
+        update = true,
+      }: { growSizer?: boolean; update?: boolean } = {},
+    ) {
       currentMessages = nextMessages
       virtualizer.setOptions(makeOptions())
-      ;(scrollElement as any).scrollHeight =
-        nextMessages.length * itemSize + paddingEnd
-      virtualizer._willUpdate()
+      if (growSizer) {
+        ;(scrollElement as any).scrollHeight =
+          nextMessages.length * itemSize + paddingEnd
+      }
+      if (update) virtualizer._willUpdate()
     },
     // Simulate the browser's scroll event after a write (or a gesture).
     emitScroll(nextOffset: number, isScrolling = false) {
@@ -3787,6 +3795,99 @@ function createChatVirtualizer({
     },
   }
 }
+
+test('#1267: end-anchor sync retries after the sizer grows following a prepend', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, setMessages } =
+    createChatVirtualizer({
+      messages,
+      offset: 50,
+    })
+
+  // The new anchor target is 150, but the old sizer still only allows 50.
+  // This simulates the adapter's layout effect running before the prepend's
+  // larger scrollable container has been committed.
+  setMessages([{ id: 'm--2' }, { id: 'm--1' }, ...messages], {
+    growSizer: false,
+  })
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(150)
+  expect(virtualizer['_clampedAdjustment']).toEqual({
+    target: 150,
+    maxAtWrite: 50,
+  })
+
+  // Once the consumer commits the larger sizer, the target can be reached.
+  ;(scrollElement as any).scrollHeight = 350
+  virtualizer._willUpdate()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(150)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1267: a new explicit scroll cancels a pending clamped anchor retry', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, setMessages } =
+    createChatVirtualizer({
+      messages,
+      offset: 50,
+    })
+
+  setMessages([{ id: 'm--2' }, { id: 'm--1' }, ...messages], {
+    growSizer: false,
+  })
+  expect(virtualizer['_clampedAdjustment']).not.toBeNull()
+
+  // A newer explicit command must take ownership rather than be overwritten
+  // when the old prepend's sizer eventually grows.
+  virtualizer.scrollToOffset(20)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+
+  ;(scrollElement as any).scrollHeight = 350
+  virtualizer._willUpdate()
+
+  // No third write to the stale prepend target is allowed.
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(20)
+})
+
+test('#1267: an explicit scroll cancels a queued prepend anchor before update', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, setMessages } =
+    createChatVirtualizer({
+      messages,
+      offset: 50,
+    })
+
+  // Queue the prepend anchor but delay _willUpdate, which is where that
+  // anchor would otherwise be written to the DOM.
+  setMessages([{ id: 'm--2' }, { id: 'm--1' }, ...messages], {
+    growSizer: false,
+    update: false,
+  })
+  expect(virtualizer['pendingScrollAnchor']).toEqual({
+    kind: 'anchor',
+    delta: 100,
+  })
+
+  // A new explicit destination must supersede the not-yet-applied anchor.
+  virtualizer.scrollToOffset(20)
+  expect(virtualizer['pendingScrollAnchor']).toBeNull()
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(20)
+
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+
+  // Growing the sizer later must not resurrect the discarded anchor either.
+  ;(scrollElement as any).scrollHeight = 350
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(20)
+})
 
 test('anchorTo:end keeps visible content stable when older items are prepended', () => {
   const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))

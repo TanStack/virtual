@@ -1234,7 +1234,14 @@ export class Virtualizer<
           // A smooth scroll that has already landed (offset at its target,
           // reconcile not yet retired it) still gets the anchor sync.
         } else {
-          this._scrollToOffset(this.getScrollOffset(), {
+          // The consumer may not have committed the new sizer size yet. If the
+          // browser clamps this anchor sync to the old scroll max, keep the
+          // intended target so _willUpdate can retry after the sizer grows.
+          const target = this.getScrollOffset()
+          const maxAtWrite = this.getMaxScrollOffset()
+          this._clampedAdjustment =
+            target > maxAtWrite + 0.5 ? { target, maxAtWrite } : null
+          this._scrollToOffset(target, {
             adjustments: undefined,
             behavior: undefined,
           })
@@ -2331,6 +2338,11 @@ export class Virtualizer<
     behavior: ScrollBehavior,
     kind: 'absolute' | 'relative',
   ) {
+    // A new explicit scroll command takes ownership of the viewport. Do not
+    // let a queued prepend/follow anchor or a previously clamped adjustment
+    // retry later and pull the user back toward its stale target.
+    this.pendingScrollAnchor = null
+    this._clampedAdjustment = null
     if (kind === 'absolute') {
       // The command takes over the scroll, so close the tail: the landing's
       // corrections then apply before paint, even for a command issued from
