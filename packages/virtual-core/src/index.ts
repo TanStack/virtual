@@ -1103,6 +1103,9 @@ export class Virtualizer<
           // own read-back, which the browser reports at the scroll max we
           // saw at write time. Anything else is a real gesture (or the write
           // landing after all), so drop it rather than yank the user later.
+          // Not `kind !== 'clampedEcho'`: the classifier ranks `readBack` and
+          // `clampedReadBack` first, and either can also sit at that max, so
+          // the record must survive them too.
           if (
             this._clampedAdjustment !== null &&
             Math.abs(offset - this._clampedAdjustment.maxAtWrite) >= 1.5
@@ -2166,8 +2169,9 @@ export class Virtualizer<
   // correction is held, and a prepend's anchor delta behind from
   // `setOptions` (which moved `scrollOffset` by it) until `_willUpdate`
   // writes or holds it. Writes (`_scrollToOffset`) and the clamp record
-  // (`_clampedBy`) deliberately account for the hold alone: a write of the
-  // layout position is what closes the anchor delta.
+  // (`_clampedBy`) deliberately subtract the hold alone, not this whole
+  // lead: by the time they run, the anchor delta is already in
+  // `scrollOffset`, and writing that layout position is what closes it.
   private _toLayoutOffset = (elementOffset: number) => {
     let offset = elementOffset + this._holdOffset
     if (this.pendingScrollAnchor?.kind === 'anchor') {

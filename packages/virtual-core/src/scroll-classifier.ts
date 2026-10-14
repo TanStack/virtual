@@ -152,9 +152,10 @@ export function externalRetiresCommand({
     !isAnimating(command.phase) &&
     !approxEqual(offset, command.lastTargetOffset) &&
     !approxEqual(offset, target()) &&
-    // A compensation write's clamped echo (#1258) keeps the command; checked
-    // last, like `clampedReadBack` first, so the target is computed for
-    // exactly the events it always was.
+    // A compensation write's clamped echo (#1258) keeps the command. The
+    // order is deliberate, not tidiness: this clause stays after `target()`
+    // (and `clampedReadBack` before it) because `target()` can rebuild the
+    // measurements, so it must run for exactly the events it always did.
     kind !== 'clampedEcho'
   )
 }
