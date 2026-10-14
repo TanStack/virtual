@@ -3,6 +3,7 @@ import {
   getMeasurementKey,
 } from './lazy-measurements'
 import { approxEqual, debounce, memo, notUndefined } from './utils'
+import { classifyScrollEvent } from './scroll-classifier'
 
 // Browser-aware iOS detection. Programmatic `scrollTo`/`scrollTop` writes
 // during a momentum-scroll cancel the momentum on iOS WebKit, so we defer
@@ -498,24 +499,6 @@ const isAnimating = (state: ScrollState) =>
 type PendingScrollAnchor =
   | { kind: 'anchor'; delta: number }
   | { kind: 'follow'; behavior: ScrollBehavior }
-
-// Why a scroll event arrived, decided before the handler mutates anything.
-//   spurious         Safari/Firefox re-emit at the position we hold, nothing
-//                    pending
-//   readBack         our last write reporting back (within 1.5px of its
-//                    target)
-//   clampedReadBack  our last non-smooth write, clamped at the element's
-//                    current max
-//   clampedEcho      a compensation write the browser clamped (#1258)
-//                    reporting at the max seen at write time
-//   external         anything else: the user, a fling, a smooth animation
-//                    frame
-type ScrollEventKind =
-  | 'spurious'
-  | 'readBack'
-  | 'clampedReadBack'
-  | 'clampedEcho'
-  | 'external'
 
 function isAppendWithTrim(
   prevCount: number,
@@ -1328,53 +1311,21 @@ export class Virtualizer<
   // Classify a scroll event (see `ScrollEventKind`) from the state as it was
   // before the event. `offset` is the reported position in layout
   // coordinates; `elementMax` is the element's own max, read only while
-  // scrolling (null otherwise). Reads, never writes.
+  // scrolling (null otherwise).
   private _classifyScrollEvent = (
     offset: number,
     isScrolling: boolean,
     elementMax: number | null,
-  ): ScrollEventKind => {
-    // A scroll event that reports movement but lands on the offset we
-    // already hold — and isn't a self-write read-back — is a spurious no-op
-    // re-emit that Safari/Firefox fire after a re-render's layout (Chrome
-    // doesn't). Treating it as scrolling re-arms `isScrolling`, which forces
-    // a render that triggers another such event: an infinite re-render
-    // loop.
-    if (
-      isScrolling &&
-      this.pendingWrite === null &&
-      offset === this.scrollOffset
-    ) {
-      return 'spurious'
-    }
-    const pending = this.pendingWrite
-    if (pending !== null && Math.abs(offset - pending.target) < 1.5) {
-      return 'readBack'
-    }
-    // A non-smooth write past the element's max reads back at the max:
-    // ours, clamped because the sizer shrank between the write and the
-    // report (rows above the target measured smaller in a same-task render,
-    // #1310). The element is where it says. A finger that drags to the max
-    // while such a write is pending (iOS ignored it) is read the same way;
-    // the command then retires at the next frame, its target clamped to the
-    // same max.
-    if (
-      pending !== null &&
-      !pending.smooth &&
-      elementMax !== null &&
-      pending.target > elementMax + this._holdOffset + 0.5 &&
-      Math.abs(offset - (elementMax + this._holdOffset)) < 1.5
-    ) {
-      return 'clampedReadBack'
-    }
-    if (
-      this._clampedAdjustment !== null &&
-      Math.abs(offset - this._clampedAdjustment.maxAtWrite) < 1.5
-    ) {
-      return 'clampedEcho'
-    }
-    return 'external'
-  }
+  ) =>
+    classifyScrollEvent({
+      offset,
+      isScrolling,
+      elementMax,
+      holdOffset: this._holdOffset,
+      scrollOffset: this.scrollOffset,
+      pendingWrite: this.pendingWrite,
+      clampedMaxAtWrite: this._clampedAdjustment?.maxAtWrite ?? null,
+    })
 
   // Re-issue a compensation write the browser clamped because the sizer had
   // not grown yet (#1258, #1266). Called after `notify` in `resizeItem`,
