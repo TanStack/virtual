@@ -1089,14 +1089,8 @@ export class Virtualizer<
           const elementMax = isScrolling ? this._elementMaxScrollOffset() : null
           this._reportedOverscroll =
             offset < 0 || (elementMax !== null && offset > elementMax + 1)
-          // Everything below works in layout coordinates: the element is
-          // `_holdOffset` behind them while a correction is held, and a
-          // prepend's anchor delta behind them from `setOptions` (which moved
-          // `scrollOffset` by it) until `_willUpdate` writes or holds it.
-          offset += this._holdOffset
-          if (this.pendingScrollAnchor?.kind === 'anchor') {
-            offset += this.pendingScrollAnchor.delta
-          }
+          // Everything below works in layout coordinates.
+          offset = this._toLayoutOffset(offset)
 
           const kind = this._classifyScrollEvent(
             offset,
@@ -2218,6 +2212,21 @@ export class Virtualizer<
   // held the sizer is short by the hold, so the element's own max is too.
   private getMaxScrollOffset = () =>
     (this._elementMaxScrollOffset() ?? 0) + this._holdOffset
+
+  // An element position in layout coordinates: how far the layout position
+  // is ahead of the element. The element is `_holdOffset` behind while a
+  // correction is held, and a prepend's anchor delta behind from
+  // `setOptions` (which moved `scrollOffset` by it) until `_willUpdate`
+  // writes or holds it. Writes (`_scrollToOffset`) and the clamp record
+  // (`_clampedBy`) deliberately account for the hold alone: a write of the
+  // layout position is what closes the anchor delta.
+  private _toLayoutOffset = (elementOffset: number) => {
+    let offset = elementOffset + this._holdOffset
+    if (this.pendingScrollAnchor?.kind === 'anchor') {
+      offset += this.pendingScrollAnchor.delta
+    }
+    return offset
+  }
 
   // The element's own scroll range, or null where it cannot be read (no
   // element, or a bare test double without `scrollHeight` / `document`).
