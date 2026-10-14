@@ -438,12 +438,21 @@ export interface VirtualizerOptions<
 
 // Where an in-flight scroll command is in its lifecycle, which decides how
 // its scroll events and measurements are read:
+//   queued           the first write waits for the momentum tail to close
+//                    (iOS 27, see `_startScroll`). Nothing has been written:
+//                    the fling's scroll events do not retire the command, a
+//                    drag does, and reconcile only keeps the safety valve
 //   smooth           a smooth animation is travelling to the target
 //   smoothLanded     a smooth scroll is at its target, waiting to retire
 //   smoothFinishing  a smooth scroll switched to instant writes for the
 //                    final approach; its animation can still report positions
 //   instant          instant writes
-type ScrollPhase = 'smooth' | 'smoothLanded' | 'smoothFinishing' | 'instant'
+type ScrollPhase =
+  | 'queued'
+  | 'smooth'
+  | 'smoothLanded'
+  | 'smoothFinishing'
+  | 'instant'
 
 type ScrollState = {
   // what we want
@@ -454,6 +463,8 @@ type ScrollState = {
 
   // lifecycle
   startedAt: number
+  // how the command was asked to scroll; a queued command writes with it
+  behavior: ScrollBehavior
 
   // target tracking
   lastTargetOffset: number
@@ -461,12 +472,6 @@ type ScrollState = {
   // settling
   stableFrames: number
   phase: ScrollPhase
-
-  // The command's first write waits for the momentum tail to close (iOS 27,
-  // see `_startScroll`). Until then nothing has been written: the fling's
-  // scroll events do not retire the command, a drag does, and reconcile only
-  // keeps the safety valve.
-  awaitingTail?: { behavior: ScrollBehavior }
 }
 
 const initialScrollPhase = (
@@ -1133,7 +1138,7 @@ export class Virtualizer<
             this.scrollState?.index != null &&
             // Nothing has been written for a command waiting for the tail;
             // these are the fling's events.
-            this.scrollState.awaitingTail === undefined &&
+            this.scrollState.phase !== 'queued' &&
             !isClampedReadBack &&
             // A non-smooth write lands at once, so any other scroll event is
             // the user's, even before reconcile saw the target reached (the
@@ -1201,7 +1206,7 @@ export class Virtualizer<
             this._iosTouch.moved = true
             // The user scrolls: a command still waiting for the tail is
             // theirs to override, like a written one would be.
-            if (this.scrollState?.awaitingTail) this.scrollState = null
+            if (this.scrollState?.phase === 'queued') this.scrollState = null
           }
 
           // A held correction is written once a write is possible.
@@ -1389,9 +1394,8 @@ export class Virtualizer<
   // have moved an index target).
   private _writeAwaitingCommand = () => {
     const state = this.scrollState
-    if (state === null || state.awaitingTail === undefined) return
-    const { behavior } = state.awaitingTail
-    delete state.awaitingTail
+    if (state === null || state.phase !== 'queued') return
+    const { behavior } = state
     this.getMeasurements()
     const offset = this.getScrollStateTarget(state)
     state.lastTargetOffset = offset
@@ -1492,7 +1496,7 @@ export class Virtualizer<
 
     // Nothing to reconcile until the tail closes and the command is written;
     // only the safety valve above applies.
-    if (this.scrollState.awaitingTail !== undefined) {
+    if (this.scrollState.phase === 'queued') {
       this.scheduleScrollReconcile()
       return
     }
@@ -2425,8 +2429,8 @@ export class Virtualizer<
           startedAt: this.now(),
           lastTargetOffset: offset,
           stableFrames: 0,
-          phase: 'instant',
-          awaitingTail: { behavior },
+          phase: 'queued',
+          behavior,
         }
         this.scheduleScrollReconcile()
         return
@@ -2443,6 +2447,7 @@ export class Virtualizer<
       startedAt: this.now(),
       lastTargetOffset: offset,
       stableFrames: 0,
+      behavior,
       phase: initialScrollPhase(
         behavior,
         target.index != null && approxEqual(offset, this.getScrollOffset()),
