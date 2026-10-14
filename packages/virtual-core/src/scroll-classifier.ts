@@ -197,10 +197,11 @@ export function flingSpedUp(samples: ReadonlyArray<ScrollSample>): boolean {
 }
 
 // Whether a fling that sent its last scroll event was still going at
-// 0.5px/ms or more over its last 40ms: a finger caught it. A fling that ends
-// on its own fades to about 0.01px/ms first; a tap stopped one at
-// 0.83–1.43px/ms (iPhone, 27.0.1, #1307). The finger stays down with no
-// touch events, and iOS undoes a write made under it.
+// 0.05px/ms or more over its last 40ms: a finger caught it. A fling that
+// ends on its own fades to at most 0.015px/ms first; taps stopped one at
+// 0.21–1.43px/ms (iPhones on 27.0.1, #1307). The finger stays down with no
+// touch events, and iOS undoes a write made under it. A tap in the last
+// pixels of a fling reads as its end.
 export function flingCaught(samples: ReadonlyArray<ScrollSample>): boolean {
   const last = samples[samples.length - 1]
   if (last === undefined) return false
@@ -208,5 +209,5 @@ export function flingCaught(samples: ReadonlyArray<ScrollSample>): boolean {
   while (j >= 0 && last.t - samples[j]!.t < FLING_WINDOW_MS) j--
   if (j < 0) return false
   const from = samples[j]!
-  return Math.abs(last.offset - from.offset) / (last.t - from.t) >= 0.5
+  return Math.abs(last.offset - from.offset) / (last.t - from.t) >= 0.05
 }

@@ -362,13 +362,36 @@ describe('flingCaught', () => {
     expect(
       flingCaught([
         { t: 0, offset: 0 },
-        { t: 40, offset: 20 },
+        { t: 40, offset: 2 },
       ]),
     ).toBe(true)
     expect(
       flingCaught([
         { t: 0, offset: 0 },
-        { t: 40, offset: 19 },
+        { t: 40, offset: 1 },
+      ]),
+    ).toBe(false)
+  })
+
+  // A fling at a steady speed for 100ms, 16ms a frame.
+  const atSpeed = (pxPerMs: number) =>
+    Array.from({ length: 7 }, (_, i) => ({
+      t: i * 16,
+      offset: Math.round(i * 16 * pxPerMs),
+    }))
+
+  test('late taps (0.21–0.35px/ms, another iPhone) are caught', () => {
+    expect(flingCaught(atSpeed(0.21))).toBe(true)
+    expect(flingCaught(atSpeed(0.35))).toBe(true)
+  })
+
+  test('the slowest natural end recorded (0.015px/ms) is not', () => {
+    // 1px every 67ms, as the last frames of a fling report.
+    expect(
+      flingCaught([
+        { t: 0, offset: 0 },
+        { t: 67, offset: 1 },
+        { t: 134, offset: 2 },
       ]),
     ).toBe(false)
   })

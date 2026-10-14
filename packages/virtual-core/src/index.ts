@@ -612,6 +612,11 @@ export class Virtualizer<
   // The scroll events since a command started waiting for the tail, at
   // most the last 200ms, for `flingSpedUp`.
   private _flingSamples: Array<ScrollSample> = []
+  // A drag ended and its fling has not reported yet: 'awaiting' from the
+  // touchend until a scroll event re-arms the tail; once the tail closes
+  // first, the time until which the fling's first frame may still come and
+  // reopen it (see the scroll handler).
+  private _lateFling: 'awaiting' | number | null = null
   // Our last write to the element, from `_scrollToOffset` until the next
   // scroll event reports it (the only place it is cleared). Until then
   // `scrollOffset` may still hold the old position.
@@ -1146,7 +1151,27 @@ export class Virtualizer<
           // Only an open tail is extended: a scroll event with no touch before
           // it (our own write's read-back) never opens one.
           if (isScrolling && this._iosTouch?.phase === 'tail') {
+            this._lateFling = null
             this._openIosTail(this._iosTouch.moved || kind !== 'readBack')
+          } else if (typeof this._lateFling === 'number') {
+            // The first frame of a fling can come 150–250ms after touchend
+            // when the main thread is busy (27.0 simulator, #1307), after
+            // the tail has closed. It reopens it, within 1s of a drag only:
+            // other scroll events with no touch before them must not defer
+            // corrections (#1250). Our smooth animation's frames are not one.
+            if (this.now() > this._lateFling) {
+              this._lateFling = null
+            } else if (
+              kind === 'external' &&
+              isScrolling &&
+              offset !== prevOffset &&
+              this._iosTouch === null &&
+              this.scrollState?.phase !== 'smooth' &&
+              this.scrollState?.phase !== 'smoothFinishing'
+            ) {
+              this._lateFling = null
+              this._openIosTail(true)
+            }
           }
           // A finger that lands on a fling fires no touch events (#1307), so
           // while a command waits for the fling, the scroll events are all
@@ -1214,6 +1239,7 @@ export class Virtualizer<
         const onTouchEnd = () => {
           const moved = this._iosTouch?.phase === 'down' && this._iosTouch.moved
           this._endIosTouch()
+          this._lateFling = moved ? 'awaiting' : null
           this._openIosTail(moved)
         }
         scrollEl.addEventListener(
@@ -1385,10 +1411,14 @@ export class Virtualizer<
           Math.abs(now - this._lastElementOffset) >= 1
         ) {
           this._lastElementOffset = now
+          // It moved with no event: a sample, so the speed `flingCaught`
+          // reads when it stops is not the one from before the silence.
+          this._flingSamples.push({ t: this.now(), offset: now })
           this._openIosTail(tail.moved)
           return
         }
         if (this._iosTouch === tail) this._iosTouch = null
+        if (this._lateFling === 'awaiting') this._lateFling = this.now() + 1000
         // A fling that stopped at speed was caught by a finger that is still
         // down, with no touch events: the user has taken over, as with a
         // drag, and iOS would undo the write anyway.

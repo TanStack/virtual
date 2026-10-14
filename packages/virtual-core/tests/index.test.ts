@@ -2968,6 +2968,45 @@ test('iOS 27: a command issued after a second flick waits for the new fling', ()
   expect(h.writes).toEqual([4000])
 })
 
+test('iOS 27: a tap late in the fling (0.21px/ms) cancels the waiting command', () => {
+  const h = flingOnIOS27() // heading up, passing 1500
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    // ~3.4px a frame when the finger lands (another iPhone, #1307).
+    for (const top of [1497, 1493, 1490, 1487, 1483, 1480]) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: a fling that went on with no scroll events is not read as caught', () => {
+  const h = flingOnIOS27() // heading up, passing 1500
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    // 0.25px/ms when the events stop...
+    for (const top of [1496, 1492, 1488, 1484]) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+  })
+  // ...but the element keeps moving, fading out, with none.
+  for (const top of [1478, 1476]) {
+    h.advance(150)
+    h.el.scrollTop = top
+    h.expireTail()
+    expect(h.writes).toEqual([])
+  }
+  // It stopped: the speed it stopped at is the silent one, not 0.25px/ms.
+  h.advance(150)
+  h.expireTail()
+  expect(h.writes).toEqual([4500])
+})
+
 test('iOS 27: the waiting command is not written while the fling still moves between scroll events', () => {
   const h = flingOnIOS27()
   h.run(() => {
@@ -3308,6 +3347,91 @@ test('iOS Phase 1: momentum scroll events re-arm the post-touchend tail until th
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_holdOffset']).toBe(0)
   })
+})
+
+// The first frame of a fling can come 150–250ms after touchend when the main
+// thread is busy (27.0 simulator, #1307): after the tail has closed.
+function dragThenLateFling({ ios27 = false } = {}) {
+  const h = makeDeferralHarness({ start: 2000, ios27 })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, 1990))
+  h.touch('touchend')
+  h.advance(150)
+  h.expireTail() // no momentum frame yet
+  h.writes.length = 0
+  return h
+}
+
+test('iOS: a fling whose first frame comes after the tail closed reopens it', () => {
+  const h = dragThenLateFling()
+  h.advance(100)
+  h.run(() => {
+    h.scroll(true, 1960)
+    h.v.resizeItem(5, 100)
+  })
+  // Held: a write would stop the fling (26) or be overridden (27).
+  expect(h.writes).toEqual([])
+  h.run(() => {
+    h.scroll(true, 1900)
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([1950])
+})
+
+test('iOS 27: a command mid-fling waits when the first frame came late', () => {
+  const h = dragThenLateFling({ ios27: true })
+  h.advance(100)
+  h.run(() => {
+    h.scroll(true, 1960)
+    h.v.scrollToIndex(90, { align: 'start' })
+  })
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState?.phase).toBe('queued')
+})
+
+test('iOS: a scroll event over 1s after the tail closed does not reopen it', () => {
+  const h = dragThenLateFling()
+  h.advance(1100)
+  h.run(() => {
+    h.scroll(true, 1960)
+    h.v.resizeItem(5, 100)
+  })
+  expect(h.writes).toEqual([2010])
+})
+
+test('iOS: after a fling that reported in time, a later scroll event opens no tail', () => {
+  const h = makeDeferralHarness({ start: 2000 })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, 1990))
+  h.touch('touchend')
+  h.run(() => {
+    h.scroll(true, 1900)
+    h.scroll(false)
+  })
+  h.expireTail()
+  h.writes.length = 0
+  // Say the app scrolls the element itself.
+  h.advance(100)
+  h.run(() => {
+    h.scroll(true, 1800)
+    h.v.resizeItem(5, 100)
+  })
+  expect(h.writes).toEqual([1850])
+})
+
+test('iOS: a tap opens no late-fling window', () => {
+  const h = makeDeferralHarness({ start: 2000 })
+  h.touch('touchstart')
+  h.touch('touchend')
+  h.expireTail()
+  h.writes.length = 0
+  h.advance(100)
+  h.run(() => {
+    h.scroll(true, 1960)
+    h.v.resizeItem(5, 100)
+  })
+  expect(h.writes).toEqual([2010])
 })
 
 test('iOS Phase 1: new touchstart during grace window cancels pending flush timer', () => {
