@@ -94,13 +94,20 @@ button {
   background: none;
   border: 0;
   border-radius: 8px;
-  font-size: 16px;
-  height: 36px;
-  width: 36px;
+  display: grid;
+  height: 40px;
+  place-items: center;
+  width: 40px;
 }
 
 .IconButton:hover {
   background: var(--hover);
+}
+
+.NewChat {
+  align-items: center;
+  display: flex;
+  gap: 10px;
 }
 
 .NewChat,
@@ -108,6 +115,7 @@ button {
   background: none;
   border: 0;
   border-radius: 8px;
+  flex: none;
   overflow: hidden;
   padding: 8px 10px;
   text-align: left;
@@ -209,11 +217,13 @@ button {
   border-radius: 999px;
   bottom: 12px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
-  height: 36px;
+  display: grid;
+  height: 40px;
   left: 50%;
+  place-items: center;
   position: absolute;
   transform: translateX(-50%);
-  width: 36px;
+  width: 40px;
 }
 
 /* Messages */
@@ -346,10 +356,11 @@ button {
   border: 0;
   border-radius: 50%;
   color: var(--accent-text);
+  display: grid;
   flex: none;
-  font-size: 16px;
-  height: 36px;
-  width: 36px;
+  height: 40px;
+  place-items: center;
+  width: 40px;
 }
 
 .SendButton:disabled {

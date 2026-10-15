@@ -6,6 +6,34 @@ import { queryClient, useChats, useMessages, useSendMessage } from './queries'
 import type { Message } from './api'
 import './index.css'
 
+// Feather-style 24×24 stroke paths.
+const icons = {
+  menu: 'M3 6h18M3 12h18M3 18h18',
+  close: 'M15 18l-6-6 6-6',
+  newChat: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z',
+  up: 'M12 19V5M5 12l7-7 7 7',
+  down: 'M12 5v14M19 12l-7 7-7-7',
+  stop: 'M7 7h10v10H7Z',
+}
+
+function Icon({ path }: { path: string }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={path} />
+    </svg>
+  )
+}
+
 const isNarrow = () => window.matchMedia('(max-width: 768px)').matches
 
 function App() {
@@ -47,7 +75,7 @@ function App() {
             aria-label="Close sidebar"
             onClick={() => setSidebarOpen(false)}
           >
-            ⟨
+            <Icon path={icons.close} />
           </button>
         </div>
         <button
@@ -56,7 +84,8 @@ function App() {
           aria-current={activeChatId === null ? 'page' : undefined}
           onClick={() => openChat(null)}
         >
-          ✎ New chat
+          <Icon path={icons.newChat} />
+          New chat
         </button>
         <div className="SidebarLabel">Chats</div>
         <nav className="ChatList" aria-label="Chat history">
@@ -92,7 +121,7 @@ function App() {
               aria-label="Open sidebar"
               onClick={() => setSidebarOpen(true)}
             >
-              ☰
+              <Icon path={icons.menu} />
             </button>
           )}
           <span className="MainTitle">
@@ -251,7 +280,7 @@ function MessageList({
           aria-label="Jump to latest message"
           onClick={() => virtualizer.scrollToEnd({ behavior: 'smooth' })}
         >
-          ↓
+          <Icon path={icons.down} />
         </button>
       )}
     </div>
@@ -357,7 +386,7 @@ function Composer({
           aria-label="Stop"
           onClick={onStop}
         >
-          ■
+          <Icon path={icons.stop} />
         </button>
       ) : (
         <button
@@ -366,7 +395,7 @@ function Composer({
           aria-label="Send"
           disabled={disabled || !text.trim()}
         >
-          ↑
+          <Icon path={icons.up} />
         </button>
       )}
     </form>
