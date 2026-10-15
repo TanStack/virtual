@@ -610,15 +610,16 @@ export class Virtualizer<
   //   further by the time it reports.
   // - `smooth`: the write animates, so until it lands the element is
   //   somewhere between the old offset and `target`.
-  // - `max`, `lowMaxes`: for a command's instant write, the scroll max as
-  //   rows measured since the write moved it (`resizeItem`), and each value
-  //   it took below `target`. The browser clamps the write to one of them
-  //   at a layout, and the sizer can grow back before the report, so the
-  //   read-back is that max rather than the element's current one.
+  // - `lowMaxes`: for a command's instant write, each scroll max below
+  //   `target` the element had since the write. A command's target is
+  //   clamped to the max at the write, but the sizer can shrink under it
+  //   before the report (rows measured smaller, a count change) and grow
+  //   back, so the read-back is the max the browser clamped to then rather
+  //   than the element's current one. Read wherever the sizer can have
+  //   been committed (`_noteClampMax`).
   private pendingWrite: {
     target: number
     smooth: boolean
-    max?: number
     lowMaxes?: Array<number>
   } | null = null
   // A compensation write from `applyScrollAdjustment` whose target exceeded
@@ -673,6 +674,7 @@ export class Virtualizer<
             this._resizeBatch = null
             if (batch.notify) {
               this.notify(batch.sync)
+              this._noteClampMax()
               this._flushHoldIfReady(true)
               this._retryClampedAdjustment()
             }
@@ -1094,8 +1096,8 @@ export class Virtualizer<
           } else if (
             kind === 'clampedReadBack' &&
             this.scrollState?.index != null &&
-            elementMax !== null &&
-            offset < elementMax + this._holdOffset - 1.5
+            // Not `elementMax`: an adapter can report the read-back at rest.
+            offset < this.getMaxScrollOffset() - 1.5
           ) {
             // Our write, clamped at a max the sizer has since grown back
             // from: reconcile writes the target again, even when the layout
@@ -1211,6 +1213,9 @@ export class Virtualizer<
 
       this._scrollToOffset(this.getScrollOffset())
     }
+
+    // The consumer has committed the sizer.
+    this._noteClampMax()
 
     const anchor = this.pendingScrollAnchor
     this.pendingScrollAnchor = null
@@ -2048,30 +2053,6 @@ export class Virtualizer<
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
 
-      // Follow the scroll max through the sizes measured before a command's
-      // instant write reports back (see `pendingWrite`). The element's max
-      // is read once, at the first resize after the write, before that
-      // resize reaches the sizer; it may already be below the target. With
-      // lanes, a row's delta is not the total's, so nothing is followed.
-      const write =
-        this.options.lanes === 1 && this._awaitingCommandReadBack()
-          ? this.pendingWrite!
-          : null
-      const followMax = (max: number) => {
-        write!.max = max
-        // The element cannot clamp below its own 0, which is the hold in
-        // layout coordinates; the raw max stays for the next delta.
-        const reachable = Math.max(max, this._holdOffset)
-        if (reachable < write!.target) {
-          ;(write!.lowMaxes ??= []).push(reachable)
-        }
-      }
-      if (write !== null && write.max === undefined) {
-        const elementMax = this._elementMaxScrollOffset()
-        if (elementMax !== null) followMax(elementMax + this._holdOffset)
-      }
-      if (write?.max !== undefined) followMax(write.max + delta)
-
       // Before a command's read-back, an index or end target is retargeted
       // from fresh measurements by reconcileScroll next frame; an offset
       // target lands where it was written and the delta is not applied.
@@ -2104,6 +2085,7 @@ export class Virtualizer<
         return
       }
       this.notify(adjustedSync)
+      this._noteClampMax()
       // A consumer that grows the sizer synchronously inside `onChange`
       // (direct DOM updates) may never re-render when the range is
       // unchanged, so retry a clamped write here rather than only in
@@ -2162,6 +2144,23 @@ export class Virtualizer<
       offset,
     )
     return notUndefined(measurements[idx])
+  }
+
+  // Record the element's max, in layout coordinates, as one a command's
+  // pending instant write may be clamped to (see `lowMaxes` on
+  // `pendingWrite`). Called where the sizer can have been committed: after
+  // a notify, for a consumer that sizes it in `onChange`, and in
+  // `_willUpdate`. The element cannot clamp below its own 0, which is the
+  // hold in layout coordinates.
+  private _noteClampMax = () => {
+    if (!this._awaitingCommandReadBack()) return
+    const elementMax = this._elementMaxScrollOffset()
+    if (elementMax === null) return
+    const write = this.pendingWrite!
+    const max = Math.max(elementMax, 0) + this._holdOffset
+    if (max >= write.target) return
+    const lowMaxes = (write.lowMaxes ??= [])
+    if (lowMaxes[lowMaxes.length - 1] !== max) lowMaxes.push(max)
   }
 
   // The element's scroll range in layout coordinates: while a correction is

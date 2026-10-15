@@ -66,6 +66,39 @@ exports[`scroll behaviour snapshot > base web 1`] = `
 ]
 `;
 
+exports[`scroll behaviour snapshot > commitPerRow ios 1`] = `
+[
+  "0: 188b7eb6 cbb399d1 0c68f8d8 52d44e85 030fdf66 f89bae5e e33eb3b7 4b11cbb6 bc3f4dfa 0d8fe7ec",
+  "10: 06bda0c7 fbdcf4b6 92b9b7d7 ac880e66 9880cb46 5ff7a292 10a7d3a0 78eed177 e0b1c0ac e25c37ec",
+  "20: 7d64b6f6 8ddb843c 01a561c0 4f8fccf5 06aa4f85 0c141569 cfbd97d3 aa353506 4634aede 5052c204",
+  "30: b6a919af 84dc4560 7e492fad 1852617f b06693e3 124a7157 f88d78a2 a89b2b4f 2d610d8a 155761e2",
+  "40: 0d274a15 5b099780 9dcf3736 54322109 bf57934a 6041f019 b28f19d9 e5e20e3b cfb551ab 2c1bbec2",
+  "50: ad0cbc1d 1f82fb9b 8ab02f8b 23c2e2fb 8cb40f92 ec29f0fd 91528992 14e26564 884a1fff 622e658e",
+]
+`;
+
+exports[`scroll behaviour snapshot > commitPerRow ios27 1`] = `
+[
+  "0: e9f2ce2c cbb399d1 0c68f8d8 2c24151f 030fdf66 43163cec e33eb3b7 0c7f462d bc3f4dfa 0d8fe7ec",
+  "10: 9ee9150b fbdcf4b6 92b9b7d7 ec0a38f6 9880cb46 60d448ce 10a7d3a0 78eed177 e0b1c0ac a5e63aaf",
+  "20: 7d64b6f6 8ddb843c 01a561c0 6c999c46 3dcaee6a b2e63a21 cfbd97d3 b6a51eb6 e50f28ad 5052c204",
+  "30: b6a919af 84dc4560 42933fed 1852617f b06693e3 124a7157 13948bf0 a89b2b4f 2d610d8a 155761e2",
+  "40: 019380ed 5b099780 9dcf3736 c80d856e bf57934a 6041f019 c20f0271 e5e20e3b cfb551ab 2c1bbec2",
+  "50: ad0cbc1d 1f82fb9b 8ab02f8b 23c2e2fb 8cb40f92 d54527a4 7989082d 14e26564 884a1fff 98ba9a64",
+]
+`;
+
+exports[`scroll behaviour snapshot > commitPerRow web 1`] = `
+[
+  "0: ceb7f0e7 cbb399d1 f4a63add a132747c 030fdf66 643d2755 e33eb3b7 4b11cbb6 bc3f4dfa 0d8fe7ec",
+  "10: 06bda0c7 fbdcf4b6 166319fd ac880e66 9880cb46 5ff7a292 31061954 dae8df99 e2cc19b7 e25c37ec",
+  "20: 7e86e2b6 fe1ff262 01a561c0 f91f4bae 6e38d09b 4ee9d5dd 7135be90 4ae76f75 b13f2c93 5052c204",
+  "30: b6a919af 2109d992 7e492fad 1852617f b06693e3 124a7157 117f3ed1 a89b2b4f 2d610d8a 155761e2",
+  "40: 0d274a15 5b099780 2c1ceef6 f813aca3 bf57934a 8e53c5c4 de439e3e e5e20e3b 5e08526b ef4b633c",
+  "50: 26d62359 e308f594 a0ad4db6 9d7ab115 509fe1e1 53afc076 83a11448 14e26564 884a1fff 622e658e",
+]
+`;
+
 exports[`scroll behaviour snapshot > horizontal ios 1`] = `
 [
   "0: a9fcb9d4 0d2cec68 ed35961e 0a69fa03 0be21da6 3ec8eb85 869fa2d1 27716a81 f885c716 44f33e92",

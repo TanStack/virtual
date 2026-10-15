@@ -68,6 +68,12 @@ type Config = {
   setup?: (v: Virtualizer<any, any>) => void
   // Share of scroll commands issued with `behavior: 'smooth'`.
   smooth?: number
+  // The adapter sizes the container from `onChange` (react-virtual's
+  // `directDomUpdates`), and the ResizeObserver reports each resized row in
+  // its own callback, so the sizer commits, and can clamp, per row.
+  commitPerRow?: boolean
+  // Step weights in place of the defaults in `makeSteps`.
+  weights?: { end?: number; resizeMany?: number }
 }
 
 const IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)'
@@ -102,6 +108,14 @@ const configs: Array<Config> = [
   },
   { name: 'horizontal', options: { horizontal: true } },
   { name: 'smooth', smooth: 0.8 },
+  // Instant scrolls to the end and resizes of several rows, so rows shrink
+  // and grow back under a write that has not been reported yet: the browser
+  // clamps it at a max the sizer has left by the read-back.
+  {
+    name: 'commitPerRow',
+    commitPerRow: true,
+    weights: { end: 12, resizeMany: 14 },
+  },
 ]
 
 // mulberry32
@@ -133,7 +147,11 @@ const naturalSize = (key: number) =>
 
 const ALIGNS: Array<ScrollAlignment> = ['start', 'center', 'end', 'auto']
 
-function makeSteps(seed: number, smooth: number): Array<Step> {
+function makeSteps(
+  seed: number,
+  smooth: number,
+  weights: Config['weights'] = {},
+): Array<Step> {
   const r = rng(seed)
   const int = (n: number) => Math.floor(r() * n)
   const behavior = (): Behavior => (r() < smooth ? 'smooth' : 'auto')
@@ -155,10 +173,10 @@ function makeSteps(seed: number, smooth: number): Array<Step> {
     ],
     [2, () => ({ t: 'offset', to: int(5200), behavior: behavior() })],
     [3, () => ({ t: 'by', d: int(1200) - 600, behavior: behavior() })],
-    [2, () => ({ t: 'end', behavior: behavior() })],
+    [weights.end ?? 2, () => ({ t: 'end', behavior: behavior() })],
     [1, () => ({ t: 'cancel' })],
     [10, () => resize(1)],
-    [4, () => resize(2 + int(3))],
+    [weights.resizeMany ?? 4, () => resize(2 + int(3))],
     [1, () => ({ t: 'prepend', n: 1 + int(5) })],
     [1, () => ({ t: 'append', n: 1 + int(5) })],
     [10, () => ({ t: 'render' })],
@@ -207,7 +225,11 @@ function runTrace(
   }
   _resetIOSDetectionForTests()
   try {
-    return simulate(config, platform, makeSteps(seed, config.smooth ?? 0.3))
+    return simulate(
+      config,
+      platform,
+      makeSteps(seed, config.smooth ?? 0.3, config.weights),
+    )
   } finally {
     delete (navigator as any).userAgent
     delete (globalThis as any).CSS
@@ -329,6 +351,13 @@ function simulate(
   let lateFrame: number | null = null
   let writes: Array<string> = []
   let rendered: Array<number> = []
+  // Size the container to the total. One that shrinks under the position
+  // clamps it; the scroll event for that comes with the next event step. A
+  // bounce past the top is left alone: the content cannot clamp it.
+  const commitSizer = () => {
+    el.size = v.getTotalSize() + (v.options.scrollMargin ?? 0)
+    el.pos = Math.min(el.pos, max())
+  }
 
   const v = new Virtualizer({
     count: ids.length,
@@ -369,15 +398,14 @@ function simulate(
       cb(el.pos, false)
       return () => {}
     },
+    ...(config.commitPerRow && { onChange: () => commitSizer() }),
     ...options,
   })
   config.setup?.(v)
   const unmount = v._didMount()
 
   // What a framework adapter does on render: read the items, mount and
-  // measure their rows, run the update hook, and size the container. A
-  // container that shrinks under the position clamps it; the scroll event
-  // for that comes with the next event step.
+  // measure their rows, run the update hook, and size the container.
   const render = () => {
     const items = v.getVirtualItems()
     rendered = items.map((item) => item.index)
@@ -409,10 +437,10 @@ function simulate(
       }
     }
     if (unmounted) v.measureElement(null)
+    // react-virtual sizes the container before its update hook runs.
+    if (config.commitPerRow) commitSizer()
     v._willUpdate()
-    el.size = v.getTotalSize() + (v.options.scrollMargin ?? 0)
-    // A bounce past the top is left alone: the content cannot clamp it.
-    el.pos = Math.min(el.pos, max())
+    commitSizer()
     // The first row's exposed start as well as its index: a correction held
     // while a write is impossible shifts what the rows render at, not which
     // rows render, and this is where that shows.
@@ -484,7 +512,8 @@ function simulate(
           const row = rows.get(ids[index]!)
           if (row && !changed.includes(row)) changed.push(row)
         })
-        if (changed.length > 0) ro.deliver?.(changed)
+        if (config.commitPerRow) changed.forEach((row) => ro.deliver?.([row]))
+        else if (changed.length > 0) ro.deliver?.(changed)
         extra = changed.map((row) => `#${row.index}`).join('')
         break
       }
