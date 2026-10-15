@@ -117,6 +117,10 @@ test('iOS 27: an overflow the app sets while the fling stops is kept', () => {
     h.frame()
   })
   expect(h.overflow()).toBe('scroll ')
+  // The fling may still run: the tail writes when it closes.
+  expect(h.writes).toEqual([])
+  h.run(() => h.scroll(false))
+  h.expireTail()
   expect(h.writes).toEqual([4800])
 })
 
@@ -168,23 +172,22 @@ test('iOS 27: a fling in a bounce when it stops is written when the tail closes'
   expect(h.writes).toEqual([4800])
 })
 
-test('iOS 27: a fling that stopped at speed before the frames passed is left to the tail, which cancels', () => {
+test('iOS 27: a fling the stop ends at speed over a slow frame is still written', () => {
   const h = flingWithStyle()
   h.run(() => {
     h.v.scrollToEnd()
-    // A finger caught it at ~20px a frame: no touch events, the events stop.
-    for (const top of [1480, 1460, 1441, 1422]) {
-      h.advance(16)
-      h.scroll(true, top)
-    }
+    // Fling frames 45ms apart on a busy main thread, then the stop holds:
+    // the events end at speed, which is not a finger's catch.
+    h.advance(5)
+    h.scroll(true, 1480)
     h.frame()
+    h.advance(45)
+    h.scroll(true, 1390)
     h.frame()
   })
-  expect(h.writes).toEqual([])
-  h.run(() => h.scroll(false))
+  expect(h.writes).toEqual([4800])
   h.expireTail()
-  expect(h.writes).toEqual([])
-  expect(h.v.scrollState).toBeNull()
+  expect(h.writes).toEqual([4800])
 })
 
 test('iOS 26: a scrollToIndex mid-fling is written at once, as before', () => {

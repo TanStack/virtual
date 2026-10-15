@@ -2173,8 +2173,9 @@ export class Virtualizer<
   // carries on (27.0.1 iPhone); hidden for two frames, it stops at once.
   // Nothing moves on screen. A second call while one is in progress waits
   // for the same frames. The app's inline value comes back, unless the app
-  // set a new one meanwhile.
-  private _momentumStop: { restore: () => void; done: () => void } | null = null
+  // set a new one meanwhile; `done` is then not called.
+  private _momentumStop: { restore: () => boolean; done: () => void } | null =
+    null
   private _stopMomentum = (done: () => void) => {
     const el = this.scrollElement
     const win = this.targetWindow
@@ -2194,13 +2195,17 @@ export class Virtualizer<
     const priority = style.getPropertyPriority(property)
     style.setProperty(property, 'hidden', 'important')
     const stop = {
+      // False when the app replaced the hidden value: the fling may not
+      // have stopped.
       restore: () => {
         if (
-          style.getPropertyValue(property) === 'hidden' &&
-          style.getPropertyPriority(property) === 'important'
+          style.getPropertyValue(property) !== 'hidden' ||
+          style.getPropertyPriority(property) !== 'important'
         ) {
-          style.setProperty(property, value, priority)
+          return false
         }
+        style.setProperty(property, value, priority)
+        return true
       },
       done,
     }
@@ -2210,8 +2215,8 @@ export class Virtualizer<
         // Already restored by `cleanup`, which also drops its command.
         if (this._momentumStop !== stop) return
         this._momentumStop = null
-        stop.restore()
-        stop.done()
+        // The command waits for the tail, as without the stop.
+        if (stop.restore()) stop.done()
       }),
     )
   }
@@ -2398,7 +2403,7 @@ export class Virtualizer<
         // iOS 27: a write now shows for one frame and the fling carries on
         // along its own path, so the command would be lost (#1307, step 3).
         // Stop the fling and write two frames later. Otherwise (no style to
-        // change, a finger down, a bounce, a catch) the tail stays open and
+        // change, a finger down, a bounce) the tail stays open and
         // the command is written when it closes, ~150ms after the last
         // fling frame. The user taking over before the write (a drag, a
         // second flick, a finger stopping the fling) cancels the command
@@ -2411,11 +2416,11 @@ export class Virtualizer<
             state?.phase !== 'queued' ||
             // A finger came down: it owns the scroll until it lifts.
             this._iosGesture.tail() !== 'fling' ||
-            // In a bounce WebKit can drop the write (#1287), and a fling
-            // that stopped at speed may be a finger's catch: the tail
-            // decides, as without the stop.
-            this._reportedOverscroll ||
-            flingCaught(state.samples ?? [])
+            // In a bounce WebKit can drop the write (#1287): the tail
+            // decides, as without the stop. (Not `flingCaught`: our stop
+            // also ends the fling at speed, so a slow frame would read as
+            // a catch and the tail would drop the command.)
+            this._reportedOverscroll
           ) {
             return
           }
