@@ -34,6 +34,12 @@ function Icon({ path }: { path: string }) {
   )
 }
 
+const suggestions = [
+  'How do I virtualize a chat list?',
+  'Explain scroll anchoring in one paragraph.',
+  'What should I test in an infinite list?',
+]
+
 const isNarrow = () => window.matchMedia('(max-width: 768px)').matches
 
 function App() {
@@ -138,6 +144,19 @@ function App() {
           <div className="Empty">
             <h1>What can I help with?</h1>
             {composer}
+            <div className="Suggestions">
+              {suggestions.map((text) => (
+                <button
+                  key={text}
+                  type="button"
+                  className="Suggestion"
+                  disabled={sending || streaming}
+                  onClick={() => onSend(text)}
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </main>

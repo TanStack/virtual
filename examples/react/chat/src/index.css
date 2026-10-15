@@ -275,6 +275,28 @@ button {
   margin: 0 0 24px;
 }
 
+.Suggestions {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+  max-width: 768px;
+  width: 100%;
+}
+
+.Suggestion {
+  background: none;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted);
+  padding: 10px 20px;
+  text-align: left;
+}
+
+.Suggestion:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--text);
+}
+
 .Composer {
   align-items: flex-end;
   background: var(--bg);
