@@ -69,7 +69,13 @@ function App() {
   const onSend = (text: string) => {
     send(
       { chatId: activeChatId, text },
-      { onSuccess: ({ chatId }) => setActiveChatId(chatId) },
+      {
+        // Keep a chat the user opened while the send was in flight.
+        onSuccess: ({ chatId }) =>
+          setActiveChatId((current) =>
+            current === activeChatId ? chatId : current,
+          ),
+      },
     )
   }
 
