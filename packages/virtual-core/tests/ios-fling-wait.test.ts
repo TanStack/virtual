@@ -133,6 +133,60 @@ test('iOS 27: an element let go of while the fling stops gets its overflow back 
   expect(h.writes).toEqual([])
 })
 
+test('iOS 27: a finger down while the fling stops keeps its gesture, and the command waits for it to lift', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.frame()
+  })
+  h.touch('touchstart')
+  h.run(() => h.frame())
+  expect(h.overflow()).toBe('auto important')
+  expect(h.writes).toEqual([])
+  // Still dragging: corrections stay held under it.
+  expect(h.v['_iosGesture'].touch?.phase).toBe('down')
+  h.touch('touchend')
+  h.expireTail()
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: a fling in a bounce when it stops is written when the tail closes', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.scroll(true, -40)
+    h.frame()
+    h.frame()
+  })
+  // WebKit can drop a write mid-bounce: wait for the tail.
+  expect(h.writes).toEqual([])
+  h.run(() => {
+    h.scroll(true, 0)
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: a fling that stopped at speed before the frames passed is left to the tail, which cancels', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    // A finger caught it at ~20px a frame: no touch events, the events stop.
+    for (const top of [1480, 1460, 1441, 1422]) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+    h.frame()
+    h.frame()
+  })
+  expect(h.writes).toEqual([])
+  h.run(() => h.scroll(false))
+  h.expireTail()
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
 test('iOS 26: a scrollToIndex mid-fling is written at once, as before', () => {
   const h = flingOnIOS27(false)
   h.run(() => h.v.scrollToIndex(90, { align: 'start' }))

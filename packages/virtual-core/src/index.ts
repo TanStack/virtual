@@ -2397,16 +2397,28 @@ export class Virtualizer<
       if (tail === 'fling' && iosMomentumOverridesWrites()) {
         // iOS 27: a write now shows for one frame and the fling carries on
         // along its own path, so the command would be lost (#1307, step 3).
-        // Stop the fling and write two frames later. Where the fling cannot
-        // be stopped (a scroll element without a style), the tail stays
-        // open and the command is written when it closes, ~150ms after the
-        // last fling frame. The user taking over before the write (a drag,
-        // a second flick, a finger stopping the fling) cancels the command
+        // Stop the fling and write two frames later. Otherwise (no style to
+        // change, a finger down, a bounce, a catch) the tail stays open and
+        // the command is written when it closes, ~150ms after the last
+        // fling frame. The user taking over before the write (a drag, a
+        // second flick, a finger stopping the fling) cancels the command
         // (see the scroll handler and `onTailClosed`). A relative command
         // (`scrollBy`) is not postponed: its target is taken from the
         // position at the call, which the fling leaves behind either way.
         this._stopMomentum(() => {
-          if (this.scrollState?.phase !== 'queued') return
+          const state = this.scrollState
+          if (
+            state?.phase !== 'queued' ||
+            // A finger came down: it owns the scroll until it lifts.
+            this._iosGesture.tail() !== 'fling' ||
+            // In a bounce WebKit can drop the write (#1287), and a fling
+            // that stopped at speed may be a finger's catch: the tail
+            // decides, as without the stop.
+            this._reportedOverscroll ||
+            flingCaught(state.samples ?? [])
+          ) {
+            return
+          }
           this._iosGesture.end()
           this._flushHoldIfReady(true)
           this._writeAwaitingCommand()
