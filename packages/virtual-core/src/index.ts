@@ -151,7 +151,7 @@ export const observeElementRect = <T extends Element>(
       : run()
   })
 
-  observer.observe(element, { box: 'border-box' })
+  observer.observe(element, { box: 'content-box' })
 
   return () => {
     observer.unobserve(element)

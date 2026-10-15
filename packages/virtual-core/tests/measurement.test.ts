@@ -1032,3 +1032,47 @@ test.each([false, true])(
     virtualizer._didMount()()
   },
 )
+
+test('refreshes horizontal end alignment when a scrollbar toggles', () => {
+  const { el } = createOwnWindow()
+  let deliverResize: ResizeObserverCallback
+  let observedBox: ResizeObserverBoxOptions | undefined
+  el.ownerDocument.defaultView!.ResizeObserver = vi.fn(function (cb) {
+    deliverResize = cb
+    return {
+      observe: (_target: Element, options?: ResizeObserverOptions) => {
+        observedBox = options?.box
+      },
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    }
+  }) as unknown as typeof ResizeObserver
+  Object.assign(el, { scrollWidth: 5000 })
+  const virtualizer = new Virtualizer({
+    count: 100,
+    horizontal: true,
+    estimateSize: () => 50,
+    getScrollElement: () => el,
+    scrollToFn: vi.fn(),
+    observeElementRect,
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+    },
+  })
+  virtualizer._willUpdate()
+  expect(virtualizer.getOffsetForIndex(10, 'end')?.[0]).toBe(150)
+  for (const width of [385, 400]) {
+    // A classic scrollbar changes the content box, leaving the border box fixed.
+    Object.assign(el, { clientWidth: width })
+    if (observedBox !== 'border-box') {
+      deliverResize!(
+        [{ target: el } as ResizeObserverEntry],
+        {} as ResizeObserver,
+      )
+    }
+    expect(el.offsetWidth).toBe(400)
+    expect(virtualizer.scrollRect?.width).toBe(width)
+    expect(virtualizer.getOffsetForIndex(10, 'end')?.[0]).toBe(550 - width)
+  }
+  virtualizer._didMount()()
+})
