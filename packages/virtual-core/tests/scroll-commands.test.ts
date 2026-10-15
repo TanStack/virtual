@@ -497,6 +497,50 @@ test('an instant scrollToEnd clamped by a shrink that grew back to the same tota
   )
 })
 
+test('a transient max below zero clamps an instant scrollToEnd at 0 without cancelling it', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+  let onScroll!: (offset: number, isScrolling: boolean) => void
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    count: 13,
+    observeElementOffset: (_instance, callback) => {
+      onScroll = callback
+      callback(0, false)
+      return () => {}
+    },
+  })
+  Object.defineProperty(mockScrollElement, 'scrollHeight', {
+    value: 630,
+    configurable: true,
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+
+  virtualizer.scrollToEnd()
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    30,
+    expect.anything(),
+    virtualizer,
+  )
+
+  // A row shrinks by 50: the max would be -20, so the browser clamps to 0.
+  // Then a row grows and the sizer passes the target again.
+  virtualizer.resizeItem(10, 0)
+  virtualizer.resizeItem(11, 150)
+  Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 680 })
+  onScroll(0, true)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    80,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
 test('a smooth retarget is not cancelled by its own intermediate scroll events', () => {
   const { rafCallbacks, mockScrollElement, scrollToFn } =
     createMockEnvironment()

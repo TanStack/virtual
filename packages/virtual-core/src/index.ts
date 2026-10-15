@@ -2059,7 +2059,12 @@ export class Virtualizer<
           : null
       const followMax = (max: number) => {
         write!.max = max
-        if (max < write!.target) (write!.lowMaxes ??= []).push(max)
+        // The element cannot clamp below its own 0, which is the hold in
+        // layout coordinates; the raw max stays for the next delta.
+        const reachable = Math.max(max, this._holdOffset)
+        if (reachable < write!.target) {
+          ;(write!.lowMaxes ??= []).push(reachable)
+        }
       }
       if (write !== null && write.max === undefined) {
         const elementMax = this._elementMaxScrollOffset()
