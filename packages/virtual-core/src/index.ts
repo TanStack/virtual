@@ -419,6 +419,11 @@ type ScrollState = {
   // settling
   stableFrames: number
   phase: ScrollPhase
+
+  // A `queued` command's view of the fling it waits for: the scroll events
+  // since it was queued, at most the last 200ms (`flingSpedUp`,
+  // `flingCaught`). Read only while `queued`.
+  samples?: Array<ScrollSample>
 }
 
 const initialScrollPhase = (
@@ -558,7 +563,8 @@ export class Virtualizer<
     // last event means it has not ended: wait again. Not while our own
     // write has yet to report: that moved it.
     tailStillMoving: () => {
-      if (this.scrollState?.phase !== 'queued' || this.pendingWrite !== null) {
+      const state = this.scrollState
+      if (state?.phase !== 'queued' || this.pendingWrite !== null) {
         return false
       }
       const now = this._readElementOffset()
@@ -572,17 +578,15 @@ export class Virtualizer<
       this._lastElementOffset = now
       // It moved with no event: a sample, so the speed `flingCaught` reads
       // when it stops is not the one from before the silence.
-      this._flingSamples.push({ t: this.now(), offset: now })
+      state.samples = [...(state.samples ?? []), { t: this.now(), offset: now }]
       return true
     },
     onTailClosed: () => {
       // A fling that stopped at speed was caught by a finger that is still
       // down, with no touch events: the user has taken over, as with a
       // drag, and iOS would undo the write anyway.
-      if (
-        this.scrollState?.phase === 'queued' &&
-        flingCaught(this._flingSamples)
-      ) {
+      const state = this.scrollState
+      if (state?.phase === 'queued' && flingCaught(state.samples ?? [])) {
         this.scrollState = null
       }
       this._flushHoldIfReady(true)
@@ -593,9 +597,6 @@ export class Virtualizer<
   // coordinates. The tail compares it with the element (`tailStillMoving`
   // above).
   private _lastElementOffset: number | null = null
-  // The scroll events since a command started waiting for the tail, at
-  // most the last 200ms, for `flingSpedUp`.
-  private _flingSamples: Array<ScrollSample> = []
   // Our last write to the element, from `_scrollToOffset` until the next
   // scroll event reports it (the only place it is cleared). Until then
   // `scrollOffset` may still hold the old position.
@@ -1130,23 +1131,26 @@ export class Virtualizer<
           // that show the user taking over: the scroll turns back, or speeds
           // up (`flingSpedUp`). Momentum does neither inside the scroll
           // range; a bounce does both, so no part of one counts.
+          const queued = this.scrollState
           if (
-            this.scrollState?.phase === 'queued' &&
+            queued?.phase === 'queued' &&
             kind === 'external' &&
             isScrolling
           ) {
             if (wasOverscrolled || this._reportedOverscroll) {
-              this._flingSamples = []
+              queued.samples = []
             } else {
               const t = this.now()
-              this._flingSamples = this._flingSamples.filter(
-                (sample) => t - sample.t <= 200,
-              )
-              this._flingSamples.push({ t, offset: elementOffset })
+              queued.samples = [
+                ...(queued.samples ?? []).filter(
+                  (sample) => t - sample.t <= 200,
+                ),
+                { t, offset: elementOffset },
+              ]
               if (
                 (prevDirection !== null &&
                   this.scrollDirection !== prevDirection) ||
-                flingSpedUp(this._flingSamples)
+                flingSpedUp(queued.samples)
               ) {
                 this.scrollState = null
               }
@@ -2353,8 +2357,8 @@ export class Virtualizer<
           stableFrames: 0,
           phase: 'queued',
           behavior,
+          samples: [],
         }
-        this._flingSamples = []
         this.scheduleScrollReconcile()
         return
       }
