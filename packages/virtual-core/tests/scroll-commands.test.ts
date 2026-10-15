@@ -711,9 +711,16 @@ test('a committed max is read in layout coordinates while a correction is held',
   scroll(4230)
 
   expect(virtualizer['scrollState']).not.toBeNull()
+  // The event is not past the max, so the hold is written, and the end is
+  // the element's own max again.
+  expect(virtualizer['_holdOffset']).toBe(0)
   scrollToFn.mockClear()
   rafCallbacks.splice(0).forEach((cb) => cb(0))
-  expect(scrollToFn).toHaveBeenCalled()
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4370,
+    expect.anything(),
+    virtualizer,
+  )
 })
 
 test('a clamp at the lowest of several committed maxima does not cancel an instant scrollToEnd', () => {
