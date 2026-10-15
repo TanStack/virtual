@@ -205,12 +205,17 @@ function MessageList({
   }, [didInitialScroll, virtualizer])
 
   // Sending a message jumps to it, like in most chat apps. Assistant output
-  // follows only when the reader is already at the latest message.
-  const lastMessage = messages[messages.length - 1]
-  const lastUserMessageId =
-    lastMessage?.author === 'user' ? lastMessage.id : null
+  // follows only when the reader is already at the latest message. The empty
+  // reply is added in the same render as the user message, so look for the
+  // latest user message rather than the last message.
+  const lastUserMessageId = [...messages]
+    .reverse()
+    .find((message) => message.author === 'user')?.id
+  const seenUserMessageIdRef = React.useRef(lastUserMessageId)
   React.useEffect(() => {
-    if (lastUserMessageId) virtualizer.scrollToEnd()
+    if (lastUserMessageId === seenUserMessageIdRef.current) return
+    seenUserMessageIdRef.current = lastUserMessageId
+    virtualizer.scrollToEnd()
   }, [lastUserMessageId, virtualizer])
 
   React.useEffect(() => {
