@@ -541,6 +541,228 @@ test('a transient max below zero clamps an instant scrollToEnd at 0 without canc
   )
 })
 
+// A virtualizer whose scroll events the test reports, over a sizer the test
+// commits: `commit` sets the element's scroll height and runs the adapter's
+// commit hook, as a re-render does.
+function createCommittedSizer() {
+  const env = createMockEnvironment()
+  const virtualizer = createVirtualizer(env.mockScrollElement, env.scrollToFn)
+  let onScroll!: (offset: number, isScrolling: boolean) => void
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    observeElementOffset: (_instance, callback) => {
+      onScroll = callback
+      callback(0, false)
+      return () => {}
+    },
+  })
+  const commit = (scrollHeight: number) => {
+    Object.defineProperty(env.mockScrollElement, 'scrollHeight', {
+      value: scrollHeight,
+      configurable: true,
+    })
+    virtualizer._willUpdate()
+  }
+  commit(5000)
+  virtualizer.getVirtualItems()
+  return {
+    ...env,
+    virtualizer,
+    commit,
+    scroll: (offset: number, isScrolling = true) =>
+      onScroll(offset, isScrolling),
+  }
+}
+
+test('a clamp at a max an append committed does not cancel an instant scrollToEnd', () => {
+  const { rafCallbacks, scrollToFn, virtualizer, commit, scroll } =
+    createCommittedSizer()
+
+  virtualizer.scrollToEnd()
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4400,
+    expect.anything(),
+    virtualizer,
+  )
+
+  // A row shrinks, a row is appended, a second row shrinks: the sizer
+  // commits at a max of 4390, which no row's delta alone leads to. The
+  // browser clamps there before a row grows the sizer past the target.
+  virtualizer.resizeItem(90, 20)
+  commit(4970)
+  virtualizer.setOptions({ ...virtualizer.options, count: 101 })
+  commit(5020)
+  virtualizer.resizeItem(91, 20)
+  commit(4990)
+  virtualizer.resizeItem(92, 150)
+  commit(5120)
+  scroll(4390)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4520,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
+test('a clamp below a max read before the sizer committed does not cancel an instant scrollToEnd', () => {
+  const { rafCallbacks, scrollToFn, virtualizer, commit, scroll } =
+    createCommittedSizer()
+
+  // A row measured smaller before the command; the sizer has not committed
+  // it, so the command and its first resize read a max 30px too large.
+  virtualizer.resizeItem(90, 20)
+  virtualizer.scrollToEnd()
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4400,
+    expect.anything(),
+    virtualizer,
+  )
+
+  virtualizer.resizeItem(91, 10)
+  commit(4930)
+  virtualizer.resizeItem(92, 150)
+  commit(5070)
+  scroll(4330)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4470,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
+test('a clamp at a max an append committed does not cancel an instant scrollToIndex', () => {
+  const { rafCallbacks, scrollToFn, virtualizer, commit, scroll } =
+    createCommittedSizer()
+
+  virtualizer.scrollToIndex(99, { align: 'end' })
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4400,
+    expect.anything(),
+    virtualizer,
+  )
+
+  virtualizer.resizeItem(90, 20)
+  commit(4970)
+  virtualizer.setOptions({ ...virtualizer.options, count: 101 })
+  commit(5020)
+  virtualizer.resizeItem(91, 20)
+  commit(4990)
+  virtualizer.resizeItem(92, 150)
+  commit(5120)
+  scroll(4390)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.splice(0).forEach((cb) => cb(0))
+  // Row 99 ends at 5040 after -30, -30 and +100.
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4440,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
+test('a committed max is read in layout coordinates while a correction is held', () => {
+  const { rafCallbacks, scrollToFn, virtualizer, commit, scroll } =
+    createCommittedSizer()
+
+  // A held correction of 100px: the sizer is 100px short of the layout, and
+  // an overscroll report keeps the hold from being written.
+  virtualizer['_holdOffset'] = 100
+  virtualizer['_reportedOverscroll'] = true
+  commit(4900)
+
+  virtualizer.resizeItem(90, 20)
+  virtualizer.scrollToEnd()
+  // The element's max (4300) plus the hold, written 100px short.
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4300,
+    expect.anything(),
+    virtualizer,
+  )
+
+  virtualizer.resizeItem(91, 10)
+  commit(4830)
+  virtualizer.resizeItem(92, 150)
+  commit(4970)
+  scroll(4230)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  scrollToFn.mockClear()
+  rafCallbacks.splice(0).forEach((cb) => cb(0))
+  expect(scrollToFn).toHaveBeenCalled()
+})
+
+test('a clamp at the lowest of several committed maxima does not cancel an instant scrollToEnd', () => {
+  const { rafCallbacks, scrollToFn, virtualizer, commit, scroll } =
+    createCommittedSizer()
+
+  // Not committed before the command, so every max that follows from the
+  // first resize's read is 30px too large.
+  virtualizer.resizeItem(80, 20)
+  virtualizer.scrollToEnd()
+
+  // Three shrinks commit one by one; the browser clamps at each, last at
+  // 4280.
+  virtualizer.resizeItem(90, 20)
+  commit(4940)
+  virtualizer.resizeItem(91, 20)
+  commit(4910)
+  virtualizer.resizeItem(92, 20)
+  commit(4880)
+  virtualizer.resizeItem(93, 200)
+  commit(5030)
+  scroll(4280)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4430,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
+test('a scroll to a position no committed max reached still cancels an instant scrollToEnd', () => {
+  const { virtualizer, commit, scroll } = createCommittedSizer()
+
+  virtualizer.resizeItem(80, 20)
+  virtualizer.scrollToEnd()
+  virtualizer.resizeItem(90, 20)
+  commit(4940)
+  virtualizer.resizeItem(91, 150)
+  commit(5070)
+  // The user, between the committed max (4340) and the target.
+  scroll(4355)
+
+  expect(virtualizer['scrollState']).toBeNull()
+})
+
+test('a clamp reported at rest still writes the end again', () => {
+  const { rafCallbacks, scrollToFn, virtualizer, scroll } =
+    createCommittedSizer()
+
+  // As in the net-zero case above, from an adapter that reports its
+  // read-back with `isScrolling` false.
+  virtualizer.scrollToEnd()
+  virtualizer.resizeItem(90, 20)
+  virtualizer.resizeItem(91, 80)
+  scroll(4370, false)
+  scrollToFn.mockClear()
+
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4400,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
 test('a smooth retarget is not cancelled by its own intermediate scroll events', () => {
   const { rafCallbacks, mockScrollElement, scrollToFn } =
     createMockEnvironment()

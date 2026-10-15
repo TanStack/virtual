@@ -612,7 +612,8 @@ export class Virtualizer<
   //   somewhere between the old offset and `target`.
   // - `max`, `lowMaxes`: for a command's instant write, the scroll max as
   //   rows measured since the write moved it (`resizeItem`), and each value
-  //   it took below `target`. The browser clamps the write to one of them
+  //   it took below `target`, with each max the sizer was committed at
+  //   below it (`_willUpdate`). The browser clamps the write to one of them
   //   at a layout, and the sizer can grow back before the report, so the
   //   read-back is that max rather than the element's current one.
   private pendingWrite: {
@@ -1094,8 +1095,8 @@ export class Virtualizer<
           } else if (
             kind === 'clampedReadBack' &&
             this.scrollState?.index != null &&
-            elementMax !== null &&
-            offset < elementMax + this._holdOffset - 1.5
+            // Not `elementMax`: an adapter can report the read-back at rest.
+            offset < this.getMaxScrollOffset() - 1.5
           ) {
             // Our write, clamped at a max the sizer has since grown back
             // from: reconcile writes the target again, even when the layout
@@ -1210,6 +1211,16 @@ export class Virtualizer<
       }
 
       this._scrollToOffset(this.getScrollOffset())
+    }
+
+    // The consumer has committed the sizer, and the browser clamps a pending
+    // instant write to the max it gives. `resizeItem` follows rows' deltas
+    // only, so it misses a sizer moved otherwise: a count change, `measure()`,
+    // or a first read from a sizer that had not committed an earlier resize.
+    // The committed max does not depend on lanes.
+    if (this._awaitingCommandReadBack()) {
+      const elementMax = this._elementMaxScrollOffset()
+      if (elementMax !== null) this._recordLowMax(elementMax + this._holdOffset)
     }
 
     const anchor = this.pendingScrollAnchor
@@ -2057,14 +2068,10 @@ export class Virtualizer<
         this.options.lanes === 1 && this._awaitingCommandReadBack()
           ? this.pendingWrite!
           : null
+      // The raw max stays for the next delta.
       const followMax = (max: number) => {
         write!.max = max
-        // The element cannot clamp below its own 0, which is the hold in
-        // layout coordinates; the raw max stays for the next delta.
-        const reachable = Math.max(max, this._holdOffset)
-        if (reachable < write!.target) {
-          ;(write!.lowMaxes ??= []).push(reachable)
-        }
+        this._recordLowMax(max)
       }
       if (write !== null && write.max === undefined) {
         const elementMax = this._elementMaxScrollOffset()
@@ -2162,6 +2169,15 @@ export class Virtualizer<
       offset,
     )
     return notUndefined(measurements[idx])
+  }
+
+  // A scroll max, in layout coordinates, that a command's pending instant
+  // write may be clamped to (see `lowMaxes` on `pendingWrite`). The element
+  // cannot clamp below its own 0, which is the hold in layout coordinates.
+  private _recordLowMax = (max: number) => {
+    const write = this.pendingWrite!
+    const reachable = Math.max(max, this._holdOffset)
+    if (reachable < write.target) (write.lowMaxes ??= []).push(reachable)
   }
 
   // The element's scroll range in layout coordinates: while a correction is
