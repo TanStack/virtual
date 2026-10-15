@@ -47,6 +47,149 @@ test('iOS 27: a scrollToIndex mid-fling waits for the tail, and the fling does n
   expect(h.v.scrollState).toBeNull()
 })
 
+// A fling whose element records its inline overflow-y, set by the app to
+// `auto !important`.
+function flingWithStyle() {
+  const h = flingOnIOS27()
+  const props = new Map([['overflow-y', ['auto', 'important']]])
+  Object.assign(h.el, {
+    style: {
+      getPropertyValue: (name: string) => props.get(name)?.[0] ?? '',
+      getPropertyPriority: (name: string) => props.get(name)?.[1] ?? '',
+      setProperty: (name: string, value: string, priority = '') => {
+        props.set(name, [value, priority])
+      },
+    },
+  })
+  return { ...h, overflow: () => props.get('overflow-y')!.join(' ') }
+}
+
+test('iOS 27: a command mid-fling stops the fling and writes two frames later', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd({ behavior: 'smooth' })
+    // Hidden through a frame: the fling stops. Restored and written after
+    // the next one, without waiting for the tail.
+    expect(h.overflow()).toBe('hidden important')
+    h.frame()
+    expect(h.overflow()).toBe('hidden important')
+    expect(h.writes).toEqual([])
+    h.frame()
+  })
+  expect(h.overflow()).toBe('auto important')
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: a second command while the fling stops leaves the overflow as the app set it', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToIndex(10, { align: 'start' })
+    h.frame()
+    h.v.scrollToEnd()
+    h.frame()
+    h.frame()
+  })
+  expect(h.overflow()).toBe('auto important')
+  // The later command wins.
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: a fling caught and dragged back while it stops cancels the command', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.scroll(true, 1300)
+    h.scroll(true, 1350)
+    h.frame()
+    h.frame()
+  })
+  expect(h.overflow()).toBe('auto important')
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: an overflow the app sets while the fling stops is kept', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.el.style.setProperty('overflow-y', 'scroll', '')
+    h.frame()
+    h.frame()
+  })
+  expect(h.overflow()).toBe('scroll ')
+  // The fling may still run: the tail writes when it closes.
+  expect(h.writes).toEqual([])
+  h.run(() => h.scroll(false))
+  h.expireTail()
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: an element let go of while the fling stops gets its overflow back at once', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.v['cleanup']()
+    expect(h.overflow()).toBe('auto important')
+    h.frame()
+    h.frame()
+  })
+  // Its command went with it.
+  expect(h.writes).toEqual([])
+})
+
+test('iOS 27: a finger down while the fling stops keeps its gesture, and the command waits for it to lift', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.frame()
+  })
+  h.touch('touchstart')
+  h.run(() => h.frame())
+  expect(h.overflow()).toBe('auto important')
+  expect(h.writes).toEqual([])
+  // Still dragging: corrections stay held under it.
+  expect(h.v['_iosGesture'].touch?.phase).toBe('down')
+  h.touch('touchend')
+  h.expireTail()
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: a fling in a bounce when it stops is written when the tail closes', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.scroll(true, -40)
+    h.frame()
+    h.frame()
+  })
+  // WebKit can drop a write mid-bounce: wait for the tail.
+  expect(h.writes).toEqual([])
+  h.run(() => {
+    h.scroll(true, 0)
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: a fling the stop ends at speed over a slow frame is still written', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    // Fling frames 45ms apart on a busy main thread, then the stop holds:
+    // the events end at speed, which is not a finger's catch.
+    h.advance(5)
+    h.scroll(true, 1480)
+    h.frame()
+    h.advance(45)
+    h.scroll(true, 1390)
+    h.frame()
+  })
+  expect(h.writes).toEqual([4800])
+  h.expireTail()
+  expect(h.writes).toEqual([4800])
+})
+
 test('iOS 26: a scrollToIndex mid-fling is written at once, as before', () => {
   const h = flingOnIOS27(false)
   h.run(() => h.v.scrollToIndex(90, { align: 'start' }))

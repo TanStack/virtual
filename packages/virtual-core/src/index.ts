@@ -1004,6 +1004,10 @@ export class Virtualizer<
       this.rafId = null
     }
     this.scrollState = null
+    // The element is let go of: give it back its overflow now. A stop the
+    // next element needs starts afresh.
+    this._momentumStop?.restore()
+    this._momentumStop = null
     // The debounce cancelled above is the only thing that writes `isScrolling`
     // back to false, so a cleanup inside the reset window would strand it, and
     // the direction derived from it, as true. That matters because `cleanup`
@@ -2203,6 +2207,60 @@ export class Virtualizer<
     return null
   }
 
+  // Stop a running iOS fling, then call `done`: the momentum does not
+  // survive the element losing its overflow for a frame. Hidden and
+  // restored within one task, iOS never sees the change and the fling
+  // carries on (27.0.1 iPhone); hidden for two frames, it stops at once.
+  // Nothing moves on screen. A second call while one is in progress waits
+  // for the same frames. The app's inline value comes back, unless the app
+  // set a new one meanwhile; `done` is then not called.
+  private _momentumStop: { restore: () => boolean; done: () => void } | null =
+    null
+  private _stopMomentum = (done: () => void) => {
+    const el = this.scrollElement
+    const win = this.targetWindow
+    if (el === null || win === null) return
+    const scroller = (
+      'document' in el ? el.document.scrollingElement : el
+    ) as HTMLElement | null
+    // A test double may have no style to change.
+    if (!scroller?.style) return
+    if (this._momentumStop) {
+      this._momentumStop.done = done
+      return
+    }
+    const { style } = scroller
+    const property = this.options.horizontal ? 'overflow-x' : 'overflow-y'
+    const value = style.getPropertyValue(property)
+    const priority = style.getPropertyPriority(property)
+    style.setProperty(property, 'hidden', 'important')
+    const stop = {
+      // False when the app replaced the hidden value: the fling may not
+      // have stopped.
+      restore: () => {
+        if (
+          style.getPropertyValue(property) !== 'hidden' ||
+          style.getPropertyPriority(property) !== 'important'
+        ) {
+          return false
+        }
+        style.setProperty(property, value, priority)
+        return true
+      },
+      done,
+    }
+    this._momentumStop = stop
+    win.requestAnimationFrame(() =>
+      win.requestAnimationFrame(() => {
+        // Already restored by `cleanup`, which also drops its command.
+        if (this._momentumStop !== stop) return
+        this._momentumStop = null
+        // The command waits for the tail, as without the stop.
+        if (stop.restore()) stop.done()
+      }),
+    )
+  }
+
   // A compensation write past the element's current max (the sizer has not
   // grown yet) is clamped by the browser; record it for the retry (#1258).
   private _clampedBy = (target: number) => {
@@ -2384,12 +2442,32 @@ export class Virtualizer<
       if (tail === 'fling' && iosMomentumOverridesWrites()) {
         // iOS 27: a write now shows for one frame and the fling carries on
         // along its own path, so the command would be lost (#1307, step 3).
-        // Leave the tail open and write when it closes, ~150ms after the
-        // last fling frame; the user taking over before then (a drag, a
+        // Stop the fling and write two frames later. Otherwise (no style to
+        // change, a finger down, a bounce) the tail stays open and
+        // the command is written when it closes, ~150ms after the last
+        // fling frame. The user taking over before the write (a drag, a
         // second flick, a finger stopping the fling) cancels the command
-        // (see the scroll handler and `onTailClosed`). A relative command (`scrollBy`)
-        // is not postponed: its target is taken from the position at the
-        // call, which the fling leaves behind either way.
+        // (see the scroll handler and `onTailClosed`). A relative command
+        // (`scrollBy`) is not postponed: its target is taken from the
+        // position at the call, which the fling leaves behind either way.
+        this._stopMomentum(() => {
+          const state = this.scrollState
+          if (
+            state?.phase !== 'queued' ||
+            // A finger came down: it owns the scroll until it lifts.
+            this._iosGesture.tail() !== 'fling' ||
+            // In a bounce WebKit can drop the write (#1287): the tail
+            // decides, as without the stop. (Not `flingCaught`: our stop
+            // also ends the fling at speed, so a slow frame would read as
+            // a catch and the tail would drop the command.)
+            this._reportedOverscroll
+          ) {
+            return
+          }
+          this._iosGesture.end()
+          this._flushHoldIfReady(true)
+          this._writeAwaitingCommand()
+        })
         this.scrollState = {
           ...target,
           startedAt: this.now(),
