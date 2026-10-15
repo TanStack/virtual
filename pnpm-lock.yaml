@@ -1186,6 +1186,9 @@ importers:
 
   examples/react/chat:
     dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.80.7
+        version: 5.90.5(react@19.2.7)
       '@tanstack/react-virtual':
         specifier: ^3.14.19
         version: link:../../../packages/react-virtual
