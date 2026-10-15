@@ -47,6 +47,67 @@ test('iOS 27: a scrollToIndex mid-fling waits for the tail, and the fling does n
   expect(h.v.scrollState).toBeNull()
 })
 
+// A fling whose element records its inline overflow-y, set by the app to
+// `auto !important`.
+function flingWithStyle() {
+  const h = flingOnIOS27()
+  const props = new Map([['overflow-y', ['auto', 'important']]])
+  Object.assign(h.el, {
+    style: {
+      getPropertyValue: (name: string) => props.get(name)?.[0] ?? '',
+      getPropertyPriority: (name: string) => props.get(name)?.[1] ?? '',
+      setProperty: (name: string, value: string, priority = '') => {
+        props.set(name, [value, priority])
+      },
+    },
+  })
+  return { ...h, overflow: () => props.get('overflow-y')!.join(' ') }
+}
+
+test('iOS 27: a command mid-fling stops the fling and writes two frames later', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd({ behavior: 'smooth' })
+    // Hidden through a frame: the fling stops. Restored and written after
+    // the next one, without waiting for the tail.
+    expect(h.overflow()).toBe('hidden important')
+    h.frame()
+    expect(h.overflow()).toBe('hidden important')
+    expect(h.writes).toEqual([])
+    h.frame()
+  })
+  expect(h.overflow()).toBe('auto important')
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: a second command while the fling stops leaves the overflow as the app set it', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToIndex(10, { align: 'start' })
+    h.frame()
+    h.v.scrollToEnd()
+    h.frame()
+    h.frame()
+  })
+  expect(h.overflow()).toBe('auto important')
+  // The later command wins.
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: a fling caught and dragged back while it stops cancels the command', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.scroll(true, 1300)
+    h.scroll(true, 1350)
+    h.frame()
+    h.frame()
+  })
+  expect(h.overflow()).toBe('auto important')
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
 test('iOS 26: a scrollToIndex mid-fling is written at once, as before', () => {
   const h = flingOnIOS27(false)
   h.run(() => h.v.scrollToIndex(90, { align: 'start' }))
