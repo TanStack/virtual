@@ -254,6 +254,11 @@ button {
   white-space: pre-wrap;
 }
 
+.Message-assistant a {
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
 /* Composer */
 
 .ComposerDock {
@@ -284,12 +289,19 @@ button {
 }
 
 .Suggestion {
+  align-items: center;
   background: none;
   border: 0;
   border-radius: 12px;
   color: var(--muted);
+  display: flex;
+  gap: 12px;
   padding: 10px 20px;
   text-align: left;
+}
+
+.Suggestion span {
+  display: flex;
 }
 
 .Suggestion:hover:not(:disabled) {

@@ -6,7 +6,7 @@ import { queryClient, useChats, useMessages, useSendMessage } from './queries'
 import type { Message } from './api'
 import './index.css'
 
-// Feather-style 24×24 stroke paths.
+// Feather icon paths (MIT, feathericons.com), 24×24 strokes.
 const icons = {
   menu: 'M3 6h18M3 12h18M3 18h18',
   close: 'M15 18l-6-6 6-6',
@@ -35,9 +35,21 @@ function Icon({ path }: { path: string }) {
 }
 
 const suggestions = [
-  'How do I virtualize a chat list?',
-  'Explain scroll anchoring in one paragraph.',
-  'What should I test in an infinite list?',
+  {
+    text: 'How do I virtualize a chat list?',
+    icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z',
+    color: '#3b82f6',
+  },
+  {
+    text: 'Explain scroll anchoring in one paragraph.',
+    icon: 'M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM12 22V8M5 12H2a10 10 0 0 0 20 0h-3',
+    color: '#f59e0b',
+  },
+  {
+    text: 'What should I test in an infinite list?',
+    icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3',
+    color: '#10b981',
+  },
 ]
 
 const isNarrow = () => window.matchMedia('(max-width: 768px)').matches
@@ -145,7 +157,7 @@ function App() {
             <h1>What can I help with?</h1>
             {composer}
             <div className="Suggestions">
-              {suggestions.map((text) => (
+              {suggestions.map(({ text, icon, color }) => (
                 <button
                   key={text}
                   type="button"
@@ -153,6 +165,9 @@ function App() {
                   disabled={sending || streaming}
                   onClick={() => onSend(text)}
                 >
+                  <span style={{ color }}>
+                    <Icon path={icon} />
+                  </span>
                   {text}
                 </button>
               ))}
@@ -299,7 +314,19 @@ function MessageView({ message }: { message: Message }) {
     )
   }
 
-  return <div className="Message Message-assistant">{message.text}</div>
+  return (
+    <div className="Message Message-assistant">
+      {message.text.split(/(https?:\/\/\S+)/).map((part, index) =>
+        index % 2 ? (
+          <a key={index} href={part} target="_blank" rel="noreferrer">
+            {part}
+          </a>
+        ) : (
+          part
+        ),
+      )}
+    </div>
+  )
 }
 
 function Composer({

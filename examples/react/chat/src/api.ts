@@ -49,7 +49,7 @@ const titles = [
   'Debounce a search input',
   'Virtualize a 10k row table',
   'Explain React Suspense',
-  'Plan a weekend in Kraków',
+  'Plan a weekend in Rzeszów',
   'Beginner running plan',
 ]
 
@@ -95,6 +95,15 @@ function generateReply(random: Random, prompt: string): string {
     ).join(' '),
   )
   return [`You asked: “${prompt}”`, ...paragraphs].join('\n\n')
+}
+
+// Fixed replies for prompts that deserve a real answer.
+const cannedReplies: Record<string, string> = {
+  'How do I virtualize a chat list?': [
+    'You asked: “How do I virtualize a chat list?”',
+    'A chat is a virtual list anchored to the end: new messages arrive at the bottom, older history loads at the top, and replies grow while they stream. This example uses anchorTo: "end" with stable keys from getItemKey, followOnAppend with scrollEndThreshold, and scrollToEnd() with isAtEnd() for the jump button.',
+    "Tanner Linsley explains it in “Chat UIs Are Lists Until They Aren't”: https://tanstack.com/blog/tanstack-virtual-chat",
+  ].join('\n\n'),
 }
 
 const now = Date.now()
@@ -190,7 +199,8 @@ export function streamReply(
 ): () => void {
   const messages = getMessages(chatId)
   const index = messages.length
-  const words = generateReply(Math.random, prompt).match(/\s*\S+/g) ?? []
+  const reply = cannedReplies[prompt] ?? generateReply(Math.random, prompt)
+  const words = reply.match(/\s*\S+/g) ?? []
   let message: Message = { id: `m-${nextId++}`, author: 'assistant', text: '' }
   let position = 0
 
