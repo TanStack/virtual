@@ -877,7 +877,8 @@ function createOwnWindow() {
     frames.clear()
     queued.forEach((cb) => cb(0))
   }
-  const resize = (target: Element, blockSize: number) =>
+  const resize = (target: Element, blockSize: number) => {
+    Object.assign(target, { clientHeight: blockSize })
     roCallback!(
       [
         {
@@ -887,7 +888,10 @@ function createOwnWindow() {
       ],
       {} as ResizeObserver,
     )
+  }
   const el = {
+    clientWidth: 400,
+    clientHeight: 600,
     scrollTop: 0,
     scrollLeft: 0,
     scrollWidth: 400,
@@ -994,3 +998,37 @@ test('observeElementRect defers to a frame of the scroll element window and canc
     expect(globalRaf).not.toHaveBeenCalled()
   })
 })
+
+test.each([false, true])(
+  'viewport measurements exclude borders and scrollbars (horizontal: %s)',
+  (horizontal) => {
+    const { el, resize } = createOwnWindow()
+    Object.assign(el, {
+      clientWidth: 370,
+      clientHeight: 570,
+      scrollWidth: 5000,
+    })
+    const virtualizer = new Virtualizer({
+      count: 100,
+      horizontal,
+      estimateSize: () => 50,
+      getScrollElement: () => el,
+      scrollToFn: vi.fn(),
+      observeElementRect,
+      observeElementOffset: (_instance, cb) => {
+        cb(0, false)
+      },
+    })
+    virtualizer._willUpdate()
+    expect(virtualizer.scrollRect).toEqual({ width: 370, height: 570 })
+    expect(virtualizer.getOffsetForIndex(10, 'end')?.[0]).toBe(
+      horizontal ? 180 : 0,
+    )
+    resize(el, 470)
+    expect(virtualizer.scrollRect).toEqual({ width: 370, height: 470 })
+    expect(virtualizer.getOffsetForIndex(10, 'end')?.[0]).toBe(
+      horizontal ? 180 : 80,
+    )
+    virtualizer._didMount()()
+  },
+)

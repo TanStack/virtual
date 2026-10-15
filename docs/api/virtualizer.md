@@ -177,6 +177,8 @@ observeElementRect: (
 
 An optional function that if provided is called when the scrollElement changes and should implement the initial measurement and continuous monitoring of the scrollElement's `Rect` (an object with `width` and `height`). It's called with the instance (which also gives you access to the scrollElement via `instance.scrollElement`. Built-in implementations are exported as `observeElementRect` and `observeWindowRect` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `useWindowVirtualizer`.
 
+The built-in `observeElementRect` measures the visible client area (`clientWidth` and `clientHeight`), excluding borders and scrollbars. Custom implementations should report the same viewport dimensions.
+
 ### `observeElementOffset`
 
 ```tsx
