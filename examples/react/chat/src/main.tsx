@@ -255,7 +255,6 @@ function MessageList({
         ref={parentRef}
         className="Messages"
         onScroll={(event) => {
-          if (virtualizer.isAtEnd()) return
           const { scrollTop } = event.currentTarget
           const movingUp = scrollTop < lastScrollTopRef.current
           lastScrollTopRef.current = scrollTop
