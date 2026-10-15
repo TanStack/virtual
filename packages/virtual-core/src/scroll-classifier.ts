@@ -34,7 +34,7 @@ export interface ScrollEventInput {
   // The layout position the virtualizer holds.
   scrollOffset: number | null
   // Our last write to the element, until a scroll event reports it, with
-  // the scroll maxima below its target the layout took since (see
+  // the scroll maxima below its target the element had since (see
   // `lowMaxes` on `pendingWrite` in the virtualizer).
   pendingWrite: {
     target: number
@@ -81,11 +81,11 @@ export function classifyScrollEvent({
   ) {
     return 'clampedReadBack'
   }
-  // The same, clamped to a smaller max than the element's current one: a row
-  // measured smaller shrank the sizer below the target and the browser
-  // clamped there, then a row measured larger grew it back, all before the
-  // report. The clamp lands on one of those maxima; a position between them
-  // is not one.
+  // The same, clamped to a smaller max than the element's current one: the
+  // sizer shrank below the target after the write (rows measured smaller,
+  // a count change) and the browser clamped there, then it grew back, all
+  // before the report. The clamp lands on one of those maxima; a position
+  // between them is not one.
   if (
     pendingWrite !== null &&
     !pendingWrite.smooth &&

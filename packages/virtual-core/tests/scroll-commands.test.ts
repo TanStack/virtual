@@ -379,6 +379,13 @@ test('a clamp the sizer grew back from does not cancel an instant scrollToEnd', 
   let onScroll!: (offset: number, isScrolling: boolean) => void
   virtualizer.setOptions({
     ...virtualizer.options,
+    // The container is sized in `onChange`, as with `directDomUpdates`.
+    onChange: (instance) => {
+      Object.defineProperty(mockScrollElement, 'scrollHeight', {
+        value: instance.getTotalSize(),
+        configurable: true,
+      })
+    },
     observeElementOffset: (_instance, callback) => {
       onScroll = callback
       callback(0, false)
@@ -405,7 +412,6 @@ test('a clamp the sizer grew back from does not cancel an instant scrollToEnd', 
   // target again. The event reports the clamped position.
   virtualizer.resizeItem(90, 20)
   virtualizer.resizeItem(91, 150)
-  Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 5070 })
   onScroll(4370, true)
 
   expect(virtualizer['scrollState']).not.toBeNull()
@@ -449,8 +455,10 @@ test('a sizer that shrank before the first resize after an instant scrollToEnd d
   // The sizer commits smaller (the browser clamps to 4370) before the next
   // row measures larger and grows it past the target again.
   Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 4970 })
+  virtualizer._willUpdate()
   virtualizer.resizeItem(91, 150)
   Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 5070 })
+  virtualizer._willUpdate()
   onScroll(4370, true)
 
   expect(virtualizer['scrollState']).not.toBeNull()
@@ -469,6 +477,13 @@ test('an instant scrollToEnd clamped by a shrink that grew back to the same tota
   let onScroll!: (offset: number, isScrolling: boolean) => void
   virtualizer.setOptions({
     ...virtualizer.options,
+    // The container is sized in `onChange`, as with `directDomUpdates`.
+    onChange: (instance) => {
+      Object.defineProperty(mockScrollElement, 'scrollHeight', {
+        value: instance.getTotalSize(),
+        configurable: true,
+      })
+    },
     observeElementOffset: (_instance, callback) => {
       onScroll = callback
       callback(0, false)
@@ -528,8 +543,11 @@ test('a transient max below zero clamps an instant scrollToEnd at 0 without canc
   // A row shrinks by 50: the max would be -20, so the browser clamps to 0.
   // Then a row grows and the sizer passes the target again.
   virtualizer.resizeItem(10, 0)
+  Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 580 })
+  virtualizer._willUpdate()
   virtualizer.resizeItem(11, 150)
   Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 680 })
+  virtualizer._willUpdate()
   onScroll(0, true)
 
   expect(virtualizer['scrollState']).not.toBeNull()
@@ -744,14 +762,16 @@ test('a scroll to a position no committed max reached still cancels an instant s
 })
 
 test('a clamp reported at rest still writes the end again', () => {
-  const { rafCallbacks, scrollToFn, virtualizer, scroll } =
+  const { rafCallbacks, scrollToFn, virtualizer, commit, scroll } =
     createCommittedSizer()
 
   // As in the net-zero case above, from an adapter that reports its
   // read-back with `isScrolling` false.
   virtualizer.scrollToEnd()
   virtualizer.resizeItem(90, 20)
+  commit(4970)
   virtualizer.resizeItem(91, 80)
+  commit(5000)
   scroll(4370, false)
   scrollToFn.mockClear()
 
