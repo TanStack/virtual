@@ -995,6 +995,10 @@ export class Virtualizer<
       this.rafId = null
     }
     this.scrollState = null
+    // The element is let go of: give it back its overflow now. A stop the
+    // next element needs starts afresh.
+    this._momentumStop?.restore()
+    this._momentumStop = null
     // The debounce cancelled above is the only thing that writes `isScrolling`
     // back to false, so a cleanup inside the reset window would strand it, and
     // the direction derived from it, as true. That matters because `cleanup`
@@ -2168,8 +2172,9 @@ export class Virtualizer<
   // restored within one task, iOS never sees the change and the fling
   // carries on (27.0.1 iPhone); hidden for two frames, it stops at once.
   // Nothing moves on screen. A second call while one is in progress waits
-  // for the same frames.
-  private _momentumStopDone: (() => void) | null = null
+  // for the same frames. The app's inline value comes back, unless the app
+  // set a new one meanwhile.
+  private _momentumStop: { restore: () => void; done: () => void } | null = null
   private _stopMomentum = (done: () => void) => {
     const el = this.scrollElement
     const win = this.targetWindow
@@ -2179,20 +2184,34 @@ export class Virtualizer<
     ) as HTMLElement | null
     // A test double may have no style to change.
     if (!scroller?.style) return
-    const pending = this._momentumStopDone !== null
-    this._momentumStopDone = done
-    if (pending) return
+    if (this._momentumStop) {
+      this._momentumStop.done = done
+      return
+    }
     const { style } = scroller
     const property = this.options.horizontal ? 'overflow-x' : 'overflow-y'
     const value = style.getPropertyValue(property)
     const priority = style.getPropertyPriority(property)
     style.setProperty(property, 'hidden', 'important')
+    const stop = {
+      restore: () => {
+        if (
+          style.getPropertyValue(property) === 'hidden' &&
+          style.getPropertyPriority(property) === 'important'
+        ) {
+          style.setProperty(property, value, priority)
+        }
+      },
+      done,
+    }
+    this._momentumStop = stop
     win.requestAnimationFrame(() =>
       win.requestAnimationFrame(() => {
-        style.setProperty(property, value, priority)
-        const callback = this._momentumStopDone
-        this._momentumStopDone = null
-        callback?.()
+        // Already restored by `cleanup`, which also drops its command.
+        if (this._momentumStop !== stop) return
+        this._momentumStop = null
+        stop.restore()
+        stop.done()
       }),
     )
   }

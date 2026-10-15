@@ -108,6 +108,31 @@ test('iOS 27: a fling caught and dragged back while it stops cancels the command
   expect(h.v.scrollState).toBeNull()
 })
 
+test('iOS 27: an overflow the app sets while the fling stops is kept', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.el.style.setProperty('overflow-y', 'scroll', '')
+    h.frame()
+    h.frame()
+  })
+  expect(h.overflow()).toBe('scroll ')
+  expect(h.writes).toEqual([4800])
+})
+
+test('iOS 27: an element let go of while the fling stops gets its overflow back at once', () => {
+  const h = flingWithStyle()
+  h.run(() => {
+    h.v.scrollToEnd()
+    h.v['cleanup']()
+    expect(h.overflow()).toBe('auto important')
+    h.frame()
+    h.frame()
+  })
+  // Its command went with it.
+  expect(h.writes).toEqual([])
+})
+
 test('iOS 26: a scrollToIndex mid-fling is written at once, as before', () => {
   const h = flingOnIOS27(false)
   h.run(() => h.v.scrollToIndex(90, { align: 'start' }))
