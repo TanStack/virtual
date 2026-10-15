@@ -47,30 +47,10 @@ const delay = (ms: number) =>
 
 const titles = [
   'Debounce a search input',
-  'Plan a weekend in Kraków',
-  'Explain React Suspense',
-  'Sourdough starter schedule',
-  'Postgres index for a slow query',
-  'Rewrite a cover letter',
-  'Compare Vite and webpack',
-  'Beginner running plan',
   'Virtualize a 10k row table',
-  'Name ideas for a bakery',
-  'CSS grid vs flexbox',
-  'Summarize a research paper',
-  'Fix a flaky Playwright test',
-  'Budget for a home office',
-  'Explain TypeScript generics',
-  'Birthday party games for kids',
-  'Migrate from Redux to Zustand',
-  'Learn basic Spanish phrases',
-  'Design a REST pagination API',
-  'Houseplants for low light',
-  'Write a git commit message',
-  'Explain event loop microtasks',
-  'Meal prep for the week',
-  'Accessible modal dialog',
-  'Pick a mechanical keyboard',
+  'Explain React Suspense',
+  'Plan a weekend in Kraków',
+  'Beginner running plan',
 ]
 
 const followUps = [
@@ -86,15 +66,6 @@ const followUps = [
   'Ok, and what is the next step?',
   'Can you put that in a table or a list?',
   'Thanks! One more question about the last point.',
-]
-
-const openers = [
-  'Good question.',
-  'Sure, here is how I would approach it.',
-  'Short answer: it depends on your constraints.',
-  'Let me break it down.',
-  'Here is a practical way to think about it.',
-  'There are a few options.',
 ]
 
 const sentences = [
@@ -116,59 +87,14 @@ const sentences = [
   'Consistency matters more than the exact choice.',
 ]
 
-const bullets = [
-  'Keep the scope small',
-  'Measure before and after the change',
-  'Prefer boring, well-known tools',
-  'Write one test for the happy path and one for an edge case',
-  'Document the decision in one sentence',
-  'Remove what you do not use',
-  'Ask for feedback early',
-  'Automate the step you repeat most often',
-]
-
-const snippets = [
-  '```ts\nfunction debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number) {\n  let id: ReturnType<typeof setTimeout>\n  return (...args: T) => {\n    clearTimeout(id)\n    id = setTimeout(() => fn(...args), ms)\n  }\n}\n```',
-  '```tsx\nconst virtualizer = useVirtualizer({\n  count: rows.length,\n  getScrollElement: () => parentRef.current,\n  estimateSize: () => 35,\n})\n```',
-  '```sql\nCREATE INDEX CONCURRENTLY orders_customer_created_idx\n  ON orders (customer_id, created_at DESC);\n```',
-  '```css\n.layout {\n  display: grid;\n  grid-template-columns: 260px 1fr;\n  height: 100vh;\n}\n```',
-  '```bash\npnpm add @tanstack/react-query\npnpm dev\n```',
-]
-
-const closers = [
-  'Let me know if you want me to go deeper on any of these.',
-  'Want me to turn this into a checklist?',
-  'I can also show a full example if that helps.',
-  'Does that match what you had in mind?',
-]
-
+// One to three paragraphs of random sentences, so rows have different heights.
 function generateReply(random: Random, prompt: string): string {
-  const parts: string[] = []
-  const quote = prompt.length > 48 ? `${prompt.slice(0, 48).trim()}…` : prompt
-  parts.push(`${pick(random, openers)} You asked: “${quote}”`)
-
-  const paragraphs = between(random, 0, 3)
-  for (let i = 0; i < paragraphs; i++) {
-    const count = between(random, 2, 4)
-    parts.push(
-      Array.from({ length: count }, () => pick(random, sentences)).join(' '),
-    )
-  }
-  if (random() < 0.3) {
-    const count = between(random, 3, 5)
-    parts.push(
-      Array.from({ length: count }, () => `- ${pick(random, bullets)}`).join(
-        '\n',
-      ),
-    )
-  }
-  if (random() < 0.25) {
-    parts.push(pick(random, snippets))
-  }
-  if (random() < 0.5) {
-    parts.push(pick(random, closers))
-  }
-  return parts.join('\n\n')
+  const paragraphs = Array.from({ length: between(random, 1, 3) }, () =>
+    Array.from({ length: between(random, 1, 4) }, () =>
+      pick(random, sentences),
+    ).join(' '),
+  )
+  return [`You asked: “${prompt}”`, ...paragraphs].join('\n\n')
 }
 
 const now = Date.now()
@@ -255,8 +181,7 @@ export async function postMessage(
 }
 
 // Streams a generated reply word by word. `onUpdate` gets the whole message
-// so far on every chunk, starting with an empty one. Returns a stop function
-// that keeps the partial reply.
+// so far on every chunk. Returns a stop function that keeps the partial reply.
 export function streamReply(
   chatId: string,
   prompt: string,
@@ -265,34 +190,25 @@ export function streamReply(
 ): () => void {
   const messages = getMessages(chatId)
   const index = messages.length
-  let message: Message = { id: `m-${nextId++}`, author: 'assistant', text: '' }
-  messages.push(message)
-  onUpdate(message)
-
   const words = generateReply(Math.random, prompt).match(/\s*\S+/g) ?? []
+  let message: Message = { id: `m-${nextId++}`, author: 'assistant', text: '' }
   let position = 0
-  let intervalId: ReturnType<typeof setInterval> | undefined
 
-  const timeoutId = setTimeout(() => {
-    intervalId = setInterval(() => {
-      const count = 1 + Math.floor(Math.random() * 3)
-      message = {
-        ...message,
-        text: message.text + words.slice(position, position + count).join(''),
-      }
-      position += count
-      messages[index] = message
-      onUpdate(message)
-      if (position >= words.length) {
-        clearInterval(intervalId)
-        touchChat(chatId)
-        onDone()
-      }
-    }, 40)
-  }, 600)
+  const intervalId = setInterval(() => {
+    const count = 1 + Math.floor(Math.random() * 3)
+    message = {
+      ...message,
+      text: message.text + words.slice(position, position + count).join(''),
+    }
+    position += count
+    messages[index] = message
+    onUpdate(message)
+    if (position >= words.length) {
+      clearInterval(intervalId)
+      touchChat(chatId)
+      onDone()
+    }
+  }, 40)
 
-  return () => {
-    clearTimeout(timeoutId)
-    clearInterval(intervalId)
-  }
+  return () => clearInterval(intervalId)
 }

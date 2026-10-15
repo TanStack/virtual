@@ -179,8 +179,6 @@ function MessageList({
 }) {
   const parentRef = React.useRef<HTMLDivElement>(null)
   const lastScrollTopRef = React.useRef(0)
-  const [didInitialScroll, setDidInitialScroll] = React.useState(false)
-  const [autoHistoryEnabled, setAutoHistoryEnabled] = React.useState(false)
   const [atEnd, setAtEnd] = React.useState(true)
 
   const virtualizer = useVirtualizer({
@@ -198,36 +196,18 @@ function MessageList({
     directDomUpdates: true,
     // Runs after the virtualizer reads each scroll event. React's onScroll
     // runs before it, so isAtEnd() there still sees the previous position.
-    onChange: (instance) => setAtEnd(instance.isAtEnd(80)),
+    onChange: (instance) => setAtEnd(instance.isAtEnd()),
   })
 
-  React.useLayoutEffect(() => {
-    if (didInitialScroll) return
-    virtualizer.scrollToEnd()
-    setDidInitialScroll(true)
-  }, [didInitialScroll, virtualizer])
-
-  // Sending a message jumps to it, like in most chat apps. Assistant output
-  // follows only when the reader is already at the latest message. The empty
-  // reply is added in the same render as the user message, so look for the
-  // latest user message rather than the last message.
+  // Start at the latest message, and jump to it again after each send, like
+  // most chat apps. Assistant output follows only when the reader is already
+  // at the latest message (followOnAppend).
   const lastUserMessageId = [...messages]
     .reverse()
     .find((message) => message.author === 'user')?.id
-  const seenUserMessageIdRef = React.useRef(lastUserMessageId)
-  React.useEffect(() => {
-    if (lastUserMessageId === seenUserMessageIdRef.current) return
-    seenUserMessageIdRef.current = lastUserMessageId
+  React.useLayoutEffect(() => {
     virtualizer.scrollToEnd()
   }, [lastUserMessageId, virtualizer])
-
-  React.useEffect(() => {
-    const id = window.setTimeout(() => {
-      setAutoHistoryEnabled(true)
-    }, 250)
-
-    return () => window.clearTimeout(id)
-  }, [])
 
   return (
     <div className="Pane">
@@ -235,14 +215,12 @@ function MessageList({
         ref={parentRef}
         className="Messages"
         onScroll={(event) => {
-          if (!autoHistoryEnabled || virtualizer.isAtEnd(80)) return
+          if (virtualizer.isAtEnd()) return
           const { scrollTop } = event.currentTarget
           const movingUp = scrollTop < lastScrollTopRef.current
           lastScrollTopRef.current = scrollTop
-          // Load only while the reader scrolls up into the top. Safari's
-          // rubber band reports negative positions past the top and then
-          // settles back down to 0; neither is the reader asking for more
-          // history, and loading on the settle would load twice per bounce.
+          // Load only while scrolling up. Safari's rubber band reports
+          // negative positions past the top; ignore them.
           if (movingUp && scrollTop >= 0 && scrollTop < 400) {
             onLoadOlder()
           }
@@ -302,31 +280,7 @@ function MessageView({ message }: { message: Message }) {
     )
   }
 
-  return (
-    <div className="Message Message-assistant">
-      {message.text ? (
-        message.text.split(/(```[\s\S]*?(?:```|$))/).map((part, index) =>
-          part.startsWith('```') ? (
-            <pre key={index} className="Code">
-              {part.replace(/^```\w*\n?/, '').replace(/```$/, '')}
-            </pre>
-          ) : (
-            part.trim() && (
-              <p key={index} className="Prose">
-                {part.trim()}
-              </p>
-            )
-          ),
-        )
-      ) : (
-        <span className="Typing" aria-label="Assistant is typing">
-          <span />
-          <span />
-          <span />
-        </span>
-      )}
-    </div>
-  )
+  return <div className="Message Message-assistant">{message.text}</div>
 }
 
 function Composer({
@@ -341,15 +295,6 @@ function Composer({
   onStop: () => void
 }) {
   const [text, setText] = React.useState('')
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
-
-  React.useLayoutEffect(() => {
-    const textarea = textareaRef.current!
-    textarea.style.height = 'auto'
-    if (text) {
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
-    }
-  }, [text])
 
   const submit = () => {
     const value = text.trim()
@@ -367,7 +312,6 @@ function Composer({
       }}
     >
       <textarea
-        ref={textareaRef}
         rows={1}
         value={text}
         placeholder="Ask anything"

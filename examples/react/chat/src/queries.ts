@@ -19,9 +19,7 @@ import type { Message, MessagePage } from './api'
 // The cache is the source of truth while the page is open: new messages are
 // written into it directly, so a background refetch would only fight them.
 export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: Infinity, refetchOnWindowFocus: false },
-  },
+  defaultOptions: { queries: { staleTime: Infinity } },
 })
 
 const chatsKey = ['chats'] as const
