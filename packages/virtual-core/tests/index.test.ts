@@ -2081,7 +2081,7 @@ function makeIOSTouchVirtualizer(
       el._dispatch(type),
     expireTouchTail: () => {
       const id =
-        (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null
+        (v['_iosGesture'].touch as { timerId?: number } | null)?.timerId ?? null
       expect(id, 'a touch tail timer is armed').not.toBeNull()
       const fn = timers.get(id!)!
       fn()
@@ -3197,9 +3197,9 @@ test('iOS Phase 1: touchstart enters the `down` phase and ends a prior tail', ()
     const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend') // leaves a tail armed
-    expect(v['_iosTouch']?.phase).toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).toBe('tail')
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
+    expect(v['_iosGesture'].touch).toEqual({ phase: 'down', moved: false })
   })
 })
 
@@ -3219,9 +3219,9 @@ test('iOS Phase 1: touchcancel clears touching the same as touchend, and cleanup
     expect(el._hasListener('touchcancel')).toBe(true)
 
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
+    expect(v['_iosGesture'].touch).toEqual({ phase: 'down', moved: false })
     dispatchTouchEvent(el, 'touchcancel')
-    expect(v['_iosTouch']?.phase).toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).toBe('tail')
 
     const unmount = v._didMount()
     unmount()
@@ -3246,13 +3246,13 @@ test('iOS Phase 1: touchend sets justTouchEnded + starts grace timer, then expir
     const { v, el } = makeIOSVirtualizerWithRealEl(vi.fn(), mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    const touch = v['_iosTouch']
+    const touch = v['_iosGesture'].touch
     expect(touch?.phase).toBe('tail')
 
     // Fire the timer manually (simulating 150ms elapsing).
     const fn = timers.get((touch as { timerId: number }).timerId)!
     fn()
-    expect(v['_iosTouch']).toBeNull()
+    expect(v['_iosGesture'].touch).toBeNull()
   })
 })
 
@@ -3291,7 +3291,7 @@ test('iOS Phase 1: resize in post-touchend grace window defers; flushes when tim
     const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    const touch = v['_iosTouch']
+    const touch = v['_iosGesture'].touch
     expect(touch?.phase).toBe('tail')
     scrollToFn.mockClear()
 
@@ -3304,7 +3304,7 @@ test('iOS Phase 1: resize in post-touchend grace window defers; flushes when tim
     // Expire the grace timer; the timer callback flushes the accumulated delta.
     const fn = timers.get((touch as { timerId: number }).timerId)!
     fn()
-    expect(v['_iosTouch']).toBeNull()
+    expect(v['_iosGesture'].touch).toBeNull()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_holdOffset']).toBe(0)
   })
@@ -3317,7 +3317,7 @@ test('iOS Phase 1: momentum scroll events re-arm the post-touchend tail until th
     touch('touchstart')
     touch('touchend')
     const firstTimer =
-      (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null
+      (v['_iosGesture'].touch as { timerId?: number } | null)?.timerId ?? null
     expect(firstTimer).not.toBeNull()
 
     // iOS fires no touch events during momentum, only scroll events. Each
@@ -3325,9 +3325,9 @@ test('iOS Phase 1: momentum scroll events re-arm the post-touchend tail until th
     // fling that lasts a second or more, and the next resize would write
     // scrollTop and kill the momentum (#884).
     scroll(120, true)
-    expect(v['_iosTouch']?.phase).toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).toBe('tail')
     expect(
-      (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null,
+      (v['_iosGesture'].touch as { timerId?: number } | null)?.timerId ?? null,
     ).not.toBe(firstTimer)
 
     v.resizeItem(0, 100)
@@ -3335,14 +3335,14 @@ test('iOS Phase 1: momentum scroll events re-arm the post-touchend tail until th
     expect(v['_holdOffset']).toBe(50)
 
     scroll(140, true) // still flinging: re-armed again, still deferred
-    expect(v['_iosTouch']?.phase).toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).toBe('tail')
     expect(scrollToFn).not.toHaveBeenCalled()
 
     // 150 ms after the last frame the tail expires and the delta flushes.
     expireTouchTail()
-    expect(v['_iosTouch']?.phase).not.toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).not.toBe('tail')
     expect(
-      (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null,
+      (v['_iosGesture'].touch as { timerId?: number } | null)?.timerId ?? null,
     ).toBeNull()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     expect(v['_holdOffset']).toBe(0)
@@ -3450,14 +3450,14 @@ test('iOS Phase 1: new touchstart during grace window cancels pending flush time
     const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
     dispatchTouchEvent(el, 'touchstart')
     dispatchTouchEvent(el, 'touchend')
-    const firstTimerId = (v['_iosTouch'] as { timerId: number }).timerId
+    const firstTimerId = (v['_iosGesture'].touch as { timerId: number }).timerId
     expect(timers.has(firstTimerId)).toBe(true)
 
     // User puts finger back down before grace window expired.
     dispatchTouchEvent(el, 'touchstart')
     // The pending timer must have been canceled.
     expect(timers.has(firstTimerId)).toBe(false)
-    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
+    expect(v['_iosGesture'].touch).toEqual({ phase: 'down', moved: false })
   })
 })
 
@@ -3546,7 +3546,7 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand the `down` phas
       mockWindow,
     )
     dispatchTouchEvent(holder.el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
+    expect(v['_iosGesture'].touch).toEqual({ phase: 'down', moved: false })
 
     // The in-flight touch keeps targeting the old element (implicit touch
     // capture), so the new element will never deliver its touchend. Without
@@ -3554,7 +3554,7 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand the `down` phas
     // the flush blocked until the user's next full touch cycle.
     holder.el = makeEl()
     v._willUpdate()
-    expect(v['_iosTouch']).toBeNull()
+    expect(v['_iosGesture'].touch).toBeNull()
   })
 })
 
@@ -3576,14 +3576,14 @@ test('iOS Phase 1: scroll-element swap during grace window does not strand the t
     )
     dispatchTouchEvent(holder.el, 'touchstart')
     dispatchTouchEvent(holder.el, 'touchend')
-    expect(v['_iosTouch']?.phase).toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).toBe('tail')
 
     // Swapping inside the grace window removes the listeners and clears the
     // grace timer — which was the only pending reset of the record. Without
     // the cleanup reset the tail would stay set indefinitely.
     holder.el = makeEl()
     v._willUpdate()
-    expect(v['_iosTouch']).toBeNull()
+    expect(v['_iosGesture'].touch).toBeNull()
     expect(timers.size).toBe(0)
   })
 })
@@ -3799,10 +3799,10 @@ test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
 
   dispatchTouchEvent(el, 'touchstart')
-  expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false }) // touchstart still records (cheap)
+  expect(v['_iosGesture'].touch).toEqual({ phase: 'down', moved: false }) // touchstart still records (cheap)
   dispatchTouchEvent(el, 'touchend')
   // Non-iOS path returns before arming a tail
-  expect(v['_iosTouch']).toBeNull()
+  expect(v['_iosGesture'].touch).toBeNull()
 })
 
 test('non-iOS: adjustment is applied immediately during scroll (no regression)', () => {
@@ -6640,7 +6640,7 @@ test('#1250: a programmatic scrollToIndex landing compensates synchronously with
     expect(scrollToFn).toHaveBeenCalledTimes(1)
     scroll(250, true) // the write's own scroll-event echo: isScrolling=true
     expect(v.isScrolling).toBe(true)
-    expect(v['_iosTouch']?.phase).not.toBe('tail') // an echo never opens the tail
+    expect(v['_iosGesture'].touch?.phase).not.toBe('tail') // an echo never opens the tail
     scrollToFn.mockClear()
 
     // Newly mounted rows measure. Item 0 sits above the fold, so its first
@@ -6659,10 +6659,10 @@ test('#1250: a tap that never scrolls does not latch the deferral gate', () => {
     touch('touchstart')
     touch('touchend')
     expireTouchTail()
-    expect(v['_iosTouch']?.phase).not.toBe('down')
-    expect(v['_iosTouch']?.phase).not.toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).not.toBe('down')
+    expect(v['_iosGesture'].touch?.phase).not.toBe('tail')
     expect(
-      (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null,
+      (v['_iosGesture'].touch as { timerId?: number } | null)?.timerId ?? null,
     ).toBeNull()
 
     // Every piece of touch state is timer-bounded, so the next compensation
@@ -6681,16 +6681,16 @@ test('#1250: a scrollToIndex issued from a tap handler lands compensated', () =>
     // the post-touchend window.
     touch('touchstart')
     touch('touchend')
-    expect(v['_iosTouch']?.phase).toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).toBe('tail')
 
     // The command's own write cancels any momentum, so it closes the tail.
     v.scrollToIndex(8)
-    expect(v['_iosTouch']?.phase).not.toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).not.toBe('tail')
     expect(
-      (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null,
+      (v['_iosGesture'].touch as { timerId?: number } | null)?.timerId ?? null,
     ).toBeNull()
     scroll(250, true) // the echo must not re-open it
-    expect(v['_iosTouch']?.phase).not.toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).not.toBe('tail')
     scrollToFn.mockClear()
 
     v.resizeItem(0, 100)
@@ -6706,7 +6706,7 @@ test('#1250: an absolute command under a dragging finger keeps deferring', () =>
     touch('touchstart')
     scroll(90, true) // the finger drags
     v.scrollToIndex(8) // the dragging finger still owns the scroll
-    expect(v['_iosTouch']?.phase).toBe('down')
+    expect(v['_iosGesture'].touch?.phase).toBe('down')
     scrollToFn.mockClear()
 
     v.resizeItem(0, 100)
@@ -6725,7 +6725,7 @@ test('#1250: a scrollToIndex with no target leaves the fling running and the hel
     v.resizeItem(0, 100)
     expect(v['_holdOffset']).toBe(50)
     const timer =
-      (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null
+      (v['_iosGesture'].touch as { timerId?: number } | null)?.timerId ?? null
     expect(timer).not.toBeNull()
 
     // getOffsetForIndex finds no measurement for the index (e.g. the list was
@@ -6736,9 +6736,9 @@ test('#1250: a scrollToIndex with no target leaves the fling running and the hel
     v.scrollToIndex(5)
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_holdOffset']).toBe(50)
-    expect(v['_iosTouch']?.phase).toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).toBe('tail')
     expect(
-      (v['_iosTouch'] as { timerId?: number } | null)?.timerId ?? null,
+      (v['_iosGesture'].touch as { timerId?: number } | null)?.timerId ?? null,
     ).toBe(timer)
 
     // A resize during the remaining momentum is held too rather than
@@ -6761,13 +6761,13 @@ test('iOS Phase 1: touchcancel releases the touch like touchend', () => {
     // A system gesture steals the touch: iOS fires touchcancel, never
     // touchend. Without handling it the touch would stay `down` forever.
     touch('touchstart')
-    expect(v['_iosTouch']?.phase).toBe('down')
+    expect(v['_iosGesture'].touch?.phase).toBe('down')
     touch('touchcancel')
-    expect(v['_iosTouch']?.phase).not.toBe('down')
-    expect(v['_iosTouch']?.phase).toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).not.toBe('down')
+    expect(v['_iosGesture'].touch?.phase).toBe('tail')
 
     expireTouchTail()
-    expect(v['_iosTouch']?.phase).not.toBe('tail')
+    expect(v['_iosGesture'].touch?.phase).not.toBe('tail')
 
     v.resizeItem(0, 100)
     expect(scrollToFn).toHaveBeenCalledTimes(1)
@@ -6785,11 +6785,11 @@ test.each([
 
       touch('touchstart')
       touch('touchend')
-      expect(v['_iosTouch']?.phase).toBe('tail')
+      expect(v['_iosGesture'].touch?.phase).toBe('tail')
 
       // The command's own write stops any momentum, so it closes the tail.
       command(v)
-      expect(v['_iosTouch']?.phase).not.toBe('tail')
+      expect(v['_iosGesture'].touch?.phase).not.toBe('tail')
       scroll(el.scrollTop, true) // the read-back must not re-open it
       scrollToFn.mockClear()
 
@@ -6856,7 +6856,7 @@ test('iOS deferral: a retarget iOS ignores under a finger keeps the deferred cor
   h.v.setOptions({
     ...h.v.options,
     scrollToFn: (offset, opts, inst) => {
-      if (!h.v['_iosDragging']()) write(offset, opts, inst)
+      if (!h.v['_iosGesture'].dragging()) write(offset, opts, inst)
     },
   })
   h.touch('touchstart')
@@ -6911,13 +6911,13 @@ test('iOS touch: a row that stops touch propagation does not hide the gesture', 
       v._willUpdate()
 
       row.dispatchEvent(new Event('touchstart', { bubbles: true }))
-      expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
+      expect(v['_iosGesture'].touch).toEqual({ phase: 'down', moved: false })
       row.dispatchEvent(new Event('touchend', { bubbles: true }))
-      expect(v['_iosTouch']?.phase).toBe('tail')
+      expect(v['_iosGesture'].touch?.phase).toBe('tail')
 
       unmount()
       row.dispatchEvent(new Event('touchstart', { bubbles: true }))
-      expect(v['_iosTouch']).toBeNull()
+      expect(v['_iosGesture'].touch).toBeNull()
       scrollEl.remove()
     })
   } finally {
