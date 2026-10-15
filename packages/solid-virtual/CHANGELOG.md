@@ -1,5 +1,12 @@
 # @tanstack/solid-virtual
 
+## 3.13.47
+
+### Patch Changes
+
+- Updated dependencies [[`56b2a63`](https://github.com/TanStack/virtual/commit/56b2a63d2336907659d87125b072fa11e4ac9046), [`d2c7911`](https://github.com/TanStack/virtual/commit/d2c7911d6b749aaa47e9aab1dc10125040363bd0), [`9c762fe`](https://github.com/TanStack/virtual/commit/9c762fe49021b602b1109e471ba38e3065cba5b5), [`6789f7a`](https://github.com/TanStack/virtual/commit/6789f7affc32c3fe77d8ed5b3b9d7c274d158be9), [`77cb05e`](https://github.com/TanStack/virtual/commit/77cb05eef131699bcef0f0a5877b60503e54a366), [`4a1a4fd`](https://github.com/TanStack/virtual/commit/4a1a4fdae1fa86cdda6603194876399f6651630d), [`3c61b6e`](https://github.com/TanStack/virtual/commit/3c61b6e30723e6af24d375ea1c5221d12a2e894d), [`9c762fe`](https://github.com/TanStack/virtual/commit/9c762fe49021b602b1109e471ba38e3065cba5b5)]:
+  - @tanstack/virtual-core@3.19.5
+
 ## 3.13.46
 
 ### Patch Changes
