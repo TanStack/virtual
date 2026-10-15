@@ -34,9 +34,13 @@ export interface ScrollEventInput {
   // The layout position the virtualizer holds.
   scrollOffset: number | null
   // Our last write to the element, until a scroll event reports it, with
-  // the lowest scroll max the layout reached since (see `lowestMax` on
-  // `pendingWrite` in the virtualizer).
-  pendingWrite: { target: number; smooth: boolean; lowestMax?: number } | null
+  // the scroll maxima below its target the layout took since (see
+  // `lowMaxes` on `pendingWrite` in the virtualizer).
+  pendingWrite: {
+    target: number
+    smooth: boolean
+    lowMaxes?: Array<number>
+  } | null
   // The element's max when a clamped compensation write was made (#1258),
   // or null when none is pending.
   clampedMaxAtWrite: number | null
@@ -80,14 +84,12 @@ export function classifyScrollEvent({
   // The same, clamped to a smaller max than the element's current one: a row
   // measured smaller shrank the sizer below the target and the browser
   // clamped there, then a row measured larger grew it back, all before the
-  // report. Any position between that lowest max and the target can be such
-  // a clamp.
+  // report. The clamp lands on one of those maxima; a position between them
+  // is not one.
   if (
     pendingWrite !== null &&
     !pendingWrite.smooth &&
-    pendingWrite.lowestMax !== undefined &&
-    offset < pendingWrite.target &&
-    offset > pendingWrite.lowestMax - 1.5
+    pendingWrite.lowMaxes?.some((max) => Math.abs(offset - max) < 1.5)
   ) {
     return 'clampedReadBack'
   }
