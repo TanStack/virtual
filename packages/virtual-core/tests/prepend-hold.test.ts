@@ -410,36 +410,48 @@ test('desktop: a user scroll back into bounds during a hold releases it where th
   expect(control.el.pos).toBe(30)
 })
 
-// Known gap in the `_willUpdate` fallback: a scroll event between
-// `setOptions` and `_willUpdate` overwrites the eagerly bumped `scrollOffset`
-// with the element's offset before the hold is applied, and the fallback
-// then adds the hold without restoring the layout offset. For one event the
-// range is computed from an element offset while the rows are shifted by the
-// hold: rows 0-3 render at -600 and the viewport is blank (106px). The next
-// scroll event self-heals. Without the fallback the old stall would return,
-// so it stays; this pins the glitch.
-test.fails(
-  'desktop: an overscroll event between the options change and the commit still holds',
-  () => {
-    const { h, control } = run(false, (h, prepend) => {
-      h.scroll(0, false)
-      // The options change finds the element writable (at rest, in bounds)...
-      h.prependOptions()
-      // ...but a bounce event lands before the adapter commits (`_willUpdate`
-      // runs inside the render this event triggers).
-      h.scroll(-94)
-      expect(h.writes).toEqual([])
-      h.scroll(-40)
-      h.scroll(0)
-      h.readBack()
-      void prepend
-    })
-    expect(h.writes).toEqual([PREPEND * ROW])
-    expect(h.el.pos).toBe(PREPEND * ROW)
-    expect(control.el.pos).toBe(0)
-    expect(h.v.scrollOffset).toBe(PREPEND * ROW)
-  },
-)
+// A scroll event between `setOptions` and `_willUpdate` reports the element,
+// which is still the anchor delta behind the eagerly bumped `scrollOffset`.
+// The handler counts the pending anchor like a hold, so the layout offset
+// survives the event and the `_willUpdate` fallback holds a delta that is
+// already in it. Before that, the event overwrote the layout offset, the
+// fallback added the hold, and for one event the range was computed from an
+// element offset while the rows were shifted: rows 0-3 at -600, a blank
+// viewport.
+test('desktop: an overscroll event between the options change and the commit still holds', () => {
+  const { h, control } = run(false, (h, prepend) => {
+    h.scroll(0, false)
+    // The options change finds the element writable (at rest, in bounds)...
+    h.prependOptions()
+    // ...but a bounce event lands before the adapter commits (`_willUpdate`
+    // runs inside the render this event triggers).
+    h.scroll(-94)
+    expect(h.writes).toEqual([])
+    h.scroll(-40)
+    h.scroll(0)
+    h.readBack()
+    void prepend
+  })
+  expect(h.writes).toEqual([PREPEND * ROW])
+  expect(h.el.pos).toBe(PREPEND * ROW)
+  expect(control.el.pos).toBe(0)
+  expect(h.v.scrollOffset).toBe(PREPEND * ROW)
+})
+
+test('desktop: an in-bounds scroll event between the options change and the commit keeps the anchor', () => {
+  // Same window, no bounce: the user moves before the adapter commits, and
+  // the sync writes the moved position plus the prepend.
+  const { h, control } = run(false, (h, prepend) => {
+    h.scroll(40, false)
+    h.prependOptions()
+    h.scroll(70)
+    h.readBack()
+    void prepend
+  })
+  expect(h.writes).toEqual([70 + PREPEND * ROW])
+  expect(h.el.pos).toBe(70 + PREPEND * ROW)
+  expect(control.el.pos).toBe(70)
+})
 
 test('desktop: an above-viewport grow during a bottom bounce holds and lands once in bounds', () => {
   const max = (45 - 4) * ROW // 2050

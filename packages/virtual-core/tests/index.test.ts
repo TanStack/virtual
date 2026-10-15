@@ -1,4 +1,4 @@
-import { expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   Virtualizer,
   _resetIOSDetectionForTests,
@@ -9,6 +9,7 @@ import {
   observeWindowOffset,
   windowScroll,
 } from '../src/index'
+import flings from './fixtures/ios27-flings.json'
 import type { VirtualizerOptions } from '../src/index'
 
 test('should export the Virtualizer class', () => {
@@ -1998,7 +1999,7 @@ test('lazy fast path: 1M-item list returns a sparse view, not an eagerly-allocat
 
 // ─── iOS momentum-safe scroll adjustments ───────────────────────────────────
 
-function withFakeIOSUserAgent<T>(fn: () => T): T {
+function withFakeIOSUserAgent<T>(fn: () => T, ios27 = false): T {
   // jsdom navigator.userAgent lives on the prototype; we set an own property
   // to shadow it, then remove the own property in finally so the prototype
   // value is visible again for subsequent tests.
@@ -2006,11 +2007,18 @@ function withFakeIOSUserAgent<T>(fn: () => T): T {
     value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
     configurable: true,
   })
+  // iOS 27 is told apart by `overflow-anchor` support; jsdom has no `CSS`.
+  if (ios27) {
+    ;(globalThis as any).CSS = {
+      supports: (query: string) => query === 'overflow-anchor: auto',
+    }
+  }
   _resetIOSDetectionForTests()
   try {
     return fn()
   } finally {
     delete (navigator as any).userAgent
+    delete (globalThis as any).CSS
     _resetIOSDetectionForTests()
   }
 }
@@ -2064,8 +2072,11 @@ function makeIOSTouchVirtualizer(
     v,
     el,
     scrollToFn,
-    scroll: (offset: number, isScrolling: boolean) =>
-      scrollCallback!(offset, isScrolling),
+    // A scroll event; the element is where it reports.
+    scroll: (offset: number, isScrolling: boolean) => {
+      el.scrollTop = offset
+      scrollCallback!(offset, isScrolling)
+    },
     touch: (type: 'touchstart' | 'touchend' | 'touchcancel') =>
       el._dispatch(type),
     expireTouchTail: () => {
@@ -2379,17 +2390,18 @@ test('iOS deferral: a positive delta at the end clamp still replays (growth abov
   })
 })
 
-// ─── #1307: orderings the summed deferral gets wrong, and ones to keep ──────
+// ─── #1307: orderings the hold has to get right, and ones to keep ───────────
 //
-// `test.fails` cases document current behaviour that #1307 is meant to fix:
-// each one asserts the wanted outcome and fails today. The plain tests pin
-// behaviour a redesign must not change by accident. 100 rows × 50px, 200px
-// viewport, hand-driven rAF and scroll events.
+// Each case asserts what the user sees (row positions, the element) through
+// one ordering of touches, scroll events, resizes and commands; the plain
+// tests pin behaviour a redesign must not change by accident. 100 rows ×
+// 50px, 200px viewport, hand-driven rAF and scroll events.
 
 function makeDeferralHarness({
   ios = true,
+  ios27 = false,
   start = 0,
-}: { ios?: boolean; start?: number } = {}) {
+}: { ios?: boolean; ios27?: boolean; start?: number } = {}) {
   const rafCallbacks: Array<FrameRequestCallback> = []
   let now = 0
   const timers = new Map<number, () => void>()
@@ -2416,7 +2428,10 @@ function makeDeferralHarness({
   })
   let scrollCallback: ((offset: number, isScrolling: boolean) => void) | null =
     null
-  const run = <T>(fn: () => T) => (ios ? withFakeIOSUserAgent(fn) : fn())
+  const run = <T>(fn: () => T) => (ios ? withFakeIOSUserAgent(fn, ios27) : fn())
+  const writes: Array<number> = []
+  // Like iOS under a dragging finger: drop programmatic writes on the floor.
+  const browser = { ignoreWrites: false }
   const v = run(() => {
     const instance = new Virtualizer({
       count: 100,
@@ -2424,6 +2439,8 @@ function makeDeferralHarness({
       initialOffset: start,
       getScrollElement: () => el as any,
       scrollToFn: (offset, { adjustments = 0 }) => {
+        writes.push(offset + adjustments)
+        if (browser.ignoreWrites) return
         el.scrollTop = offset + adjustments
       },
       observeElementRect: (_inst, cb) => {
@@ -2444,6 +2461,8 @@ function makeDeferralHarness({
     v,
     el,
     run,
+    writes,
+    browser,
     // A scroll event; moves the element first when `offset` is given.
     scroll: (isScrolling: boolean, offset = el.scrollTop) => {
       el.scrollTop = offset
@@ -2479,6 +2498,36 @@ function landedIndexScrollWithResizeAbove(ios = true) {
   })
   return h
 }
+
+test('iOS deferral (#1307): scrollToOffset, then a prepend during a tap tail moves the target with the held delta', () => {
+  // The options change finds the tail open and holds the prepend. The
+  // target used to stay 2000 while the flush wrote 2600, so reconcile ran
+  // until the safety valve.
+  const h = makeDeferralHarness()
+  h.run(() => {
+    h.v.setOptions({ ...h.v.options, anchorTo: 'end', getItemKey: (i) => i })
+    h.v._willUpdate()
+    h.v.scrollToOffset(2000)
+    h.scroll(true)
+  })
+  h.touch('touchstart')
+  h.touch('touchend')
+  h.run(() => {
+    h.v.setOptions({ ...h.v.options, count: 112, getItemKey: (i) => i - 12 })
+    h.v._willUpdate()
+  })
+  expect(h.el.scrollTop).toBe(2000)
+  h.expireTail()
+  expect(h.el.scrollTop).toBe(2600)
+  h.run(() => {
+    h.scroll(true)
+    for (let i = 0; i < 5; i++) h.frame()
+    h.scroll(false)
+  })
+
+  expect(h.el.scrollTop).toBe(2600)
+  expect(h.v.scrollState).toBeNull()
+})
 
 test('iOS deferral (#1307): a gesture before the index scroll retargets keeps the resize correction', () => {
   const h = landedIndexScrollWithResizeAbove()
@@ -2535,25 +2584,54 @@ test('iOS deferral (#1307): scrollBy replacing an index scroll keeps the resize 
   })
 })
 
-test.fails(
-  'iOS deferral (#1307): a correction is not replayed once the viewport is above the resized row',
-  () => {
-    const h = makeDeferralHarness({ start: 2000 })
-    h.touch('touchstart')
-    h.run(() => {
-      h.scroll(true, 2010)
-      h.v.resizeItem(30, 100)
-    })
-    h.touch('touchend')
-    // The fling carries the viewport above row 30, then settles.
-    h.run(() => {
-      h.scroll(true, 1000)
-      h.scroll(false)
-    })
-    h.expireTail()
-    expect(h.rowTop(20)).toBe(0)
-  },
-)
+// The reverse flick. Written against the old deferral (#1306), this asserted
+// `rowTop(20) === 0` after the flush: the rows were rendered in layout
+// coordinates through the deferral, so the write at the end (+50) moved the
+// screen, and the fix was to skip it once the fling had carried the viewport
+// above row 30 (#1307, step 4). The hold (#1319) changes what the user sees:
+// from the resize on, the rows are exposed shifted back by the held delta, the
+// fling runs over that layout, and the flush moves the element and the rows
+// together, so the row at the top of the viewport when the fling ends is
+// still there after the flush. Skipping the correction would move the screen
+// by the 50px instead, and the final position would differ from non-iOS,
+// where the same gesture over the same content ends at 1050. The assertion
+// is now on the screen and on that parity; `rowTop(20)` is -50 on both.
+test('iOS deferral (#1307): the flush after a reverse flick moves nothing on screen and lands where non-iOS does', () => {
+  // The screen: the first rendered row and where the viewport cuts it.
+  const screen = (h: ReturnType<typeof makeDeferralHarness>) => {
+    const first = h.v.getVirtualItems()[0]!
+    return { index: first.index, top: first.start - h.el.scrollTop }
+  }
+
+  const h = makeDeferralHarness({ start: 2000 })
+  h.touch('touchstart')
+  h.run(() => {
+    h.scroll(true, 2010)
+    h.v.resizeItem(30, 100)
+  })
+  h.touch('touchend')
+  // The fling carries the viewport above row 30, then settles.
+  h.run(() => {
+    h.scroll(true, 1000)
+    h.scroll(false)
+  })
+  const before = screen(h)
+  h.expireTail()
+  expect(screen(h)).toEqual(before)
+  expect(h.el.scrollTop).toBe(1050)
+
+  // Non-iOS: the correction is written at once and the same gesture (1010px
+  // of content) lands at the same place.
+  const web = makeDeferralHarness({ ios: false, start: 2000 })
+  web.scroll(true, 2010)
+  web.v.resizeItem(30, 100)
+  expect(web.el.scrollTop).toBe(2060)
+  web.scroll(true, 2060 - 1010)
+  web.scroll(false)
+  expect(web.el.scrollTop).toBe(1050)
+  expect(screen(web)).toEqual(screen(h))
+  expect(h.rowTop(20)).toBe(web.rowTop(20))
+})
 
 test('scrollToIndex (#1307): a resize classified against the stale offset does not overwrite the index scroll', () => {
   // Not iOS-specific. scrollOffset still holds the old position until the
@@ -2617,6 +2695,393 @@ test('iOS deferral: a deferred correction follows the viewport through momentum'
   })
   h.expireTail()
   // Applied where the momentum ended, not where the resize was seen.
+  expect(h.el.scrollTop).toBe(3050)
+  expect(h.rowTop(60)).toBe(0)
+})
+
+// ─── #1307 step 3: iOS 27, where a fling carries on past a write ────────────
+//
+// On the 27.0 simulator a scrollTop write mid-fling shows for one frame and
+// the fling continues on its own path: it neither stops the momentum (iOS 26
+// and earlier) nor stays. A correction is held through the tail as on every
+// version; an absolute command issued mid-fling waits for the tail to close
+// instead of being lost. Told apart by `CSS.supports('overflow-anchor:
+// auto')`, stubbed here.
+
+// A fling from 2000, now passing 1500.
+function flingOnIOS27(ios27 = true) {
+  const h = makeDeferralHarness({ start: 2000, ios27 })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, 2010))
+  h.touch('touchend')
+  h.run(() => h.scroll(true, 1500))
+  h.writes.length = 0
+  return h
+}
+
+test('iOS 27: a scrollToIndex mid-fling waits for the tail, and the fling does not retire it', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    // Not written: the fling would carry on past it.
+    expect(h.writes).toEqual([])
+    h.scroll(true, 1200)
+    h.frame()
+    expect(h.writes).toEqual([])
+    expect(h.el.scrollTop).toBe(1200)
+    h.scroll(false)
+  })
+  // The tail closes 150ms after the last fling frame: written now, once.
+  h.expireTail()
+  expect(h.writes).toEqual([4500])
+  h.run(() => {
+    h.scroll(true, 4500)
+    h.frame()
+    h.frame()
+    h.scroll(false)
+  })
+  expect(h.rowTop(90)).toBe(0)
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 26: a scrollToIndex mid-fling is written at once, as before', () => {
+  const h = flingOnIOS27(false)
+  h.run(() => h.v.scrollToIndex(90, { align: 'start' }))
+  expect(h.writes).toEqual([4500])
+})
+
+test('iOS 27: a waiting index target follows rows measured during the fling', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    h.v.resizeItem(30, 100)
+    h.scroll(true, 1200)
+    h.scroll(false)
+  })
+  h.expireTail()
+  // Row 30 grew by 50 while the command waited: the write targets the fresh
+  // start of row 90, not the 4500 computed at the call.
+  expect(h.writes).toEqual([4550])
+})
+
+// A touch that lands on a scroller still in its fling fires no touch or
+// pointer events on iOS (seen on the 26.5 and 27.0 simulators and an iPhone
+// on 27.0.1, #1307). Touch events arrive only once the fling has stopped,
+// inside the tail's 150ms.
+
+test('iOS 27: a drag after the fling stopped, while the command waits, cancels it', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    h.scroll(false)
+  })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, 1300))
+  h.touch('touchend')
+  h.run(() => h.scroll(false))
+  h.expireTail()
+  expect(h.writes).toEqual([])
+  expect(h.el.scrollTop).toBe(1300)
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: a tap after the fling stopped, while the command waits, does not cancel it', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    h.scroll(false)
+  })
+  h.touch('touchstart')
+  h.touch('touchend')
+  h.expireTail()
+  expect(h.writes).toEqual([4500])
+})
+
+test('iOS 27: a tap that stops the fling at speed (no touch events) cancels the waiting command', () => {
+  const h = flingOnIOS27() // heading up, passing 1500
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    // Moving ~20px a frame when the finger lands: the events just stop.
+    for (const top of [1480, 1460, 1441, 1422]) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+    h.scroll(false)
+  })
+  h.expireTail()
+  // The finger is still down: iOS would undo a write now, and the user has
+  // taken over.
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: a fling caught and dragged back (no touch events) cancels the waiting command', () => {
+  const h = flingOnIOS27() // heading up, passing 1500
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    h.scroll(true, 1300)
+    // A finger catches the fling and drags the other way. Momentum never
+    // reverses inside the scroll range.
+    h.scroll(true, 1350)
+    h.scroll(true, 1600)
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([])
+  expect(h.el.scrollTop).toBe(1600)
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: a fling bouncing off the top does not cancel the waiting command', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    h.scroll(true, 100)
+    h.scroll(true, -40)
+    // Back from the bounce in one frame: a reversal, but not the user's.
+    h.scroll(true, 0)
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([4500])
+})
+
+test('iOS 27: a fling bouncing off the bottom does not cancel the waiting command', () => {
+  const h = makeDeferralHarness({ start: 4000, ios27: true })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, 3990))
+  h.touch('touchend')
+  h.run(() => h.scroll(true, 4500))
+  h.writes.length = 0
+  h.run(() => {
+    h.v.scrollToIndex(10, { align: 'start' })
+    h.scroll(true, 4800) // max
+    h.scroll(true, 4850)
+    h.scroll(true, 4800)
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([500])
+})
+
+// Scroll events recorded on an iPhone (iOS 27.0.1), replayed with their
+// timing and shifted into this list (`[time ms, scrollTop]`).
+function replayOnIOS27(name: string, shift: number) {
+  const recorded = flings.find((fling) => fling.name === name)!.samples
+  const [t0, top0] = recorded[0]!
+  // The flick that started the fling, in the fling's direction.
+  const back = Math.sign(recorded[1]![1]! - top0!) * 10
+  const h = makeDeferralHarness({
+    start: top0! + shift - 2 * back,
+    ios27: true,
+  })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, top0! + shift - back))
+  h.touch('touchend')
+  h.run(() => h.scroll(true, top0! + shift))
+  h.writes.length = 0
+  h.run(() => h.v.scrollToIndex(90, { align: 'start' }))
+  let last = t0!
+  for (const [t, top] of recorded.slice(1)) {
+    h.advance(t! - last)
+    last = t!
+    h.run(() => h.scroll(true, top! + shift))
+  }
+  h.run(() => h.scroll(false))
+  h.expireTail()
+  return h
+}
+
+test('iOS 27: a recorded fling alone does not cancel the waiting command', () => {
+  const h = replayOnIOS27('one flick, glide to rest (reflick run)', -9000)
+  expect(h.writes).toEqual([4500])
+})
+
+test.each([
+  'glide stopped by a tap 1',
+  'glide stopped by a tap 2',
+  'glide stopped by a tap 3',
+])(
+  'iOS 27: a recorded tap that stops the fling cancels the waiting command: %s',
+  (name) => {
+    const h = replayOnIOS27(name, -5000)
+    expect(h.writes).toEqual([])
+    expect(h.v.scrollState).toBeNull()
+  },
+)
+
+test('iOS 27: a second flick during the fling (no touch events) cancels the waiting command', () => {
+  const h = replayOnIOS27('glide, flicked again the same way (back run)', -5000)
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: a fling caught, held, then dragged the same way (no touch events) cancels the waiting command', () => {
+  const h = flingOnIOS27() // heading up, passing 1500
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    for (const top of [1480, 1462, 1446]) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+    // Caught: the finger rests, nothing moves.
+    h.advance(100)
+    h.scroll(true, 1445)
+    // It drags on, faster than the fling was going.
+    for (const top of [1400, 1350, 1300]) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: a command issued after a second flick waits for the new fling', () => {
+  const h = flingOnIOS27() // heading up, passing 1500
+  const glide = (tops: Array<number>) => {
+    for (const top of tops) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+  }
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    glide([1490, 1481, 1473, 1466])
+    // A second flick: the command waiting is the user's to drop.
+    glide([1430, 1390, 1350])
+    expect(h.v.scrollState).toBeNull()
+    // A new one waits for the new fling as it slows.
+    h.v.scrollToIndex(80, { align: 'start' })
+    glide([1312, 1276, 1242, 1210, 1180])
+    expect(h.v.scrollState?.phase).toBe('queued')
+    // It fades out on its own.
+    for (const top of [1176, 1174, 1173, 1172]) {
+      h.advance(50)
+      h.scroll(true, top)
+    }
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([4000])
+})
+
+test('iOS 27: a tap late in the fling (0.21px/ms) cancels the waiting command', () => {
+  const h = flingOnIOS27() // heading up, passing 1500
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    // ~3.4px a frame when the finger lands (another iPhone, #1307).
+    for (const top of [1497, 1493, 1490, 1487, 1483, 1480]) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: a fling that went on with no scroll events is not read as caught', () => {
+  const h = flingOnIOS27() // heading up, passing 1500
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    // 0.25px/ms when the events stop...
+    for (const top of [1496, 1492, 1488, 1484]) {
+      h.advance(16)
+      h.scroll(true, top)
+    }
+  })
+  // ...but the element keeps moving, fading out, with none.
+  for (const top of [1478, 1476]) {
+    h.advance(150)
+    h.el.scrollTop = top
+    h.expireTail()
+    expect(h.writes).toEqual([])
+  }
+  // It stopped: the speed it stopped at is the silent one, not 0.25px/ms.
+  h.advance(150)
+  h.expireTail()
+  expect(h.writes).toEqual([4500])
+})
+
+test('iOS 27: the waiting command is not written while the fling still moves between scroll events', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    h.scroll(true, 1490)
+  })
+  // The end of a fling: under a pixel per frame, so the element moves with
+  // no scroll event for 150ms.
+  h.el.scrollTop = 1488
+  h.expireTail()
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState?.phase).toBe('queued')
+  // At rest now: written.
+  h.expireTail()
+  expect(h.writes).toEqual([4500])
+})
+
+test("iOS 27: a command issued from a tap's tail is written at once", () => {
+  const h = makeDeferralHarness({ start: 2000, ios27: true })
+  h.touch('touchstart')
+  h.touch('touchend')
+  h.writes.length = 0
+  h.run(() => h.v.scrollToIndex(90, { align: 'start' }))
+  // No drag before the finger lifted, so no fling to wait for.
+  expect(h.writes).toEqual([4500])
+})
+
+test('iOS 27: the hold is released before the waiting command is written', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    // Row 5 (above the viewport) grows by 50: held, the rows exposed
+    // shifted back by it.
+    h.v.resizeItem(5, 100)
+    expect(h.writes).toEqual([])
+    expect(h.v.getVirtualItems()[0]!.start).toBe(
+      h.v['getMeasurements']()[h.v.getVirtualItems()[0]!.index]!.start - 50,
+    )
+    h.scroll(false)
+  })
+  h.expireTail()
+  // The hold lands where the fling ended (1500 + 50), then the command.
+  expect(h.writes).toEqual([1550, 4550])
+  expect(h.v.getVirtualItems()[0]!.start).toBe(
+    h.v['getMeasurements']()[h.v.getVirtualItems()[0]!.index]!.start,
+  )
+})
+
+test('iOS 27: a command that waits past the safety valve is dropped', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    h.advance(6000)
+    h.frame()
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState).toBeNull()
+})
+
+test('iOS 27: a correction mid-fling is held through the tail, as on 26', () => {
+  const h = makeDeferralHarness({ start: 1000, ios27: true })
+  h.writes.length = 0
+  h.touch('touchstart')
+  h.run(() => {
+    h.scroll(true, 1010)
+    h.v.resizeItem(5, 100)
+  })
+  h.touch('touchend')
+  h.run(() => {
+    h.scroll(true, 3000)
+    h.scroll(false)
+  })
+  expect(h.writes).toEqual([])
+  h.expireTail()
   expect(h.el.scrollTop).toBe(3050)
   expect(h.rowTop(60)).toBe(0)
 })
@@ -2734,7 +3199,7 @@ test('iOS Phase 1: touchstart enters the `down` phase and ends a prior tail', ()
     dispatchTouchEvent(el, 'touchend') // leaves a tail armed
     expect(v['_iosTouch']?.phase).toBe('tail')
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
   })
 })
 
@@ -2754,7 +3219,7 @@ test('iOS Phase 1: touchcancel clears touching the same as touchend, and cleanup
     expect(el._hasListener('touchcancel')).toBe(true)
 
     dispatchTouchEvent(el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
     dispatchTouchEvent(el, 'touchcancel')
     expect(v['_iosTouch']?.phase).toBe('tail')
 
@@ -2884,6 +3349,91 @@ test('iOS Phase 1: momentum scroll events re-arm the post-touchend tail until th
   })
 })
 
+// The first frame of a fling can come 150–250ms after touchend when the main
+// thread is busy (27.0 simulator, #1307): after the tail has closed.
+function dragThenLateFling({ ios27 = false } = {}) {
+  const h = makeDeferralHarness({ start: 2000, ios27 })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, 1990))
+  h.touch('touchend')
+  h.advance(150)
+  h.expireTail() // no momentum frame yet
+  h.writes.length = 0
+  return h
+}
+
+test('iOS: a fling whose first frame comes after the tail closed reopens it', () => {
+  const h = dragThenLateFling()
+  h.advance(100)
+  h.run(() => {
+    h.scroll(true, 1960)
+    h.v.resizeItem(5, 100)
+  })
+  // Held: a write would stop the fling (26) or be overridden (27).
+  expect(h.writes).toEqual([])
+  h.run(() => {
+    h.scroll(true, 1900)
+    h.scroll(false)
+  })
+  h.expireTail()
+  expect(h.writes).toEqual([1950])
+})
+
+test('iOS 27: a command mid-fling waits when the first frame came late', () => {
+  const h = dragThenLateFling({ ios27: true })
+  h.advance(100)
+  h.run(() => {
+    h.scroll(true, 1960)
+    h.v.scrollToIndex(90, { align: 'start' })
+  })
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollState?.phase).toBe('queued')
+})
+
+test('iOS: a scroll event over 1s after the tail closed does not reopen it', () => {
+  const h = dragThenLateFling()
+  h.advance(1100)
+  h.run(() => {
+    h.scroll(true, 1960)
+    h.v.resizeItem(5, 100)
+  })
+  expect(h.writes).toEqual([2010])
+})
+
+test('iOS: after a fling that reported in time, a later scroll event opens no tail', () => {
+  const h = makeDeferralHarness({ start: 2000 })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, 1990))
+  h.touch('touchend')
+  h.run(() => {
+    h.scroll(true, 1900)
+    h.scroll(false)
+  })
+  h.expireTail()
+  h.writes.length = 0
+  // Say the app scrolls the element itself.
+  h.advance(100)
+  h.run(() => {
+    h.scroll(true, 1800)
+    h.v.resizeItem(5, 100)
+  })
+  expect(h.writes).toEqual([1850])
+})
+
+test('iOS: a tap opens no late-fling window', () => {
+  const h = makeDeferralHarness({ start: 2000 })
+  h.touch('touchstart')
+  h.touch('touchend')
+  h.expireTail()
+  h.writes.length = 0
+  h.advance(100)
+  h.run(() => {
+    h.scroll(true, 1960)
+    h.v.resizeItem(5, 100)
+  })
+  expect(h.writes).toEqual([2010])
+})
+
 test('iOS Phase 1: new touchstart during grace window cancels pending flush timer', () => {
   withFakeIOSUserAgent(() => {
     const scrollToFn = vi.fn()
@@ -2907,7 +3457,7 @@ test('iOS Phase 1: new touchstart during grace window cancels pending flush time
     dispatchTouchEvent(el, 'touchstart')
     // The pending timer must have been canceled.
     expect(timers.has(firstTimerId)).toBe(false)
-    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
   })
 })
 
@@ -2996,7 +3546,7 @@ test('iOS Phase 1: scroll-element swap mid-touch does not strand the `down` phas
       mockWindow,
     )
     dispatchTouchEvent(holder.el, 'touchstart')
-    expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+    expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
 
     // The in-flight touch keeps targeting the old element (implicit touch
     // capture), so the new element will never deliver its touchend. Without
@@ -3249,7 +3799,7 @@ test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
 
   dispatchTouchEvent(el, 'touchstart')
-  expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false }) // touchstart still records (cheap)
+  expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false }) // touchstart still records (cheap)
   dispatchTouchEvent(el, 'touchend')
   // Non-iOS path returns before arming a tail
   expect(v['_iosTouch']).toBeNull()
@@ -3538,6 +4088,40 @@ test('self-write read-back rounded by the browser still does not latch a directi
   expect(v.isScrolling).toBe(true)
   expect(v.scrollDirection).toBeNull()
   expect(v.scrollOffset).toBe(640.5)
+})
+
+describe('a scrollToFn that reports its write back synchronously', () => {
+  // The read-back runs inside `applyScrollAdjustment`, before it folds the
+  // delta into `scrollOffset`; the read-back has already put `scrollOffset`
+  // at the target, so the delta must not be added a second time.
+  const setup = (offset: number) => {
+    const harness = createAdjustmentVirtualizer({ offset })
+    harness.scrollToFn.mockImplementation(
+      (to: number, { adjustments }: { adjustments?: number }) =>
+        harness.emitScroll(to + (adjustments ?? 0), true),
+    )
+    return harness
+  }
+
+  test('a positive adjustment lands on its target once', () => {
+    const { v, scrollToFn } = setup(600)
+    v['applyScrollAdjustment'](40)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(v.scrollOffset).toBe(640)
+    expect(v['pendingWrite']).toBeNull()
+  })
+
+  test('a negative adjustment lands on its target once', () => {
+    const { v } = setup(600)
+    v['applyScrollAdjustment'](-40)
+    expect(v.scrollOffset).toBe(560)
+  })
+
+  test('a read-back above the top is still clamped to 0', () => {
+    const { v } = setup(20)
+    v['applyScrollAdjustment'](-50)
+    expect(v.scrollOffset).toBe(0)
+  })
 })
 
 test('real scroll gestures still latch forward/backward and reset to null', () => {
@@ -5604,6 +6188,154 @@ test('scrollBy past the end does not leave the next scrollBy building on an unre
   expect(el.scrollTop).toBe(4700)
 })
 
+// ─── #1307 step 5: an offset target follows the corrections made after its
+// read-back, and a prepend before a command's read-back is left to reconcile
+
+test('scrollToOffset: a row above growing after the read-back moves the target with it, and the command retires', () => {
+  // The compensation moved the element to 2050 while the target stayed 2000:
+  // reconcile saw neither a moved target nor a reached one and kept running
+  // until the 5s safety valve.
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+
+  v.scrollToOffset(2000)
+  scroll(2000, true)
+  v.resizeItem(10, 100)
+  expect(el.scrollTop).toBe(2050)
+  settle()
+
+  expect(el.scrollTop).toBe(2050)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollBy: a row above growing after the read-back moves the target with it, and the command retires', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+  el.scrollTop = 1500
+  scroll(1500, false)
+
+  v.scrollBy(500)
+  scroll(2000, true)
+  v.resizeItem(10, 100)
+  expect(el.scrollTop).toBe(2050)
+  settle()
+
+  expect(el.scrollTop).toBe(2050)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollToOffset: a prepend after the read-back moves the target with the anchor sync, and the command retires', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  v.scrollToOffset(2000)
+  scroll(2000, true)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  expect(el.scrollTop).toBe(2600)
+  settle()
+
+  expect(el.scrollTop).toBe(2600)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollToOffset: a prepend held by a bounce before the commit moves the target with it', () => {
+  // At the max (4800). The options change finds the element writable, a
+  // bounce past the max lands before the commit, and `_willUpdate` holds
+  // the prepend instead; the target follows there too, so the command
+  // retires once the hold lands.
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  v.scrollToOffset(4800)
+  scroll(4800, true)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  el.scrollTop = 4810
+  scroll(4810, true)
+  v._willUpdate()
+  expect(el.scrollTop).toBe(4810)
+  // The bounce returns; the sizer has grown by the prepend.
+  el.scrollHeight = 5600
+  el.scrollTop = 4800
+  scroll(4800, true)
+  expect(el.scrollTop).toBe(5400)
+  settle()
+
+  expect(el.scrollTop).toBe(5400)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollToOffset: a prepend held by a bounce before the options change moves the target with it', () => {
+  // As above, but the bounce lands first, so `setOptions` itself holds the
+  // prepend. The target stayed 4800 and reconcile ran until the safety valve.
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  v.scrollToOffset(4800)
+  scroll(4800, true)
+  el.scrollTop = 4810
+  scroll(4810, true)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  expect(el.scrollTop).toBe(4810)
+  el.scrollHeight = 5600
+  el.scrollTop = 4800
+  scroll(4800, true)
+  expect(el.scrollTop).toBe(5400)
+  settle()
+
+  expect(el.scrollTop).toBe(5400)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a prepend before the read-back of a scrollToIndex write is left to reconcile', () => {
+  // scrollToIndex(20) wrote 1000 while `scrollOffset` still holds 2000. The
+  // anchor sync used to write the stale offset plus the prepend (2600) over
+  // the command, and reconcile (index target unchanged at 1000) never wrote
+  // again until the safety valve.
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+  el.scrollTop = 2000
+  scroll(2000, false)
+
+  v.scrollToIndex(20, { align: 'start' })
+  expect(el.scrollTop).toBe(1000)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  // No anchor write before the read-back...
+  expect(el.scrollTop).toBe(1000)
+  scroll(1000, true)
+  settle()
+  // ...the index scroll lands on index 20 of the new list.
+  expect(el.scrollTop).toBe(1000)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a prepend before the read-back of a scrollToOffset write is left to reconcile', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+  el.scrollTop = 2000
+  scroll(2000, false)
+
+  v.scrollToOffset(1000)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  expect(el.scrollTop).toBe(1000)
+  scroll(1000, true)
+  settle()
+
+  expect(el.scrollTop).toBe(1000)
+  expect(v.scrollState).toBeNull()
+})
+
 test('scrollBy past the start does not leave the next scrollBy building on an unreachable offset', () => {
   const { v, el, frames } = setupHandDrivenScroll()
 
@@ -5672,29 +6404,48 @@ test('a smooth scrollToIndex switched to auto near the end is not cancelled by a
   expect(v.scrollState).toBeNull()
 })
 
-test.fails(
-  'a scrollToIndex write clamped by a sizer that shrank below it still reaches the fresh target',
-  () => {
-    // Not seen in a real browser: the sizer has to re-render before the
-    // scroll event reports the write. Rows above the target shrink by 600px,
-    // so the max drops from 4800 to 4200 and the target from 4500 to 3900.
-    // The read-back at the new max is neither our write nor the target, so it
-    // reads as a user scroll and the index scroll stops at 4200.
-    const { v, el, scroll, settle } = setupHandDrivenScroll()
+test('a scrollToIndex write clamped by a sizer that shrank below it still reaches the fresh target', () => {
+  // The sizer re-renders before the scroll event reports the write (a
+  // same-task render after the command). Rows above the target shrink by
+  // 600px, so the max drops from 4800 to 4200 and the target from 4500 to
+  // 3900. The read-back at the new max is our write, clamped: it used to
+  // read as a user scroll and the index scroll stopped at 4200.
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
 
-    v.scrollToIndex(90, { align: 'start' })
-    expect(el.scrollTop).toBe(4500)
-    for (let i = 0; i < 20; i++) v.resizeItem(i, 20)
-    // The re-render that shrinks the sizer also rebuilds the measurements.
-    v.getVirtualItems()
-    el.scrollHeight = 4400
-    el.scrollTop = 4200
-    scroll(4200, true)
-    settle()
+  v.scrollToIndex(90, { align: 'start' })
+  expect(el.scrollTop).toBe(4500)
+  for (let i = 0; i < 20; i++) v.resizeItem(i, 20)
+  // The re-render that shrinks the sizer also rebuilds the measurements.
+  v.getVirtualItems()
+  el.scrollHeight = 4400
+  el.scrollTop = 4200
+  scroll(4200, true)
+  settle()
 
-    expect(el.scrollTop).toBe(3900)
-  },
-)
+  expect(el.scrollTop).toBe(3900)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a user scroll to the max while a write above it is pending is still the user', () => {
+  // The clamped read-back is only a read-back when the pending write sits
+  // past the max. A write within the range that the user overtakes to the
+  // bottom reads as the user's and retires the command.
+  const { v, el, scroll, frame, settle } = setupHandDrivenScroll()
+
+  v.scrollToIndex(20, { align: 'start' })
+  expect(el.scrollTop).toBe(1000)
+  el.scrollTop = 4800
+  scroll(4800, true)
+  // A row above grows while the user is still scrolling: a command still
+  // alive would retarget to 1050 and pull the user back.
+  v.resizeItem(5, 100)
+  frame()
+  expect(el.scrollTop).toBe(4800)
+  settle()
+
+  expect(el.scrollTop).toBe(4800)
+  expect(v.scrollState).toBeNull()
+})
 
 test('a write to a scroll element that went away is not adopted by the next one', () => {
   // A write is matched to its read-back within 1.5px. After the element is
@@ -6160,7 +6911,7 @@ test('iOS touch: a row that stops touch propagation does not hide the gesture', 
       v._willUpdate()
 
       row.dispatchEvent(new Event('touchstart', { bubbles: true }))
-      expect(v['_iosTouch']).toEqual({ phase: 'down', dragged: false })
+      expect(v['_iosTouch']).toEqual({ phase: 'down', moved: false })
       row.dispatchEvent(new Event('touchend', { bubbles: true }))
       expect(v['_iosTouch']?.phase).toBe('tail')
 

@@ -10,7 +10,8 @@ type ScrollAlignment = NonNullable<ScrollToOptions['align']>
 // animation steps, content resizes delivered by ResizeObserver, prepends,
 // user drags that rubber-band past an edge, touches, renders, frames, waits
 // that fire due timers, the reconcile safety valve)
-// run against a simulated browser, on iOS and non-iOS, across a set of layout
+// run against a simulated browser, on iOS 26 and earlier, iOS 27 and non-iOS,
+// across a set of layout
 // options. Each sequence records only what a consumer can observe: every
 // write to the element, where it rests after each step, and what the adapter
 // renders. The traces are hashed per seed and compared with the committed
@@ -23,8 +24,18 @@ type ScrollAlignment = NonNullable<ScrollToOptions['align']>
 //   SCROLL_TRACE=lanes/ios/17 pnpm vitest run tests/scroll-trace.test.ts
 //
 // Private state is deliberately not recorded: it is what refactors change.
+//
+// Platforms: `web` takes every write; `ios` (26 and earlier) ignores a write
+// under a dragging finger and a write cancels momentum; `ios27` additionally
+// runs a fling on its own path after touchend, which a write interrupts for
+// one frame only (measured on the 27.0 simulator in #1307: `scrollToIndex`
+// mid-fling shows its target, then the fling carries on and ends where it
+// would have). On `ios27` the virtualizer sees `CSS.supports('overflow-anchor:
+// auto')` as true, which is how it tells 27 apart.
 
 type Behavior = 'auto' | 'smooth'
+type Platform = 'web' | 'ios' | 'ios27'
+const PLATFORMS: Array<Platform> = ['web', 'ios', 'ios27']
 
 type Step =
   | { t: 'index'; i: number; align: ScrollAlignment; behavior: Behavior }
@@ -178,18 +189,28 @@ function makeSteps(seed: number, smooth: number): Array<Step> {
   return steps
 }
 
-function runTrace(config: Config, ios: boolean, seed: number): Array<string> {
-  if (ios) {
+function runTrace(
+  config: Config,
+  platform: Platform,
+  seed: number,
+): Array<string> {
+  if (platform !== 'web') {
     Object.defineProperty(navigator, 'userAgent', {
       value: IOS_UA,
       configurable: true,
     })
   }
+  if (platform === 'ios27') {
+    ;(globalThis as any).CSS = {
+      supports: (query: string) => query === 'overflow-anchor: auto',
+    }
+  }
   _resetIOSDetectionForTests()
   try {
-    return simulate(config, ios, makeSteps(seed, config.smooth ?? 0.3))
+    return simulate(config, platform, makeSteps(seed, config.smooth ?? 0.3))
   } finally {
     delete (navigator as any).userAgent
+    delete (globalThis as any).CSS
     _resetIOSDetectionForTests()
   }
 }
@@ -202,9 +223,11 @@ type Row = {
 
 function simulate(
   config: Config,
-  ios: boolean,
+  platform: Platform,
   steps: Array<Step>,
 ): Array<string> {
+  const ios = platform !== 'web'
+  const ios27 = platform === 'ios27'
   const options = config.options ?? {}
   const rafs: Array<FrameRequestCallback> = []
   const timers = new Map<number, { fn: () => void; due: number }>()
@@ -295,6 +318,11 @@ function simulate(
   let touching = false
   // The finger has moved the content since it touched down.
   let dragged = false
+  // iOS 27: a fling after a drag runs on its own path until it rests or a
+  // finger stops it. A write shows until the next fling frame, which puts the
+  // element back on the path; a smooth write never shows at all.
+  let momentum = false
+  let pathPos = 0
   // A native smooth scroll in flight, and a frame of it computed before an
   // instant write replaced it, which WebKit can still apply and report.
   let smoothTarget: number | null = null
@@ -321,6 +349,7 @@ function simulate(
       // A write that lands is reported like any other move.
       stalled = false
       if (behavior === 'smooth') {
+        if (momentum) return
         smoothTarget = clamp(to)
         lateFrame = null
       } else {
@@ -473,15 +502,20 @@ function simulate(
         extra = render()
         break
       case 'event':
+        // A fling frame reports the path, not a write made since.
+        if (momentum) el.pos = pathPos
         spring()
+        if (momentum) pathPos = el.pos
         scroll(true)
         break
       case 'idle':
+        if (momentum) el.pos = pathPos
+        momentum = false
         el.pos = clamp(el.pos)
         scroll(false)
         break
       case 'anim':
-        if (stalled) break
+        if (stalled || momentum) break
         if (lateFrame !== null) {
           el.pos = clamp(lateFrame)
           lateFrame = null
@@ -503,25 +537,32 @@ function simulate(
         if (touching) dragged = true
         // The user scrolls: a stalled bounce reports again.
         stalled = false
-        const to = el.pos + step.d
+        // After a touch on iOS 27 this is a fling frame, on its own path.
+        const to = (momentum ? pathPos : el.pos) + step.d
         el.pos =
           to < 0
             ? -Math.min(Math.round(-to / 3), 100)
             : to > max()
               ? max() + Math.min(Math.round((to - max()) / 3), 100)
               : to
+        if (momentum) pathPos = el.pos
         scroll(true)
         break
       }
       case 'touchstart':
         touching = true
         dragged = false
+        momentum = false
         smoothTarget = null
         lateFrame = null
         fire('touchstart')
         break
       case 'touchend':
         touching = false
+        if (ios27 && dragged) {
+          momentum = true
+          pathPos = el.pos
+        }
         fire('touchend')
         break
       case 'touchcancel':
@@ -549,6 +590,11 @@ function simulate(
     touching = false
     fire('touchend')
   }
+  // A fling in progress ends where its path is.
+  if (momentum) {
+    el.pos = pathPos
+    momentum = false
+  }
   lateFrame = null
   if (smoothTarget !== null) {
     el.pos = smoothTarget
@@ -574,18 +620,18 @@ function simulate(
   return trace
 }
 
-const key = (config: Config, ios: boolean, seed: number) =>
-  `${config.name}/${ios ? 'ios' : 'web'}/${seed}`
+const key = (config: Config, platform: Platform, seed: number) =>
+  `${config.name}/${platform}/${seed}`
 
 const only = process.env.SCROLL_TRACE
 
 describe.skipIf(!!only)('scroll behaviour snapshot', () => {
   for (const config of configs) {
-    for (const ios of [false, true]) {
-      test(`${config.name} ${ios ? 'ios' : 'web'}`, () => {
+    for (const platform of PLATFORMS) {
+      test(`${config.name} ${platform}`, () => {
         const hashes: Array<string> = []
         for (let seed = 0; seed < SEEDS; seed++) {
-          hashes.push(hash(runTrace(config, ios, seed).join('\n')))
+          hashes.push(hash(runTrace(config, platform, seed).join('\n')))
         }
         // Ten per row so a diff points at the seeds that moved.
         const rows: Array<string> = []
@@ -603,10 +649,13 @@ describe.runIf(!!only)('scroll trace', () => {
     const [name, platform, seed] = only!.split('/')
     const config = configs.find((c) => c.name === name)
     if (!config) throw new Error(`unknown config ${name}`)
-    const trace = runTrace(config, platform === 'ios', Number(seed))
+    if (!PLATFORMS.includes(platform as Platform)) {
+      throw new Error(`unknown platform ${platform}`)
+    }
+    const trace = runTrace(config, platform as Platform, Number(seed))
     // Vitest captures console output; write straight to stderr.
     process.stderr.write(
-      `${key(config, platform === 'ios', Number(seed))}\n${trace.join('\n')}\n`,
+      `${key(config, platform as Platform, Number(seed))}\n${trace.join('\n')}\n`,
     )
   })
 })
