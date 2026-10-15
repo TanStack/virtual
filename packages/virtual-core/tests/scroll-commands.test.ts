@@ -417,6 +417,86 @@ test('a clamp the sizer grew back from does not cancel an instant scrollToEnd', 
   )
 })
 
+test('a sizer that shrank before the first resize after an instant scrollToEnd does not cancel it', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+  let onScroll!: (offset: number, isScrolling: boolean) => void
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    observeElementOffset: (_instance, callback) => {
+      onScroll = callback
+      callback(0, false)
+      return () => {}
+    },
+  })
+  Object.defineProperty(mockScrollElement, 'scrollHeight', {
+    value: 5000,
+    configurable: true,
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+
+  // A row measured smaller before the command; the sizer has not shrunk yet.
+  virtualizer.resizeItem(90, 20)
+  virtualizer.scrollToEnd()
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4400,
+    expect.anything(),
+    virtualizer,
+  )
+
+  // The sizer commits smaller (the browser clamps to 4370) before the next
+  // row measures larger and grows it past the target again.
+  Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 4970 })
+  virtualizer.resizeItem(91, 150)
+  Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 5070 })
+  onScroll(4370, true)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4470,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
+test('an instant scrollToEnd clamped by a shrink that grew back to the same total writes the end again', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+  let onScroll!: (offset: number, isScrolling: boolean) => void
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    observeElementOffset: (_instance, callback) => {
+      onScroll = callback
+      callback(0, false)
+      return () => {}
+    },
+  })
+  Object.defineProperty(mockScrollElement, 'scrollHeight', {
+    value: 5000,
+    configurable: true,
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+
+  virtualizer.scrollToEnd()
+  // -30 then +30: the end is where it was, but the browser clamped to 4370.
+  virtualizer.resizeItem(90, 20)
+  virtualizer.resizeItem(91, 80)
+  onScroll(4370, true)
+  scrollToFn.mockClear()
+
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4400,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
 test('a smooth retarget is not cancelled by its own intermediate scroll events', () => {
   const { rafCallbacks, mockScrollElement, scrollToFn } =
     createMockEnvironment()

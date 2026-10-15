@@ -1092,6 +1092,16 @@ export class Virtualizer<
             // `pendingWrite`).
             offset = this.pendingWrite!.target
           } else if (
+            kind === 'clampedReadBack' &&
+            this.scrollState?.index != null &&
+            elementMax !== null &&
+            offset < elementMax + this._holdOffset - 1.5
+          ) {
+            // Our write, clamped at a max the sizer has since grown back
+            // from: reconcile writes the target again, even when the layout
+            // came back to the same end.
+            this.scrollState.lastTargetOffset = offset
+          } else if (
             externalRetiresCommand({
               kind,
               offset,
@@ -2041,19 +2051,23 @@ export class Virtualizer<
       // Follow the scroll max through the sizes measured before a command's
       // instant write reports back (see `pendingWrite`). The element's max
       // is read once, at the first resize after the write, before that
-      // resize reaches the sizer.
+      // resize reaches the sizer; it may already be below the target. With
+      // lanes, a row's delta is not the total's, so nothing is followed.
       const write =
-        this.getCommandWrittenOffset() !== null ? this.pendingWrite! : null
-      if (write !== null && write.max === undefined) {
-        const elementMax = this._elementMaxScrollOffset()
-        if (elementMax !== null) write.max = elementMax + this._holdOffset
-      }
-      if (write?.max !== undefined) {
-        write.max += delta
-        if (write.max < write.target) {
-          write.lowestMax = Math.min(write.lowestMax ?? write.max, write.max)
+        this.options.lanes === 1 && this._awaitingCommandReadBack()
+          ? this.pendingWrite!
+          : null
+      const followMax = (max: number) => {
+        write!.max = max
+        if (max < write!.target) {
+          write!.lowestMax = Math.min(write!.lowestMax ?? max, max)
         }
       }
+      if (write !== null && write.max === undefined) {
+        const elementMax = this._elementMaxScrollOffset()
+        if (elementMax !== null) followMax(elementMax + this._holdOffset)
+      }
+      if (write?.max !== undefined) followMax(write.max + delta)
 
       // Before a command's read-back, an index or end target is retargeted
       // from fresh measurements by reconcileScroll next frame; an offset

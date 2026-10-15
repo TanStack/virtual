@@ -187,6 +187,10 @@ describe('classifyScrollEvent', () => {
         expect(at({ offset: 998.5, pendingWrite: shrunk })).toBe('external')
       })
 
+      test('not past the target', () => {
+        expect(at({ offset: 1201.5, pendingWrite: shrunk })).toBe('external')
+      })
+
       test('not for a smooth write', () => {
         expect(
           at({ offset: 1000, pendingWrite: { ...shrunk, smooth: true } }),
