@@ -610,9 +610,16 @@ export class Virtualizer<
   //   further by the time it reports.
   // - `smooth`: the write animates, so until it lands the element is
   //   somewhere between the old offset and `target`.
+  // - `max`, `lowMaxes`: for a command's instant write, the scroll max as
+  //   rows measured since the write moved it (`resizeItem`), and each value
+  //   it took below `target`. The browser clamps the write to one of them
+  //   at a layout, and the sizer can grow back before the report, so the
+  //   read-back is that max rather than the element's current one.
   private pendingWrite: {
     target: number
     smooth: boolean
+    max?: number
+    lowMaxes?: Array<number>
   } | null = null
   // A compensation write from `applyScrollAdjustment` whose target exceeded
   // the element's scroll max at the moment of the write. The browser clamps
@@ -1084,6 +1091,16 @@ export class Virtualizer<
             // Adopt the exact target over the browser's rounded value (see
             // `pendingWrite`).
             offset = this.pendingWrite!.target
+          } else if (
+            kind === 'clampedReadBack' &&
+            this.scrollState?.index != null &&
+            elementMax !== null &&
+            offset < elementMax + this._holdOffset - 1.5
+          ) {
+            // Our write, clamped at a max the sizer has since grown back
+            // from: reconcile writes the target again, even when the layout
+            // came back to the same end.
+            this.scrollState.lastTargetOffset = offset
           } else if (
             externalRetiresCommand({
               kind,
@@ -2030,6 +2047,30 @@ export class Virtualizer<
       }
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
+
+      // Follow the scroll max through the sizes measured before a command's
+      // instant write reports back (see `pendingWrite`). The element's max
+      // is read once, at the first resize after the write, before that
+      // resize reaches the sizer; it may already be below the target. With
+      // lanes, a row's delta is not the total's, so nothing is followed.
+      const write =
+        this.options.lanes === 1 && this._awaitingCommandReadBack()
+          ? this.pendingWrite!
+          : null
+      const followMax = (max: number) => {
+        write!.max = max
+        // The element cannot clamp below its own 0, which is the hold in
+        // layout coordinates; the raw max stays for the next delta.
+        const reachable = Math.max(max, this._holdOffset)
+        if (reachable < write!.target) {
+          ;(write!.lowMaxes ??= []).push(reachable)
+        }
+      }
+      if (write !== null && write.max === undefined) {
+        const elementMax = this._elementMaxScrollOffset()
+        if (elementMax !== null) followMax(elementMax + this._holdOffset)
+      }
+      if (write?.max !== undefined) followMax(write.max + delta)
 
       // Before a command's read-back, an index or end target is retargeted
       // from fresh measurements by reconcileScroll next frame; an offset

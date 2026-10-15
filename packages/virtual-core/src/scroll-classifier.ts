@@ -8,7 +8,8 @@ import { approxEqual } from './utils'
 //   readBack         our last write reporting back (within 1.5px of its
 //                    target)
 //   clampedReadBack  our last non-smooth write, clamped at the element's
-//                    current max
+//                    current max or at a smaller max the layout passed
+//                    through since the write
 //   clampedEcho      a compensation write the browser clamped (#1258)
 //                    reporting at the max seen at write time
 //   external         anything else: the user, a fling, a smooth animation
@@ -32,8 +33,14 @@ export interface ScrollEventInput {
   holdOffset: number
   // The layout position the virtualizer holds.
   scrollOffset: number | null
-  // Our last write to the element, until a scroll event reports it.
-  pendingWrite: { target: number; smooth: boolean } | null
+  // Our last write to the element, until a scroll event reports it, with
+  // the scroll maxima below its target the layout took since (see
+  // `lowMaxes` on `pendingWrite` in the virtualizer).
+  pendingWrite: {
+    target: number
+    smooth: boolean
+    lowMaxes?: Array<number>
+  } | null
   // The element's max when a clamped compensation write was made (#1258),
   // or null when none is pending.
   clampedMaxAtWrite: number | null
@@ -71,6 +78,18 @@ export function classifyScrollEvent({
     elementMax !== null &&
     pendingWrite.target > elementMax + holdOffset + 0.5 &&
     Math.abs(offset - (elementMax + holdOffset)) < 1.5
+  ) {
+    return 'clampedReadBack'
+  }
+  // The same, clamped to a smaller max than the element's current one: a row
+  // measured smaller shrank the sizer below the target and the browser
+  // clamped there, then a row measured larger grew it back, all before the
+  // report. The clamp lands on one of those maxima; a position between them
+  // is not one.
+  if (
+    pendingWrite !== null &&
+    !pendingWrite.smooth &&
+    pendingWrite.lowMaxes?.some((max) => Math.abs(offset - max) < 1.5)
   ) {
     return 'clampedReadBack'
   }
