@@ -610,9 +610,16 @@ export class Virtualizer<
   //   further by the time it reports.
   // - `smooth`: the write animates, so until it lands the element is
   //   somewhere between the old offset and `target`.
+  // - `max`, `lowestMax`: for a command's instant write, the scroll max as
+  //   rows measured since the write moved it (`resizeItem`), and the lowest
+  //   it went below `target`. The browser clamps the write to that max at
+  //   the next layout, and the sizer can grow back before the report, so
+  //   the read-back is that max rather than the element's current one.
   private pendingWrite: {
     target: number
     smooth: boolean
+    max?: number
+    lowestMax?: number
   } | null = null
   // A compensation write from `applyScrollAdjustment` whose target exceeded
   // the element's scroll max at the moment of the write. The browser clamps
@@ -2030,6 +2037,23 @@ export class Virtualizer<
       }
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
+
+      // Follow the scroll max through the sizes measured before a command's
+      // instant write reports back (see `pendingWrite`). The element's max
+      // is read once, at the first resize after the write, before that
+      // resize reaches the sizer.
+      const write =
+        this.getCommandWrittenOffset() !== null ? this.pendingWrite! : null
+      if (write !== null && write.max === undefined) {
+        const elementMax = this._elementMaxScrollOffset()
+        if (elementMax !== null) write.max = elementMax + this._holdOffset
+      }
+      if (write?.max !== undefined) {
+        write.max += delta
+        if (write.max < write.target) {
+          write.lowestMax = Math.min(write.lowestMax ?? write.max, write.max)
+        }
+      }
 
       // Before a command's read-back, an index or end target is retargeted
       // from fresh measurements by reconcileScroll next frame; an offset

@@ -372,6 +372,51 @@ test('a browser clamp to the new max does not cancel a reached scrollToEnd', () 
   expect(virtualizer['scrollState']?.lastTargetOffset).toBe(4410)
 })
 
+test('a clamp the sizer grew back from does not cancel an instant scrollToEnd', () => {
+  const { rafCallbacks, mockScrollElement, scrollToFn } =
+    createMockEnvironment()
+  const virtualizer = createVirtualizer(mockScrollElement, scrollToFn)
+  let onScroll!: (offset: number, isScrolling: boolean) => void
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    observeElementOffset: (_instance, callback) => {
+      onScroll = callback
+      callback(0, false)
+      return () => {}
+    },
+  })
+  Object.defineProperty(mockScrollElement, 'scrollHeight', {
+    value: 5000,
+    configurable: true,
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+
+  virtualizer.scrollToEnd()
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4400,
+    expect.anything(),
+    virtualizer,
+  )
+
+  // Before the read-back, rows measure in one task: one smaller than its
+  // estimate, so the sizer shrinks and the browser clamps scrollTop to the
+  // max of that moment (4370), then one larger, so the sizer grows past the
+  // target again. The event reports the clamped position.
+  virtualizer.resizeItem(90, 20)
+  virtualizer.resizeItem(91, 150)
+  Object.defineProperty(mockScrollElement, 'scrollHeight', { value: 5070 })
+  onScroll(4370, true)
+
+  expect(virtualizer['scrollState']).not.toBeNull()
+  rafCallbacks.shift()!(0)
+  expect(scrollToFn).toHaveBeenLastCalledWith(
+    4470,
+    expect.anything(),
+    virtualizer,
+  )
+})
+
 test('a smooth retarget is not cancelled by its own intermediate scroll events', () => {
   const { rafCallbacks, mockScrollElement, scrollToFn } =
     createMockEnvironment()

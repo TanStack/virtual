@@ -8,7 +8,8 @@ import { approxEqual } from './utils'
 //   readBack         our last write reporting back (within 1.5px of its
 //                    target)
 //   clampedReadBack  our last non-smooth write, clamped at the element's
-//                    current max
+//                    current max or at a smaller max the layout passed
+//                    through since the write
 //   clampedEcho      a compensation write the browser clamped (#1258)
 //                    reporting at the max seen at write time
 //   external         anything else: the user, a fling, a smooth animation
@@ -32,8 +33,10 @@ export interface ScrollEventInput {
   holdOffset: number
   // The layout position the virtualizer holds.
   scrollOffset: number | null
-  // Our last write to the element, until a scroll event reports it.
-  pendingWrite: { target: number; smooth: boolean } | null
+  // Our last write to the element, until a scroll event reports it, with
+  // the lowest scroll max the layout reached since (see `lowestMax` on
+  // `pendingWrite` in the virtualizer).
+  pendingWrite: { target: number; smooth: boolean; lowestMax?: number } | null
   // The element's max when a clamped compensation write was made (#1258),
   // or null when none is pending.
   clampedMaxAtWrite: number | null
@@ -71,6 +74,20 @@ export function classifyScrollEvent({
     elementMax !== null &&
     pendingWrite.target > elementMax + holdOffset + 0.5 &&
     Math.abs(offset - (elementMax + holdOffset)) < 1.5
+  ) {
+    return 'clampedReadBack'
+  }
+  // The same, clamped to a smaller max than the element's current one: a row
+  // measured smaller shrank the sizer below the target and the browser
+  // clamped there, then a row measured larger grew it back, all before the
+  // report. Any position between that lowest max and the target can be such
+  // a clamp.
+  if (
+    pendingWrite !== null &&
+    !pendingWrite.smooth &&
+    pendingWrite.lowestMax !== undefined &&
+    offset < pendingWrite.target &&
+    offset > pendingWrite.lowestMax - 1.5
   ) {
     return 'clampedReadBack'
   }

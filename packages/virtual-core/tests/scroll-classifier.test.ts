@@ -167,6 +167,32 @@ describe('classifyScrollEvent', () => {
         }),
       ).toBe('clampedReadBack')
     })
+
+    describe('at a lower max the layout passed through', () => {
+      const shrunk = { target: 1200, smooth: false, lowestMax: 1000 }
+
+      test('anywhere from that max up to the target', () => {
+        expect(
+          at({ offset: 1000, elementMax: 1300, pendingWrite: shrunk }),
+        ).toBe('clampedReadBack')
+        expect(at({ offset: 998.6, pendingWrite: shrunk })).toBe(
+          'clampedReadBack',
+        )
+        expect(at({ offset: 1100, pendingWrite: shrunk })).toBe(
+          'clampedReadBack',
+        )
+      })
+
+      test('not below that max', () => {
+        expect(at({ offset: 998.5, pendingWrite: shrunk })).toBe('external')
+      })
+
+      test('not for a smooth write', () => {
+        expect(
+          at({ offset: 1000, pendingWrite: { ...shrunk, smooth: true } }),
+        ).toBe('external')
+      })
+    })
   })
 
   describe('clampedEcho', () => {
