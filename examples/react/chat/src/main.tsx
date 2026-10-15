@@ -196,6 +196,9 @@ function MessageList({
     scrollEndThreshold: 80,
     overscan: 6,
     directDomUpdates: true,
+    // Runs after the virtualizer reads each scroll event. React's onScroll
+    // runs before it, so isAtEnd() there still sees the previous position.
+    onChange: (instance) => setAtEnd(instance.isAtEnd(80)),
   })
 
   React.useLayoutEffect(() => {
@@ -232,9 +235,7 @@ function MessageList({
         ref={parentRef}
         className="Messages"
         onScroll={(event) => {
-          const isAtEnd = virtualizer.isAtEnd(80)
-          setAtEnd(isAtEnd)
-          if (!autoHistoryEnabled || isAtEnd) return
+          if (!autoHistoryEnabled || virtualizer.isAtEnd(80)) return
           const { scrollTop } = event.currentTarget
           const movingUp = scrollTop < lastScrollTopRef.current
           lastScrollTopRef.current = scrollTop
