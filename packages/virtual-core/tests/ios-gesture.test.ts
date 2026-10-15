@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { IosGesture, _resetIOSDetectionForTests } from '../src/ios-gesture'
+import {
+  IosGesture,
+  _resetIOSDetectionForTests,
+  iosMomentumOverridesWrites,
+} from '../src/ios-gesture'
 
 const setUserAgent = (ios: boolean, ios27 = false) => {
   if (ios) {
@@ -73,7 +77,7 @@ describe('IosGesture', () => {
 
     gesture.touchEnd()
     expect(gesture.touch).toMatchObject({ phase: 'tail', moved: false })
-    expect(gesture.inTail()).toBe(true)
+    expect(gesture.tail()).toBe('tap')
 
     vi.advanceTimersByTime(149)
     expect(onTailClosed).not.toHaveBeenCalled()
@@ -186,26 +190,28 @@ describe('IosGesture', () => {
     expect(other.gesture.touch).toBeNull()
   })
 
-  describe('momentumOverridesWrites', () => {
-    test('only on iOS 27, in a tail that moved', () => {
-      setUserAgent(true, true)
-      const { gesture } = make()
-      gesture.touchStart()
-      expect(gesture.momentumOverridesWrites()).toBe(false)
-      gesture.touchEnd()
-      // A tap's tail.
-      expect(gesture.momentumOverridesWrites()).toBe(false)
-      scroll(gesture)
-      expect(gesture.momentumOverridesWrites()).toBe(true)
-    })
+  test('tail: none while down, a tap, then a fling once a momentum frame comes', () => {
+    const { gesture } = make()
+    gesture.touchStart()
+    expect(gesture.tail()).toBeNull()
+    gesture.touchEnd()
+    expect(gesture.tail()).toBe('tap')
+    scroll(gesture)
+    expect(gesture.tail()).toBe('fling')
 
-    test('never before iOS 27', () => {
-      const { gesture } = make()
-      gesture.touchStart()
-      scroll(gesture)
-      gesture.touchEnd()
-      expect(gesture.momentumOverridesWrites()).toBe(false)
-    })
+    const drag = make()
+    drag.gesture.touchStart()
+    scroll(drag.gesture)
+    drag.gesture.touchEnd()
+    expect(drag.gesture.tail()).toBe('fling')
+  })
+
+  test('iosMomentumOverridesWrites: only on iOS 27', () => {
+    expect(iosMomentumOverridesWrites()).toBe(false)
+    setUserAgent(true, true)
+    expect(iosMomentumOverridesWrites()).toBe(true)
+    setUserAgent(false, true)
+    expect(iosMomentumOverridesWrites()).toBe(false)
   })
 
   describe('listen', () => {
@@ -226,7 +232,7 @@ describe('IosGesture', () => {
       el.dispatchEvent(new Event('touchstart'))
       expect(gesture.touch).toEqual({ phase: 'down', moved: false })
       el.dispatchEvent(new Event('touchcancel'))
-      expect(gesture.inTail()).toBe(true)
+      expect(gesture.tail()).toBe('tap')
 
       stop()
       expect(remove.mock.calls.map(([type]) => type)).toEqual([
@@ -256,7 +262,9 @@ describe('IosGesture', () => {
     expect(gesture.touch).toMatchObject({ phase: 'tail', moved: true })
     vi.advanceTimersByTime(150)
     expect(onTailClosed).toHaveBeenCalledTimes(1)
-    expect(gesture.touch).toBeNull()
+    // A drag's tail closed before its fling reported: the late-fling window.
+    expect(gesture.touch).toMatchObject({ phase: 'lateFling' })
+    expect(gesture.inMotion()).toBe(false)
   })
 
   test('a drag whose fling reports after the tail closed reopens it, within 1s', () => {
@@ -265,10 +273,45 @@ describe('IosGesture', () => {
     scroll(gesture)
     gesture.touchEnd()
     vi.advanceTimersByTime(150)
-    expect(gesture.touch).toBeNull()
+    // Waiting for the fling's first frame defers nothing.
+    expect(gesture.touch).toMatchObject({ phase: 'lateFling' })
+    expect(gesture.inMotion()).toBe(false)
     vi.advanceTimersByTime(100)
     scroll(gesture)
     expect(gesture.touch).toMatchObject({ phase: 'tail', moved: true })
+  })
+
+  test('a momentum frame in time leaves no late-fling window', () => {
+    const { gesture } = make()
+    gesture.touchStart()
+    scroll(gesture)
+    gesture.touchEnd()
+    vi.advanceTimersByTime(50)
+    scroll(gesture)
+    vi.advanceTimersByTime(150)
+    expect(gesture.touch).toBeNull()
+  })
+
+  test('a finger down or end() drops the late-fling window', () => {
+    const { gesture } = make()
+    gesture.touchStart()
+    scroll(gesture)
+    gesture.touchEnd()
+    vi.advanceTimersByTime(150)
+    gesture.touchStart()
+    // A drag under the new finger, not a late fling.
+    expect(scroll(gesture)).toBe(true)
+    expect(gesture.touch).toEqual({ phase: 'down', moved: true })
+
+    const swapped = make()
+    swapped.gesture.touchStart()
+    scroll(swapped.gesture)
+    swapped.gesture.touchEnd()
+    vi.advanceTimersByTime(150)
+    // The scroll element changed (cleanup): nothing carries over.
+    swapped.gesture.end()
+    scroll(swapped.gesture)
+    expect(swapped.gesture.touch).toBeNull()
   })
 
   test('the late-fling window closes after 1s and never follows a tap', () => {
@@ -295,6 +338,6 @@ describe('IosGesture', () => {
     gesture.touchEnd()
     vi.advanceTimersByTime(250)
     scroll(gesture, { external: false })
-    expect(gesture.touch).toBeNull()
+    expect(gesture.tail()).toBeNull()
   })
 })

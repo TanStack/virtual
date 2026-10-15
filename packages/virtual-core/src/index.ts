@@ -9,7 +9,11 @@ import {
   flingCaught,
   flingSpedUp,
 } from './scroll-classifier'
-import { IosGesture, isIOSWebKit } from './ios-gesture'
+import {
+  IosGesture,
+  iosMomentumOverridesWrites,
+  isIOSWebKit,
+} from './ios-gesture'
 import type { ScrollPhase, ScrollSample } from './scroll-classifier'
 
 export { _resetIOSDetectionForTests } from './ios-gesture'
@@ -1008,7 +1012,7 @@ export class Virtualizer<
     // its next touch cycle.
     this._holdOffset = 0
     this._reportedOverscroll = false
-    this._iosGesture.end()
+    // (The gesture was ended with its listeners, in the unsubs above.)
     this._clampedAdjustment = null
     // A write to the old element will never be read back.
     this.pendingWrite = null
@@ -2331,13 +2335,15 @@ export class Virtualizer<
     behavior: ScrollBehavior,
     kind: 'absolute' | 'relative',
   ) {
-    if (kind === 'absolute' && this._iosGesture.inTail()) {
-      if (this._iosGesture.momentumOverridesWrites()) {
+    const tail = this._iosGesture.tail()
+    if (kind === 'absolute' && tail !== null) {
+      if (tail === 'fling' && iosMomentumOverridesWrites()) {
         // iOS 27: a write now shows for one frame and the fling carries on
         // along its own path, so the command would be lost (#1307, step 3).
         // Leave the tail open and write when it closes, ~150ms after the
-        // last fling frame; a drag before then cancels the command (see the
-        // scroll handler), a tap does not. A relative command (`scrollBy`)
+        // last fling frame; the user taking over before then (a drag, a
+        // second flick, a finger stopping the fling) cancels the command
+        // (see the scroll handler and `onTailClosed`). A relative command (`scrollBy`)
         // is not postponed: its target is taken from the position at the
         // call, which the fling leaves behind either way.
         this.scrollState = {

@@ -21,7 +21,7 @@ export const isIOSWebKit = (): boolean => {
 // the feature check; iOS 26 and earlier report false. Cached like the iOS
 // check; SSR-safe.
 let _iosMomentumOverridesWritesResult: boolean | undefined
-const iosMomentumOverridesWrites = (): boolean => {
+export const iosMomentumOverridesWrites = (): boolean => {
   if (_iosMomentumOverridesWritesResult !== undefined) {
     return _iosMomentumOverridesWritesResult
   }
@@ -53,29 +53,31 @@ const touchListenerOptions = {
 // `tail` while momentum runs. iOS fires no touch events during momentum, so
 // every scroll event re-arms the tail and it closes ~150ms after the last
 // one. Null between gestures, and after touchend on non-iOS, which arms no
-// tail. The tail record owns its timer: `end` is the only way to drop
-// either, so a cleared record never leaves a timer behind, and a live timer
-// always has its record.
+// tail. The tail record owns its timer: every replacement of the state goes
+// through `end`, which clears it, so a live timer always has its record.
 //
 // `moved`: the content moved under or after the finger other than by our
 // own write's read-back. While `down`, a scroll event that changed the
 // position sets it: the finger is dragging. The tail inherits it from the
 // drag, and any other scroll event re-arming the tail sets it: a fling can
 // be running. A tap's tail has it unset.
+//
+// `awaitingFling`: the tail follows a drag whose fling has not reported
+// yet. The first frame of a fling can come 150–250ms after touchend when
+// the main thread is busy (27.0 simulator, #1307); if the tail closes
+// first, `lateFling` waits until `until` for that frame to reopen it. It
+// defers nothing: other scroll events with no touch before them must not
+// defer corrections (#1250).
 type IosTouch =
   | { phase: 'down'; moved: boolean }
-  | { phase: 'tail'; moved: boolean; timerId: number }
+  | { phase: 'tail'; moved: boolean; awaitingFling: boolean; timerId: number }
+  | { phase: 'lateFling'; until: number }
   | null
 
 type TimerWindow = Pick<Window, 'setTimeout' | 'clearTimeout'>
 
 export class IosGesture {
   private _touch: IosTouch = null
-  // A drag ended and its fling has not reported yet: 'awaiting' from the
-  // touchend until a scroll event re-arms the tail; once the tail closes
-  // first, the time until which the fling's first frame may still come and
-  // reopen it (see `onScroll`).
-  private _lateFling: 'awaiting' | number | null = null
 
   constructor(
     private readonly host: {
@@ -100,20 +102,17 @@ export class IosGesture {
   // `isScrolling` is not part of it: any scroll event sets it, including
   // the read-back of our own write, and a programmatic scroll has no
   // momentum to protect (#1250).
-  inMotion = () => this._touch !== null
+  inMotion = () => this._touch !== null && this._touch.phase !== 'lateFling'
 
   // A finger is dragging the content, so iOS ignores our writes and no
   // read-back will come. A resting finger does not: the write lands.
   dragging = () => this._touch?.phase === 'down' && this._touch.moved
 
-  inTail = () => this._touch?.phase === 'tail'
-
-  // iOS 27: the tail follows a drag or a fling, whose momentum overrides a
-  // write within a frame (see `iosMomentumOverridesWrites`).
-  momentumOverridesWrites = () =>
-    this._touch?.phase === 'tail' &&
-    this._touch.moved &&
-    iosMomentumOverridesWrites()
+  // The open tail, if any: after a tap, or after a drag or fling. On iOS 27
+  // a fling's momentum overrides a write within a frame (see
+  // `iosMomentumOverridesWrites`).
+  tail = (): 'tap' | 'fling' | null =>
+    this._touch?.phase === 'tail' ? (this._touch.moved ? 'fling' : 'tap') : null
 
   // A scroll event reached the handler. `ownReadBack`: it is our own
   // write's read-back; `moved`: it changed the layout position; `external`:
@@ -135,18 +134,13 @@ export class IosGesture {
     // tail is extended: a scroll event with no touch before it (our own
     // write's read-back) never opens one.
     if (isScrolling && this._touch?.phase === 'tail') {
-      this._lateFling = null
-      this._openTail(this._touch.moved || !ownReadBack)
-    } else if (typeof this._lateFling === 'number') {
-      // The first frame of a fling can come 150–250ms after touchend when
-      // the main thread is busy (27.0 simulator, #1307), after the tail has
-      // closed. It reopens it, within 1s of a drag only: other scroll events
-      // with no touch before them must not defer corrections (#1250).
-      if (this.host.now() > this._lateFling) {
-        this._lateFling = null
-      } else if (external && isScrolling && moved && this._touch === null) {
-        this._lateFling = null
-        this._openTail(true)
+      this._openTail(this._touch.moved || !ownReadBack, false)
+    } else if (this._touch?.phase === 'lateFling') {
+      // A drag's fling reporting after its tail closed reopens it.
+      if (this.host.now() > this._touch.until) {
+        this._touch = null
+      } else if (external && isScrolling && moved) {
+        this._openTail(true, false)
       }
     }
     // A finger that moved the content is dragging. Our own write landing
@@ -168,8 +162,7 @@ export class IosGesture {
   touchEnd = () => {
     const moved = this._touch?.phase === 'down' && this._touch.moved
     this.end()
-    this._lateFling = moved ? 'awaiting' : null
-    this._openTail(moved)
+    this._openTail(moved, moved)
   }
 
   // Drop the gesture, and the tail's timer with it.
@@ -211,22 +204,23 @@ export class IosGesture {
 
   // (Re)open the tail after the finger lifts, closing ~150ms after the last
   // touchend or momentum frame. On non-iOS there is nothing to protect.
-  private _openTail = (moved: boolean) => {
+  private _openTail = (moved: boolean, awaitingFling: boolean) => {
     const win = this.host.getWindow()
     if (!isIOSWebKit() || win == null) return
     this.end()
     const tail = {
       phase: 'tail' as const,
       moved,
+      awaitingFling,
+      // Only fires while this tail is current: `end` clears it otherwise.
       timerId: win.setTimeout(() => {
-        if (this._touch === tail && this.host.tailStillMoving()) {
-          this._openTail(tail.moved)
+        if (this.host.tailStillMoving()) {
+          this._openTail(tail.moved, tail.awaitingFling)
           return
         }
-        if (this._touch === tail) this._touch = null
-        if (this._lateFling === 'awaiting') {
-          this._lateFling = this.host.now() + 1000
-        }
+        this._touch = tail.awaitingFling
+          ? { phase: 'lateFling', until: this.host.now() + 1000 }
+          : null
         this.host.onTailClosed()
       }, 150),
     }
