@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.19.6
+
+### Patch Changes
+
+- [#1326](https://github.com/TanStack/virtual/pull/1326) [`05bb4d3`](https://github.com/TanStack/virtual/commit/05bb4d3e75359442e7a650f1814bd496e382bc3d) - Measure the scroll viewport using client dimensions so borders and scrollbars do not obscure end-aligned items.
+
 ## 3.19.5
 
 ### Patch Changes
