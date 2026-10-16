@@ -74,8 +74,8 @@ export interface Rect {
 //
 
 const getRect = (element: HTMLElement): Rect => {
-  const { offsetWidth, offsetHeight } = element
-  return { width: offsetWidth, height: offsetHeight }
+  const { clientWidth, clientHeight } = element
+  return { width: clientWidth, height: clientHeight }
 }
 
 // Animation frames for `useAnimationFrameWithResizeObserver`, requested from
@@ -141,16 +141,8 @@ export const observeElementRect = <T extends Element>(
   }
 
   const frames = createFrameQueue(targetWindow)
-  const observer = new targetWindow.ResizeObserver((entries) => {
+  const observer = new targetWindow.ResizeObserver(() => {
     const run = () => {
-      const entry = entries[0]
-      if (entry?.borderBoxSize) {
-        const box = entry.borderBoxSize[0]
-        if (box) {
-          handler({ width: box.inlineSize, height: box.blockSize })
-          return
-        }
-      }
       handler(getRect(element as unknown as HTMLElement))
     }
 
@@ -159,7 +151,7 @@ export const observeElementRect = <T extends Element>(
       : run()
   })
 
-  observer.observe(element, { box: 'border-box' })
+  observer.observe(element, { box: 'content-box' })
 
   return () => {
     observer.unobserve(element)
