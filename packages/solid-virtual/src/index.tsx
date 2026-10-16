@@ -38,6 +38,36 @@ function createVirtualizerBase<
   )
   const [totalSize, setTotalSize] = createSignal(instance.getTotalSize())
 
+  let pending = false
+  let disposed = false
+  onCleanup(() => {
+    disposed = true
+  })
+
+  const flush = () => {
+    pending = false
+    if (disposed) return
+    instance._willUpdate()
+    setVirtualItems(reconcile(instance.getVirtualItems(), { key: 'index' }))
+    setTotalSize(instance.getTotalSize())
+  }
+
+  const flushIfPending = () => {
+    if (pending) flush()
+  }
+
+  // Size changes (`resizeItem`/`measure`, reported with `sync: false`) can
+  // arrive from a row's ref while <For> is still iterating `virtualItems`, so
+  // reconciling immediately would mutate the array underneath `mapArray`.
+  const schedule = (sync: boolean) => {
+    if (sync) {
+      flush()
+    } else if (!pending) {
+      pending = true
+      queueMicrotask(flushIfPending)
+    }
+  }
+
   const handler = {
     get(
       target: Virtualizer<TScrollElement, TItemElement>,
@@ -70,20 +100,12 @@ function createVirtualizerBase<
           instance: Virtualizer<TScrollElement, TItemElement>,
           sync: boolean,
         ) => {
-          instance._willUpdate()
-          setVirtualItems(
-            reconcile(instance.getVirtualItems(), {
-              key: 'index',
-            }),
-          )
-          setTotalSize(instance.getTotalSize())
+          schedule(sync)
           options.onChange?.(instance, sync)
         },
       }),
     )
-    virtualizer._willUpdate()
-    setVirtualItems(reconcile(instance.getVirtualItems(), { key: 'index' }))
-    setTotalSize(instance.getTotalSize())
+    flush()
   })
 
   return virtualizer
