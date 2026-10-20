@@ -59,6 +59,18 @@ class MyVirtualElement extends LitElement {
 
 Note that a [Ref](https://lit.dev/docs/templates/directives/#ref) is attached to the scrolling container to allow the virtualizer to interact with it.
 
+Options passed to the constructor are captured once. When a reactive property changes, merge the new values in `willUpdate` with `setOptions`. The same method exists on `WindowVirtualizerController`.
+
+```ts
+protected willUpdate(changed: PropertyValues<this>) {
+  if (changed.has('count')) {
+    this.virtualizerController.setOptions({ count: this.count })
+  }
+}
+```
+
+`setOptions` merges a partial update over the controller's current options and keeps the `onChange` wrapper that re-renders the host. `undefined` values are ignored. Use the controller method rather than `getVirtualizer().setOptions(...)`, which replaces options wholesale and drops that wrapper.
+
 ## `WindowVirtualizerController`
 
 You can also create a virtualizer controller that attaches to the Window:
