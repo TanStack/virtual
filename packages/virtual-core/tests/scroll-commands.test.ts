@@ -1882,3 +1882,21 @@ test('a write to a scroll element that went away is not adopted by the next one'
 
   expect(v.scrollOffset).toBe(1001)
 })
+
+test('an explicit scroll cancels pending anchor work and a clamped retry', () => {
+  const { v, el } = setupHandDrivenScroll()
+
+  // Model a prepend anchor sync and a clamped compensation still waiting
+  // for a later layout commit. A newer explicit command must supersede both.
+  v['pendingScrollAnchor'] = { kind: 'anchor', delta: 150 }
+  v['_clampedAdjustment'] = { target: 1200, maxAtWrite: 300 }
+
+  v.scrollToOffset(100)
+
+  expect(v['pendingScrollAnchor']).toBeNull()
+  expect(v['_clampedAdjustment']).toBeNull()
+
+  // A later layout opportunity must not restore the stale target.
+  v['_retryClampedAdjustment']()
+  expect(el.scrollTop).toBe(100)
+})
