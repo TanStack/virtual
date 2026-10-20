@@ -1882,3 +1882,31 @@ test('a write to a scroll element that went away is not adopted by the next one'
 
   expect(v.scrollOffset).toBe(1001)
 })
+
+test('an explicit scroll cancels a pending anchor before layout commit', () => {
+  const { v, el, scroll } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  el.scrollTop = 2000
+  scroll(2000, false)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+
+  v.scrollToOffset(100)
+  v._willUpdate()
+  expect(el.scrollTop).toBe(100)
+})
+
+test('an explicit scroll cancels a pending clamped retry', () => {
+  const { v, el, scroll } = setupHandDrivenScroll()
+
+  el.scrollTop = 4800
+  scroll(4800, false)
+  v.resizeItem(0, 100)
+  v.scrollToOffset(100)
+
+  el.scrollHeight = 5050
+  v._willUpdate()
+  expect(el.scrollTop).toBe(100)
+})
