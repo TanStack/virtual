@@ -1883,20 +1883,30 @@ test('a write to a scroll element that went away is not adopted by the next one'
   expect(v.scrollOffset).toBe(1001)
 })
 
-test('an explicit scroll cancels pending anchor work and a clamped retry', () => {
-  const { v, el } = setupHandDrivenScroll()
+test('an explicit scroll cancels a pending anchor before layout commit', () => {
+  const { v, el, scroll } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
 
-  // Model a prepend anchor sync and a clamped compensation still waiting
-  // for a later layout commit. A newer explicit command must supersede both.
-  v['pendingScrollAnchor'] = { kind: 'anchor', delta: 150 }
-  v['_clampedAdjustment'] = { target: 1200, maxAtWrite: 300 }
+  el.scrollTop = 2000
+  scroll(2000, false)
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
 
   v.scrollToOffset(100)
+  v._willUpdate()
+  expect(el.scrollTop).toBe(100)
+})
 
-  expect(v['pendingScrollAnchor']).toBeNull()
-  expect(v['_clampedAdjustment']).toBeNull()
+test('an explicit scroll cancels a pending clamped retry', () => {
+  const { v, el, scroll } = setupHandDrivenScroll()
 
-  // A later layout opportunity must not restore the stale target.
-  v['_retryClampedAdjustment']()
+  el.scrollTop = 4800
+  scroll(4800, false)
+  v.resizeItem(0, 100)
+  v.scrollToOffset(100)
+
+  el.scrollHeight = 5050
+  v._willUpdate()
   expect(el.scrollTop).toBe(100)
 })
