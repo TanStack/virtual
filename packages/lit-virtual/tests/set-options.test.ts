@@ -96,7 +96,7 @@ test('setOptions keeps the user onChange and the host update wrapper', async () 
   expect(harness.requestUpdateCount).toBeGreaterThan(0)
 })
 
-test('setOptions requests a host update outside an update, and not again for the same options', async () => {
+test('setOptions requests a host update, and not again for the same options', async () => {
   const harness = createHost()
   const controller = new VirtualizerController(harness.host, {
     count: 10,
@@ -112,26 +112,6 @@ test('setOptions requests a host update outside an update, and not again for the
   controller.setOptions({ count: 12 })
   await Promise.resolve()
   expect(harness.requestUpdateCount).toBe(afterChange)
-})
-
-test('setOptions during a host update does not schedule another update', () => {
-  const harness = createHost()
-  const controller = new VirtualizerController(harness.host, {
-    count: 10,
-    estimateSize: () => 50,
-    getScrollElement: () => null,
-  })
-
-  controller.hostUpdate()
-  const before = harness.requestUpdateCount
-  controller.setOptions({ count: 15 })
-  controller.setOptions({
-    getScrollElement: () => null,
-  })
-  expect(controller.getVirtualizer().options.count).toBe(15)
-  expect(controller.getVirtualizer().getTotalSize()).toBe(750)
-  expect(harness.requestUpdateCount).toBe(before)
-  controller.hostUpdated()
 })
 
 test('WindowVirtualizerController.setOptions keeps the window defaults', () => {
@@ -176,6 +156,12 @@ class ListSetOptions extends LitElement {
     }
   }
 
+  updateCount = 0
+
+  protected updated() {
+    this.updateCount++
+  }
+
   render() {
     const virtualizer = this.virtualizerController.getVirtualizer()
     return html`<div data-testid="total">${virtualizer.getTotalSize()}</div>`
@@ -198,4 +184,21 @@ test('a reactive count property updates the rendered total size', async () => {
   await elementUpdated(el)
 
   expect(total()).toBe('1000')
+})
+
+test('setOptions from willUpdate does not schedule an extra update', async () => {
+  const el = (await fixture(
+    html`<test-list-set-options></test-list-set-options>`,
+  )) as ListSetOptions
+  await elementUpdated(el)
+
+  const before = el.updateCount
+  el.count = 30
+  await elementUpdated(el)
+  await elementUpdated(el)
+
+  expect(el.updateCount).toBe(before + 1)
+  expect(
+    el.shadowRoot!.querySelector('[data-testid="total"]')?.textContent,
+  ).toBe('1500')
 })

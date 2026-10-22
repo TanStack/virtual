@@ -24,13 +24,6 @@ class VirtualizerControllerBase<
 
   private cleanup: () => void = () => {}
 
-  /**
-   * True between `hostUpdate` and `hostUpdated`. `willUpdate` runs in that
-   * window, before render, so applying options there is already part of the
-   * current update.
-   */
-  private hostIsUpdating = false
-
   constructor(
     host: ReactiveControllerHost,
     options: VirtualizerOptions<TScrollElement, TItemElement>,
@@ -47,8 +40,8 @@ class VirtualizerControllerBase<
 
   /**
    * Merge a partial options update into the options this controller already
-   * holds, push them to the virtualizer, and re-render the host when this is
-   * called outside an update.
+   * holds, push them to the virtualizer, and request a host update. Lit folds
+   * a request made from `willUpdate` into the update already in progress.
    *
    * Keys set to `undefined` are ignored, matching core `setOptions`, so a
    * partial update cannot wipe an option stored earlier. Defaults supplied by
@@ -62,14 +55,7 @@ class VirtualizerControllerBase<
 
     this.virtualizer.setOptions(this.resolveOptions(this.options))
     this.virtualizer._willUpdate()
-
-    if (!this.hostIsUpdating) {
-      this.host.requestUpdate()
-    }
-  }
-
-  hostUpdate() {
-    this.hostIsUpdating = true
+    this.host.requestUpdate()
   }
 
   hostConnected() {
@@ -77,7 +63,6 @@ class VirtualizerControllerBase<
   }
 
   hostUpdated() {
-    this.hostIsUpdating = false
     this.virtualizer._willUpdate()
   }
 
