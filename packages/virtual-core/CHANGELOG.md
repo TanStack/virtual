@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.19.7
+
+### Patch Changes
+
+- [#1335](https://github.com/TanStack/virtual/pull/1335) [`887e971`](https://github.com/TanStack/virtual/commit/887e97172207c28d12bf9a0df8a842e261565a42) - fix(virtual-core): cancel stale anchor work on explicit scroll
+
+- [#1337](https://github.com/TanStack/virtual/pull/1337) [`5d51f1d`](https://github.com/TanStack/virtual/commit/5d51f1d972c8c22b9cb0b767741a9c544bd89299) - fix(virtual-core): hold a clamped compensation retry while a touch owns the scroll
+
 ## 3.19.6
 
 ### Patch Changes
