@@ -5,15 +5,18 @@
 <html lang="en">
   <head><meta charset="UTF-8"/><title>gate: isRtl</title></head>
   <body>
+    <virtualizer/v
+      count=10000
+      estimateSize=() => 100
+      overscan=5
+      horizontal=true
+      isRtl=true
+      getScrollElement=() => scrollEl()
+    />
+    <button data-testid="scroll-50" onClick() { v.scrollToIndex(50, { align: "start" }) }>
+      Scroll to column 50
+    </button>
     <div/scrollEl dir="rtl" data-testid="scroller" style="width: 500px; height: 120px; overflow-x: auto; position: relative">
-      <virtualizer/v
-        count=10000
-        estimateSize=() => 100
-        overscan=5
-        horizontal=true
-        isRtl=true
-        getScrollElement=() => scrollEl()
-      />
       <div style=`width: ${v.totalSize}px; height: 100%; position: relative`>
         <for|item| of=v.virtualItems>
           <div
