@@ -3,7 +3,7 @@
 exports[`scroll behaviour snapshot > anchorEnd ios 1`] = `
 [
   "0: 9c30ad29 85b526da ed35961e 0a69fa03 86e37173 a7c6a294 33f6e53e 2a95e498 9d2aaa43 79c0b972",
-  "10: 56c43525 67a48d7b 56c4a6ad 8aad82fb 3952ce1c 83082b83 8b6948e0 7081e813 d1336903 7f3041e0",
+  "10: 56c43525 6f3e47e6 56c4a6ad 8aad82fb 3952ce1c 83082b83 8b6948e0 7081e813 d1336903 7f3041e0",
   "20: 8e4723f5 f780f908 13bd300f d53e7a2d ddda056c ebb40e0f 7533b661 6408933e 9f3ec27c 09a1874e",
   "30: d0da31f6 2a263abe beba95dc b0cf23fd 436c1d33 9b9b908c c8c87f50 d9749dba 552b4b5b 93ac03b2",
   "40: 351e701d 2f446794 d8e6a0e3 4d60c709 0b280b4f ac75fa53 868d9e7b 7f5b2824 780cae35 8f0a8fe9",
@@ -14,7 +14,7 @@ exports[`scroll behaviour snapshot > anchorEnd ios 1`] = `
 exports[`scroll behaviour snapshot > anchorEnd ios27 1`] = `
 [
   "0: 9c30ad29 85b526da ed35961e a0c8a633 86e37173 a7c6a294 33f6e53e 2a95e498 9d2aaa43 da12bd22",
-  "10: 56c43525 321ccf6c 56c4a6ad 8aad82fb 341cd88e 83082b83 ad77153a fd903c9c d1336903 7f3041e0",
+  "10: 56c43525 70d604ef 56c4a6ad 8aad82fb 341cd88e 83082b83 ad77153a fd903c9c d1336903 7f3041e0",
   "20: 8e4723f5 b7484e9f 13bd300f d53e7a2d 4c85db64 ebb40e0f ec059677 6408933e a8bfc9cf 09a1874e",
   "30: 3825d5d2 2a263abe beba95dc 6e007e5d 3ab04872 9b9b908c c8c87f50 4acd8bac 552b4b5b 93ac03b2",
   "40: 351e701d 81b41eab d8e6a0e3 4d60c709 0018ede1 ac75fa53 868d9e7b 7f5b2824 3e95ee0d 8f0a8fe9",
@@ -36,7 +36,7 @@ exports[`scroll behaviour snapshot > anchorEnd web 1`] = `
 exports[`scroll behaviour snapshot > base ios 1`] = `
 [
   "0: a9fcb9d4 0d2cec68 ed35961e 0a69fa03 0be21da6 3ec8eb85 869fa2d1 27716a81 f885c716 44f33e92",
-  "10: 9dedc3e2 a924913e 455a1c1e f463e55c f807b968 83082b83 c0d001ca 7081e813 d1336903 7b73eb01",
+  "10: 9dedc3e2 25c58688 455a1c1e f463e55c f807b968 83082b83 c0d001ca 7081e813 d1336903 7b73eb01",
   "20: 65dd1acd ceac4ab2 2c8bfacf 98bf94c9 34191b80 a7b02f04 7533b661 f6030c4d 4ddf6da0 a5002541",
   "30: d0da31f6 d8bbcf3a ea6dc035 aec3dd30 586ac9dd 46df8677 c4ac0a4d d9749dba 5b30b633 d4289992",
   "40: 351e701d 3645f268 2bf7e8fd feacb1d8 9ce9ecf7 ccef0b14 f9ead96e 30236a00 28000854 3b4e9ef5",
@@ -47,7 +47,7 @@ exports[`scroll behaviour snapshot > base ios 1`] = `
 exports[`scroll behaviour snapshot > base ios27 1`] = `
 [
   "0: a9fcb9d4 0d2cec68 ed35961e a0c8a633 0be21da6 3ec8eb85 869fa2d1 27716a81 f885c716 37400543",
-  "10: 9dedc3e2 bc62c925 455a1c1e f463e55c 21131058 83082b83 41ca8ab9 fd903c9c d1336903 7b73eb01",
+  "10: 9dedc3e2 1832327d 455a1c1e f463e55c 21131058 83082b83 41ca8ab9 fd903c9c d1336903 7b73eb01",
   "20: 65dd1acd b7484e9f 2c8bfacf 98bf94c9 2c2abba8 a7b02f04 ec059677 f6030c4d cc64ede2 a5002541",
   "30: 3825d5d2 d8bbcf3a ea6dc035 2ecd0e38 b6979c84 46df8677 c4ac0a4d 38614562 5b30b633 d4289992",
   "40: 351e701d f52511a4 2bf7e8fd feacb1d8 b612742b ccef0b14 f9ead96e 30236a00 bb18bdf4 3b4e9ef5",
@@ -102,7 +102,7 @@ exports[`scroll behaviour snapshot > commitPerRow web 1`] = `
 exports[`scroll behaviour snapshot > horizontal ios 1`] = `
 [
   "0: a9fcb9d4 0d2cec68 ed35961e 0a69fa03 0be21da6 3ec8eb85 869fa2d1 27716a81 f885c716 44f33e92",
-  "10: 9dedc3e2 a924913e 455a1c1e f463e55c f807b968 83082b83 c0d001ca 7081e813 d1336903 7b73eb01",
+  "10: 9dedc3e2 25c58688 455a1c1e f463e55c f807b968 83082b83 c0d001ca 7081e813 d1336903 7b73eb01",
   "20: 65dd1acd ceac4ab2 2c8bfacf 98bf94c9 34191b80 a7b02f04 7533b661 f6030c4d 4ddf6da0 a5002541",
   "30: d0da31f6 d8bbcf3a ea6dc035 aec3dd30 586ac9dd 46df8677 c4ac0a4d d9749dba 5b30b633 d4289992",
   "40: 351e701d 3645f268 2bf7e8fd feacb1d8 9ce9ecf7 ccef0b14 f9ead96e 30236a00 28000854 3b4e9ef5",
@@ -113,7 +113,7 @@ exports[`scroll behaviour snapshot > horizontal ios 1`] = `
 exports[`scroll behaviour snapshot > horizontal ios27 1`] = `
 [
   "0: a9fcb9d4 0d2cec68 ed35961e a0c8a633 0be21da6 3ec8eb85 869fa2d1 27716a81 f885c716 37400543",
-  "10: 9dedc3e2 bc62c925 455a1c1e f463e55c 21131058 83082b83 41ca8ab9 fd903c9c d1336903 7b73eb01",
+  "10: 9dedc3e2 1832327d 455a1c1e f463e55c 21131058 83082b83 41ca8ab9 fd903c9c d1336903 7b73eb01",
   "20: 65dd1acd b7484e9f 2c8bfacf 98bf94c9 2c2abba8 a7b02f04 ec059677 f6030c4d cc64ede2 a5002541",
   "30: 3825d5d2 d8bbcf3a ea6dc035 2ecd0e38 b6979c84 46df8677 c4ac0a4d 38614562 5b30b633 d4289992",
   "40: 351e701d f52511a4 2bf7e8fd feacb1d8 b612742b ccef0b14 f9ead96e 30236a00 bb18bdf4 3b4e9ef5",
@@ -135,10 +135,10 @@ exports[`scroll behaviour snapshot > horizontal web 1`] = `
 exports[`scroll behaviour snapshot > lanes ios 1`] = `
 [
   "0: 02580197 f314892c fd721b30 93e795a5 84959476 631e3681 7114dede de5f2a5e 576db818 2e50c67d",
-  "10: 514a82cf 25c644f3 7a8d2a09 2abee23f 5872f8d5 c103e623 c4d2fe64 554a1766 21de167e 487aeb4b",
+  "10: 514a82cf 13eeb0aa 7a8d2a09 2abee23f 5872f8d5 c103e623 c4d2fe64 554a1766 21de167e 487aeb4b",
   "20: f2245f58 81bd9a1e 79b54054 6e12648a 38539662 4b10cf13 0bddc3e4 11317c75 bbfdc970 d2432a43",
   "30: 12468132 20c7aff9 67dcb6d5 03291755 c9ffab63 5f0a007d ec1d6907 f41ff60d f7397d3b 701d9fb6",
-  "40: d7be12c4 972dd8d5 cd9e5629 bc8f344f 3d61d1ac 96523d8a d0d37a83 08867236 7da74ce4 bbba1406",
+  "40: d7be12c4 972dd8d5 cd9e5629 bc8f344f 70952222 96523d8a d0d37a83 08867236 7da74ce4 bbba1406",
   "50: 89573ef3 1fa2a7b0 f737f69e c3acfdb6 39c42ebf 55ca59be e01db9de cedb1bda cc70c64d 00e88da4",
 ]
 `;
@@ -146,10 +146,10 @@ exports[`scroll behaviour snapshot > lanes ios 1`] = `
 exports[`scroll behaviour snapshot > lanes ios27 1`] = `
 [
   "0: 02580197 f314892c fd721b30 34c4bce9 84959476 631e3681 7114dede de5f2a5e 576db818 4b924978",
-  "10: 514a82cf ddf40a6b 7a8d2a09 2abee23f af7ac992 c103e623 00ca2427 29c40818 21de167e 487aeb4b",
+  "10: 514a82cf 3ba98d8e 7a8d2a09 2abee23f af7ac992 c103e623 00ca2427 29c40818 21de167e 487aeb4b",
   "20: f2245f58 2424b184 79b54054 6e12648a 38539662 4b10cf13 feb6fb5c 11317c75 42d7823b d2432a43",
   "30: 65523943 20c7aff9 67dcb6d5 473c2a8f 7d23b05f 5f0a007d ec1d6907 e86742e8 f7397d3b 701d9fb6",
-  "40: d7be12c4 95d3e050 cd9e5629 bc8f344f 6df9343f 96523d8a d0d37a83 08867236 f50ddbf7 bbba1406",
+  "40: d7be12c4 95d3e050 cd9e5629 bc8f344f c4c01928 96523d8a d0d37a83 08867236 f50ddbf7 bbba1406",
   "50: 89573ef3 1fa2a7b0 53dfd836 9b5a1c5a b5b1ab21 8dd98e7e e01db9de cedb1bda cc70c64d 00e88da4",
 ]
 `;
@@ -168,7 +168,7 @@ exports[`scroll behaviour snapshot > lanes web 1`] = `
 exports[`scroll behaviour snapshot > margin ios 1`] = `
 [
   "0: 261ee8cc 0c7104ce d660522f 1ec6b870 04b73dd1 c3569067 ee016b0d a9e0ea4e 59fe0c9b 2aa76e6a",
-  "10: 80298488 1fad233c b47b8c57 b8cc23a1 3ec99fea d356dc6d 50cd4bd0 3d840e20 11b3151f c61a840f",
+  "10: 80298488 99b969a9 b47b8c57 b8cc23a1 3ec99fea d356dc6d 50cd4bd0 3d840e20 11b3151f c61a840f",
   "20: 46215df2 cb7198cf 9af764d5 e5ad1c1d d11595a6 d0cffbec 91864f2d 09a185e0 13de058c 200d4ab4",
   "30: daee6069 adb8145a 76ab5658 f4d2cc30 06a88aad f2b45513 21218db4 ae0aae24 94e08cb6 d7c3c8ec",
   "40: 4a4806a4 1866c892 fc88e237 22ee5368 a5c3ad27 7f1a8f34 20a8933f 657292c1 18ac5575 12553696",
@@ -179,7 +179,7 @@ exports[`scroll behaviour snapshot > margin ios 1`] = `
 exports[`scroll behaviour snapshot > margin ios27 1`] = `
 [
   "0: 261ee8cc 0c7104ce d660522f 97219b51 04b73dd1 c3569067 ee016b0d a9e0ea4e 59fe0c9b 042ea9c0",
-  "10: 80298488 f939c6d6 b47b8c57 b8cc23a1 28718591 d356dc6d ae7605be fe3e214a 11b3151f c61a840f",
+  "10: 80298488 ec89f9be b47b8c57 b8cc23a1 28718591 d356dc6d ae7605be fe3e214a 11b3151f c61a840f",
   "20: 46215df2 4bbfd318 9af764d5 e5ad1c1d 56d60460 d0cffbec 93a50774 09a185e0 968d5120 200d4ab4",
   "30: d8e56221 adb8145a 76ab5658 116e0db6 e6fec36b f2b45513 21218db4 a9114d57 94e08cb6 d7c3c8ec",
   "40: 4a4806a4 eeaf3a73 fc88e237 22ee5368 b54e13a5 7f1a8f34 20a8933f 657292c1 9201ba9f 12553696",
@@ -234,7 +234,7 @@ exports[`scroll behaviour snapshot > padding web 1`] = `
 exports[`scroll behaviour snapshot > predicate ios 1`] = `
 [
   "0: 1503987b da28a13a 54033cbd 75995293 b092f4c8 d731f6c6 96911d82 a3c61d73 0b82d0ed 2b56adca",
-  "10: 75e68079 2bc31908 888425aa 5683ada3 2b4bbf15 89be8bb7 4743c770 9e4371d0 8134fb03 750041da",
+  "10: 75e68079 49eee928 888425aa 5683ada3 2b4bbf15 89be8bb7 4743c770 9e4371d0 8134fb03 750041da",
   "20: 9f915474 4ca88661 54fd2515 1bc77d21 0daaca4c b368ca7e 35aedf09 b8e64de7 675f9530 8caf71f9",
   "30: 65d2a727 4f062147 b61ba9ff 4c406d77 0c47a6ac 7cbdb0c8 d11197a6 caebb6d3 82cf0b2e 087a5d0c",
   "40: 079790e8 ae3a4374 d5dec481 ac3796cc a2874f32 2fba1d55 f5b117d9 384995f7 54142c26 d1dae953",
@@ -245,7 +245,7 @@ exports[`scroll behaviour snapshot > predicate ios 1`] = `
 exports[`scroll behaviour snapshot > predicate ios27 1`] = `
 [
   "0: 1503987b da28a13a 54033cbd 6c0916d9 b092f4c8 d731f6c6 96911d82 a3c61d73 0b82d0ed a68350d1",
-  "10: 75e68079 1ff40218 888425aa 671c1e2a 9d2e455d 89be8bb7 a182b468 ccdc126b 8134fb03 750041da",
+  "10: 75e68079 19cdefb8 888425aa 671c1e2a 9d2e455d 89be8bb7 a182b468 ccdc126b 8134fb03 750041da",
   "20: 9f915474 4b896a03 54fd2515 1bc77d21 407334c6 b368ca7e 0727dcf4 b8e64de7 9effe82d 8caf71f9",
   "30: 60b29a8e 4f062147 7ea2c9cf 6fb5a6e2 0ecf3bcb 7cbdb0c8 d11197a6 d6c24b0e 82cf0b2e 087a5d0c",
   "40: 079790e8 7e7eb94d d5dec481 ac3796cc a3f65d93 2fba1d55 f5b117d9 384995f7 9c1a89ca d1dae953",
@@ -300,7 +300,7 @@ exports[`scroll behaviour snapshot > smooth web 1`] = `
 exports[`scroll behaviour snapshot > variable ios 1`] = `
 [
   "0: fba1d210 fa631490 10ca2747 e52f854d a8be165f 9e3f53bf 64e27748 f8555140 83d2f832 b8476e01",
-  "10: c3b629ee 2241edf9 3749dd54 2ec01d94 b80e2d99 35a5d702 9e405f75 00348828 e733c82e 8cf6ab83",
+  "10: c3b629ee cf7b5312 3749dd54 2ec01d94 b80e2d99 35a5d702 9e405f75 00348828 e733c82e 8cf6ab83",
   "20: b4503328 51a2636d a2d78904 8981d9d5 dbf6ef00 54b5c799 9db3ba75 f6b55614 15571a06 33c5fefe",
   "30: 3a2d53e2 78feab0d 1d33a8fc 81af3bc0 f0822adb 5ae0b4b8 66390281 07985b90 f324d93f b5ca5f73",
   "40: 3618653b 7a3e670d 3a0f5128 2eff8a63 15d50e38 4acfcd3d fb8201be 2bcbe71b 51789ded a9a59579",
@@ -311,7 +311,7 @@ exports[`scroll behaviour snapshot > variable ios 1`] = `
 exports[`scroll behaviour snapshot > variable ios27 1`] = `
 [
   "0: fba1d210 fa631490 10ca2747 25957d9e a8be165f 9e3f53bf 64e27748 f8555140 83d2f832 dab62b3e",
-  "10: c3b629ee 229224d0 3749dd54 2ec01d94 3d9df721 35a5d702 e7808baa 807ecfad e733c82e 8cf6ab83",
+  "10: c3b629ee e4ff081c 3749dd54 2ec01d94 3d9df721 35a5d702 e7808baa 807ecfad e733c82e 8cf6ab83",
   "20: b4503328 0d525631 a2d78904 8981d9d5 dbf6ef00 54b5c799 bcda7c22 f6b55614 2f0d8117 33c5fefe",
   "30: 1ab3f534 78feab0d 1d33a8fc 19c526ed 979df9b5 5ae0b4b8 66390281 ea5f1452 f324d93f b5ca5f73",
   "40: 3618653b 4e68229d 3a0f5128 2eff8a63 c67dead9 4acfcd3d fb8201be 2bcbe71b 0c19eed3 a9a59579",

@@ -1684,3 +1684,37 @@ test('iOS hold: a resize landing between a command and its read-back does not fl
     expect(v.scrollOffset).toBe(320)
   })
 })
+
+// A compensation write clamped by a not-yet-grown sizer is retried once the
+// sizer grows (#1258). That retry is a write like any other: it must wait
+// while a touch owns the scroll, and go out once the tail closes (#1327).
+test('iOS deferral: a clamped compensation is not retried while a touch owns the scroll (#1327)', () => {
+  withFakeIOSUserAgent(() => {
+    // 10 × 50 = 500px, viewport 200: reading at the bottom, max 300.
+    const { v, el, scrollToFn, touch, expireTouchTail } =
+      makeIOSTouchVirtualizer({ scrollTop: 300 })
+    // A row above the viewport grows by 70: the write to 370 is clamped
+    // to 300 because the consumer has not committed the 570px sizer yet.
+    v.resizeItem(0, 120)
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(v['_clampedAdjustment']).toEqual({ target: 370, maxAtWrite: 300 })
+    scrollToFn.mockClear()
+
+    // A finger comes down before the consumer's commit lands.
+    touch('touchstart')
+    el.scrollHeight = 570
+    v._willUpdate()
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(v['_clampedAdjustment']).not.toBeNull()
+
+    // A tap: the write waits for its tail too.
+    touch('touchend')
+    v._willUpdate()
+    expect(scrollToFn).not.toHaveBeenCalled()
+
+    expireTouchTail()
+    expect(scrollToFn).toHaveBeenCalledTimes(1)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(370)
+    expect(v['_clampedAdjustment']).toBeNull()
+  })
+})

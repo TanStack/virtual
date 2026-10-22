@@ -583,6 +583,9 @@ export class Virtualizer<
       }
       this._flushHoldIfReady(true)
       this._writeAwaitingCommand()
+      // A clamped write the touch held back; a command written above has
+      // cleared it.
+      this._retryClampedAdjustment()
     },
   })
   // The last position the scroll handler was given, in the element's own
@@ -1290,11 +1293,14 @@ export class Virtualizer<
   // may follow at all), and from `_willUpdate` for consumers that size it
   // during an asynchronous render. Both the clamped read-back and the
   // absence of one leave `_clampedAdjustment` set, so timing does not matter.
+  // While the element cannot take a write (`_canWriteScroll`) the record is
+  // kept for the next opportunity, the latest being the tail closing.
   private _retryClampedAdjustment = () => {
     if (
       this._clampedAdjustment === null ||
       !this.scrollElement ||
-      !this.options.enabled
+      !this.options.enabled ||
+      !this._canWriteScroll()
     ) {
       return
     }
