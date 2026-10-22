@@ -34,3 +34,28 @@ private windowVirtualizerController = new WindowVirtualizerController<TItemEleme
 ```
 
 This class stands of window-based `Virtualizer` instance configured to work with an HTML element as the scrollElement.
+
+## Updating options
+
+The controller reads options once, in its constructor. When a reactive property changes, pass the new values to `setOptions` from `willUpdate` (before render). `VirtualizerController` and `WindowVirtualizerController` both implement it.
+
+`setOptions` merges that partial over the options the controller already holds, including its defaults, and keeps the `onChange` wrapper that re-renders the host. Keys set to `undefined` are ignored, so a partial update does not erase an option from an earlier call.
+
+```ts
+@property({ type: Number })
+count = 1000
+
+private virtualizerController = new VirtualizerController(this, {
+  getScrollElement: () => this.scrollElementRef.value,
+  count: this.count,
+  estimateSize: () => 35,
+})
+
+protected willUpdate(changed: PropertyValues<this>) {
+  if (changed.has('count')) {
+    this.virtualizerController.setOptions({ count: this.count })
+  }
+}
+```
+
+Call `setOptions` on the controller. `getVirtualizer().setOptions(...)` replaces options wholesale, drops the host `onChange` wrapper, and leaves the controller's stored options stale.

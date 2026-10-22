@@ -20,25 +20,42 @@ class VirtualizerControllerBase<
 
   private readonly virtualizer: Virtualizer<TScrollElement, TItemElement>
 
+  private options: VirtualizerOptions<TScrollElement, TItemElement>
+
   private cleanup: () => void = () => {}
 
   constructor(
     host: ReactiveControllerHost,
     options: VirtualizerOptions<TScrollElement, TItemElement>,
   ) {
-    const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> = {
-      ...options,
-      onChange: (instance, sync) => {
-        this.host.updateComplete.then(() => this.host.requestUpdate())
-        options.onChange?.(instance, sync)
-      },
-    }
-    this.virtualizer = new Virtualizer(resolvedOptions)
-    ;(this.host = host).addController(this)
+    this.host = host
+    this.options = { ...options }
+    this.virtualizer = new Virtualizer(this.resolveOptions(this.options))
+    this.host.addController(this)
   }
 
   public getVirtualizer() {
     return this.virtualizer
+  }
+
+  /**
+   * Merge a partial options update into the options this controller already
+   * holds, push them to the virtualizer, and request a host update. Lit folds
+   * a request made from `willUpdate` into the update already in progress.
+   *
+   * Keys set to `undefined` are ignored, matching core `setOptions`, so a
+   * partial update cannot wipe an option stored earlier. Defaults supplied by
+   * `VirtualizerController` / `WindowVirtualizerController` stay in place
+   * unless a later call replaces them.
+   */
+  public setOptions(
+    options: Partial<VirtualizerOptions<TScrollElement, TItemElement>>,
+  ) {
+    if (!this.applyOptions(options)) return
+
+    this.virtualizer.setOptions(this.resolveOptions(this.options))
+    this.virtualizer._willUpdate()
+    this.host.requestUpdate()
   }
 
   hostConnected() {
@@ -51,6 +68,42 @@ class VirtualizerControllerBase<
 
   hostDisconnected() {
     this.cleanup()
+  }
+
+  private applyOptions(
+    partial: Partial<VirtualizerOptions<TScrollElement, TItemElement>>,
+  ): boolean {
+    const next: VirtualizerOptions<TScrollElement, TItemElement> = {
+      ...this.options,
+    }
+    let changed = false
+
+    for (const key in partial) {
+      if (!Object.prototype.hasOwnProperty.call(partial, key)) continue
+
+      const value = partial[key as keyof typeof partial]
+      if (value === undefined) continue
+
+      if (!Object.is(next[key as keyof typeof next], value)) {
+        changed = true
+        Object.assign(next, { [key]: value })
+      }
+    }
+
+    if (changed) this.options = next
+    return changed
+  }
+
+  private resolveOptions(
+    options: VirtualizerOptions<TScrollElement, TItemElement>,
+  ): VirtualizerOptions<TScrollElement, TItemElement> {
+    return {
+      ...options,
+      onChange: (instance, sync) => {
+        this.host.updateComplete.then(() => this.host.requestUpdate())
+        options.onChange?.(instance, sync)
+      },
+    }
   }
 }
 
