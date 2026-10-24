@@ -16,6 +16,17 @@ body {
 .container {
   height: 600px;
   overflow: auto;
+  overflow-anchor: none;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  background: white;
 }
 
 .cursor-pointer {
