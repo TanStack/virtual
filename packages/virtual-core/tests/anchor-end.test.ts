@@ -15,6 +15,7 @@ function createChatVirtualizer({
   followOnAppend = false,
   threshold = 1,
   paddingEnd = 0,
+  scrollMargin = 0,
 }: {
   messages: Array<{ id: string }>
   offset: number
@@ -23,6 +24,7 @@ function createChatVirtualizer({
   followOnAppend?: boolean | 'auto' | 'smooth' | 'instant'
   threshold?: number
   paddingEnd?: number
+  scrollMargin?: number
 }) {
   let currentMessages = messages
   const scrollToFn = vi.fn()
@@ -30,8 +32,9 @@ function createChatVirtualizer({
   const scrollElement = {
     scrollTop: offset,
     scrollLeft: 0,
-    // The sizer is `getTotalSize()`, which includes paddingEnd.
-    scrollHeight: messages.length * itemSize + paddingEnd,
+    // The sizer is `getTotalSize()`, which includes paddingEnd. Anything
+    // above the list inside the same scroller adds `scrollMargin` on top.
+    scrollHeight: scrollMargin + messages.length * itemSize + paddingEnd,
     scrollWidth: 1000,
     clientHeight: viewportSize,
     clientWidth: 400,
@@ -82,6 +85,7 @@ function createChatVirtualizer({
       followOnAppend,
       scrollEndThreshold: threshold,
       paddingEnd,
+      scrollMargin,
     }
   }
 
@@ -98,7 +102,7 @@ function createChatVirtualizer({
       currentMessages = nextMessages
       virtualizer.setOptions(makeOptions())
       ;(scrollElement as any).scrollHeight =
-        nextMessages.length * itemSize + paddingEnd
+        scrollMargin + nextMessages.length * itemSize + paddingEnd
       virtualizer._willUpdate()
     },
     // Simulate the browser's scroll event after a write (or a gesture).
@@ -372,6 +376,40 @@ test('anchorTo:end does not follow streaming growth when user is away from end',
   virtualizer.resizeItem(7, 120)
 
   expect(scrollToFn).not.toHaveBeenCalled()
+})
+
+test('anchorTo:end does not follow streaming growth when user is away from end, with a scrollMargin', () => {
+  // Same situation as the test above, with a 150px header sharing the
+  // scroller. The reader sits 100px above the end, inside the margin.
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 250,
+    scrollMargin: 150,
+  })
+
+  expect(virtualizer.getDistanceFromEnd()).toBe(100)
+  expect(virtualizer.isAtEnd()).toBe(false)
+
+  virtualizer.resizeItem(7, 120)
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+})
+
+test('anchorTo:end still pins an end-pinned viewport with a scrollMargin', () => {
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 350,
+    scrollMargin: 150,
+  })
+
+  expect(virtualizer.isAtEnd()).toBe(true)
+
+  virtualizer.resizeItem(7, 120)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(70)
 })
 
 test('isAtEnd and getDistanceFromEnd use the scroll element max offset', () => {
