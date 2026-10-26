@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.19.8
+
+### Patch Changes
+
+- [#1340](https://github.com/TanStack/virtual/pull/1340) [`2343004`](https://github.com/TanStack/virtual/commit/23430040447e24bcfdd9665bd6b6c67d8fefd0ea) - fix(virtual-core): account for scrollMargin when deciding the viewport is at the end
+
 ## 3.19.7
 
 ### Patch Changes
