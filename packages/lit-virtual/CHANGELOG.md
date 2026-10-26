@@ -1,5 +1,28 @@
 # @tanstack/lit-virtual
 
+## 3.15.0
+
+### Minor Changes
+
+- [#1334](https://github.com/TanStack/virtual/pull/1334) [`91c2931`](https://github.com/TanStack/virtual/commit/91c29312b97886d30831e69f3c5757ab18ab3bfc) - Add `setOptions` to `VirtualizerController` and `WindowVirtualizerController` so virtualizer options can be updated after construction.
+
+  Previously the controller only accepted options once, in its constructor, so options derived from reactive Lit properties (`count`, `estimateSize`, `horizontal`, …) could never be re-applied. `getVirtualizer().setOptions(...)` is not a substitute: it replaces options wholesale and drops the controller's `onChange` wrapper, which is what asks the host to re-render.
+
+  `setOptions` takes a partial set of options, merges them over the options the controller already holds (skipping `undefined`, so an omitted value does not wipe a stored one), re-applies the host `requestUpdate` wrapper around `onChange`, and flushes the change:
+
+  ```ts
+  willUpdate(changed: PropertyValues<this>) {
+    if (changed.has('count')) {
+      this.virtualizerController.setOptions({ count: this.count })
+    }
+  }
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`2343004`](https://github.com/TanStack/virtual/commit/23430040447e24bcfdd9665bd6b6c67d8fefd0ea)]:
+  - @tanstack/virtual-core@3.19.8
+
 ## 3.14.11
 
 ### Patch Changes
