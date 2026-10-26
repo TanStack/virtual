@@ -2269,8 +2269,16 @@ export class Virtualizer<
   }
 
   private getVirtualDistanceFromEnd = () => {
+    // `_getLayoutTotalSize()` measures the sizer, which starts `scrollMargin`
+    // into the scroll content, while `getScrollOffset()` is measured from the
+    // top of that content. Lift the total into the element's space before
+    // subtracting, or the viewport reads `scrollMargin` px closer to the end
+    // than it is and `getDistanceFromEnd()` disagrees by that much.
     return Math.max(
-      this._getLayoutTotalSize() - this.getSize() - this.getScrollOffset(),
+      this._getLayoutTotalSize() +
+        this.options.scrollMargin -
+        this.getSize() -
+        this.getScrollOffset(),
       0,
     )
   }
