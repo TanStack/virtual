@@ -248,34 +248,49 @@ test('useVirtualizerState follows isScrolling through a selector', () => {
   expect(screen.getByTestId('scrolling')).toHaveTextContent('false')
 })
 
-test('a count change still fires onChange while a subscriber is attached', () => {
-  const onChange = vi.fn()
+test('a subscriber does not change when a count change fires onChange', () => {
+  const run = (subscribe: boolean) => {
+    const scroll = createScrollDriver()
+    const onChange = vi.fn()
 
-  function TotalSize({ virtualizer }: { virtualizer: TestVirtualizer }) {
-    const totalSize = useVirtualizerState(virtualizer, (s) => s.totalSize)
-    return <div data-testid="total">{totalSize}</div>
+    function TotalSize({ virtualizer }: { virtualizer: TestVirtualizer }) {
+      const totalSize = useVirtualizerState(virtualizer, (s) => s.totalSize)
+      return <div data-testid="total">{totalSize}</div>
+    }
+
+    const Memoized = React.memo(TotalSize)
+
+    function App({ count }: { count: number }) {
+      const { parentRef, virtualizer } = useTestVirtualizer(count, {
+        observeElementOffset: scroll.observeElementOffset,
+        onChange,
+      })
+      return (
+        <div ref={parentRef}>
+          {subscribe && <Memoized virtualizer={virtualizer} />}
+        </div>
+      )
+    }
+
+    const { rerender, unmount } = render(<App count={100} />)
+    onChange.mockClear()
+
+    rerender(<App count={2} />)
+    if (subscribe) {
+      expect(screen.getByTestId('total')).toHaveTextContent('100')
+    }
+    const onCommit = onChange.mock.calls.length
+
+    act(() => scroll.scrollTo(100))
+    const calls = [onCommit, onChange.mock.calls.length]
+    unmount()
+    return calls
   }
 
-  const Memoized = React.memo(TotalSize)
-
-  function App({ count }: { count: number }) {
-    const { parentRef, virtualizer } = useTestVirtualizer(count, { onChange })
-    return (
-      <div ref={parentRef}>
-        <Memoized virtualizer={virtualizer} />
-      </div>
-    )
-  }
-
-  const { rerender } = render(<App count={100} />)
-  onChange.mockClear()
-
-  // Nothing reads the new range during render, so the publish from
-  // `_willUpdate` has to go through `onChange` — exactly once.
-  rerender(<App count={2} />)
-
-  expect(screen.getByTestId('total')).toHaveTextContent('100')
-  expect(onChange).toHaveBeenCalledTimes(1)
+  const withSubscriber = run(true)
+  expect(withSubscriber).toEqual(run(false))
+  // The commit itself does not notify; the scroll that moves the range does.
+  expect(withSubscriber).toEqual([0, 1])
 })
 
 test('useVirtualizerState works with useWindowVirtualizer', () => {
@@ -388,7 +403,7 @@ test('directDomUpdates positions rows a memoised child mounts together with the 
   expect(transformOf('row-3')).toBe('translate3d(0, 150px, 0)')
 })
 
-test('an option change committed mid-scroll notifies a subscriber without flushSync', () => {
+test('an option change committed mid-scroll updates a subscriber without flushSync', () => {
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
   const scroll = createScrollDriver()
   const onChange = vi.fn()
@@ -417,12 +432,12 @@ test('an option change committed mid-scroll notifies a subscriber without flushS
   onChange.mockClear()
   errors.mockClear()
 
-  // `isScrolling` is true, so the range change `_willUpdate` publishes is a
-  // sync notify raised inside a layout effect, where React cannot flushSync.
+  // `isScrolling` is true while `_willUpdate` publishes the new state from a
+  // layout effect, where React cannot flushSync.
   rerender(<App count={2} />)
 
   expect(screen.getByTestId('total')).toHaveTextContent('100')
-  expect(onChange).toHaveBeenCalledWith(expect.anything(), true)
+  expect(onChange).not.toHaveBeenCalled()
   expect(errors).not.toHaveBeenCalled()
   errors.mockRestore()
 })

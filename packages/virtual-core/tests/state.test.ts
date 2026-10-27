@@ -91,7 +91,7 @@ test('subscribe publishes a scroll direction flip within the same range', () => 
   expect(listener).toHaveBeenCalledTimes(1)
 })
 
-test('_willUpdate publishes options set since the last notify', () => {
+test('_willUpdate publishes options set during render without an onChange', () => {
   const onChange = vi.fn()
   const virtualizer = createStoreVirtualizer({ onChange })
   virtualizer._willUpdate()
@@ -102,19 +102,68 @@ test('_willUpdate publishes options set since the last notify', () => {
   listener.mockClear()
   onChange.mockClear()
 
+  // A render sets a new count and reads the new range 0–1 through getState.
   virtualizer.setOptions({ ...virtualizer.options, count: 2 })
+  expect(virtualizer.getState().range).toEqual({ startIndex: 0, endIndex: 1 })
   expect(listener).not.toHaveBeenCalled()
 
-  // The range moved from 0–3 to 0–1 and nothing read it in between, so the
-  // publish goes through `notify`: `onChange` first, then the listener.
+  // The commit counts that range as rendered, so it is not reported again.
   virtualizer._willUpdate()
-  expect(onChange).toHaveBeenCalledTimes(1)
-  expect(onChange).toHaveBeenCalledWith(virtualizer, false)
   expect(listener).toHaveBeenCalledTimes(1)
-  expect(onChange.mock.invocationCallOrder[0]).toBeLessThan(
-    listener.mock.invocationCallOrder[0]!,
-  )
+  expect(onChange).not.toHaveBeenCalled()
   expect(virtualizer.getState().totalSize).toBe(100)
+})
+
+test('onChange does not depend on subscribers or getState reads', () => {
+  const run = (read: boolean) => {
+    let emitOffset: (offset: number, isScrolling: boolean) => void = () => {}
+    const onChange = vi.fn()
+    const virtualizer = createStoreVirtualizer({
+      onChange,
+      observeElementOffset: (_, cb) => {
+        emitOffset = cb
+        cb(0, false)
+      },
+    })
+    virtualizer._willUpdate()
+    onChange.mockClear()
+
+    // The range moves from 0–3 to 0–1 outside a render.
+    virtualizer.setOptions({ ...virtualizer.options, count: 2 })
+    if (read) {
+      virtualizer.subscribe(() => {})
+      expect(virtualizer.getState().range).toEqual({
+        startIndex: 0,
+        endIndex: 1,
+      })
+    }
+
+    emitOffset(0, false)
+    return onChange.mock.calls.length
+  }
+
+  expect(run(false)).toBe(1)
+  expect(run(true)).toBe(1)
+})
+
+test('getVirtualItems counts the range it returns as rendered', () => {
+  let emitOffset: (offset: number, isScrolling: boolean) => void = () => {}
+  const onChange = vi.fn()
+  const virtualizer = createStoreVirtualizer({
+    onChange,
+    observeElementOffset: (_, cb) => {
+      emitOffset = cb
+      cb(0, false)
+    },
+  })
+  virtualizer._willUpdate()
+  onChange.mockClear()
+
+  virtualizer.setOptions({ ...virtualizer.options, count: 2 })
+  expect(virtualizer.getVirtualItems()).toHaveLength(2)
+
+  emitOffset(0, false)
+  expect(onChange).not.toHaveBeenCalled()
 })
 
 test('_willUpdate publishes a change that keeps the range without an onChange', () => {

@@ -930,27 +930,28 @@ export class Virtualizer<
     this.emitState()
   }
 
+  // Records the last computed range (`this.range`) as the one the owner has
+  // rendered, so `maybeNotify` fires only once the range moves away from it
+  // (#871). It does not recompute the range: that would run
+  // `getMeasurements` ahead of its readers.
+  private ackRange = () => {
+    this.maybeNotify.updateDeps([
+      this.isScrolling,
+      this.range ? this.range.startIndex : null,
+      this.range ? this.range.endIndex : null,
+    ])
+  }
+
   // Calls listeners when `getState()` has moved since they were last called.
+  // Besides `notify`, this runs after a scroll event that only flips
+  // `scrollDirection`, and from `_willUpdate`, which picks up options set
+  // during render (e.g. a new `count`) once they are committed.
   private emitState = () => {
     if (this.listeners.size === 0) return
     const state = this.getState()
     if (state === this.publishedState) return
     this.publishedState = state
     this.listeners.forEach((listener) => listener())
-  }
-
-  // Publishes snapshot changes that happen without a `notify`: a scroll event
-  // that only flips `scrollDirection`, and `_willUpdate`, which picks up
-  // options set during render (e.g. a new `count`) once they are committed.
-  private publishState = () => {
-    if (this.listeners.size === 0) return
-    // Reading the snapshot marks the current range as seen for `maybeNotify`
-    // (via `getVirtualIndexes`). Outside render, nothing else may have read it
-    // yet, so let a range change go through `notify` (and `onChange`) first;
-    // otherwise the read in `emitState` would swallow it. When that notifies,
-    // it has already emitted, and the call below is a no-op.
-    this.maybeNotify()
-    this.emitState()
   }
 
   /**
@@ -974,7 +975,7 @@ export class Virtualizer<
    * yet (e.g. a new `count` during render).
    */
   getState = (): VirtualizerState => {
-    const virtualItems = this.getVirtualItems()
+    const virtualItems = this._virtualItems()
     const totalSize = this.getTotalSize()
     const prev = this.state
     // `calculateRange` allocates a new object on every scroll offset change,
@@ -1140,6 +1141,10 @@ export class Virtualizer<
   }
 
   _willUpdate = () => {
+    // The owner has committed a render of the last computed range, also when
+    // it read it through `getState()`.
+    this.ackRange()
+
     const scrollElement = this.options.enabled
       ? this.options.getScrollElement()
       : null
@@ -1149,7 +1154,7 @@ export class Virtualizer<
 
       if (!scrollElement) {
         this.maybeNotify()
-        this.publishState()
+        this.emitState()
         return
       }
 
@@ -1306,7 +1311,7 @@ export class Virtualizer<
           }
           this.maybeNotify()
           // A direction flip within the same range does not notify.
-          this.publishState()
+          this.emitState()
         }),
       )
 
@@ -1376,7 +1381,7 @@ export class Virtualizer<
     // Options set during render change the snapshot without a notify, and a
     // subscriber that did not re-render with its parent (e.g. a memoised
     // child) would keep the old one.
-    this.publishState()
+    this.emitState()
   }
 
   // Classify a scroll event (see `ScrollEventKind`) from the state as it was
@@ -1962,7 +1967,7 @@ export class Virtualizer<
     },
   )
 
-  getVirtualIndexes = memo(
+  private _virtualIndexes = memo(
     () => {
       let startIndex: number | null = null
       let endIndex: number | null = null
@@ -1971,7 +1976,6 @@ export class Virtualizer<
         startIndex = range.startIndex
         endIndex = range.endIndex
       }
-      this.maybeNotify.updateDeps([this.isScrolling, startIndex, endIndex])
       return [
         this.options.rangeExtractor,
         this.options.overscan,
@@ -2209,8 +2213,8 @@ export class Virtualizer<
     }
   }
 
-  getVirtualItems = memo(
-    () => [this.getVirtualIndexes(), this.getMeasurements(), this._holdOffset],
+  private _virtualItems = memo(
+    () => [this._virtualIndexes(), this.getMeasurements(), this._holdOffset],
     (indexes, measurements, hold) => {
       const virtualItems: Array<VirtualItem> = []
 
@@ -2238,6 +2242,21 @@ export class Virtualizer<
       debug: () => this.options.debug,
     },
   )
+
+  // `getVirtualIndexes` and `getVirtualItems` count the range they return as
+  // rendered (#871), since an owner renders what it reads; `getState` reads
+  // the same values without that side effect.
+  getVirtualIndexes = () => {
+    const indexes = this._virtualIndexes()
+    this.ackRange()
+    return indexes
+  }
+
+  getVirtualItems = () => {
+    const virtualItems = this._virtualItems()
+    this.ackRange()
+    return virtualItems
+  }
 
   getVirtualItemForOffset = (offset: number) => {
     const measurements = this.getMeasurements()

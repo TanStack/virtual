@@ -582,7 +582,7 @@ interface VirtualizerState {
 
 Returns the render-relevant state of the virtualizer. The returned object keeps its identity until one of its fields changes, so it can be used directly as a store snapshot.
 
-Read it during render, or from a [`subscribe`](#subscribe) listener or [`onChange`](#onchange). Like `getVirtualItems`, it computes the current range and counts it as seen, so a range change that other code reads first, before the virtualizer has notified, does not fire `onChange`.
+Read it during render, or from a [`subscribe`](#subscribe) listener or [`onChange`](#onchange). Reading it has no side effects: unlike `getVirtualItems`, it does not count the range it returns as rendered, so reading it never keeps [`onChange`](#onchange) from firing.
 
 ### `resizeItem`
 
