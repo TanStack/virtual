@@ -324,6 +324,25 @@ export function useWindowVirtualizer<TItemElement extends Element>(
 const selectState = (state: VirtualizerState) => state
 
 /**
+ * Compares two `virtualItems` arrays by the rows they render — `key`, `index`
+ * and `lane` — and ignores positions and sizes. With `directDomUpdates` the
+ * virtualizer positions rows itself, so pass this as `isEqual` to
+ * `useVirtualizerState` to skip re-renders when rows are only re-measured.
+ * Without `directDomUpdates`, rendered positions would go stale.
+ */
+export const sameVirtualItemKeys = (
+  a: Array<VirtualItem>,
+  b: Array<VirtualItem>,
+) =>
+  a.length === b.length &&
+  a.every(
+    (item, i) =>
+      item.key === b[i]!.key &&
+      item.index === b[i]!.index &&
+      item.lane === b[i]!.lane,
+  )
+
+/**
  * Subscribes to a virtualizer's render-relevant state (`virtualItems`,
  * `totalSize`, `range`, `isScrolling`, `scrollDirection`) through
  * `useSyncExternalStore`. Values read here are safe under the React Compiler,

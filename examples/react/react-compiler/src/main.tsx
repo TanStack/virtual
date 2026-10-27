@@ -2,8 +2,12 @@ import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 import { faker } from '@faker-js/faker'
 
-import { useVirtualizer, useVirtualizerState } from '@tanstack/react-virtual'
-import type { ReactVirtualizer, VirtualItem } from '@tanstack/react-virtual'
+import {
+  sameVirtualItemKeys,
+  useVirtualizer,
+  useVirtualizerState,
+} from '@tanstack/react-virtual'
+import type { ReactVirtualizer } from '@tanstack/react-virtual'
 
 import './index.css'
 
@@ -85,13 +89,6 @@ function App() {
   )
 }
 
-// With `directDomUpdates` the virtualizer positions the rows itself, so this
-// component only cares about which rows are visible — not where they are.
-// Comparing keys and indexes skips re-renders when rows are only re-measured.
-const sameRows = (a: Array<VirtualItem>, b: Array<VirtualItem>) =>
-  a.length === b.length &&
-  a.every((item, i) => item.key === b[i]!.key && item.index === b[i]!.index)
-
 function Rows({
   virtualizer,
   rows,
@@ -102,7 +99,9 @@ function Rows({
   const virtualItems = useVirtualizerState(
     virtualizer,
     (state) => state.virtualItems,
-    sameRows,
+    // With `directDomUpdates` the virtualizer positions the rows itself, so
+    // this component only follows which rows are visible, not where they are.
+    sameVirtualItemKeys,
   )
 
   return (

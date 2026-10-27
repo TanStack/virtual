@@ -3,6 +3,7 @@ import * as React from 'react'
 import { act, render, screen } from '@testing-library/react'
 
 import {
+  sameVirtualItemKeys,
   useVirtualizer,
   useVirtualizerState,
   useWindowVirtualizer,
@@ -440,4 +441,72 @@ test('an option change committed mid-scroll updates a subscriber without flushSy
   expect(onChange).not.toHaveBeenCalled()
   expect(errors).not.toHaveBeenCalled()
   errors.mockRestore()
+})
+
+test('sameVirtualItemKeys compares rows by key, index and lane only', () => {
+  const item = { key: 1, index: 1, start: 50, end: 100, size: 50, lane: 0 }
+  const moved = { ...item, start: 80, end: 160, size: 80 }
+
+  expect(sameVirtualItemKeys([item], [moved])).toBe(true)
+  expect(sameVirtualItemKeys([item], [{ ...item, key: 2 }])).toBe(false)
+  expect(sameVirtualItemKeys([item], [{ ...item, index: 2 }])).toBe(false)
+  expect(sameVirtualItemKeys([item], [{ ...item, lane: 1 }])).toBe(false)
+  expect(sameVirtualItemKeys([item], [item, moved])).toBe(false)
+})
+
+test('sameVirtualItemKeys keeps directDomUpdates rows from re-rendering on a re-measure', () => {
+  const scroll = createScrollDriver()
+  const renders = vi.fn()
+  let instance: TestVirtualizer | null = null
+
+  const Rows = React.memo(function Rows({
+    virtualizer,
+  }: {
+    virtualizer: TestVirtualizer
+  }) {
+    const virtualItems = useVirtualizerState(
+      virtualizer,
+      (s) => s.virtualItems,
+      sameVirtualItemKeys,
+    )
+    renders()
+    return (
+      <div ref={virtualizer.containerRef} style={{ position: 'relative' }}>
+        {virtualItems.map((item) => (
+          <div
+            key={item.key}
+            data-testid={`row-${item.index}`}
+            data-index={item.index}
+            ref={virtualizer.measureElement}
+            style={{ position: 'absolute', top: 0, height: 50 }}
+          />
+        ))}
+      </div>
+    )
+  })
+
+  function App() {
+    const { parentRef, virtualizer } = useTestVirtualizer(100, {
+      directDomUpdates: true,
+      observeElementOffset: scroll.observeElementOffset,
+    })
+    instance = virtualizer
+    return (
+      <div ref={parentRef}>
+        <Rows virtualizer={virtualizer} />
+      </div>
+    )
+  }
+
+  render(<App />)
+  renders.mockClear()
+
+  // Row 0 grows: every later row moves, but the visible rows stay 0–3.
+  act(() => instance!.resizeItem(0, 60))
+  expect(renders).not.toHaveBeenCalled()
+  expect(transformOf('row-1')).toBe('translate3d(0, 60px, 0)')
+
+  act(() => scroll.scrollTo(500))
+  expect(renders).toHaveBeenCalled()
+  expect(screen.getByTestId('row-10')).toBeInTheDocument()
 })

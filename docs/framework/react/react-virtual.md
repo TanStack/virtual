@@ -90,6 +90,20 @@ Pass a `selector` to re-render only when the selected value changes, such as `vi
 const isScrolling = useVirtualizerState(virtualizer, (s) => s.isScrolling)
 ```
 
+With [`directDomUpdates`](#directdomupdates) the virtualizer writes row positions itself, so a component that renders rows only needs to know which rows are visible. Pass `sameVirtualItemKeys` as `isEqual` to compare `virtualItems` by `key`, `index` and `lane`. Then the component does not re-render when rows are only re-measured:
+
+```tsx
+import { sameVirtualItemKeys, useVirtualizerState } from '@tanstack/react-virtual'
+
+const virtualItems = useVirtualizerState(
+  virtualizer,
+  (s) => s.virtualItems,
+  sameVirtualItemKeys,
+)
+```
+
+Use it only with `directDomUpdates`. Without it, the rendered positions go stale.
+
 ### React Compiler
 
 The `Virtualizer` instance is stable across renders, so the [React Compiler](https://react.dev/learn/react-compiler) can memoise reads such as `virtualizer.getVirtualItems()` on it and render stale items. The compiler skips components that call `useVirtualizer` itself, but it still compiles components the virtualizer is passed to, and components that call `useWindowVirtualizer`. Read render values through `useVirtualizerState` there.
