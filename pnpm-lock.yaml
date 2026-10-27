@@ -1373,7 +1373,7 @@ importers:
         specifier: ^8.4.1
         version: 8.4.1
       '@tanstack/react-virtual':
-        specifier: ^3.14.13
+        specifier: ^3.14.23
         version: link:../../../packages/react-virtual
       react:
         specifier: ^19.2.7
