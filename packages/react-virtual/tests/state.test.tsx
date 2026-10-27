@@ -8,7 +8,11 @@ import {
   useVirtualizerState,
   useWindowVirtualizer,
 } from '../src/index'
-import type { ReactVirtualizer, ReactVirtualizerOptions } from '../src/index'
+import type {
+  ReactVirtualizer,
+  ReactVirtualizerOptions,
+  VirtualItem,
+} from '../src/index'
 
 type TestVirtualizer = ReactVirtualizer<HTMLDivElement, Element>
 type OffsetListener = (offset: number, isScrolling: boolean) => void
@@ -509,4 +513,178 @@ test('sameVirtualItemKeys keeps directDomUpdates rows from re-rendering on a re-
   act(() => scroll.scrollTo(500))
   expect(renders).toHaveBeenCalled()
   expect(screen.getByTestId('row-10')).toBeInTheDocument()
+})
+
+test('a scroll range change renders the owner once, as getVirtualItems does', () => {
+  const countRenders = (read: 'state' | 'instance') => {
+    const scroll = createScrollDriver()
+    let renders = 0
+
+    const rows = (items: ReadonlyArray<VirtualItem>) =>
+      items.map((item) => (
+        <div key={item.key} data-testid={`row-${item.index}`} />
+      ))
+
+    function StateApp() {
+      const { parentRef, virtualizer } = useTestVirtualizer(100, {
+        observeElementOffset: scroll.observeElementOffset,
+      })
+      const { virtualItems } = useVirtualizerState(virtualizer)
+      renders++
+      return <div ref={parentRef}>{rows(virtualItems)}</div>
+    }
+
+    function InstanceApp() {
+      const { parentRef, virtualizer } = useTestVirtualizer(100, {
+        observeElementOffset: scroll.observeElementOffset,
+      })
+      renders++
+      return <div ref={parentRef}>{rows(virtualizer.getVirtualItems())}</div>
+    }
+
+    const { unmount } = render(
+      read === 'state' ? <StateApp /> : <InstanceApp />,
+    )
+    act(() => scroll.scrollTo(10))
+    const before = renders
+    act(() => scroll.scrollTo(500))
+    expect(screen.getByTestId('row-10')).toBeInTheDocument()
+    unmount()
+    return renders - before
+  }
+
+  expect(countRenders('instance')).toBe(1)
+  expect(countRenders('state')).toBe(1)
+})
+
+// #1258 with the sizer rendered by a memoised subscriber: 5 rows × 50px +
+// paddingEnd 80 in a 200px viewport, scrolled to the bottom (130). Row 4 grows
+// by 70, so the end-anchor compensation writes 200 while the committed sizer
+// still allows 130. The write must be re-issued once the subscriber has
+// committed the 400px sizer, although the owner never renders it.
+test('a clamped end-anchor write is re-issued when a memoised subscriber renders the sizer', () => {
+  const scroll = createScrollDriver()
+  let instance: TestVirtualizer | null = null
+  const sizerHeight = () =>
+    parseFloat(screen.getByTestId('sizer').style.height) || 0
+  const scrollElement = {
+    scrollTop: 130,
+    scrollLeft: 0,
+    get scrollHeight() {
+      return sizerHeight()
+    },
+    scrollWidth: 200,
+    clientHeight: 200,
+    clientWidth: 200,
+    ownerDocument: document,
+  } as unknown as HTMLDivElement
+  const scrollToFn = vi.fn((offset: number) => {
+    scrollElement.scrollTop = Math.min(
+      offset,
+      scrollElement.scrollHeight - scrollElement.clientHeight,
+    )
+  })
+
+  const Sizer = React.memo(function Sizer({
+    virtualizer,
+  }: {
+    virtualizer: TestVirtualizer
+  }) {
+    const totalSize = useVirtualizerState(virtualizer, (s) => s.totalSize)
+    return <div data-testid="sizer" style={{ height: totalSize }} />
+  })
+
+  function App() {
+    const virtualizer = useVirtualizer({
+      count: 5,
+      getScrollElement: () => scrollElement,
+      estimateSize: () => 50,
+      paddingEnd: 80,
+      anchorTo: 'end',
+      scrollEndThreshold: 0,
+      scrollToFn,
+      observeElementRect: (_, cb) => cb({ height: 200, width: 200 }),
+      observeElementOffset: (_, cb) => {
+        scroll.observeElementOffset(_, cb)
+        cb(130, false)
+      },
+    })
+    instance = virtualizer
+    return <Sizer virtualizer={virtualizer} />
+  }
+
+  render(<App />)
+  expect(sizerHeight()).toBe(330)
+  scrollToFn.mockClear()
+
+  act(() => instance!.resizeItem(4, 120))
+
+  // The compensation could only reach the old max (130); the retry lands.
+  expect(scrollToFn.mock.calls.map(([offset]) => offset)).toEqual([130, 200])
+  expect(sizerHeight()).toBe(400)
+  expect(scrollElement.scrollTop).toBe(200)
+})
+
+// The owner reads `getVirtualItems()`, which counts the range as rendered,
+// and a memoised child reads the same range through the state hook, which
+// does not. Both must follow every change.
+test('an owner reading getVirtualItems and a memoised subscriber stay in step', () => {
+  const scroll = createScrollDriver()
+  const onChange = vi.fn()
+  let instance: TestVirtualizer | null = null
+
+  const RangeLabel = React.memo(function RangeLabel({
+    virtualizer,
+  }: {
+    virtualizer: TestVirtualizer
+  }) {
+    const range = useVirtualizerState(virtualizer, (s) => s.range)
+    return (
+      <p data-testid="label">
+        {range ? `${range.startIndex}-${range.endIndex}` : '-'}
+      </p>
+    )
+  })
+
+  function App({ count }: { count: number }) {
+    const { parentRef, virtualizer } = useTestVirtualizer(count, {
+      observeElementOffset: scroll.observeElementOffset,
+      onChange,
+    })
+    instance = virtualizer
+    const items = virtualizer.getVirtualItems()
+    return (
+      <div ref={parentRef}>
+        <p data-testid="rows">
+          {items.length ? `${items[0]!.index}-${items.at(-1)!.index}` : '-'}
+        </p>
+        <RangeLabel virtualizer={virtualizer} />
+      </div>
+    )
+  }
+
+  const expectInStep = (text: string) => {
+    expect(screen.getByTestId('rows')).toHaveTextContent(text)
+    expect(screen.getByTestId('label')).toHaveTextContent(text)
+  }
+
+  const { rerender } = render(<App count={100} />)
+  expectInStep('0-3')
+
+  rerender(<App count={2} />)
+  expectInStep('0-1')
+
+  rerender(<App count={100} />)
+  expectInStep('0-3')
+
+  onChange.mockClear()
+  act(() => scroll.scrollTo(500))
+  expectInStep('10-13')
+  expect(onChange).toHaveBeenCalled()
+
+  // Back to the top: the range returns to one the owner rendered before, and
+  // must still be reported (#871).
+  act(() => scroll.scrollTo(0, false))
+  expectInStep('0-3')
+  expect(instance!.getState().range).toEqual({ startIndex: 0, endIndex: 3 })
 })

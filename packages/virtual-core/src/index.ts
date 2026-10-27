@@ -73,11 +73,14 @@ export interface VirtualItem {
  * subscription (see `subscribe`).
  */
 export interface VirtualizerState {
-  virtualItems: Array<VirtualItem>
-  totalSize: number
-  range: { startIndex: number; endIndex: number } | null
-  isScrolling: boolean
-  scrollDirection: ScrollDirection | null
+  readonly virtualItems: ReadonlyArray<VirtualItem>
+  readonly totalSize: number
+  readonly range: {
+    readonly startIndex: number
+    readonly endIndex: number
+  } | null
+  readonly isScrolling: boolean
+  readonly scrollDirection: ScrollDirection | null
 }
 
 export interface Rect {
@@ -1380,7 +1383,10 @@ export class Virtualizer<
 
     // Options set during render change the snapshot without a notify, and a
     // subscriber that did not re-render with its parent (e.g. a memoised
-    // child) would keep the old one.
+    // child) would keep the old one. This is also what commits a sizer such
+    // a subscriber renders before `resizeItem` retries a clamped write
+    // (#1258): React flushes the update it schedules here inside the
+    // owner's `flushSync`.
     this.emitState()
   }
 

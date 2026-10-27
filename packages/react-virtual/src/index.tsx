@@ -331,8 +331,8 @@ const selectState = (state: VirtualizerState) => state
  * Without `directDomUpdates`, rendered positions would go stale.
  */
 export const sameVirtualItemKeys = (
-  a: Array<VirtualItem>,
-  b: Array<VirtualItem>,
+  a: ReadonlyArray<VirtualItem>,
+  b: ReadonlyArray<VirtualItem>,
 ) =>
   a.length === b.length &&
   a.every(
@@ -376,10 +376,27 @@ export function useVirtualizerState<
   ) => TSelected,
   isEqual?: (a: TSelected, b: TSelected) => boolean,
 ): TSelected {
+  // `_willUpdate` publishes from the owner's layout effect, but
+  // `useSyncExternalStore` records the snapshot it rendered only in a passive
+  // effect, so it would re-render for a snapshot this hook already read (e.g.
+  // the owner's own render after a scroll). Skip listener calls until the
+  // state moves past the last snapshot read here. Stable per virtualizer so
+  // the subscription is not renewed on every render.
+  const store = React.useMemo(() => {
+    let read: VirtualizerState | undefined
+    return {
+      getSnapshot: () => (read = virtualizer.getState()),
+      subscribe: (onStoreChange: () => void) =>
+        virtualizer.subscribe(() => {
+          if (virtualizer.getState() !== read) onStoreChange()
+        }),
+    }
+  }, [virtualizer])
+
   return useSyncExternalStoreWithSelector(
-    virtualizer.subscribe,
-    virtualizer.getState,
-    virtualizer.getState,
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot,
     selector,
     isEqual,
   )

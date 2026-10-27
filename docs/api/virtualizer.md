@@ -572,15 +572,17 @@ Registers a listener that runs whenever [`getState`](#getstate) returns a new sn
 getState: () => VirtualizerState
 
 interface VirtualizerState {
-  virtualItems: VirtualItem[]
-  totalSize: number
-  range: { startIndex: number; endIndex: number } | null
-  isScrolling: boolean
-  scrollDirection: 'forward' | 'backward' | null
+  readonly virtualItems: ReadonlyArray<VirtualItem>
+  readonly totalSize: number
+  readonly range: { readonly startIndex: number; readonly endIndex: number } | null
+  readonly isScrolling: boolean
+  readonly scrollDirection: 'forward' | 'backward' | null
 }
 ```
 
 Returns the render-relevant state of the virtualizer. The returned object keeps its identity until one of its fields changes, so it can be used directly as a store snapshot.
+
+The state leaves out `scrollOffset` on purpose: it changes on every scroll event, so subscribers would re-render on every event. Read `virtualizer.scrollOffset` from an [`onChange`](#onchange) handler or a scroll listener when you need it.
 
 Read it during render, or from a [`subscribe`](#subscribe) listener or [`onChange`](#onchange). Reading it has no side effects: unlike `getVirtualItems`, it does not count the range it returns as rendered, so reading it never keeps [`onChange`](#onchange) from firing.
 
