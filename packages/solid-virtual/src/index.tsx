@@ -9,13 +9,14 @@ import {
 } from '@tanstack/virtual-core'
 
 import {
-  createComputed,
+  createMemo,
+  createRenderEffect,
   createSignal,
-  mergeProps,
-  onCleanup,
-  onMount,
+  createStore,
+  merge,
+  onSettled,
+  untrack,
 } from 'solid-js'
-import { createStore, reconcile } from 'solid-js/store'
 import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
@@ -27,16 +28,35 @@ function createVirtualizerBase<
   options: VirtualizerOptions<TScrollElement, TItemElement>,
 ): Virtualizer<TScrollElement, TItemElement> {
   const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> =
-    mergeProps(options)
+    merge(options)
 
-  const instance = new Virtualizer<TScrollElement, TItemElement>(
-    resolvedOptions,
+  // The constructor reads every option once; the options effect below is
+  // what tracks them.
+  const instance = untrack(
+    () => new Virtualizer<TScrollElement, TItemElement>(resolvedOptions),
   )
 
-  const [virtualItems, setVirtualItems] = createStore(
-    instance.getVirtualItems(),
+  // The virtualizer reports changes from scroll and resize observers and from
+  // inside the options effect below; each report bumps `version`, which the
+  // item projection (reconciled by index) and the total size re-read.
+  const [version, setVersion] = createSignal(0, {
+    equals: false,
+    ownedWrite: true,
+  })
+  const [virtualItems] = createStore(
+    () => {
+      version()
+      return instance.getVirtualItems()
+    },
+    [],
+    { key: 'index' },
   )
-  const [totalSize, setTotalSize] = createSignal(instance.getTotalSize())
+  const totalSize = createMemo(() => {
+    version()
+    return instance.getTotalSize()
+  })
+
+  const sync = () => setVersion(0)
 
   const handler = {
     get(
@@ -55,35 +75,32 @@ function createVirtualizerBase<
   }
 
   const virtualizer = new Proxy(instance, handler)
-  virtualizer.setOptions(resolvedOptions)
 
-  onMount(() => {
-    const cleanup = virtualizer._didMount()
-    virtualizer._willUpdate()
-    onCleanup(cleanup)
-  })
-
-  createComputed(() => {
-    virtualizer.setOptions(
-      mergeProps(resolvedOptions, options, {
+  // Reading every option here tracks them; the effect half then applies the
+  // snapshot to the core virtualizer.
+  createRenderEffect(
+    () => ({ ...resolvedOptions }),
+    (snapshot) => {
+      virtualizer.setOptions({
+        ...snapshot,
         onChange: (
           instance: Virtualizer<TScrollElement, TItemElement>,
-          sync: boolean,
+          isSync: boolean,
         ) => {
           instance._willUpdate()
-          setVirtualItems(
-            reconcile(instance.getVirtualItems(), {
-              key: 'index',
-            }),
-          )
-          setTotalSize(instance.getTotalSize())
-          options.onChange?.(instance, sync)
+          sync()
+          snapshot.onChange?.(instance, isSync)
         },
-      }),
-    )
+      })
+      virtualizer._willUpdate()
+      sync()
+    },
+  )
+
+  onSettled(() => {
+    const cleanup = virtualizer._didMount()
     virtualizer._willUpdate()
-    setVirtualItems(reconcile(instance.getVirtualItems(), { key: 'index' }))
-    setTotalSize(instance.getTotalSize())
+    return cleanup
   })
 
   return virtualizer
@@ -99,7 +116,7 @@ export function createVirtualizer<
   >,
 ): Virtualizer<TScrollElement, TItemElement> {
   return createVirtualizerBase<TScrollElement, TItemElement>(
-    mergeProps(
+    merge(
       {
         observeElementRect: observeElementRect,
         observeElementOffset: observeElementOffset,
@@ -120,7 +137,7 @@ export function createWindowVirtualizer<TItemElement extends Element>(
   >,
 ): Virtualizer<Window, TItemElement> {
   return createVirtualizerBase<Window, TItemElement>(
-    mergeProps(
+    merge(
       {
         getScrollElement: () =>
           typeof document !== 'undefined' ? window : null,
