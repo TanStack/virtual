@@ -50,7 +50,10 @@ test('iOS 27: a scrollToIndex mid-fling waits for the tail, and the fling does n
 // A fling whose element records its inline overflow-y, set by the app to
 // `auto !important`.
 function flingWithStyle() {
-  const h = flingOnIOS27()
+  return withOverflowStyle(flingOnIOS27())
+}
+
+function withOverflowStyle(h: ReturnType<typeof makeDeferralHarness>) {
   const props = new Map([['overflow-y', ['auto', 'important']]])
   Object.assign(h.el, {
     style: {
@@ -530,4 +533,80 @@ test('iOS 27: a correction mid-fling is held through the tail, as on 26', () => 
   h.expireTail()
   expect(h.el.scrollTop).toBe(3050)
   expect(h.rowTop(60)).toBe(0)
+})
+
+// ─── Android: a fling carries on from a write ───────────────────────────────
+//
+// Chrome on Android continues a fling from the written position (Pixel 6,
+// Android 16, Chrome 156: a `scrollToIndex` issued 150ms into a fling ended
+// ~3,200px past its target). A command mid-fling stops the fling first, as
+// on iOS 27. The tail is tracked off iOS too; it holds nothing back there.
+
+// A fling from 2000 on Android, now passing 1500.
+function flingOnAndroid() {
+  const h = makeDeferralHarness({ start: 2000, ios: false })
+  h.touch('touchstart')
+  h.run(() => h.scroll(true, 2010))
+  h.touch('touchend')
+  h.run(() => h.scroll(true, 1500))
+  h.writes.length = 0
+  return h
+}
+
+test('Android: a command mid-fling stops the fling and writes two frames later', () => {
+  const h = withOverflowStyle(flingOnAndroid())
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    expect(h.overflow()).toBe('hidden important')
+    h.frame()
+    expect(h.writes).toEqual([])
+    h.frame()
+  })
+  expect(h.overflow()).toBe('auto important')
+  expect(h.writes).toEqual([4500])
+  expect(h.v['_iosGesture'].touch).toBeNull()
+})
+
+test('Android: a command after a tap, or with no touch at all, is written at once', () => {
+  const tap = withOverflowStyle(
+    makeDeferralHarness({ start: 2000, ios: false }),
+  )
+  tap.writes.length = 0
+  tap.touch('touchstart')
+  tap.touch('touchend')
+  tap.run(() => tap.v.scrollToIndex(90, { align: 'start' }))
+  expect(tap.writes).toEqual([4500])
+  expect(tap.overflow()).toBe('auto important')
+
+  // A wheel or a scrollbar drag: no touch, so no tail.
+  const wheel = withOverflowStyle(
+    makeDeferralHarness({ start: 2000, ios: false }),
+  )
+  wheel.writes.length = 0
+  wheel.run(() => {
+    wheel.scroll(true, 1500)
+    wheel.v.scrollToIndex(90, { align: 'start' })
+  })
+  expect(wheel.writes).toEqual([4500])
+  expect(wheel.overflow()).toBe('auto important')
+})
+
+test('a classic scrollbar: the overflow comes back at once and the command waits for the tail', () => {
+  const h = withOverflowStyle(flingOnAndroid())
+  // A scrollbar that takes 15px of the element's width while it shows.
+  Object.defineProperty(h.el, 'clientWidth', {
+    get: () => (h.overflow().startsWith('hidden') ? 400 : 385),
+  })
+  h.run(() => {
+    h.v.scrollToIndex(90, { align: 'start' })
+    // Hidden and put back within the call: nothing reflows.
+    expect(h.overflow()).toBe('auto important')
+    h.frame()
+    h.frame()
+    h.scroll(true, 1300)
+    h.scroll(false)
+  })
+  expect(h.writes).toEqual([])
+  h.expireTail()
+  expect(h.writes).toEqual([4500])
 })

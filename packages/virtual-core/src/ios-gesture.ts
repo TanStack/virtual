@@ -32,6 +32,17 @@ export const iosMomentumOverridesWrites = (): boolean => {
     CSS.supports('overflow-anchor: auto'))
 }
 
+// Whether a touch fling survives a scrollTop write, so a command issued
+// mid-fling has to stop the fling before it writes. Only iOS 26 and earlier
+// stop the momentum on the write itself. Chrome on Android carries the fling
+// on from the written position: on a Pixel 6 (Android 16, Chrome 156) a
+// `scrollToIndex` issued 150ms into a fling wrote its target, then went on
+// ~3,200px past it, 3 runs of 3. Other non-iOS engines are not measured; on
+// one whose write does stop the fling, stopping it first costs the two
+// frames of the stop.
+export const momentumOverridesWrites = (): boolean =>
+  !isIOSWebKit() || iosMomentumOverridesWrites()
+
 // Test hook: reset the iOS detection caches. Not exported.
 export const _resetIOSDetectionForTests = () => {
   _isIOSResult = undefined
@@ -52,9 +63,11 @@ const touchListenerOptions = {
 // the whole gesture: `down` from touchstart to touchend/touchcancel, then
 // `tail` while momentum runs. iOS fires no touch events during momentum, so
 // every scroll event re-arms the tail and it closes ~150ms after the last
-// one. Null between gestures, and after touchend on non-iOS, which arms no
-// tail. The tail record owns its timer: every replacement of the state goes
-// through `end`, which clears it, so a live timer always has its record.
+// one. Null between gestures. The tail is tracked on every platform, but
+// only iOS defers anything through it; elsewhere it only tells a command
+// that a fling may be running (`momentumOverridesWrites`). The tail record
+// owns its timer: every replacement of the state goes through `end`, which
+// clears it, so a live timer always has its record.
 //
 // `moved`: the content moved under or after the finger other than by our
 // own write's read-back. While `down`, a scroll event that changed the
@@ -108,9 +121,9 @@ export class IosGesture {
   // read-back will come. A resting finger does not: the write lands.
   dragging = () => this._touch?.phase === 'down' && this._touch.moved
 
-  // The open tail, if any: after a tap, or after a drag or fling. On iOS 27
-  // a fling's momentum overrides a write within a frame (see
-  // `iosMomentumOverridesWrites`).
+  // The open tail, if any: after a tap, or after a drag or fling. Except on
+  // iOS 26 and earlier, a fling's momentum outlasts a write (see
+  // `momentumOverridesWrites`).
   tail = (): 'tap' | 'fling' | null =>
     this._touch?.phase === 'tail' ? (this._touch.moved ? 'fling' : 'tap') : null
 
@@ -203,10 +216,10 @@ export class IosGesture {
   }
 
   // (Re)open the tail after the finger lifts, closing ~150ms after the last
-  // touchend or momentum frame. On non-iOS there is nothing to protect.
+  // touchend or momentum frame.
   private _openTail = (moved: boolean, awaitingFling: boolean) => {
     const win = this.host.getWindow()
-    if (!isIOSWebKit() || win == null) return
+    if (win == null) return
     this.end()
     const tail = {
       phase: 'tail' as const,

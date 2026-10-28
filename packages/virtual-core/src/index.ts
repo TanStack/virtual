@@ -9,11 +9,7 @@ import {
   flingCaught,
   flingSpedUp,
 } from './scroll-classifier'
-import {
-  IosGesture,
-  iosMomentumOverridesWrites,
-  isIOSWebKit,
-} from './ios-gesture'
+import { IosGesture, isIOSWebKit, momentumOverridesWrites } from './ios-gesture'
 import type { ScrollPhase, ScrollSample } from './scroll-classifier'
 
 export { _resetIOSDetectionForTests } from './ios-gesture'
@@ -2205,13 +2201,13 @@ export class Virtualizer<
     return null
   }
 
-  // Stop a running iOS fling, then call `done`: the momentum does not
-  // survive the element losing its overflow for a frame. Hidden and
-  // restored within one task, iOS never sees the change and the fling
-  // carries on (27.0.1 iPhone); hidden for two frames, it stops at once.
-  // Nothing moves on screen. A second call while one is in progress waits
-  // for the same frames. The app's inline value comes back, unless the app
-  // set a new one meanwhile; `done` is then not called.
+  // Stop a running fling, then call `done`: the momentum does not survive
+  // the element losing its overflow for a frame. Hidden and restored within
+  // one task, iOS never sees the change and the fling carries on (27.0.1
+  // iPhone); hidden for two frames, it stops at once, there and in Chrome on
+  // Android. Nothing moves on screen. A second call while one is in progress
+  // waits for the same frames. The app's inline value comes back, unless the
+  // app set a new one meanwhile; `done` is then not called.
   private _momentumStop: { restore: () => boolean; done: () => void } | null =
     null
   private _stopMomentum = (done: () => void) => {
@@ -2231,7 +2227,17 @@ export class Virtualizer<
     const property = this.options.horizontal ? 'overflow-x' : 'overflow-y'
     const value = style.getPropertyValue(property)
     const priority = style.getPropertyPriority(property)
+    const crossSize = () =>
+      this.options.horizontal ? scroller.clientHeight : scroller.clientWidth
+    const crossSizeBefore = crossSize()
     style.setProperty(property, 'hidden', 'important')
+    // A classic scrollbar takes layout space, so hiding it would reflow the
+    // content for two frames (a touchscreen laptop). Put it back before
+    // anything paints and leave the command to the tail, as without a style.
+    if (crossSize() !== crossSizeBefore) {
+      style.setProperty(property, value, priority)
+      return
+    }
     const stop = {
       // False when the app replaced the hidden value: the fling may not
       // have stopped.
@@ -2451,11 +2457,13 @@ export class Virtualizer<
 
     const tail = this._iosGesture.tail()
     if (kind === 'absolute' && tail !== null) {
-      if (tail === 'fling' && iosMomentumOverridesWrites()) {
-        // iOS 27: a write now shows for one frame and the fling carries on
-        // along its own path, so the command would be lost (#1307, step 3).
-        // Stop the fling and write two frames later. Otherwise (no style to
-        // change, a finger down, a bounce) the tail stays open and
+      if (tail === 'fling' && momentumOverridesWrites()) {
+        // A write now would not end the fling: on iOS 27 it shows for one
+        // frame and the fling carries on along its own path (#1307, step 3);
+        // in Chrome on Android the fling carries on from the written
+        // position. The command would be lost or overshot. Stop the fling
+        // and write two frames later. Otherwise (no style to change, a
+        // classic scrollbar, a finger down, a bounce) the tail stays open and
         // the command is written when it closes, ~150ms after the last
         // fling frame. The user taking over before the write (a drag, a
         // second flick, a finger stopping the fling) cancels the command

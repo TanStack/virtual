@@ -1279,8 +1279,9 @@ test('Phase 2a: a second self-write replaces the intended target', () => {
   expect(v.scrollOffset).toBe(101)
 })
 
-test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
-  // On non-iOS, touchend should not arm the grace timer.
+test('non-iOS: touchend arms a tail, which holds no correction back', () => {
+  // The tail only tells a command that a fling may be running
+  // (`momentumOverridesWrites`); corrections wait through it on iOS alone.
   _resetIOSDetectionForTests()
   const scrollToFn = vi.fn()
   const mockWindow = {
@@ -1290,10 +1291,14 @@ test('iOS Phase 1: non-iOS still does NOT install touch state machine', () => {
   const { v, el } = makeIOSVirtualizerWithRealEl(scrollToFn, mockWindow)
 
   dispatchTouchEvent(el, 'touchstart')
-  expect(v['_iosGesture'].touch).toEqual({ phase: 'down', moved: false }) // touchstart still records (cheap)
+  expect(v['_iosGesture'].touch).toEqual({ phase: 'down', moved: false })
   dispatchTouchEvent(el, 'touchend')
-  // Non-iOS path returns before arming a tail
-  expect(v['_iosGesture'].touch).toBeNull()
+  expect(v['_iosGesture'].tail()).toBe('tap')
+
+  v.resizeItem(0, 100)
+  expect(scrollToFn).toHaveBeenCalled()
+  expect(v['_holdOffset']).toBe(0)
+  v['_iosGesture'].end()
 })
 
 test('non-iOS: adjustment is applied immediately during scroll (no regression)', () => {
