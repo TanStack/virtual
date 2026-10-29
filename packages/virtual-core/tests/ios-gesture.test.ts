@@ -3,6 +3,7 @@ import {
   IosGesture,
   _resetIOSDetectionForTests,
   iosMomentumOverridesWrites,
+  momentumOverridesWrites,
 } from '../src/ios-gesture'
 
 const setUserAgent = (ios: boolean, ios27 = false) => {
@@ -175,12 +176,13 @@ describe('IosGesture', () => {
     expect(onTailClosed).toHaveBeenCalledTimes(1)
   })
 
-  test('no tail on non-iOS, or without a window', () => {
+  test('a tail on non-iOS too, but none without a window', () => {
     setUserAgent(false)
     const { gesture } = make()
     gesture.touchStart()
+    scroll(gesture)
     gesture.touchEnd()
-    expect(gesture.touch).toBeNull()
+    expect(gesture.tail()).toBe('fling')
 
     setUserAgent(true)
     const other = make()
@@ -212,6 +214,14 @@ describe('IosGesture', () => {
     expect(iosMomentumOverridesWrites()).toBe(true)
     setUserAgent(false, true)
     expect(iosMomentumOverridesWrites()).toBe(false)
+  })
+
+  test('momentumOverridesWrites: everywhere but iOS 26 and earlier', () => {
+    expect(momentumOverridesWrites()).toBe(false)
+    setUserAgent(true, true)
+    expect(momentumOverridesWrites()).toBe(true)
+    setUserAgent(false)
+    expect(momentumOverridesWrites()).toBe(true)
   })
 
   describe('listen', () => {
