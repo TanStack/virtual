@@ -558,6 +558,34 @@ Measures the element using your configured `measureElement` virtualizer option. 
 
 By default the `measureElement` virtualizer option is configured to measure elements with `getBoundingClientRect()`.
 
+### `subscribe`
+
+```tsx
+subscribe: (listener: () => void) => () => void
+```
+
+Registers a listener that runs whenever [`getState`](#getstate) returns a new snapshot, and returns an unsubscribe function. That covers every change in the snapshot, including ones that do not fire [`onChange`](#onchange), such as a scroll direction flip within the same range, or a committed `count` change that alters the total size but not the visible range. Unlike `onChange`, any number of listeners can be registered. Listeners receive no `sync` flag; use `onChange` when an update must be flushed synchronously. Pair it with [`getState`](#getstate) to build a store subscription, such as React's `useSyncExternalStore`.
+
+### `getState`
+
+```tsx
+getState: () => VirtualizerState
+
+interface VirtualizerState {
+  readonly virtualItems: ReadonlyArray<VirtualItem>
+  readonly totalSize: number
+  readonly range: { readonly startIndex: number; readonly endIndex: number } | null
+  readonly isScrolling: boolean
+  readonly scrollDirection: 'forward' | 'backward' | null
+}
+```
+
+Returns the render-relevant state of the virtualizer. The returned object keeps its identity until one of its fields changes, so it can be used directly as a store snapshot.
+
+The state leaves out `scrollOffset` on purpose: it changes on every scroll event, so subscribers would re-render on every event. Read `virtualizer.scrollOffset` from an [`onChange`](#onchange) handler or a scroll listener when you need it.
+
+Read it during render, or from a [`subscribe`](#subscribe) listener or [`onChange`](#onchange). Reading it has no side effects: unlike `getVirtualItems`, it does not count the range it returns as rendered, so reading it never keeps [`onChange`](#onchange) from firing.
+
 ### `resizeItem`
 
 ```tsx
