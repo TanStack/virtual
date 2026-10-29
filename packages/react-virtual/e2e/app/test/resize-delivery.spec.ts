@@ -50,7 +50,7 @@ for (const direction of ['grow', 'shrink'] as const) {
       await settleFrames(page)
     }
 
-    const errors: string[] = []
+    const errors: Array<string> = []
     page.on('pageerror', (error) => errors.push(error.message))
     await page.evaluate(() => {
       document.documentElement.dataset.resizeLoops = '0'
@@ -64,7 +64,10 @@ for (const direction of ['grow', 'shrink'] as const) {
           return rect.top <= top && rect.bottom > top
         },
       )!
-      return row.dataset.index!
+      return {
+        index: row.dataset.index!,
+        offset: row.getBoundingClientRect().top - top,
+      }
     })
     await page.evaluate(
       (scale) => document.documentElement.style.setProperty('--scale', scale),
@@ -77,10 +80,13 @@ for (const direction of ['grow', 'shrink'] as const) {
     else expect(countAfter).toBeLessThan(countBefore)
 
     const anchorBox = await page
-      .locator(`.row[data-index="${anchor}"]`)
+      .locator(`.row[data-index="${anchor.index}"]`)
       .boundingBox()
     const scrollBox = await scroll.boundingBox()
     expect(anchorBox).not.toBeNull()
+    expect(
+      Math.abs(anchorBox!.y - scrollBox!.y - anchor.offset),
+    ).toBeLessThanOrEqual(1)
     expect(anchorBox!.y).toBeLessThanOrEqual(scrollBox!.y + 1)
     expect(anchorBox!.y + anchorBox!.height).toBeGreaterThan(scrollBox!.y)
     expect(await page.locator('html').getAttribute('data-resize-loops')).toBe(
