@@ -30,6 +30,7 @@ function createVirtualizerBase<
 ): Readable<SvelteVirtualizer<TScrollElement, TItemElement>> {
   const virtualizer = new Virtualizer(initialOptions)
   const originalSetOptions = virtualizer.setOptions
+  let onChange = initialOptions.onChange
 
   // eslint-disable-next-line prefer-const
   let virtualizerWritable: Writable<Virtualizer<TScrollElement, TItemElement>>
@@ -39,9 +40,10 @@ function createVirtualizerBase<
   ) => {
     const resolvedOptions = {
       ...virtualizer.options,
+      onChange,
       ...options,
-      onChange: options.onChange,
     }
+    onChange = resolvedOptions.onChange
     originalSetOptions({
       ...resolvedOptions,
       onChange: (

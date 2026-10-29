@@ -16,6 +16,10 @@ export default defineConfig({
           __dirname,
           'measure-element/index.html',
         ),
+        'resize-delivery': path.resolve(
+          __dirname,
+          'resize-delivery/index.html',
+        ),
         'smooth-scroll': path.resolve(__dirname, 'smooth-scroll/index.html'),
         'smooth-prepend': path.resolve(__dirname, 'smooth-prepend/index.html'),
         'stale-index': path.resolve(__dirname, 'stale-index/index.html'),

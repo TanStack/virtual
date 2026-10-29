@@ -1,5 +1,14 @@
 # @tanstack/svelte-virtual
 
+## 3.13.50
+
+### Patch Changes
+
+- [#1344](https://github.com/TanStack/virtual/pull/1344) [`6dda0c0`](https://github.com/TanStack/virtual/commit/6dda0c02f72db0c83a605a1f7cd012b653a74541) - Preserve the `onChange` callback when partial `setOptions` updates omit it.
+
+- Updated dependencies [[`35ad56d`](https://github.com/TanStack/virtual/commit/35ad56db40da52b9c43f226ca60c8267cf1d4c53), [`979c1b4`](https://github.com/TanStack/virtual/commit/979c1b46e0b32e3cdfbe634484b9a95b6b5a191e)]:
+  - @tanstack/virtual-core@3.19.9
+
 ## 3.13.49
 
 ### Patch Changes
