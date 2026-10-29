@@ -28,6 +28,7 @@
     "test:eslint": "eslint ./src",
     "test:types": "tsc",
     "test:build": "publint --strict",
+    "test:lib": "vitest",
     "build": "svelte-package --input ./src --output ./dist"
   },
   "type": "module",
