@@ -642,6 +642,9 @@ export class Virtualizer<
   private observer = (() => {
     let _ro: ResizeObserver | null = null
     let _frames: ReturnType<typeof createFrameQueue> | null = null
+    let delivering = false
+    let observeQueued = false
+    const pendingObservations = new Set<Element>()
 
     const get = () => {
       if (_ro) {
@@ -672,12 +675,23 @@ export class Virtualizer<
               this._noteClampMax()
               this._flushHoldIfReady(true)
               this._retryClampedAdjustment()
+              // Ref-null callbacks run before the host nodes are detached.
+              // Drop them after the sync renders, before the browser gathers
+              // another round of ResizeObserver entries at their new depth.
+              this.measureElement(null)
             }
           }
         }
-        this.options.useAnimationFrameWithResizeObserver
-          ? frames.schedule(run)
-          : run()
+        if (this.options.useAnimationFrameWithResizeObserver) {
+          frames.schedule(run)
+        } else {
+          delivering = true
+          try {
+            run()
+          } finally {
+            delivering = false
+          }
+        }
       }))
     }
 
@@ -715,12 +729,37 @@ export class Virtualizer<
       disconnect: () => {
         get()?.disconnect()
         _frames?.cancel()
+        pendingObservations.clear()
+        observeQueued = false
         _ro = null
         _frames = null
       },
-      observe: (target: Element) =>
-        get()?.observe(target, { box: 'border-box' }),
-      unobserve: (target: Element) => get()?.unobserve(target),
+      observe: (target: Element) => {
+        const observer = get()
+        if (!observer) return
+        if (!delivering) {
+          observer.observe(target, { box: 'border-box' })
+          return
+        }
+        // A sync render can also mount rows at the depth being delivered.
+        // A microtask is still inside that delivery: register next frame,
+        // while measureElement continues to measure the new row immediately.
+        pendingObservations.add(target)
+        if (!observeQueued) {
+          observeQueued = true
+          _frames?.schedule(() => {
+            observeQueued = false
+            pendingObservations.forEach((node) => {
+              if (node.isConnected) _ro?.observe(node, { box: 'border-box' })
+            })
+            pendingObservations.clear()
+          })
+        }
+      },
+      unobserve: (target: Element) => {
+        pendingObservations.delete(target)
+        get()?.unobserve(target)
+      },
     }
   })()
   range: { startIndex: number; endIndex: number } | null = null

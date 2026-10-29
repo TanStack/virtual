@@ -736,13 +736,20 @@ test('changing gap invalidates cached measurements (multi-lane)', () => {
 
 function setupResizeBatch(onChange: (instance: any, sync: boolean) => void) {
   let roCallback: ResizeObserverCallback | null = null
+  const observe = vi.fn()
+  const unobserve = vi.fn()
+  const frames = new Map<number, FrameRequestCallback>()
+  let frameId = 0
   const mockWindow = {
-    requestAnimationFrame: vi.fn(),
-    cancelAnimationFrame: vi.fn(),
+    requestAnimationFrame: vi.fn((callback: FrameRequestCallback) => {
+      frames.set(++frameId, callback)
+      return frameId
+    }),
+    cancelAnimationFrame: vi.fn((id: number) => frames.delete(id)),
     performance: { now: () => Date.now() },
     ResizeObserver: vi.fn(function (cb: ResizeObserverCallback) {
       roCallback = cb
-      return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+      return { observe, unobserve, disconnect: vi.fn() }
     }),
   }
   const el = {
@@ -811,7 +818,21 @@ function setupResizeBatch(onChange: (instance: any, sync: boolean) => void) {
       ),
       {} as ResizeObserver,
     )
-  return { virtualizer, sizes, node, deliver }
+  const flush = () => {
+    const queued = [...frames.values()]
+    frames.clear()
+    queued.forEach((callback) => callback(0))
+  }
+  return {
+    virtualizer,
+    sizes,
+    node,
+    deliver,
+    observe,
+    unobserve,
+    frames,
+    flush,
+  }
 }
 
 test('ResizeObserver batch: later entries see starts updated by earlier ones (#1218)', () => {
@@ -849,6 +870,70 @@ test('ResizeObserver batch: a sync re-render does not drop queued entries (#1036
   expect(virtualizer.getMeasurements()[5]!.size).toBe(140)
   expect(notifies).toEqual([true])
 })
+
+test('unobserves rows detached by a synchronous resize render before delivery ends', () => {
+  const { virtualizer, sizes, node, deliver, unobserve } = setupResizeBatch(
+    (instance, sync) => {
+      if (!sync) return
+      // React calls the ref with null before removing the host element.
+      instance.measureElement(null)
+      node(5).isConnected = false
+    },
+  )
+  sizes.set(3, 200)
+  deliver([3])
+  expect(unobserve).toHaveBeenCalledWith(node(5))
+  expect(virtualizer.elementsCache.has(5)).toBe(false)
+})
+
+test('measures new rows synchronously but observes them after resize delivery', () => {
+  const { virtualizer, sizes, node, deliver, observe, frames, flush } =
+    setupResizeBatch((instance, sync) => {
+      if (sync) {
+        instance.measureElement(node(10))
+        instance.measureElement(node(11))
+      }
+    })
+  sizes.set(10, 120)
+  sizes.set(11, 130)
+  sizes.set(3, 200)
+  deliver([3])
+  expect(virtualizer.getMeasurements()[10]!.size).toBe(120)
+  expect(virtualizer.getMeasurements()[11]!.size).toBe(130)
+  expect(observe.mock.calls.map(([target]) => target)).not.toContain(node(10))
+  expect(observe.mock.calls.map(([target]) => target)).not.toContain(node(11))
+  expect(frames.size).toBe(1)
+  flush()
+  expect(observe).toHaveBeenCalledWith(node(10), { box: 'border-box' })
+  expect(observe).toHaveBeenCalledWith(node(11), { box: 'border-box' })
+})
+
+test.each(['removed', 'replaced', 'disconnected'] as const)(
+  'does not register a deferred row after it is %s',
+  (action) => {
+    const { virtualizer, sizes, node, deliver, observe, flush } =
+      setupResizeBatch((instance, sync) => {
+        if (sync) instance.measureElement(node(10))
+      })
+    sizes.set(10, 120)
+    sizes.set(3, 200)
+    deliver([3])
+    expect(observe.mock.calls.map(([target]) => target)).not.toContain(node(10))
+
+    if (action === 'removed') {
+      node(10).isConnected = false
+      virtualizer.measureElement(null)
+    } else if (action === 'replaced') {
+      const replacement = { ...node(10) }
+      virtualizer.measureElement(replacement)
+      expect(observe).toHaveBeenCalledWith(replacement, { box: 'border-box' })
+    } else {
+      virtualizer._didMount()()
+    }
+    flush()
+    expect(observe.mock.calls.map(([target]) => target)).not.toContain(node(10))
+  },
+)
 
 // ─── useAnimationFrameWithResizeObserver: frames of the scroll element's window
 
