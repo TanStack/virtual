@@ -1289,7 +1289,12 @@ export class Virtualizer<
           // reconcile not yet retired it) still gets the anchor sync.
         } else {
           this._followOffsetTarget(anchor.delta)
-          this._scrollToOffset(this.getScrollOffset())
+          // The consumer may not have committed the expanded sizer yet. If
+          // the browser clamps this anchor sync, keep the target for the
+          // next update after the sizer has grown.
+          const target = this.getScrollOffset()
+          this._clampedAdjustment = this._clampedBy(target)
+          this._scrollToOffset(target)
         }
       } else {
         this.scrollToEnd({ behavior: anchor.behavior })
@@ -1334,7 +1339,7 @@ export class Virtualizer<
   // absence of one leave `_clampedAdjustment` set, so timing does not matter.
   // While the element cannot take a write (`_canWriteScroll`) the record is
   // kept for the next opportunity, the latest being the tail closing.
-  private _retryClampedAdjustment = () => {
+  _retryClampedAdjustment = () => {
     if (
       this._clampedAdjustment === null ||
       !this.scrollElement ||

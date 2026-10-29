@@ -193,22 +193,108 @@ test('scrolling near the top auto-loads older history', async ({ page }) => {
     .toBeGreaterThan(heightBefore)
 })
 
-// FIXME(#1267): deterministic on CI. The click lands before the 180ms auto history
-// load fires, the prepend then resolves after the jump, and the adapter's anchor
-// write is clamped against the not-yet-grown sizer — the view strands one prepend
-// (~870px) above the bottom. Re-enable once #1267 is fixed.
-test.fixme('Latest returns to the bottom and status flips back to At latest', async ({
+test('Latest returns to the bottom and status flips back to At latest after an in-flight prepend', async ({
   page,
 }) => {
+  // Hold the example's 180ms history timer so the test controls the ordering:
+  // click Latest first, then release the prepend.
+  await page.addInitScript(() => {
+    const nativeSetTimeout = window.setTimeout.bind(window)
+    const testWindow = window as typeof window & {
+      __armHistoryPrependHold?: () => void
+      __historyPrependIsHeld?: () => boolean
+      __releaseHistoryPrepend?: () => void
+    }
+    let shouldHoldPrepend = false
+    let releasePrepend: (() => void) | null = null
+    let holdingTimer: number | null = null
+
+    testWindow.__armHistoryPrependHold = () => {
+      shouldHoldPrepend = true
+    }
+    testWindow.__historyPrependIsHeld = () => releasePrepend !== null
+    testWindow.__releaseHistoryPrepend = () => {
+      if (!releasePrepend) {
+        throw new Error('No history prepend timer is being held')
+      }
+      if (holdingTimer !== null) window.clearTimeout(holdingTimer)
+      const callback = releasePrepend
+      releasePrepend = null
+      holdingTimer = null
+      callback()
+    }
+
+    window.setTimeout = ((
+      handler: TimerHandler,
+      timeout?: number,
+      ...args: unknown[]
+    ) => {
+      if (
+        shouldHoldPrepend &&
+        timeout === 180 &&
+        typeof handler === 'function' &&
+        releasePrepend === null
+      ) {
+        shouldHoldPrepend = false
+        const callback = handler as (...callbackArgs: unknown[]) => void
+        releasePrepend = () => callback(...args)
+        holdingTimer = nativeSetTimeout(() => {}, 60_000)
+        return holdingTimer
+      }
+      return nativeSetTimeout(handler, timeout, ...args)
+    }) as typeof window.setTimeout
+  })
+
   await page.goto('/chat-pretext')
   await waitForPin(page)
+  await page.waitForTimeout(400)
+  // Arm only immediately before scrolling to the top so startup timers do not
+  // get mistaken for the history prepend.
+  await page.evaluate(() => {
+    ;(
+      window as Window & {
+        __armHistoryPrependHold?: () => void
+      }
+    ).__armHistoryPrependHold?.()
+  })
   await page.locator('.messages').evaluate((el) => {
     el.scrollTop = 0
   })
   await expect(page.locator('[data-testid="status"]')).toHaveText(
-    /Reading history|Loading history/,
+    'Loading history',
   )
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __historyPrependIsHeld?: () => boolean
+            }
+          ).__historyPrependIsHeld?.() ?? false,
+      ),
+    )
+    .toBe(true)
+
+  const heightBeforeClick = await page
+    .locator('.messages')
+    .evaluate((el) => el.scrollHeight)
   await page.locator('[data-testid="latest"]').click()
+
+  // Release the prepend only after Latest has been clicked.
+  await page.evaluate(() => {
+    ;(
+      window as Window & {
+        __releaseHistoryPrepend?: () => void
+      }
+    ).__releaseHistoryPrepend?.()
+  })
+
+  await expect
+    .poll(() => page.locator('.messages').evaluate((el) => el.scrollHeight), {
+      timeout: 3000,
+    })
+    .toBeGreaterThan(heightBeforeClick)
   await waitForPin(page)
   await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
   await expect(page.locator('[data-key^="message-4"]').last()).toBeVisible()

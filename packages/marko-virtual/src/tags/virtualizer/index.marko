@@ -65,6 +65,7 @@ export interface Input {
 <let/range   = (seed.range as { startIndex: number; endIndex: number } | null)/>
 <let/v       = (null as Virtualizer<Element, Element> | null)/>
 <let/cleanup = (null as (() => void) | null)/>
+<let/retryFrame = (null as number | null)/>
 
 <lifecycle<{}>
   onMount() {
@@ -97,9 +98,23 @@ export interface Input {
     current.setOptions({ ...current.options, ...buildOptions(input, notify) })
     current._willUpdate()
     notify()
+
+    // Marko commits the expanded sizer after this lifecycle callback. Retry
+    // the clamped anchor on the next frame, when the browser can reach it.
+    if (retryFrame !== null && current.targetWindow) {
+      current.targetWindow.cancelAnimationFrame(retryFrame)
+    }
+    retryFrame = current.targetWindow?.requestAnimationFrame(() => {
+      retryFrame = null
+      current._retryClampedAdjustment()
+    }) ?? null
   }
 
   onDestroy() {
+    if (retryFrame !== null && v?.targetWindow) {
+      v.targetWindow.cancelAnimationFrame(retryFrame)
+    }
+    retryFrame = null
     cleanup?.()
     v = null
     cleanup = null
