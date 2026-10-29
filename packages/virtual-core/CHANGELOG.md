@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.19.9
+
+### Patch Changes
+
+- [#1347](https://github.com/TanStack/virtual/pull/1347) [`35ad56d`](https://github.com/TanStack/virtual/commit/35ad56db40da52b9c43f226ca60c8267cf1d4c53) - fix(virtual-core): stop a touch fling for a command issued during it on Android too
+
+- [#1348](https://github.com/TanStack/virtual/pull/1348) [`979c1b4`](https://github.com/TanStack/virtual/commit/979c1b46e0b32e3cdfbe634484b9a95b6b5a191e) - Avoid ResizeObserver loop errors when a synchronous resize render mounts or unmounts rows. Measure new rows immediately, defer their observation until the next frame, and stop observing detached rows before delivery ends.
+
 ## 3.19.8
 
 ### Patch Changes
