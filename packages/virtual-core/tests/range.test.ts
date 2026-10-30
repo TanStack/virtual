@@ -330,3 +330,39 @@ test('lazy fast path: lanes>1 still uses eager path (regression guard)', () => {
   expect(lanes.has(0)).toBe(true)
   expect(lanes.has(1)).toBe(true)
 })
+
+// A list that shrinks while scrolled to its end (filtering, rows re-measured
+// smaller) keeps the old scroll offset until the scroll element reports the
+// clamped one. The range should still cover the rows the viewport can show.
+const shrinkWhileAtEnd = (scrollMargin: number) => {
+  const options = {
+    estimateSize: () => 30,
+    overscan: 0,
+    scrollMargin,
+    initialRect: { width: 300, height: 300 },
+    // Scrolled to the end of 50 rows: 50 × 30 - 300
+    initialOffset: scrollMargin + 1200,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  }
+  const virtualizer = new Virtualizer({ ...options, count: 50 })
+  const before = virtualizer.getVirtualIndexes()
+  virtualizer.setOptions({ ...options, count: 20 })
+  return { before, after: virtualizer.getVirtualIndexes() }
+}
+
+test('a stale offset past the end of a shrunk list renders the last viewport of rows', () => {
+  const { before, after } = shrinkWhileAtEnd(0)
+  expect(before).toEqual([40, 41, 42, 43, 44, 45, 46, 47, 48, 49])
+  expect(after).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+})
+
+test('a stale offset past the end renders the last viewport of rows with a scrollMargin', () => {
+  // scrollOffset is measured in the scroll element, getTotalSize() from the
+  // start of the list, so the end of the list sits at scrollMargin + total.
+  const { before, after } = shrinkWhileAtEnd(1000)
+  expect(before).toEqual([40, 41, 42, 43, 44, 45, 46, 47, 48, 49])
+  expect(after).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+})
