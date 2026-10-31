@@ -63,7 +63,7 @@ function createVirtualizerBase<
   }
 
   virtualizerWritable = writable(virtualizer, () => {
-    setOptions(initialOptions)
+    setOptions({})
     return virtualizer._didMount()
   })
 
