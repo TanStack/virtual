@@ -1860,16 +1860,23 @@ export class Virtualizer<
       this.getSize(),
       this.getScrollOffset(),
       this.options.lanes,
+      // scrollOffset is measured in the scroll element and the layout total
+      // from the list start, so the list ends scrollMargin further down.
+      this._getLayoutTotalSize() + this.options.scrollMargin,
     ],
-    (measurements, outerSize, scrollOffset, lanes) => {
+    (measurements, outerSize, scrollOffset, lanes, listEnd) => {
       if (measurements.length === 0 || outerSize === 0) {
         this.range = null
         return null
       }
+      // Until the element reports a clamped position (the list shrank, a
+      // rubber-band bounce), the offset can sit past the last row, which
+      // would leave only that row in the range.
+      const maxScrollOffset = Math.max(listEnd - outerSize, 0)
       this.range = calculateRangeImpl(
         measurements,
         outerSize,
-        scrollOffset,
+        Math.min(scrollOffset, maxScrollOffset),
         lanes,
         // Pass the typed array so binary search + forward-walk can read
         // start/end directly from Float64Array, skipping the Proxy traps.
