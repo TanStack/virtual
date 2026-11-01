@@ -60,6 +60,19 @@ class VirtualizerControllerBase<
 
   hostConnected() {
     this.cleanup = this.virtualizer._didMount()
+    // `hostDisconnected` runs the cleanup returned by `_didMount`, which
+    // drops `scrollElement` and its observers. Lit calls `hostUpdated` only
+    // when an update runs, and reconnecting a host with no pending update
+    // does not schedule one, so scrolling would stop changing the rendered
+    // range until a reactive property changed.
+    //
+    // Scroll elements that are already readable (the window, or a
+    // `getScrollElement` that does not use Lit's `ref`) can be observed
+    // immediately. `ref` clears its value on disconnect and restores it only
+    // after this callback returns, so also request an update: the following
+    // `hostUpdated` runs `_willUpdate` once that ref is populated again.
+    this.virtualizer._willUpdate()
+    this.host.requestUpdate()
   }
 
   hostUpdated() {
