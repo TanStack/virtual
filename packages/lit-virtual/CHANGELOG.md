@@ -1,5 +1,14 @@
 # @tanstack/lit-virtual
 
+## 3.15.2
+
+### Patch Changes
+
+- [#1357](https://github.com/TanStack/virtual/pull/1357) [`6f6970b`](https://github.com/TanStack/virtual/commit/6f6970b3b64e887fb2189fe81c2287a50a8bdf9a) - Reattach scroll observers when a Lit virtualizer host is connected again, so scrolling keeps updating the rendered range after the element is moved.
+
+- Updated dependencies [[`9d7ff67`](https://github.com/TanStack/virtual/commit/9d7ff6781767f1b9ea30ef69f42d72d8524ab75d)]:
+  - @tanstack/virtual-core@3.19.10
+
 ## 3.15.1
 
 ### Patch Changes

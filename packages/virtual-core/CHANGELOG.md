@@ -1,5 +1,11 @@
 # @tanstack/virtual-core
 
+## 3.19.10
+
+### Patch Changes
+
+- [#1351](https://github.com/TanStack/virtual/pull/1351) [`9d7ff67`](https://github.com/TanStack/virtual/commit/9d7ff6781767f1b9ea30ef69f42d72d8524ab75d) - Keep a full viewport of rows in the range when the scroll offset is past the end of the list, as it is after the list shrinks and before the element reports its clamped position.
+
 ## 3.19.9
 
 ### Patch Changes
