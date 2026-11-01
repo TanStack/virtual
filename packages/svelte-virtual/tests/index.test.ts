@@ -95,6 +95,39 @@ describe.each([
     }
   })
 
+  test('preserves updated options when the store is resubscribed', () => {
+    const onChange = vi.fn()
+    const nextOnChange = vi.fn()
+    const store = create({
+      count: 100,
+      estimateSize: () => 40,
+      getScrollElement: () => null,
+      onChange,
+    })
+    const unsubscribe = store.subscribe(() => {})
+    const virtualizer = get<TestVirtualizer>(store)
+    virtualizer.setOptions({ count: 110, onChange: nextOnChange })
+    unsubscribe()
+
+    const subscriber = vi.fn()
+    const resubscribe = store.subscribe(subscriber)
+
+    try {
+      expect(virtualizer.options.count).toBe(110)
+      expect(virtualizer.getTotalSize()).toBe(4400)
+      onChange.mockClear()
+      nextOnChange.mockClear()
+      subscriber.mockClear()
+      virtualizer.measure()
+
+      expect(onChange).not.toHaveBeenCalled()
+      expect(nextOnChange).toHaveBeenCalledExactlyOnceWith(virtualizer, false)
+      expect(subscriber).toHaveBeenCalledExactlyOnceWith(virtualizer)
+    } finally {
+      resubscribe()
+    }
+  })
+
   test('updates the store when no onChange was supplied', () => {
     const subscriber = vi.fn()
     const store = create({
