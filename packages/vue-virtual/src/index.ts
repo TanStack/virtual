@@ -35,10 +35,8 @@ function useVirtualizerBase<
 
   watch(
     () => unref(options).getScrollElement(),
-    (el) => {
-      if (el) {
-        virtualizer._willUpdate()
-      }
+    () => {
+      virtualizer._willUpdate()
     },
     {
       immediate: true,
