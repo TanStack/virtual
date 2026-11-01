@@ -1,5 +1,14 @@
 # @tanstack/svelte-virtual
 
+## 3.13.51
+
+### Patch Changes
+
+- [#1356](https://github.com/TanStack/virtual/pull/1356) [`600204a`](https://github.com/TanStack/virtual/commit/600204a41723dd124d9ee85541f79a1948f6ee5d) - Preserve updated virtualizer options when a Svelte store is resubscribed.
+
+- Updated dependencies [[`9d7ff67`](https://github.com/TanStack/virtual/commit/9d7ff6781767f1b9ea30ef69f42d72d8524ab75d)]:
+  - @tanstack/virtual-core@3.19.10
+
 ## 3.13.50
 
 ### Patch Changes

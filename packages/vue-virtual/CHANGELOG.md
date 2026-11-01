@@ -1,5 +1,14 @@
 # @tanstack/vue-virtual
 
+## 3.13.51
+
+### Patch Changes
+
+- [#1353](https://github.com/TanStack/virtual/pull/1353) [`6936d2f`](https://github.com/TanStack/virtual/commit/6936d2f7503afc6f8aeb2788e6dcc0d20ec0ccdf) - Detach scroll observers when the scroll element becomes null.
+
+- Updated dependencies [[`9d7ff67`](https://github.com/TanStack/virtual/commit/9d7ff6781767f1b9ea30ef69f42d72d8524ab75d)]:
+  - @tanstack/virtual-core@3.19.10
+
 ## 3.13.50
 
 ### Patch Changes
