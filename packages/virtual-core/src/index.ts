@@ -1071,9 +1071,21 @@ export class Virtualizer<
   }
 
   _willUpdate = () => {
-    const scrollElement = this.options.enabled
+    let scrollElement = this.options.enabled
       ? this.options.getScrollElement()
       : null
+
+    // A node that has not been inserted yet can belong to a document with no
+    // window: Solid clones its templates from a <template>, and a suspended
+    // <Suspense> keeps them there. Nothing can be observed through it, so
+    // wait until it is inserted (#1011).
+    if (
+      scrollElement &&
+      'ownerDocument' in scrollElement &&
+      !scrollElement.ownerDocument.defaultView
+    ) {
+      scrollElement = null
+    }
 
     if (this.scrollElement !== scrollElement) {
       this.cleanup()

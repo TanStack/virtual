@@ -251,6 +251,37 @@ test('cleanup resets the scroll flags on unmount', () => {
   expect(virtualizer.scrollDirection).toBe(null)
 })
 
+test('waits to observe a scroll element until it is inserted from a template', () => {
+  // Solid clones nodes from a <template>; a suspended <Suspense> keeps them
+  // in the template's document, which has no window (#1011).
+  const template = document.createElement('template')
+  template.innerHTML = '<div></div>'
+  const el = template.content.firstElementChild!.cloneNode() as HTMLDivElement
+  const observeElementRect = vi.fn((_instance, cb) => {
+    cb({ width: 400, height: 600 })
+    return () => {}
+  })
+
+  const virtualizer = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => el,
+    scrollToFn: vi.fn(),
+    observeElementRect,
+    observeElementOffset: () => () => {},
+  })
+
+  virtualizer._willUpdate()
+  expect(observeElementRect).not.toHaveBeenCalled()
+
+  document.body.appendChild(el)
+  virtualizer._willUpdate()
+
+  expect(observeElementRect).toHaveBeenCalledOnce()
+  expect(virtualizer.getVirtualItems()).toHaveLength(13)
+  el.remove()
+})
+
 test('observeElementOffset: cleanup drops the queued isScrolling reset', () => {
   vi.useFakeTimers()
   try {
