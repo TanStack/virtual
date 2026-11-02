@@ -1285,7 +1285,13 @@ export class Virtualizer<
           // reconcile not yet retired it) still gets the anchor sync.
         } else {
           this._followOffsetTarget(anchor.delta)
-          this._scrollToOffset(this.getScrollOffset())
+          // A consumer that commits the grown sizer after this call (Marko
+          // renders it in a later batch) has the write clamped to the old
+          // max, a prepend's height short of the anchor. Record it for the
+          // retry once the sizer has grown (#1267).
+          const target = this.getScrollOffset()
+          this._clampedAdjustment = this._clampedBy(target)
+          this._scrollToOffset(target)
         }
       } else {
         this.scrollToEnd({ behavior: anchor.behavior })
@@ -1326,11 +1332,13 @@ export class Virtualizer<
   // which covers consumers that size the container synchronously inside
   // `onChange` (direct DOM updates, flushSync renders — where no re-render
   // may follow at all), and from `_willUpdate` for consumers that size it
-  // during an asynchronous render. Both the clamped read-back and the
-  // absence of one leave `_clampedAdjustment` set, so timing does not matter.
+  // during an asynchronous render. An adapter whose framework commits the
+  // sizer after `_willUpdate` returns calls it once that commit lands (the
+  // Marko tags, #1267). Both the clamped read-back and the absence of one
+  // leave `_clampedAdjustment` set, so timing does not matter.
   // While the element cannot take a write (`_canWriteScroll`) the record is
   // kept for the next opportunity, the latest being the tail closing.
-  private _retryClampedAdjustment = () => {
+  _retryClampedAdjustment = () => {
     if (
       this._clampedAdjustment === null ||
       !this.scrollElement ||
