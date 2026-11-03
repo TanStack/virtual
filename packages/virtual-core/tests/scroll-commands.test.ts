@@ -1,9 +1,11 @@
 import { expect, test, vi } from 'vitest'
 import {
   Virtualizer,
+  elementScroll,
   observeElementOffset,
   observeElementRect,
 } from '../src/index'
+import { makeMockScrollElement } from './helpers'
 import type { VirtualizerOptions } from '../src/index'
 
 test('should not throw when component unmounts during scrollToIndex rAF loop', () => {
@@ -1946,3 +1948,81 @@ test('scrollToIndex reaches an index added since the last render once the sizer 
   expect(el.scrollTop).toBe(5500)
   expect(v.scrollState).toBeNull()
 })
+
+// A dir="rtl" horizontal scroller as browsers implement it: scrollLeft is 0 at
+// the start (the right edge) and negative towards the end, and a write outside
+// [-(scrollWidth - clientWidth), 0] is clamped. The scroll event arrives in
+// the next frame.
+function setupRtlScroller() {
+  const rafCallbacks: Array<FrameRequestCallback> = []
+  const mockWindow = {
+    requestAnimationFrame: (cb: FrameRequestCallback) => rafCallbacks.push(cb),
+    cancelAnimationFrame: () => {},
+    setTimeout: () => 0,
+    clearTimeout: () => {},
+  }
+  const el = makeMockScrollElement({
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollWidth: 10000,
+    clientWidth: 500,
+    scrollHeight: 120,
+    clientHeight: 120,
+    offsetWidth: 500,
+    offsetHeight: 120,
+    ownerDocument: { defaultView: mockWindow },
+  })
+  el.scrollTo = ({ left }: ScrollToOptions) => {
+    el.scrollLeft = Math.min(
+      0,
+      Math.max(left!, el.clientWidth - el.scrollWidth),
+    )
+    rafCallbacks.push(() => el._dispatch('scroll'))
+  }
+  const v = new Virtualizer<HTMLDivElement, HTMLDivElement>({
+    count: 100,
+    horizontal: true,
+    isRtl: true,
+    estimateSize: () => 100,
+    getScrollElement: () => el,
+    scrollToFn: elementScroll,
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 500, height: 120 })
+      return () => {}
+    },
+    observeElementOffset,
+  })
+  v._willUpdate()
+  v.getVirtualItems()
+  const settle = () => {
+    for (let i = 0; i < 10 && rafCallbacks.length > 0; i++) {
+      rafCallbacks.splice(0).forEach((cb) => cb(0))
+    }
+  }
+  return { v, el, settle }
+}
+
+test.each([
+  {
+    command: 'scrollToIndex',
+    run: (v: Virtualizer<any, any>) => v.scrollToIndex(50, { align: 'start' }),
+  },
+  {
+    command: 'scrollToOffset',
+    run: (v: Virtualizer<any, any>) => v.scrollToOffset(5000),
+  },
+  { command: 'scrollBy', run: (v: Virtualizer<any, any>) => v.scrollBy(5000) },
+])(
+  'isRtl: $command moves a horizontal element with the default elementScroll',
+  ({ run }) => {
+    const { v, el, settle } = setupRtlScroller()
+
+    run(v)
+    settle()
+
+    expect(el.scrollLeft).toBe(-5000)
+    expect(v.scrollOffset).toBe(5000)
+    expect(v.getVirtualItems()[0]!.index).toBeLessThanOrEqual(50)
+    expect(v.getVirtualItems().at(-1)!.index).toBeGreaterThanOrEqual(54)
+  },
+)

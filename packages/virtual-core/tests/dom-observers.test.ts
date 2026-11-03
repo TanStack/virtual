@@ -49,6 +49,61 @@ test('elementScroll: uses left when horizontal is true', () => {
   expect(scrollTo).toHaveBeenCalledWith({ left: 100, behavior: 'auto' })
 })
 
+// In a right-to-left element scrollLeft runs from 0 down to negative values,
+// which is why observeElementOffset negates it under isRtl. The write has to
+// convert back, or the browser clamps the positive value to 0.
+test.each([
+  { adjustments: 0, left: -100 },
+  { adjustments: 25, left: -125 },
+  { adjustments: -25, left: -75 },
+])(
+  'elementScroll: writes a negative left when horizontal and isRtl (adjustments: $adjustments)',
+  ({ adjustments, left }) => {
+    const scrollEl = document.createElement('div')
+    const scrollTo = vi.fn()
+    scrollEl.scrollTo = scrollTo
+    elementScroll(
+      100,
+      { adjustments, behavior: 'auto' },
+      makeBaseInstance(scrollEl, { horizontal: true, isRtl: true }) as any,
+    )
+    expect(scrollTo).toHaveBeenCalledWith({ left, behavior: 'auto' })
+  },
+)
+
+test('elementScroll: isRtl does not change a vertical write', () => {
+  const scrollEl = document.createElement('div')
+  const scrollTo = vi.fn()
+  scrollEl.scrollTo = scrollTo
+  elementScroll(
+    100,
+    { behavior: 'auto' },
+    makeBaseInstance(scrollEl, { horizontal: false, isRtl: true }) as any,
+  )
+  expect(scrollTo).toHaveBeenCalledWith({ top: 100, behavior: 'auto' })
+})
+
+test('elementScroll: reading back its own RTL write gives the written offset', () => {
+  const scrollEl = document.createElement('div')
+  scrollEl.scrollTo = ((options: ScrollToOptions) => {
+    // A dir="rtl" scroller clamps scrollLeft to [-(scrollWidth - clientWidth), 0].
+    scrollEl.scrollLeft = Math.min(0, Math.max(-9500, options.left!))
+    scrollEl.dispatchEvent(new Event('scroll'))
+  }) as typeof scrollEl.scrollTo
+  const instance = makeObserveInstance(scrollEl, {
+    horizontal: true,
+    isRtl: true,
+  })
+  const cb = vi.fn()
+  const cleanup = observeElementOffset(instance as any, cb)
+
+  elementScroll(5000, { behavior: 'auto' }, instance as any)
+
+  expect(scrollEl.scrollLeft).toBe(-5000)
+  expect(cb).toHaveBeenLastCalledWith(5000, true)
+  cleanup?.()
+})
+
 test('windowScroll: calls scrollTo with top + behavior on the window', () => {
   const scrollTo = vi.fn()
   const win = { scrollTo }
@@ -65,6 +120,18 @@ test('windowScroll: applies adjustments + horizontal', () => {
     makeBaseInstance(win, { horizontal: true }) as any,
   )
   expect(scrollTo).toHaveBeenCalledWith({ left: 240, behavior: 'auto' })
+})
+
+// observeWindowOffset reads scrollX as is, so the window write stays positive.
+test('windowScroll: isRtl does not change a horizontal write', () => {
+  const scrollTo = vi.fn()
+  const win = { scrollTo }
+  windowScroll(
+    250,
+    { behavior: 'auto' },
+    makeBaseInstance(win, { horizontal: true, isRtl: true }) as any,
+  )
+  expect(scrollTo).toHaveBeenCalledWith({ left: 250, behavior: 'auto' })
 })
 
 test('elementScroll / windowScroll: no-op when scrollElement is null', () => {
