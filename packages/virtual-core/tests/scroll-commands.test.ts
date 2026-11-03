@@ -1930,3 +1930,19 @@ test('scrollToIndex reaches an index added since the last render', () => {
 
   expect(el.scrollTop).toBe(5500)
 })
+
+test('scrollToIndex reaches an index added since the last render once the sizer grows', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+
+  v.setOptions({ ...v.options, count: 120 })
+  v.scrollToIndex(110, { align: 'start' })
+  // The sizer still holds the old 100 rows, so the write stops at its max.
+  expect(el.scrollTop).toBe(4800)
+  scroll(4800, true)
+  el.scrollHeight = 6000
+  v._willUpdate()
+  settle()
+
+  expect(el.scrollTop).toBe(5500)
+  expect(v.scrollState).toBeNull()
+})
