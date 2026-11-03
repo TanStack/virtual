@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.19.11
+
+### Patch Changes
+
+- [#1363](https://github.com/TanStack/virtual/pull/1363) [`acaef5e`](https://github.com/TanStack/virtual/commit/acaef5ef7fc2ed86f10fad660b2e21c9285027b5) - fix(virtual-core): compute `getOffsetForIndex` (and the first write of `scrollToIndex`) from the current measurements, not from those of the last render
+
+- [#1291](https://github.com/TanStack/virtual/pull/1291) [`bd08fe5`](https://github.com/TanStack/virtual/commit/bd08fe5b4e798fb12f54ba1e28d31f15482e43a6) - Fix programmatic scrolling in horizontal RTL elements by converting logical offsets, including measurement adjustments, to negative DOM scroll offsets.
+
 ## 3.19.10
 
 ### Patch Changes
