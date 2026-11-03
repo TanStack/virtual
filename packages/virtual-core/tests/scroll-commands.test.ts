@@ -1910,3 +1910,39 @@ test('an explicit scroll cancels a pending clamped retry', () => {
   v._willUpdate()
   expect(el.scrollTop).toBe(100)
 })
+
+test('scrollToIndex aims its first write at a size changed since the last render', () => {
+  const { v, el } = setupHandDrivenScroll()
+
+  // Item 0 is at the fold, so growing it does not move the scroll position.
+  v.resizeItem(0, 200)
+  v.scrollToIndex(10, { align: 'start' })
+
+  expect(el.scrollTop).toBe(650)
+})
+
+test('scrollToIndex reaches an index added since the last render', () => {
+  const { v, el } = setupHandDrivenScroll()
+  el.scrollHeight = 6000
+
+  v.setOptions({ ...v.options, count: 120 })
+  v.scrollToIndex(110, { align: 'start' })
+
+  expect(el.scrollTop).toBe(5500)
+})
+
+test('scrollToIndex reaches an index added since the last render once the sizer grows', () => {
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+
+  v.setOptions({ ...v.options, count: 120 })
+  v.scrollToIndex(110, { align: 'start' })
+  // The sizer still holds the old 100 rows, so the write stops at its max.
+  expect(el.scrollTop).toBe(4800)
+  scroll(4800, true)
+  el.scrollHeight = 6000
+  v._willUpdate()
+  settle()
+
+  expect(el.scrollTop).toBe(5500)
+  expect(v.scrollState).toBeNull()
+})

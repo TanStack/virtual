@@ -209,6 +209,51 @@ test('should not flushSync while measuring an item from its ref callback', () =>
   errorSpy.mockRestore()
 })
 
+test('getOffsetForIndex in a layout effect sees the rows measured in the same commit', () => {
+  const offsets: Array<number | undefined> = []
+
+  function ScrollOnMount() {
+    const parentRef = React.useRef<HTMLDivElement>(null)
+    const virtualizer = useVirtualizer({
+      count: 100,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 50,
+      observeElementRect: (_, cb) => cb({ height: 200, width: 200 }),
+      measureElement: () => 100,
+    })
+    const items = virtualizer.getVirtualItems()
+
+    // The rows' ref callbacks have measured them by the time this runs: React
+    // attaches a component's child refs before running its layout effects.
+    React.useLayoutEffect(() => {
+      if (items.length > 0 && offsets.length === 0) {
+        offsets.push(virtualizer.getOffsetForIndex(3, 'start')?.[0])
+      }
+    })
+
+    return (
+      <div ref={parentRef} style={{ height: 200, overflow: 'auto' }}>
+        <div
+          style={{ height: virtualizer.getTotalSize(), position: 'relative' }}
+        >
+          {items.map((item) => (
+            <div
+              key={item.key}
+              data-index={item.index}
+              ref={virtualizer.measureElement}
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  render(<ScrollOnMount />)
+
+  // Rows 0-2 measured at 100px each, not their 50px estimates.
+  expect(offsets).toEqual([300])
+})
+
 // `directDomUpdates` rows rendered by a child component that re-renders on its
 // own — local state, context, a resolved Suspense boundary — commit without the
 // owner, so the owner's layout effect never positions them. With fixed-size

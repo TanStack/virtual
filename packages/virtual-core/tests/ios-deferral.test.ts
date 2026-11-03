@@ -178,17 +178,18 @@ test('iOS deferral: an absolute scroll command targets the layout and the hold m
 
     v.resizeItem(1, 100) // held too (finger still down)
     expect(v['_holdOffset']).toBe(100)
+    // Item 5 ends at 400 now that items 0 and 1 have grown by 50 each.
     v.scrollToIndex(5)
-    expect(scrollToFn.mock.calls.at(-1)![0]).toBe(250 - 100 + 50)
+    expect(scrollToFn.mock.calls.at(-1)![0]).toBe(400 - 100)
     scrollToFn.mockClear()
 
     // The finger lifts and the writes it ignored have no read-back, so the
-    // last command still owns the target: the flush writes it (300, which
+    // last command still owns the target: the flush writes it (400, which
     // the command wrote 100 short of), not the pre-command offset (290).
     touch('touchend')
     expireTouchTail()
     expect(scrollToFn).toHaveBeenCalledTimes(1)
-    expect(scrollToFn.mock.calls[0]![0]).toBe(300)
+    expect(scrollToFn.mock.calls[0]![0]).toBe(400)
     expect(v['_holdOffset']).toBe(0)
     scroll(scrollToFn.mock.calls[0]![0], false)
     expect(v['_holdOffset']).toBe(0)
@@ -1438,7 +1439,7 @@ test('#1250: a scrollToIndex with no target leaves the fling running and the hel
     // emptied), so scrollToIndex writes nothing. Nothing stopped the fling,
     // so the tail stays open. The held correction is already in
     // `scrollOffset` and stays for the flush.
-    v.measurementsCache = []
+    vi.spyOn(v, 'getOffsetForIndex').mockReturnValueOnce(undefined)
     v.scrollToIndex(5)
     expect(scrollToFn).not.toHaveBeenCalled()
     expect(v['_holdOffset']).toBe(50)
