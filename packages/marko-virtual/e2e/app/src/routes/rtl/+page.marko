@@ -11,7 +11,7 @@
       overscan=5
       horizontal=true
       isRtl=true
-      getScrollElement=() => scrollEl()
+      getScrollElement=(): HTMLDivElement | null => scrollEl()
     />
     <button data-testid="scroll-50" onClick() { v.scrollToIndex(50, { align: "start" }) }>
       Scroll to column 50
