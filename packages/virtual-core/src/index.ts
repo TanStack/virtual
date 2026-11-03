@@ -2376,7 +2376,9 @@ export class Virtualizer<
     const size = this.getSize()
     const scrollOffset = this.getScrollOffset()
 
-    const item = this.measurementsCache[index]
+    // Not `measurementsCache`: that field is only rebuilt by getMeasurements,
+    // so it lags a size change until the next render reads the items.
+    const item = this.getMeasurements()[index]
     if (!item) return
 
     if (align === 'auto') {

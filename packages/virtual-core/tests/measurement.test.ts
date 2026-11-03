@@ -264,6 +264,70 @@ test('getMeasurements memo should return new array reference after resizeItem', 
   expect(b[0]!.size).toBe(100)
 })
 
+// The public reads must agree with each other between a size change and the
+// next render, which is the first thing to rebuild the measurements: an
+// adapter that re-renders asynchronously (React without flushSync) has not
+// rendered yet when an event handler or a layout effect calls into the
+// instance.
+
+test.each([
+  {
+    change: 'resizeItem',
+    apply: (v: Virtualizer<any, any>) => v.resizeItem(0, 200),
+    offset: 700,
+  },
+  {
+    change: 'measure',
+    apply: (v: Virtualizer<any, any>) => v.measure(),
+    offset: 500,
+  },
+])(
+  'getOffsetForIndex reflects $change made since the last render',
+  ({ apply, offset }) => {
+    const el = {
+      scrollTop: 0,
+      scrollHeight: 10000,
+      clientHeight: 200,
+      ownerDocument: { defaultView: null },
+    } as unknown as HTMLDivElement
+    const virtualizer = new Virtualizer({
+      count: 100,
+      estimateSize: () => 50,
+      getScrollElement: () => el,
+      scrollToFn: vi.fn(),
+      observeElementRect: (_instance, cb) => {
+        cb({ width: 400, height: 200 })
+      },
+      observeElementOffset: (_instance, cb) => {
+        cb(0, false)
+      },
+    })
+    virtualizer._willUpdate()
+    virtualizer.resizeItem(1, 100)
+    virtualizer.getVirtualItems()
+
+    apply(virtualizer)
+
+    // Read first: any other read rebuilds the measurements and hides it.
+    expect(virtualizer.getOffsetForIndex(10, 'start')?.[0]).toBe(offset)
+    expect(virtualizer.getVirtualItemForOffset(offset)?.index).toBe(10)
+  },
+)
+
+test('getOffsetForIndex reflects a ResizeObserver measurement before the render it schedules', () => {
+  // onChange only schedules the render, as React's adapter does for a
+  // notify that did not move the scroll position.
+  const { virtualizer, sizes, deliver } = setupResizeBatch(() => {})
+
+  // Item 5 (500..600) is below the fold at offset 450: no scroll adjustment.
+  sizes.set(5, 160)
+  deliver([5])
+
+  expect(virtualizer.getOffsetForIndex(8, 'start')?.[0]).toBe(860)
+  expect(virtualizer.getVirtualItemForOffset(860)?.index).toBe(8)
+  expect(virtualizer.getTotalSize()).toBe(1960)
+})
+
 // ─── elementsCache leak: disconnected node cleanup ───────────────────────────
 
 test('RO callback should remove disconnected node from elementsCache', () => {
