@@ -1,5 +1,12 @@
 # @tanstack/marko-virtual
 
+## 3.16.12
+
+### Patch Changes
+
+- Updated dependencies [[`acaef5e`](https://github.com/TanStack/virtual/commit/acaef5ef7fc2ed86f10fad660b2e21c9285027b5), [`bd08fe5`](https://github.com/TanStack/virtual/commit/bd08fe5b4e798fb12f54ba1e28d31f15482e43a6)]:
+  - @tanstack/virtual-core@3.19.11
+
 ## 3.16.11
 
 ### Patch Changes
