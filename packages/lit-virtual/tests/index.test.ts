@@ -113,3 +113,76 @@ test('should render virtual items', async () => {
     'Element did not render virtual items',
   )
 })
+
+@customElement('reconnect-list')
+class ReconnectList extends LitElement {
+  private scrollElementRef: Ref<HTMLDivElement> = createRef()
+
+  private virtualizerController: VirtualizerController<HTMLDivElement, Element>
+
+  constructor() {
+    super()
+    this.virtualizerController = new VirtualizerController(this, {
+      getScrollElement: () => this.scrollElementRef.value,
+      count,
+      estimateSize: () => 50,
+      observeElementRect: (_, cb) => {
+        cb({ height, width })
+      },
+    })
+  }
+
+  render() {
+    const virtualizer = this.virtualizerController.getVirtualizer()
+
+    return html`
+      <div class="scroll-container" ${ref(this.scrollElementRef)}>
+        ${repeat(
+          virtualizer.getVirtualItems(),
+          (virtualRow) => virtualRow.key,
+          (virtualRow) =>
+            html`<div data-index="${virtualRow.index}">
+              Row ${virtualRow.index}
+            </div>`,
+        )}
+      </div>
+    `
+  }
+}
+
+test('keeps updating after the host is removed and reinserted', async () => {
+  const el = await fixture(html`<reconnect-list></reconnect-list>`)
+  await elementUpdated(el)
+  await waitUntil(
+    () => el.shadowRoot.querySelector('[data-index="0"]'),
+    'Element did not render the initial rows',
+  )
+  // Let the rect observer's follow-up update finish so the host has no
+  // pending change when it is removed. A pending update would call
+  // `hostUpdated` after reinsertion and hide the bug.
+  await (el as ReconnectList).updateComplete
+  await (el as ReconnectList).updateComplete
+  expect(el.shadowRoot.querySelector('[data-index="20"]')).toBeNull()
+
+  const parent = el.parentNode
+  if (parent == null) {
+    throw new Error('host has no parent')
+  }
+  const next = el.nextSibling
+  el.remove()
+  parent.insertBefore(el, next)
+  await (el as ReconnectList).updateComplete
+
+  const scroller = el.shadowRoot.querySelector('.scroll-container')
+  if (!(scroller instanceof HTMLElement)) {
+    throw new Error('scroll container was not rendered')
+  }
+  scroller.scrollTop = 1000
+  scroller.dispatchEvent(new Event('scroll'))
+
+  await waitUntil(
+    () => el.shadowRoot.querySelector('[data-index="20"]'),
+    'Virtualizer did not update after the host was reattached',
+  )
+  expect(el.shadowRoot.querySelector('[data-index="0"]')).toBeNull()
+})

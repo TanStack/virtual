@@ -80,7 +80,7 @@ The sync parameter indicates whether scrolling is currently in progress. It is `
 overscan?: number
 ```
 
-The number of items to render above and below the visible area. Increasing this number will increase the amount of time it takes to render the virtualizer, but might decrease the likelihood of seeing slow-rendering blank items at the top and bottom of the virtualizer when scrolling. The default value is `1`.
+The number of items to render above and below the visible area. Increasing this number will increase the amount of time it takes to render the virtualizer, but might decrease the likelihood of seeing slow-rendering blank items at the top and bottom of the virtualizer when scrolling. The default value is `1`. When `lanes` is greater than `1`, overscan counts whole rows of `lanes` items, so every lane renders the same number of extra items.
 
 ### `horizontal`
 
@@ -146,7 +146,7 @@ This function is passed the index of each item and should return a unique key fo
 rangeExtractor?: (range: Range) => number[]
 ```
 
-This function receives visible range indexes and should return array of indexes to render. This is useful if you need to add or remove items from the virtualizer manually regardless of the visible range, eg. rendering sticky items, headers, footers, etc. The default range extractor implementation will return the visible range indexes and is exported as `defaultRangeExtractor`.
+This function receives visible range indexes and should return array of indexes to render. This is useful if you need to add or remove items from the virtualizer manually regardless of the visible range, eg. rendering sticky items, headers, footers, etc. The default range extractor implementation will return the visible range indexes and is exported as `defaultRangeExtractor`. When `lanes` is greater than `1`, `range.lanes` holds the lane count and `defaultRangeExtractor` applies `overscan` as whole rows; a custom extractor that computes its own indexes should do the same to keep lanes aligned.
 
 ### `scrollToFn`
 
@@ -176,6 +176,8 @@ observeElementRect: (
 ```
 
 An optional function that if provided is called when the scrollElement changes and should implement the initial measurement and continuous monitoring of the scrollElement's `Rect` (an object with `width` and `height`). It's called with the instance (which also gives you access to the scrollElement via `instance.scrollElement`. Built-in implementations are exported as `observeElementRect` and `observeWindowRect` which are automatically configured for you by your framework adapter's exported functions like `useVirtualizer` or `useWindowVirtualizer`.
+
+The built-in `observeElementRect` measures the visible client area (`clientWidth` and `clientHeight`), excluding borders and scrollbars. Custom implementations should report the same viewport dimensions.
 
 ### `observeElementOffset`
 
@@ -459,6 +461,16 @@ Scrolls the virtualizer to the end of the content. For vertical lists this is th
 
 This is useful for "Jump to latest" controls in chat and log views.
 
+### `cancelScroll`
+
+```tsx
+cancelScroll: () => void
+```
+
+Cancels an in-flight `scrollToIndex`, `scrollToOffset`, `scrollBy` or `scrollToEnd`. After those calls, the virtualizer keeps correcting toward the target for a short time while items are measured. Call `cancelScroll` when the user starts their own scroll (for example from `wheel`, `touchstart` or `keydown` handlers) so the viewport stays where the user takes it.
+
+The current scroll position is not changed. It does nothing when no scroll is in flight.
+
 ### `getDistanceFromEnd`
 
 ```tsx
@@ -582,13 +594,15 @@ virtualizer.shouldAdjustScrollPositionOnItemSizeChange = (
   delta,
   instance,
 ) => {
-  return item.start < instance.getScrollOffset() + instance.scrollAdjustments
+  return item.start < (instance.scrollOffset ?? 0)
 }
 ```
 
 The callback receives the resized `item`, the size `delta`, and the `instance`; return `true` to apply the scroll adjustment, `false` to skip it.
 
 On iOS WebKit, scroll-position writes are deferred regardless of this callback while a finger is on screen, during momentum-scroll, and during elastic-overscroll bounce. The cumulative delta is flushed in a single write once the scroll settles, preserving iOS's native momentum physics.
+
+On iOS 27 and later a write no longer stops a fling but is overridden by it within a frame, so a `scrollToIndex`, `scrollToOffset` or `scrollToEnd` issued during a fling is written once the fling ends (about 150ms after its last frame) rather than being lost; a drag before then cancels it, a tap does not.
 
 ### `isScrolling`
 
@@ -613,3 +627,7 @@ scrollOffset: number
 ```
 
 This option represents the current scroll position along the scrolling axis. It is measured in pixels from the starting point of the scrollable area.
+
+It is a position in the list's layout, and it stays consistent with `getOffsetForIndex`, the argument to `scrollToOffset`, and `initialOffset`: restoring a saved value returns to the same layout position. That is the same item only while the items and sizes before it are unchanged; to restore across changes, pair it with `takeSnapshot()` and `initialMeasurementsCache` as described above, or scroll to the item with `scrollToIndex`.
+
+While a scroll correction is held, because a write to the element is impossible at that moment (a touch gesture or its momentum on iOS, or the element rubber-banding past an edge), `getVirtualItems()` and `getTotalSize()` describe what is rendered, shifted by the held amount so the rows on screen do not move, while `scrollOffset` keeps the layout position. The hold ends with a single write once the element can take it. Prefer `getVirtualItems()` positions over `item.start - scrollOffset` for where a row sits in the viewport, since that difference is off by the held amount for the length of the gesture or bounce.

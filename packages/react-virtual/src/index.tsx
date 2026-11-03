@@ -9,7 +9,11 @@ import {
   observeWindowRect,
   windowScroll,
 } from '@tanstack/virtual-core'
-import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
+import type {
+  PartialKeys,
+  VirtualItem,
+  VirtualizerOptions,
+} from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
 
@@ -129,6 +133,27 @@ function useVirtualizerBase<
     }
   }
 
+  // Writes one item's main-axis position to its element. Idempotent — guarded
+  // by lastPositions.
+  const applyItemPosition = (
+    instance: Virtualizer<TScrollElement, TItemElement>,
+    item: VirtualItem,
+    el: HTMLElement,
+  ) => {
+    const state = directRef.current
+    const horizontal = !!instance.options.horizontal
+    const next = item.start - instance.options.scrollMargin
+    if (state.lastPositions.get(el) === next) return
+    state.lastPositions.set(el, next)
+    if (state.mode === 'transform') {
+      el.style.transform = horizontal
+        ? `translate3d(${next}px, 0, 0)`
+        : `translate3d(0, ${next}px, 0)`
+    } else {
+      el.style[horizontal ? 'left' : 'top'] = `${next}px`
+    }
+  }
+
   // Writes container size + item positions to the DOM. Idempotent — guarded
   // by lastSize / lastPositions. Called from onChange (covers scroll-driven
   // updates) and from a layout effect (covers post-render commits when refs
@@ -141,24 +166,9 @@ function useVirtualizerBase<
 
     applyContainerSize(instance)
 
-    const horizontal = !!instance.options.horizontal
-    const useTransform = state.mode === 'transform'
-    const posAxis = horizontal ? 'left' : 'top'
-    const scrollMargin = instance.options.scrollMargin
-    const items = instance.getVirtualItems()
-    for (const item of items) {
-      const next = item.start - scrollMargin
+    for (const item of instance.getVirtualItems()) {
       const el = instance.elementsCache.get(item.key) as HTMLElement | undefined
-      if (!el) continue
-      if (state.lastPositions.get(el) === next) continue
-      state.lastPositions.set(el, next)
-      if (useTransform) {
-        el.style.transform = horizontal
-          ? `translate3d(${next}px, 0, 0)`
-          : `translate3d(0, ${next}px, 0)`
-      } else {
-        el.style[posAxis] = `${next}px`
-      }
+      if (el) applyItemPosition(instance, item, el)
     }
   }
 
@@ -220,17 +230,27 @@ function useVirtualizerBase<
       } finally {
         measuringFromRef.current = false
       }
+      // A row can mount in a commit that does not include this component — a
+      // child re-rendering on its own state, context or a resolved Suspense
+      // boundary — which the `applyDirectStyles` effect below never sees.
+      // Position it as it registers; a row the effect does cover is skipped by
+      // `lastPositions`.
+      const state = directRef.current
+      if (node !== null && state.enabled && state.container) {
+        const item = v.measurementsCache[v.indexFromElement(node)]
+        if (item) applyItemPosition(v, item, node as unknown as HTMLElement)
+      }
     }
     return Object.assign(v, {
       containerRef: (node: HTMLElement | null) => {
         const state = directRef.current
         state.container = node
         state.lastSize = null
-        if (node && state.enabled) {
-          const total = v.getTotalSize()
-          state.lastSize = total
-          const axis = v.options.horizontal ? 'width' : 'height'
-          node.style[axis] = `${total}px`
+        // Sizes the container, and positions the rows that mounted with it:
+        // React attaches children's refs before their parent's, so they have
+        // already registered but found no container to be positioned in.
+        if (node !== null) {
+          applyDirectStyles(v)
         }
       },
     })

@@ -1,5 +1,33 @@
 import { expect, test } from '@playwright/test'
 
+for (const deferred of [false, true]) {
+  test(`re-pins after a cached row grows (deferred observer: ${deferred})`, async ({
+    page,
+  }) => {
+    await page.goto(`/cached-measurements/${deferred ? '?raf' : ''}`)
+    const scroller = page.locator('#scroll-container')
+    await expect
+      .poll(() => scroller.evaluate((el) => el.scrollHeight))
+      .toBe(980)
+    await page.getByRole('button', { name: 'Scroll to end' }).click()
+    await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBe(780)
+    await expect(page.getByTestId('scrolling')).toHaveText('idle')
+
+    await page.getByRole('button', { name: 'Grow and pin' }).click()
+
+    await expect
+      .poll(() => scroller.evaluate((el) => el.scrollHeight))
+      .toBe(1010)
+    await expect
+      .poll(() =>
+        scroller.evaluate(
+          (el) => el.scrollHeight - el.scrollTop - el.clientHeight,
+        ),
+      )
+      .toBe(0)
+  })
+}
+
 test('preserves item sizes when list is hidden with useCachedMeasurements', async ({
   page,
 }) => {
