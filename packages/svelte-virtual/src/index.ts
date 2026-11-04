@@ -7,6 +7,7 @@ import {
   observeWindowRect,
   windowScroll,
 } from '@tanstack/virtual-core'
+import { tick } from 'svelte'
 import { derived, writable } from 'svelte/store'
 import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 import type { Readable, Writable } from 'svelte/store'
@@ -64,7 +65,17 @@ function createVirtualizerBase<
 
   virtualizerWritable = writable(virtualizer, () => {
     setOptions({})
-    return virtualizer._didMount()
+    let subscribed = true
+    // The store is usually subscribed before `bind:this` assigns the scroll
+    // element, so read it again once Svelte has updated the DOM.
+    tick().then(() => {
+      if (subscribed) virtualizer._willUpdate()
+    })
+    const cleanup = virtualizer._didMount()
+    return () => {
+      subscribed = false
+      cleanup()
+    }
   })
 
   return derived(virtualizerWritable, (instance) =>
