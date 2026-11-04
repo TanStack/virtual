@@ -636,13 +636,15 @@ export class Virtualizer<
   // pending, any other scroll event (a real gesture) cancels it.
   private _clampedAdjustment: { target: number; maxAtWrite: number } | null =
     null
+  // false vetoes either resize correction; undefined retains the complete default policy.
+  // This does not govern keyed structural reanchoring in setOptions/_willUpdate.
   shouldAdjustScrollPositionOnItemSizeChange:
     | undefined
     | ((
         item: VirtualItem,
         delta: number,
         instance: Virtualizer<TScrollElement, TItemElement>,
-      ) => boolean)
+      ) => boolean | undefined)
   elementsCache = new Map<Key, TItemElement>()
   // Set while a ResizeObserver callback measures its entries; `resizeItem`
   // records the pending notify here instead of firing it per entry.
@@ -2087,22 +2089,20 @@ export class Virtualizer<
           this.scrollDirection !== 'backward'
       const shouldAdjustScroll =
         !isSmoothScroll(this.scrollState) &&
-        (this.shouldAdjustScrollPositionOnItemSizeChange !== undefined
-          ? this.shouldAdjustScrollPositionOnItemSizeChange(
-              // The callback expects a VirtualItem; build one lazily only
-              // when the consumer actually supplied a custom predicate.
-              this.measurementsCache[index] ?? {
-                index,
-                key,
-                start: itemStart,
-                size: cachedSize,
-                end: itemStart + cachedSize,
-                lane: 0,
-              },
-              delta,
-              this,
-            )
-          : defaultShouldAdjust)
+        (this.shouldAdjustScrollPositionOnItemSizeChange?.(
+          // Undefined delegates to the complete default policy, including end anchoring.
+          // A false result vetoes both resize-correction branches before either writes.
+          this.measurementsCache[index] ?? {
+            index,
+            key,
+            start: itemStart,
+            size: cachedSize,
+            end: itemStart + cachedSize,
+            lane: 0,
+          },
+          delta,
+          this,
+        ) ?? (wasAtEnd || defaultShouldAdjust))
 
       if (this.pendingMin === null || index < this.pendingMin) {
         this.pendingMin = index
@@ -2115,7 +2115,7 @@ export class Virtualizer<
       // target lands where it was written and the delta is not applied.
       let adjustedSync = false
       if (!this._awaitingCommandReadBack()) {
-        if (wasAtEnd) {
+        if (shouldAdjustScroll && wasAtEnd) {
           adjustedSync = this.applyScrollAdjustment(
             this._getLayoutTotalSize() - prevTotalSize,
           )
