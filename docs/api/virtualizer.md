@@ -556,7 +556,7 @@ Measures the element using your configured `measureElement` virtualizer option. 
 >...</div>
 ```
 
-By default the `measureElement` virtualizer option is configured to measure elements with `getBoundingClientRect()`.
+By default, `measureElement` uses `ResizeObserverEntry.borderBoxSize` when available. Without an observer entry, it reuses the cached size if one exists. Otherwise, it reads `offsetWidth` for horizontal lists or `offsetHeight` for vertical lists. With `useCachedMeasurements` enabled, it uses the cached size or `estimateSize` without measuring the DOM.
 
 ### `resizeItem`
 
