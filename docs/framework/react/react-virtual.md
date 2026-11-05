@@ -170,12 +170,12 @@ beforeEach(() => {
   )
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(
     function (this: HTMLElement) {
-      return this.hasAttribute('data-index') ? 40 : 0
+      return this.matches('[data-testid="scroller"] [data-index]') ? 40 : 0
     },
   )
   vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(
     function (this: HTMLElement) {
-      return this.hasAttribute('data-index') ? 320 : 0
+      return this.matches('[data-testid="scroller"] [data-index]') ? 320 : 0
     },
   )
 })
@@ -185,6 +185,6 @@ afterEach(() => {
 })
 ```
 
-Scope the mocks to your list so unrelated elements keep their default measurements. Restore the getters after each test to avoid affecting other tests. If your test environment does not provide `ResizeObserver`, supply a mock or polyfill as well. To test later item resizes, deliver `ResizeObserver` entries with the corresponding `borderBoxSize`.
+Scope the mocks to your list so unrelated elements keep their default measurements. The item selectors use the default `data-index` attribute. If you set a custom `indexAttribute`, replace `data-index` with that attribute. Restore the getters after each test to avoid affecting other tests. If your test environment does not provide `ResizeObserver`, supply a mock or polyfill as well. To test later item resizes, deliver `ResizeObserver` entries with the corresponding `borderBoxSize`.
 
 Alternatively, pass a custom [`observeElementRect`](../../api/virtualizer.md#observeelementrect) to report a viewport size without mocking its DOM getters. For dynamically measured items, you can also pass a custom [`measureElement`](../../api/virtualizer.md#measureelement). Use browser tests when you need real layout, scrolling, or resize behavior.
