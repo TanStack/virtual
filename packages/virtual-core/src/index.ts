@@ -822,6 +822,7 @@ export class Virtualizer<
     let anchor: [Key, number] | null = null
     let followOnAppend: ScrollBehavior | null = null
     let edgeKeysChanged = false
+    let leadOffsetChanged = false
 
     if (
       prevOptions !== undefined &&
@@ -839,6 +840,9 @@ export class Virtualizer<
       const prevFirstKey = prevCount > 0 ? getPreviousKey(0) : null
       const prevLastKey = prevCount > 0 ? getPreviousKey(prevCount - 1) : null
       const didCountChange = nextCount !== prevCount
+      const didLeadOffsetChange =
+        merged.paddingStart !== prevOptions.paddingStart ||
+        merged.scrollMargin !== prevOptions.scrollMargin
       const didEdgeKeysChange =
         didCountChange ||
         (prevCount > 0 &&
@@ -846,8 +850,12 @@ export class Virtualizer<
           (merged.getItemKey(0) !== prevFirstKey ||
             merged.getItemKey(nextCount - 1) !== prevLastKey))
 
-      if (didEdgeKeysChange) {
-        edgeKeysChanged = true
+      if (didEdgeKeysChange || didLeadOffsetChange) {
+        if (didEdgeKeysChange) {
+          edgeKeysChanged = true
+        } else {
+          leadOffsetChanged = true
+        }
         const item =
           prevCount > 0
             ? (this.getVirtualItemForOffset(this.getScrollOffset()) ??
@@ -858,27 +866,30 @@ export class Virtualizer<
           anchor = [item.key, this.getScrollOffset() - item.start]
         }
 
-        const behavior =
-          merged.followOnAppend === true
-            ? 'auto'
-            : merged.followOnAppend || null
+        if (didEdgeKeysChange) {
+          const behavior =
+            merged.followOnAppend === true
+              ? 'auto'
+              : merged.followOnAppend || null
 
-        if (
-          behavior &&
-          nextCount > 0 &&
-          this.isAtEnd(prevOptions.scrollEndThreshold) &&
-          (prevCount === 0 || merged.getItemKey(nextCount - 1) !== prevLastKey)
-        ) {
           if (
-            nextCount > prevCount ||
-            isAppendWithTrim(
-              prevCount,
-              nextCount,
-              getPreviousKey,
-              merged.getItemKey,
-            )
+            behavior &&
+            nextCount > 0 &&
+            this.isAtEnd(prevOptions.scrollEndThreshold) &&
+            (prevCount === 0 ||
+              merged.getItemKey(nextCount - 1) !== prevLastKey)
           ) {
-            followOnAppend = behavior
+            if (
+              nextCount > prevCount ||
+              isAppendWithTrim(
+                prevCount,
+                nextCount,
+                getPreviousKey,
+                merged.getItemKey,
+              )
+            ) {
+              followOnAppend = behavior
+            }
           }
         }
       }
@@ -894,6 +905,8 @@ export class Virtualizer<
     if (edgeKeysChanged) {
       this.pendingMin = 0
       this.itemSizeCacheVersion++
+    } else if (leadOffsetChanged) {
+      this.pendingMin = 0
     }
 
     // Eagerly adjust scrollOffset so the virtualizer computes the correct
@@ -941,15 +954,22 @@ export class Virtualizer<
     if (followOnAppend) {
       this.pendingScrollAnchor = { kind: 'follow', behavior: followOnAppend }
     } else if (anchorDelta !== null) {
+      const prevDelta =
+        this.pendingScrollAnchor?.kind === 'anchor'
+          ? this.pendingScrollAnchor.delta
+          : 0
+      const nextDelta = prevDelta + anchorDelta
       if (this._canWriteScroll()) {
-        this.pendingScrollAnchor = { kind: 'anchor', delta: anchorDelta }
+        this.pendingScrollAnchor =
+          nextDelta === 0 ? null : { kind: 'anchor', delta: nextDelta }
       } else {
+        this.pendingScrollAnchor = null
         // The element cannot take the write (a touch owns it on iOS, or it is
         // overscrolled). Hold the delta instead: this render already exposes
         // the rows and the total shifted back by it, so the reader's row
         // stays put, and the flush writes it once a write is possible.
-        this._holdOffset += anchorDelta
-        this._followOffsetTarget(anchorDelta)
+        this._holdOffset += nextDelta
+        this._followOffsetTarget(nextDelta)
       }
     }
   }
@@ -1298,7 +1318,17 @@ export class Virtualizer<
           // reconcile not yet retired it) still gets the anchor sync.
         } else {
           this._followOffsetTarget(anchor.delta)
-          this._scrollToOffset(this.getScrollOffset())
+          const target = this.getScrollOffset()
+          const layoutMax = Math.max(
+            this._getLayoutTotalSize() +
+              this.options.scrollMargin -
+              this.getSize(),
+            0,
+          )
+          if (target <= layoutMax + 0.5) {
+            this._clampedAdjustment = this._clampedBy(target)
+          }
+          this._scrollToOffset(target)
         }
       } else {
         this.scrollToEnd({ behavior: anchor.behavior })
