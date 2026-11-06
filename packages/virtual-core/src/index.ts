@@ -556,10 +556,12 @@ export class Virtualizer<
   // last rendered (`_willUpdate` runs once the adapter has rendered), taken
   // to layout coordinates with the report: measurements and a held
   // correction move the layout's own end before the element has the new size.
+  // The initial offset counts as a report, against the end it is first
+  // ranged with (a null end until then).
   private _renderedListEnd = Infinity
   private _rangeListEnd = -Infinity
-  private _reportedOffset = NaN
-  private _reportedListEnd = Infinity
+  private _reportedOffset: number | null = null
+  private _reportedListEnd: number | null = null
   // The touch gesture in progress (see `IosGesture`). Its tail closing on
   // its own makes a write possible again: the last momentum frame may have
   // come before the timer. The hold is released first, so a command that
@@ -1080,7 +1082,7 @@ export class Virtualizer<
     // its next touch cycle.
     this._holdOffset = 0
     this._reportedOverscroll = false
-    this._reportedOffset = NaN
+    this._reportedOffset = null
     // (The gesture was ended with its listeners, in the unsubs above.)
     this._clampedAdjustment = null
     // A write to the old element will never be read back.
@@ -1608,11 +1610,14 @@ export class Virtualizer<
       return 0
     }
 
-    this.scrollOffset =
-      this.scrollOffset ??
-      (typeof this.options.initialOffset === 'function'
-        ? this.options.initialOffset()
-        : this.options.initialOffset)
+    if (this.scrollOffset === null) {
+      this.scrollOffset =
+        typeof this.options.initialOffset === 'function'
+          ? this.options.initialOffset()
+          : this.options.initialOffset
+      this._reportedOffset = this.scrollOffset
+      this._reportedListEnd = null
+    }
 
     return this.scrollOffset
   }
@@ -1914,6 +1919,9 @@ export class Virtualizer<
       overscrolled,
     ) => {
       this._rangeListEnd = listEnd
+      if (reportedListEnd === null) {
+        this._reportedListEnd = reportedListEnd = listEnd
+      }
       if (measurements.length === 0 || outerSize === 0) {
         this.range = null
         return null

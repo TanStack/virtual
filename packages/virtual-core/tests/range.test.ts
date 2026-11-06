@@ -400,6 +400,23 @@ test('a list above the viewport in a shared scroll element keeps only its last r
   expect(virtualizer.getVirtualIndexes()).toEqual([74, 75, 76, 77, 78, 79, 80])
 })
 
+test('an initial offset past the list end in a shared scroll element keeps only the last rows', () => {
+  // The issue's core reproduction: no element, the position given up front.
+  const virtualizer = new Virtualizer({
+    count: 81,
+    estimateSize: () => 25,
+    overscan: 6,
+    scrollMargin: 100,
+    initialRect: { width: 300, height: 600 },
+    initialOffset: 2500,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  expect(virtualizer.getVirtualIndexes()).toEqual([74, 75, 76, 77, 78, 79, 80])
+})
+
 test('a list that shrinks after the element reported a position still renders its last viewport of rows', () => {
   const { virtualizer, options, report } = sharedScroller()
   // At rest at the end of the first list: 100 + 2025 - 600.
