@@ -1,3 +1,4 @@
+import { tick } from 'svelte'
 import { get } from 'svelte/store'
 import { describe, expect, test, vi } from 'vitest'
 import { createVirtualizer, createWindowVirtualizer } from '../src'
@@ -148,4 +149,34 @@ describe.each([
       unsubscribe()
     }
   })
+})
+
+test('createVirtualizer reads a scroll element bound after subscribing', async () => {
+  let scrollElement: Element | null = null
+  const subscriber = vi.fn()
+  const store = createVirtualizer<Element, Element>({
+    count: 100,
+    estimateSize: () => 40,
+    getScrollElement: () => scrollElement,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 400 })
+    },
+    observeElementOffset: () => {},
+    scrollToFn: () => {},
+  })
+  const unsubscribe = store.subscribe(subscriber)
+  const virtualizer = get(store)
+
+  try {
+    expect(virtualizer.getVirtualItems()).toHaveLength(0)
+
+    scrollElement = {} as Element
+    subscriber.mockClear()
+    await tick()
+
+    expect(virtualizer.getVirtualItems()).toHaveLength(11)
+    expect(subscriber).toHaveBeenCalledWith(virtualizer)
+  } finally {
+    unsubscribe()
+  }
 })
