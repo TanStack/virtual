@@ -513,3 +513,168 @@ test('#1218: first measurement of a spanning item still compensates', () => {
 
   expect(v.scrollOffset).toBe(before + 70)
 })
+
+// A sticky header / wrapping row whose measured size differs from the
+// estimate. The correction's own sync render (and the next ResizeObserver
+// delivery in the same broadcast) reads the layout box the write just
+// invalidated and reports the size we left, so the delta flips sign forever.
+function setupEchoList({
+  onChange,
+  measure,
+}: {
+  onChange?: (instance: Virtualizer<any, any>, sync: boolean) => void
+  measure?: (
+    element: HTMLElement,
+    entry: ResizeObserverEntry | undefined,
+  ) => number
+} = {}) {
+  const timers: Array<() => void> = []
+  const rafs: Array<FrameRequestCallback> = []
+  let roCallback: ResizeObserverCallback | null = null
+  const mockWindow = {
+    requestAnimationFrame: (cb: FrameRequestCallback) => {
+      rafs.push(cb)
+      return rafs.length
+    },
+    cancelAnimationFrame: () => {},
+    setTimeout: (fn: () => void) => {
+      timers.push(fn)
+      return timers.length
+    },
+    clearTimeout: () => {},
+    performance: { now: () => 0 },
+    ResizeObserver: class {
+      constructor(cb: ResizeObserverCallback) {
+        roCallback = cb
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  }
+  const el = {
+    scrollTop: 400,
+    scrollLeft: 0,
+    scrollHeight: 5000,
+    clientHeight: 200,
+    offsetHeight: 200,
+    ownerDocument: { defaultView: mockWindow },
+  }
+  const v = new Virtualizer({
+    count: 40,
+    estimateSize: () => 50,
+    getScrollElement: () => el as any,
+    scrollToFn: (offset, { adjustments = 0 } = {}) => {
+      el.scrollTop = offset + adjustments
+    },
+    measureElement: measure as any,
+    onChange,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 200 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(400, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v.getMeasurements()
+  const node = {
+    getAttribute: (name: string) => (name === 'data-index' ? '0' : null),
+    isConnected: true,
+    offsetHeight: 53,
+    offsetWidth: 400,
+  } as unknown as HTMLElement
+  const deliver = (blockSize: number) => {
+    roCallback!(
+      [
+        {
+          target: node,
+          borderBoxSize: [{ blockSize, inlineSize: 400 }],
+        } as unknown as ResizeObserverEntry,
+      ],
+      {} as ResizeObserver,
+    )
+  }
+  // setTimeout(0) releases the guard; two frames later the settled box is read.
+  const flushSettle = () => {
+    timers.splice(0).forEach((fn) => fn())
+    rafs.splice(0).forEach((fn) => fn(0))
+    rafs.splice(0).forEach((fn) => fn(0))
+  }
+  return { v, el, node, deliver, flushSettle }
+}
+
+test('#1252: a sticky row remeasured from the notify does not ping-pong the correction', () => {
+  let notifies = 0
+  const { v, el, node } = setupEchoList({
+    onChange: (instance, sync) => {
+      if (!sync) return
+      notifies++
+      if (notifies > 8) throw new Error('scroll correction loop')
+      // The box the correction just invalidated still reports the other size.
+      const size = instance.itemSizeCache.get(0)
+      instance.resizeItem(0, size === 53 ? 50 : 53)
+    },
+  })
+
+  v.measureElement(node)
+
+  expect(notifies).toBe(1)
+  expect(v.itemSizeCache.get(0)).toBe(53)
+  expect(v.scrollOffset).toBe(403)
+  expect(el.scrollTop).toBe(403)
+})
+
+test('#1252: the next observation in the same broadcast does not reverse the correction', () => {
+  const { v, el, node, deliver } = setupEchoList({
+    // Sync measure (no entry) matches the estimate, so only the observer
+    // deliveries move the scroll position.
+    measure: (_element, entry) => entry?.borderBoxSize?.[0]?.blockSize ?? 50,
+  })
+  v.measureElement(node)
+
+  deliver(53)
+  expect(v.scrollOffset).toBe(403)
+  expect(v.itemSizeCache.get(0)).toBe(53)
+
+  // Stale box from the write above: the size this row just left.
+  deliver(50)
+  expect(v.scrollOffset).toBe(403)
+  expect(el.scrollTop).toBe(403)
+  expect(v.itemSizeCache.get(0)).toBe(53)
+})
+
+test('#1252: the frame after an echo adopts the settled size once', () => {
+  let notifies = 0
+  const { v, el, node, flushSettle } = setupEchoList({
+    onChange: (instance, sync) => {
+      if (!sync) return
+      notifies++
+      if (notifies > 8) throw new Error('scroll correction loop')
+      const size = instance.itemSizeCache.get(0)
+      instance.resizeItem(0, size === 53 ? 50 : 53)
+    },
+  })
+  v.measureElement(node)
+  expect(v.scrollOffset).toBe(403)
+
+  // Layout has settled on the pre-correction size. One confirm, no loop.
+  node.offsetHeight = 50
+  flushSettle()
+
+  expect(notifies).toBe(2)
+  expect(v.itemSizeCache.get(0)).toBe(50)
+  expect(v.scrollOffset).toBe(400)
+  expect(el.scrollTop).toBe(400)
+})
+
+test('#1252: a later direct resize back to a previous size still applies', () => {
+  const { v } = makeAdjustmentVirtualizer(400)
+  v.resizeItem(0, 80)
+  // Same turn, but not an echo of a notify or an observer broadcast.
+  v.resizeItem(0, 50)
+  expect(v.getMeasurements()[0]!.size).toBe(50)
+  expect(v.scrollOffset).toBe(400)
+})

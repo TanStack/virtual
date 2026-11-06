@@ -654,6 +654,28 @@ export class Virtualizer<
   // Set while a ResizeObserver callback measures its entries; `resizeItem`
   // records the pending notify here instead of firing it per entry.
   private _resizeBatch: { sync: boolean; notify?: boolean } | null = null
+  // The size an item just left, for as long as a correction of that change
+  // can still be echoing. A sticky header or a wrapping row, remeasured off
+  // a layout box that the correction itself just invalidated, reports the
+  // size it had before the write. That applies the opposite delta, which
+  // reports the new size again: the ±px loop in #1252 (the scroll freezes,
+  // and the pinned header jumps by that delta on every turn). The browser
+  // delivers those observations in one ResizeObserver broadcast — a
+  // microtask runs between them, a macrotask does not — and a sync notify
+  // re-enters `resizeItem` before paint. Pausing for a frame lets the box
+  // settle; keeping the first size and confirming it a frame later does the
+  // same.
+  private _echoFrom = new Map<Key, number>()
+  private _echoConfirmKeys = new Set<Key>()
+  private _echoSettleScheduled = false
+  private _echoToken = 0
+  // > 0 while a size change is writing scroll or notifying. A measurement
+  // that re-enters from that notify is the echo of the change, not a new one.
+  private _correctionDepth = 0
+  // True for a whole ResizeObserver callback, including the notify after the
+  // batch. The broadcast loop's next callback is not nested, so depth alone
+  // misses it.
+  private _observingResize = false
   private now = () => this.targetWindow?.performance?.now?.() ?? Date.now()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
@@ -682,20 +704,27 @@ export class Virtualizer<
           // away from the others (#1036).
           const batch: { sync: boolean; notify?: boolean } = { sync: false }
           this._resizeBatch = batch
+          this._observingResize = true
           try {
-            entries.forEach(measureEntry)
-          } finally {
-            this._resizeBatch = null
-            if (batch.notify) {
-              this.notify(batch.sync)
-              this._noteClampMax()
-              this._flushHoldIfReady(true)
-              this._retryClampedAdjustment()
-              // Ref-null callbacks run before the host nodes are detached.
-              // Drop them after the sync renders, before the browser gathers
-              // another round of ResizeObserver entries at their new depth.
-              this.measureElement(null)
+            try {
+              entries.forEach(measureEntry)
+            } finally {
+              this._resizeBatch = null
+              if (batch.notify) {
+                this._withCorrectionDepth(() => {
+                  this.notify(batch.sync)
+                  this._noteClampMax()
+                  this._flushHoldIfReady(true)
+                  this._retryClampedAdjustment()
+                  // Ref-null callbacks run before the host nodes are detached.
+                  // Drop them after the sync renders, before the browser gathers
+                  // another round of ResizeObserver entries at their new depth.
+                  this.measureElement(null)
+                })
+              }
             }
+          } finally {
+            this._observingResize = false
           }
         }
         if (this.options.useAnimationFrameWithResizeObserver) {
@@ -1053,6 +1082,12 @@ export class Virtualizer<
       this.targetWindow.cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
+    // Drop a pending echo confirm. Bumping the token makes a callback that
+    // is already queued return without measuring a detached list.
+    this._echoToken++
+    this._echoSettleScheduled = false
+    this._echoFrom.clear()
+    this._echoConfirmKeys.clear()
     this.scrollState = null
     // The element is let go of: give it back its overflow now. A stop the
     // next element needs starts afresh.
@@ -2044,6 +2079,83 @@ export class Virtualizer<
     }
   }
 
+  // A macrotask after the ResizeObserver broadcast, then a frame for the
+  // live read. Microtasks run between broadcast callbacks, so they must not
+  // be what releases the guard; setTimeout does not.
+  private _scheduleEchoSettle = () => {
+    if (this._echoSettleScheduled) return
+    const win = this.targetWindow
+    if (win?.setTimeout == null) return
+    this._echoSettleScheduled = true
+    const token = this._echoToken
+    win.setTimeout(() => {
+      if (token !== this._echoToken) return
+      this._echoSettleScheduled = false
+      const keys = [...this._echoConfirmKeys]
+      this._echoConfirmKeys.clear()
+      // Nothing echoed: release the guard so a later, real return to the
+      // previous size still applies. An echo waits for a settled box.
+      if (keys.length === 0) {
+        this._echoFrom.clear()
+        return
+      }
+      const confirm = () => {
+        if (token !== this._echoToken) return
+        this._echoFrom.clear()
+        for (const key of keys) this._confirmEchoKey(key)
+      }
+      if (win.requestAnimationFrame == null) {
+        confirm()
+        return
+      }
+      win.requestAnimationFrame(() => {
+        if (token !== this._echoToken) return
+        win.requestAnimationFrame(confirm)
+      })
+    }, 0)
+  }
+
+  private _confirmEchoKey = (key: Key) => {
+    const node = this.elementsCache.get(key)
+    if (!node?.isConnected) return
+    const index = this.indexFromElement(node)
+    if (!this.isIndexInRange(index)) return
+    const live = this._readLiveItemSize(node)
+    if (live == null || !Number.isFinite(live)) return
+    this.resizeItem(index, live)
+  }
+
+  // A fresh border box. The sync measure path returns the cache, which is
+  // the size the echo just refused to commit, so the confirm cannot use it.
+  private _readLiveItemSize = (node: TItemElement): number | null => {
+    const el = node as unknown as HTMLElement
+    const horizontal = this.options.horizontal
+    const block = el?.[horizontal ? 'offsetWidth' : 'offsetHeight']
+    const inline = el?.[horizontal ? 'offsetHeight' : 'offsetWidth']
+    if (typeof block !== 'number' || !(block > 0)) {
+      return this.options.measureElement(node, undefined, this)
+    }
+    const entry = {
+      target: node,
+      borderBoxSize: [
+        {
+          blockSize: horizontal ? inline || 0 : block,
+          inlineSize: horizontal ? block : inline || 0,
+        },
+      ],
+    } as unknown as ResizeObserverEntry
+    return this.options.measureElement(node, entry, this)
+  }
+
+  private _withCorrectionDepth = (fn: () => void) => {
+    this._correctionDepth++
+    try {
+      fn()
+    } finally {
+      this._correctionDepth--
+    }
+  }
+
   resizeItem = (index: number, size: number) => {
     if (!this.isIndexInRange(index)) return
 
@@ -2078,6 +2190,19 @@ export class Virtualizer<
     const delta = size - itemSize
 
     if (delta !== 0) {
+      // Immediate reversal of the size this correction just left, seen from
+      // the notify it flushed or from the next observation in the same
+      // broadcast. Keep the size we already committed. The confirm below
+      // reads the box again once layout has had a frame (#1252).
+      if (
+        this._echoFrom.get(key) === size &&
+        (this._observingResize || this._correctionDepth > 0)
+      ) {
+        this._echoConfirmKeys.add(key)
+        this._scheduleEchoSettle()
+        return
+      }
+
       const wasAtEnd =
         this.options.anchorTo === 'end' &&
         !isSmoothScroll(this.scrollState) &&
@@ -2125,46 +2250,55 @@ export class Virtualizer<
       }
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
+      // Record the size we left before the write, so a re-entrant read from
+      // the scroll event or the notify still recognizes the echo.
+      this._echoFrom.set(key, itemSize)
+      this._scheduleEchoSettle()
 
       // Before a command's read-back, an index or end target is retargeted
       // from fresh measurements by reconcileScroll next frame; an offset
       // target lands where it was written and the delta is not applied.
       let adjustedSync = false
-      if (!this._awaitingCommandReadBack()) {
-        if (wasAtEnd) {
-          adjustedSync = this.applyScrollAdjustment(
-            this._getLayoutTotalSize() - prevTotalSize,
-          )
-        } else if (shouldAdjustScroll) {
-          adjustedSync = this.applyScrollAdjustment(delta)
+      this._correctionDepth++
+      try {
+        if (!this._awaitingCommandReadBack()) {
+          if (wasAtEnd) {
+            adjustedSync = this.applyScrollAdjustment(
+              this._getLayoutTotalSize() - prevTotalSize,
+            )
+          } else if (shouldAdjustScroll) {
+            adjustedSync = this.applyScrollAdjustment(delta)
+          }
         }
-      }
 
-      // When we just moved `scrollTop` to compensate for an above-viewport
-      // resize, the grown item transforms must commit in the SAME frame as
-      // that write. `applyScrollAdjustment` writes `scrollTop` synchronously
-      // inside this ResizeObserver callback, but an async `notify` schedules
-      // the transform render for a later commit — so the browser can paint
-      // one frame with the new `scrollTop` and the old positions, and the
-      // viewport visibly jumps by `delta` before snapping back (#1227). A
-      // synchronous notify flushes the render in this same callback, so both
-      // land in one paint. When nothing moved (or the write was deferred on
-      // iOS), keep the cheaper async notify.
-      if (this._resizeBatch) {
-        // Inside a ResizeObserver callback: notify once after every entry
-        // is measured, synchronously if any of them moved `scrollTop`.
-        this._resizeBatch.notify = true
-        this._resizeBatch.sync ||= adjustedSync
-        return
+        // When we just moved `scrollTop` to compensate for an above-viewport
+        // resize, the grown item transforms must commit in the SAME frame as
+        // that write. `applyScrollAdjustment` writes `scrollTop` synchronously
+        // inside this ResizeObserver callback, but an async `notify` schedules
+        // the transform render for a later commit — so the browser can paint
+        // one frame with the new `scrollTop` and the old positions, and the
+        // viewport visibly jumps by `delta` before snapping back (#1227). A
+        // synchronous notify flushes the render in this same callback, so both
+        // land in one paint. When nothing moved (or the write was deferred on
+        // iOS), keep the cheaper async notify.
+        if (this._resizeBatch) {
+          // Inside a ResizeObserver callback: notify once after every entry
+          // is measured, synchronously if any of them moved `scrollTop`.
+          this._resizeBatch.notify = true
+          this._resizeBatch.sync ||= adjustedSync
+          return
+        }
+        this.notify(adjustedSync)
+        this._noteClampMax()
+        // A consumer that grows the sizer synchronously inside `onChange`
+        // (direct DOM updates) may never re-render when the range is
+        // unchanged, so retry a clamped write here rather than only in
+        // `_willUpdate` (#1266).
+        this._flushHoldIfReady(true)
+        this._retryClampedAdjustment()
+      } finally {
+        this._correctionDepth--
       }
-      this.notify(adjustedSync)
-      this._noteClampMax()
-      // A consumer that grows the sizer synchronously inside `onChange`
-      // (direct DOM updates) may never re-render when the range is
-      // unchanged, so retry a clamped write here rather than only in
-      // `_willUpdate` (#1266).
-      this._flushHoldIfReady(true)
-      this._retryClampedAdjustment()
     }
   }
 
