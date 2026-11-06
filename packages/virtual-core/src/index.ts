@@ -1268,7 +1268,10 @@ export class Virtualizer<
       }
 
       this._scrollToOffset(this.getScrollOffset())
+      // The rect observer has notified already; reading what follows the
+      // list can change the range again.
       this._readTrailing(this._elementMaxScrollOffset())
+      this.maybeNotify()
     }
 
     // The consumer has committed the sizer.

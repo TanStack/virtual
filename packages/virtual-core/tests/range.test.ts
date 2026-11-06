@@ -372,6 +372,7 @@ test('a stale offset past the end renders the last viewport of rows with a scrol
 // to 6000px. A position past the first list's end is real there.
 const sharedScroller = (initialOffset = 0) => {
   let report: ((offset: number, isScrolling: boolean) => void) | null = null
+  const onChange = vi.fn()
   const element = {
     scrollTop: initialOffset,
     scrollHeight: 6000,
@@ -391,11 +392,14 @@ const sharedScroller = (initialOffset = 0) => {
       report = cb
       return () => {}
     },
+    onChange,
   })
-  // What an adapter does on render: draw the sizer, then run the update hook.
+  // What an adapter does on its first render: read the rows and draw the
+  // sizer, then run the update hook, which attaches the element.
+  const firstRender = virtualizer.getVirtualIndexes()
   virtualizer.getTotalSize()
   virtualizer._willUpdate()
-  return { virtualizer, report: report! }
+  return { virtualizer, report: report!, firstRender, onChange }
 }
 
 const lastRows = [74, 75, 76, 77, 78, 79, 80]
@@ -407,9 +411,13 @@ test('a list above the viewport in a shared scroll element keeps only its last r
 })
 
 test('a shared scroll element already past the list when it attaches keeps only its last rows', () => {
-  // No scroll event comes: the element is where the initial offset says.
-  const { virtualizer } = sharedScroller(2500)
+  // No scroll event comes: the element is where the initial offset says. The
+  // first render has no element to read the content after the list from, so
+  // attaching changes the range and has to tell the adapter.
+  const { virtualizer, firstRender, onChange } = sharedScroller(2500)
+  expect(firstRender).toEqual(Array.from({ length: 30 }, (_, i) => i + 51))
   expect(virtualizer.getVirtualIndexes()).toEqual(lastRows)
+  expect(onChange).toHaveBeenCalled()
 })
 
 test('a list measured smaller after it was drawn still renders its last viewport of rows', () => {
