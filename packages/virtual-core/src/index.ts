@@ -1096,7 +1096,16 @@ export class Virtualizer<
       ? this.options.getScrollElement()
       : null
 
-    if (this.scrollElement !== scrollElement) {
+    // Solid can create the scroll element in a template document without a
+    // window while Suspense is pending (#1011). Once inserted, the element
+    // is the same but its window has changed, so the built-in observers
+    // need to be attached again.
+    if (
+      this.scrollElement !== scrollElement ||
+      (scrollElement &&
+        'ownerDocument' in scrollElement &&
+        this.targetWindow !== scrollElement.ownerDocument.defaultView)
+    ) {
       this.cleanup()
 
       if (!scrollElement) {
