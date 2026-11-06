@@ -1,0 +1,16 @@
+{
+  "mode": "pre",
+  "tag": "rc",
+  "initialVersions": {
+    "@tanstack/virtual-benchmarks": "0.0.26",
+    "@tanstack/angular-virtual": "6.1.9",
+    "@tanstack/lit-virtual": "3.15.0",
+    "@tanstack/marko-virtual": "3.16.9",
+    "@tanstack/react-virtual": "3.14.23",
+    "@tanstack/solid-virtual": "3.13.50",
+    "@tanstack/svelte-virtual": "3.13.49",
+    "@tanstack/virtual-core": "3.19.8",
+    "@tanstack/vue-virtual": "3.13.49"
+  },
+  "changesets": []
+}

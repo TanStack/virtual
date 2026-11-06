@@ -29,6 +29,9 @@ allowBuilds:
   vue-demi: false # only required for vue 2 support
 
 overrides:
+  # @tanstack/solid-virtual tests and builds with @solidjs/vite-plugin, which
+  # (carrying the Solid 2 compiler) requires vite ^8.
+  '@tanstack/solid-virtual>vite': '^8.3.0'
   # Exactly one @marko/compiler in the graph. marko, @marko/vite, and
   # @marko/language-tools (via @marko/type-check) all accept ^5.39/^5.40 ranges;
   # letting the lockfile resolve them independently can split versions across
