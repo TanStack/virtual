@@ -549,6 +549,13 @@ export class Virtualizer<
   // (`followOnAppend does not follow 'trim only'`; reading the element at
   // write time still moves 49 of 1080 snapshot seeds).
   private _reportedOverscroll = false
+  // How far the scroll element extends past the end of the list: other
+  // content that shares it (#1371). Read with the element's scroll range on
+  // scroll reports and on attach, against the sizer the element has (the
+  // last `getTotalSize()` an adapter drew), not a layout that measurements
+  // moved since.
+  private _trailing = 0
+  private _drawnListEnd = Infinity
   // The touch gesture in progress (see `IosGesture`). Its tail closing on
   // its own makes a write possible again: the last momentum frame may have
   // come before the timer. The hold is released first, so a command that
@@ -1069,6 +1076,7 @@ export class Virtualizer<
     // its next touch cycle.
     this._holdOffset = 0
     this._reportedOverscroll = false
+    this._trailing = 0
     // (The gesture was ended with its listeners, in the unsubs above.)
     this._clampedAdjustment = null
     // A write to the old element will never be read back.
@@ -1121,6 +1129,7 @@ export class Virtualizer<
           // judged only while scrolling: at rest the element has clamped,
           // and a stale sizer makes no bounce.
           const elementMax = isScrolling ? this._elementMaxScrollOffset() : null
+          this._readTrailing(elementMax)
           const wasOverscrolled = this._reportedOverscroll
           this._reportedOverscroll =
             offset < 0 || (elementMax !== null && offset > elementMax + 1)
@@ -1259,6 +1268,10 @@ export class Virtualizer<
       }
 
       this._scrollToOffset(this.getScrollOffset())
+      // The rect observer has notified already; reading what follows the
+      // list can change the range again.
+      this._readTrailing(this._elementMaxScrollOffset())
+      this.maybeNotify()
     }
 
     // The consumer has committed the sizer.
@@ -1876,16 +1889,19 @@ export class Virtualizer<
       // scrollOffset is measured in the scroll element and the layout total
       // from the list start, so the list ends scrollMargin further down.
       this._getLayoutTotalSize() + this.options.scrollMargin,
+      this._trailing,
     ],
-    (measurements, outerSize, scrollOffset, lanes, listEnd) => {
+    (measurements, outerSize, scrollOffset, lanes, listEnd, trailing) => {
       if (measurements.length === 0 || outerSize === 0) {
         this.range = null
         return null
       }
       // Until the element reports a clamped position (the list shrank, a
       // rubber-band bounce), the offset can sit past the last row, which
-      // would leave only that row in the range.
-      const maxScrollOffset = Math.max(listEnd - outerSize, 0)
+      // would leave only that row in the range. The element ends `trailing`
+      // past the list where other content follows it, and an offset up to
+      // there is where the element is.
+      const maxScrollOffset = Math.max(listEnd + trailing - outerSize, 0)
       this.range = calculateRangeImpl(
         measurements,
         outerSize,
@@ -2239,6 +2255,12 @@ export class Virtualizer<
       offset += this.pendingScrollAnchor.delta
     }
     return offset
+  }
+
+  private _readTrailing = (elementMax: number | null) => {
+    if (elementMax === null) return
+    const trailing = elementMax + this.getSize() - this._drawnListEnd
+    this._trailing = trailing > 0 ? trailing : 0
   }
 
   // The element's own scroll range, or null where it cannot be read (no
@@ -2598,8 +2620,11 @@ export class Virtualizer<
   // The size the consumer gives the container: the layout's total, short by
   // a held correction so the rows exposed shifted by it still fill it (see
   // `_holdOffset`).
-  getTotalSize = () =>
-    Math.max(this._getLayoutTotalSize() - this._holdOffset, 0)
+  getTotalSize = () => {
+    const total = Math.max(this._getLayoutTotalSize() - this._holdOffset, 0)
+    this._drawnListEnd = total + this.options.scrollMargin
+    return total
+  }
 
   private _getLayoutTotalSize = () => {
     const measurements = this.getMeasurements()

@@ -366,3 +366,85 @@ test('a stale offset past the end renders the last viewport of rows with a scrol
   expect(before).toEqual([40, 41, 42, 43, 44, 45, 46, 47, 48, 49])
   expect(after).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
 })
+
+// Two lists share one scroll element: the first starts 100px down and is
+// 81 × 25 = 2025px tall, so it ends at 2125px; the second extends the element
+// to 6000px. A position past the first list's end is real there.
+const sharedScroller = (initialOffset = 0) => {
+  let report: ((offset: number, isScrolling: boolean) => void) | null = null
+  const onChange = vi.fn()
+  const element = {
+    scrollTop: initialOffset,
+    scrollHeight: 6000,
+    clientHeight: 600,
+  }
+  const virtualizer = new Virtualizer({
+    count: 81,
+    estimateSize: () => 25,
+    overscan: 6,
+    scrollMargin: 100,
+    initialOffset,
+    initialRect: { width: 300, height: 600 },
+    getScrollElement: () => element as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: (_: unknown, cb: typeof report) => {
+      report = cb
+      return () => {}
+    },
+    onChange,
+  })
+  // What an adapter does on its first render: read the rows and draw the
+  // sizer, then run the update hook, which attaches the element.
+  const firstRender = virtualizer.getVirtualIndexes()
+  virtualizer.getTotalSize()
+  virtualizer._willUpdate()
+  return { virtualizer, report: report!, firstRender, onChange }
+}
+
+const lastRows = [74, 75, 76, 77, 78, 79, 80]
+
+test('a list above the viewport in a shared scroll element keeps only its last rows', () => {
+  const { virtualizer, report } = sharedScroller()
+  report(2500, true)
+  expect(virtualizer.getVirtualIndexes()).toEqual(lastRows)
+})
+
+test('a shared scroll element already past the list when it attaches keeps only its last rows', () => {
+  // No scroll event comes: the element is where the initial offset says. The
+  // first render has no element to read the content after the list from, so
+  // attaching changes the range and has to tell the adapter.
+  const { virtualizer, firstRender, onChange } = sharedScroller(2500)
+  expect(firstRender).toEqual(Array.from({ length: 30 }, (_, i) => i + 51))
+  expect(virtualizer.getVirtualIndexes()).toEqual(lastRows)
+  expect(onChange).toHaveBeenCalled()
+})
+
+test('a list measured smaller after it was drawn still renders its last viewport of rows', () => {
+  // The list has the element to itself. Its rows shrink from 30 to 20 before
+  // the next draw, and the element, still drawn 1500px tall, reports 1200.
+  let report: ((offset: number, isScrolling: boolean) => void) | null = null
+  const element = { scrollTop: 1200, scrollHeight: 1500, clientHeight: 300 }
+  const virtualizer = new Virtualizer({
+    count: 50,
+    estimateSize: () => 30,
+    overscan: 0,
+    initialOffset: 1200,
+    initialRect: { width: 300, height: 300 },
+    getScrollElement: () => element as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: (_: unknown, cb: typeof report) => {
+      report = cb
+      return () => {}
+    },
+  })
+  virtualizer.getTotalSize()
+  virtualizer._willUpdate()
+  for (let i = 0; i < 50; i++) virtualizer.resizeItem(i, 20)
+  report!(1200, true)
+  // 50 rows of 20 end at 1000: 1200 is stale, so the range is the last 300px.
+  expect(virtualizer.getVirtualIndexes()).toEqual([
+    35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+  ])
+})
