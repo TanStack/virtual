@@ -200,6 +200,10 @@
             {
               "to": "framework/react/examples/window",
               "label": "Window"
+            },
+            {
+              "to": "framework/react/examples/react-compiler",
+              "label": "React Compiler"
             }
           ]
         },
