@@ -549,6 +549,17 @@ export class Virtualizer<
   // (`followOnAppend does not follow 'trim only'`; reading the element at
   // write time still moves 49 of 1080 snapshot seeds).
   private _reportedOverscroll = false
+  // The last position the element reported, and where the list ended in the
+  // element then. A `scrollOffset` past the list's end is where the element
+  // is only if it is that report and the list has not shrunk since, as when
+  // other content shares the scroll element (#1371). The end is the sizer as
+  // last rendered (`_willUpdate` runs once the adapter has rendered), taken
+  // to layout coordinates with the report: measurements and a held
+  // correction move the layout's own end before the element has the new size.
+  private _renderedListEnd = Infinity
+  private _rangeListEnd = -Infinity
+  private _reportedOffset = NaN
+  private _reportedListEnd = Infinity
   // The touch gesture in progress (see `IosGesture`). Its tail closing on
   // its own makes a write possible again: the last momentum frame may have
   // come before the timer. The hold is released first, so a command that
@@ -1069,6 +1080,7 @@ export class Virtualizer<
     // its next touch cycle.
     this._holdOffset = 0
     this._reportedOverscroll = false
+    this._reportedOffset = NaN
     // (The gesture was ended with its listeners, in the unsubs above.)
     this._clampedAdjustment = null
     // A write to the old element will never be read back.
@@ -1084,6 +1096,7 @@ export class Virtualizer<
   }
 
   _willUpdate = () => {
+    this._renderedListEnd = this.getTotalSize() + this.options.scrollMargin
     const scrollElement = this.options.enabled
       ? this.options.getScrollElement()
       : null
@@ -1128,6 +1141,14 @@ export class Virtualizer<
           this._lastElementOffset = elementOffset
           // Everything below works in layout coordinates.
           offset = this._toLayoutOffset(offset)
+          // An adapter that redraws on onChange (Vue, Svelte) renders the
+          // sizer of the last range without `_willUpdate`, so the element can
+          // end further down than recorded there; the longer end only makes
+          // the offset stale sooner.
+          const listEnd = Math.max(
+            this._toLayoutOffset(this._renderedListEnd),
+            this._rangeListEnd,
+          )
 
           const kind = this._classifyScrollEvent(
             offset,
@@ -1190,6 +1211,8 @@ export class Virtualizer<
                 : 'backward'
             : null
           this.scrollOffset = offset
+          this._reportedOffset = offset
+          this._reportedListEnd = listEnd
           this.isScrolling = isScrolling
 
           // A finger that lands on a fling fires no touch events (#1307), so
@@ -1876,20 +1899,39 @@ export class Virtualizer<
       // scrollOffset is measured in the scroll element and the layout total
       // from the list start, so the list ends scrollMargin further down.
       this._getLayoutTotalSize() + this.options.scrollMargin,
+      this._reportedOffset,
+      this._reportedListEnd,
+      this._reportedOverscroll,
     ],
-    (measurements, outerSize, scrollOffset, lanes, listEnd) => {
+    (
+      measurements,
+      outerSize,
+      scrollOffset,
+      lanes,
+      listEnd,
+      reportedOffset,
+      reportedListEnd,
+      overscrolled,
+    ) => {
+      this._rangeListEnd = listEnd
       if (measurements.length === 0 || outerSize === 0) {
         this.range = null
         return null
       }
       // Until the element reports a clamped position (the list shrank, a
       // rubber-band bounce), the offset can sit past the last row, which
-      // would leave only that row in the range.
-      const maxScrollOffset = Math.max(listEnd - outerSize, 0)
+      // would leave only that row in the range. Any other offset past the
+      // end is where the element is: the list is above the viewport.
+      const stale =
+        overscrolled ||
+        scrollOffset !== reportedOffset ||
+        listEnd < reportedListEnd
       this.range = calculateRangeImpl(
         measurements,
         outerSize,
-        Math.min(scrollOffset, maxScrollOffset),
+        stale
+          ? Math.min(scrollOffset, Math.max(listEnd - outerSize, 0))
+          : scrollOffset,
         lanes,
         // Pass the typed array so binary search + forward-walk can read
         // start/end directly from Float64Array, skipping the Proxy traps.

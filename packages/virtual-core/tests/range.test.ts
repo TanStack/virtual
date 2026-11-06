@@ -366,3 +366,84 @@ test('a stale offset past the end renders the last viewport of rows with a scrol
   expect(before).toEqual([40, 41, 42, 43, 44, 45, 46, 47, 48, 49])
   expect(after).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
 })
+
+// Two lists share one scroll element: the first starts 100px down and is
+// 81 × 25 = 2025px tall, so it ends at 2125px; the second extends the element
+// well below that. A position the element reports past the first list's end
+// is real, and the first list is wholly above the viewport.
+const sharedScroller = () => {
+  let report: ((offset: number, isScrolling: boolean) => void) | null = null
+  const options = {
+    estimateSize: () => 25,
+    overscan: 6,
+    scrollMargin: 100,
+    initialRect: { width: 300, height: 600 },
+    getScrollElement: () =>
+      ({ scrollTop: 0, scrollHeight: 6000, clientHeight: 600 }) as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: (_: unknown, cb: typeof report) => {
+      report = cb
+      return () => {}
+    },
+  }
+  const virtualizer = new Virtualizer({ ...options, count: 81 })
+  virtualizer._willUpdate()
+  return { virtualizer, options, report: report! }
+}
+
+test('a list above the viewport in a shared scroll element keeps only its last rows', () => {
+  const { virtualizer, report } = sharedScroller()
+  report(2500, false)
+  // The last row plus overscan, as before the shrink cap: not a viewport of
+  // rows nobody can see.
+  expect(virtualizer.getVirtualIndexes()).toEqual([74, 75, 76, 77, 78, 79, 80])
+})
+
+test('a list that shrinks after the element reported a position still renders its last viewport of rows', () => {
+  const { virtualizer, options, report } = sharedScroller()
+  // At rest at the end of the first list: 100 + 2025 - 600.
+  report(1525, false)
+  virtualizer.setOptions({ ...options, count: 41 })
+  // 41 rows end at 100 + 1025 = 1125: 1525 is stale until the element
+  // reports its clamped position, so the range is the last 24 rows plus
+  // overscan, not the last row alone.
+  expect(virtualizer.getVirtualIndexes()).toEqual(
+    Array.from({ length: 30 }, (_, i) => i + 11),
+  )
+})
+
+test('a list that grew without an update before the element reported still renders its last viewport once it shrinks', () => {
+  // Adapters that redraw on onChange (Vue, Svelte) run `_willUpdate` only when
+  // the options change, so the element can have a sizer longer than the one
+  // last recorded there by the time it reports a position.
+  let report: ((offset: number, isScrolling: boolean) => void) | null = null
+  const element = { scrollTop: 0, scrollHeight: 2000, clientHeight: 300 }
+  const options = {
+    estimateSize: () => 30,
+    overscan: 0,
+    initialRect: { width: 300, height: 300 },
+    getScrollElement: () => element as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: (_: unknown, cb: typeof report) => {
+      report = cb
+      return () => {}
+    },
+  }
+  const virtualizer = new Virtualizer({ ...options, count: 50 })
+  virtualizer._willUpdate()
+  // Rows measure 40, not 30: the list ends at 2000, not 1500. The adapter
+  // redraws on onChange (reading the items and the total size), not through
+  // `_willUpdate`.
+  for (let i = 0; i < 50; i++) virtualizer.resizeItem(i, 40)
+  virtualizer.getVirtualItems()
+  report!(1700, false)
+  virtualizer.setOptions({ ...options, count: 45 })
+  virtualizer._willUpdate()
+  // 45 rows end at 1800: 1700 is stale until the element reports its
+  // clamped position, so the range is the last 300px of rows.
+  expect(virtualizer.getVirtualIndexes()).toEqual([
+    37, 38, 39, 40, 41, 42, 43, 44,
+  ])
+})
