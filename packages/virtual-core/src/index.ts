@@ -1082,7 +1082,11 @@ export class Virtualizer<
     // its next touch cycle.
     this._holdOffset = 0
     this._reportedOverscroll = false
-    this._reportedOffset = null
+    // A position the old element reported means nothing for the next one.
+    // The initial offset, given before any element, stays: `_willUpdate`
+    // writes it to the element it attaches, and an element already there
+    // fires no scroll event to report it.
+    if (this.scrollElement !== null) this._reportedOffset = null
     // (The gesture was ended with its listeners, in the unsubs above.)
     this._clampedAdjustment = null
     // A write to the old element will never be read back.
@@ -1284,6 +1288,17 @@ export class Virtualizer<
       }
 
       this._scrollToOffset(this.getScrollOffset())
+      // The kept initial offset is where the element is unless the element
+      // cannot scroll that far: then it clamps, and already resting there it
+      // fires no scroll event to say so.
+      const elementMax = this._elementMaxScrollOffset()
+      if (
+        elementMax !== null &&
+        this._reportedOffset !== null &&
+        this._reportedOffset > elementMax + this._holdOffset
+      ) {
+        this._reportedOffset = null
+      }
     }
 
     // The consumer has committed the sizer.

@@ -417,6 +417,50 @@ test('an initial offset past the list end in a shared scroll element keeps only 
   expect(virtualizer.getVirtualIndexes()).toEqual([74, 75, 76, 77, 78, 79, 80])
 })
 
+test('an initial offset the attached element already has stays valid without a scroll event', () => {
+  // Attaching writes the initial offset to the element; one that is already
+  // there fires no scroll event to report it.
+  const element = { scrollTop: 2500, scrollHeight: 6000, clientHeight: 600 }
+  const virtualizer = new Virtualizer({
+    count: 81,
+    estimateSize: () => 25,
+    overscan: 6,
+    scrollMargin: 100,
+    initialRect: { width: 300, height: 600 },
+    initialOffset: 2500,
+    getScrollElement: () => element as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const lastRows = [74, 75, 76, 77, 78, 79, 80]
+  expect(virtualizer.getVirtualIndexes()).toEqual(lastRows)
+  virtualizer._willUpdate()
+  expect(virtualizer.getVirtualIndexes()).toEqual(lastRows)
+})
+
+test('an initial offset past where the attached element can scroll is capped', () => {
+  // The list has the element to itself and the element already rests at its
+  // end (2125 - 600), so the write of 2500 is clamped without a scroll event.
+  const element = { scrollTop: 1525, scrollHeight: 2125, clientHeight: 600 }
+  const virtualizer = new Virtualizer({
+    count: 81,
+    estimateSize: () => 25,
+    overscan: 6,
+    scrollMargin: 100,
+    initialRect: { width: 300, height: 600 },
+    initialOffset: 2500,
+    getScrollElement: () => element as any,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  virtualizer._willUpdate()
+  expect(virtualizer.getVirtualIndexes()).toEqual(
+    Array.from({ length: 30 }, (_, i) => i + 51),
+  )
+})
+
 test('a list that shrinks after the element reported a position still renders its last viewport of rows', () => {
   const { virtualizer, options, report } = sharedScroller()
   // At rest at the end of the first list: 100 + 2025 - 600.
