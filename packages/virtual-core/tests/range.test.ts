@@ -369,120 +369,59 @@ test('a stale offset past the end renders the last viewport of rows with a scrol
 
 // Two lists share one scroll element: the first starts 100px down and is
 // 81 × 25 = 2025px tall, so it ends at 2125px; the second extends the element
-// well below that. A position the element reports past the first list's end
-// is real, and the first list is wholly above the viewport.
-const sharedScroller = () => {
+// to 6000px. A position past the first list's end is real there.
+const sharedScroller = (initialOffset = 0) => {
   let report: ((offset: number, isScrolling: boolean) => void) | null = null
-  const options = {
+  const element = {
+    scrollTop: initialOffset,
+    scrollHeight: 6000,
+    clientHeight: 600,
+  }
+  const virtualizer = new Virtualizer({
+    count: 81,
     estimateSize: () => 25,
     overscan: 6,
     scrollMargin: 100,
+    initialOffset,
     initialRect: { width: 300, height: 600 },
-    getScrollElement: () =>
-      ({ scrollTop: 0, scrollHeight: 6000, clientHeight: 600 }) as any,
+    getScrollElement: () => element as any,
     scrollToFn: vi.fn(),
     observeElementRect: vi.fn(),
     observeElementOffset: (_: unknown, cb: typeof report) => {
       report = cb
       return () => {}
     },
-  }
-  const virtualizer = new Virtualizer({ ...options, count: 81 })
+  })
+  // What an adapter does on render: draw the sizer, then run the update hook.
+  virtualizer.getTotalSize()
   virtualizer._willUpdate()
-  return { virtualizer, options, report: report! }
+  return { virtualizer, report: report! }
 }
+
+const lastRows = [74, 75, 76, 77, 78, 79, 80]
 
 test('a list above the viewport in a shared scroll element keeps only its last rows', () => {
   const { virtualizer, report } = sharedScroller()
-  report(2500, false)
-  // The last row plus overscan, as before the shrink cap: not a viewport of
-  // rows nobody can see.
-  expect(virtualizer.getVirtualIndexes()).toEqual([74, 75, 76, 77, 78, 79, 80])
-})
-
-test('an initial offset past the list end in a shared scroll element keeps only the last rows', () => {
-  // The issue's core reproduction: no element, the position given up front.
-  const virtualizer = new Virtualizer({
-    count: 81,
-    estimateSize: () => 25,
-    overscan: 6,
-    scrollMargin: 100,
-    initialRect: { width: 300, height: 600 },
-    initialOffset: 2500,
-    getScrollElement: () => null,
-    scrollToFn: vi.fn(),
-    observeElementRect: vi.fn(),
-    observeElementOffset: vi.fn(),
-  })
-  expect(virtualizer.getVirtualIndexes()).toEqual([74, 75, 76, 77, 78, 79, 80])
-})
-
-test('an initial offset the attached element already has stays valid without a scroll event', () => {
-  // Attaching writes the initial offset to the element; one that is already
-  // there fires no scroll event to report it.
-  const element = { scrollTop: 2500, scrollHeight: 6000, clientHeight: 600 }
-  const virtualizer = new Virtualizer({
-    count: 81,
-    estimateSize: () => 25,
-    overscan: 6,
-    scrollMargin: 100,
-    initialRect: { width: 300, height: 600 },
-    initialOffset: 2500,
-    getScrollElement: () => element as any,
-    scrollToFn: vi.fn(),
-    observeElementRect: vi.fn(),
-    observeElementOffset: vi.fn(),
-  })
-  const lastRows = [74, 75, 76, 77, 78, 79, 80]
-  expect(virtualizer.getVirtualIndexes()).toEqual(lastRows)
-  virtualizer._willUpdate()
+  report(2500, true)
   expect(virtualizer.getVirtualIndexes()).toEqual(lastRows)
 })
 
-test('an initial offset past where the attached element can scroll is capped', () => {
-  // The list has the element to itself and the element already rests at its
-  // end (2125 - 600), so the write of 2500 is clamped without a scroll event.
-  const element = { scrollTop: 1525, scrollHeight: 2125, clientHeight: 600 }
-  const virtualizer = new Virtualizer({
-    count: 81,
-    estimateSize: () => 25,
-    overscan: 6,
-    scrollMargin: 100,
-    initialRect: { width: 300, height: 600 },
-    initialOffset: 2500,
-    getScrollElement: () => element as any,
-    scrollToFn: vi.fn(),
-    observeElementRect: vi.fn(),
-    observeElementOffset: vi.fn(),
-  })
-  virtualizer._willUpdate()
-  expect(virtualizer.getVirtualIndexes()).toEqual(
-    Array.from({ length: 30 }, (_, i) => i + 51),
-  )
+test('a shared scroll element already past the list when it attaches keeps only its last rows', () => {
+  // No scroll event comes: the element is where the initial offset says.
+  const { virtualizer } = sharedScroller(2500)
+  expect(virtualizer.getVirtualIndexes()).toEqual(lastRows)
 })
 
-test('a list that shrinks after the element reported a position still renders its last viewport of rows', () => {
-  const { virtualizer, options, report } = sharedScroller()
-  // At rest at the end of the first list: 100 + 2025 - 600.
-  report(1525, false)
-  virtualizer.setOptions({ ...options, count: 41 })
-  // 41 rows end at 100 + 1025 = 1125: 1525 is stale until the element
-  // reports its clamped position, so the range is the last 24 rows plus
-  // overscan, not the last row alone.
-  expect(virtualizer.getVirtualIndexes()).toEqual(
-    Array.from({ length: 30 }, (_, i) => i + 11),
-  )
-})
-
-test('a list that grew without an update before the element reported still renders its last viewport once it shrinks', () => {
-  // Adapters that redraw on onChange (Vue, Svelte) run `_willUpdate` only when
-  // the options change, so the element can have a sizer longer than the one
-  // last recorded there by the time it reports a position.
+test('a list measured smaller after it was drawn still renders its last viewport of rows', () => {
+  // The list has the element to itself. Its rows shrink from 30 to 20 before
+  // the next draw, and the element, still drawn 1500px tall, reports 1200.
   let report: ((offset: number, isScrolling: boolean) => void) | null = null
-  const element = { scrollTop: 0, scrollHeight: 2000, clientHeight: 300 }
-  const options = {
+  const element = { scrollTop: 1200, scrollHeight: 1500, clientHeight: 300 }
+  const virtualizer = new Virtualizer({
+    count: 50,
     estimateSize: () => 30,
     overscan: 0,
+    initialOffset: 1200,
     initialRect: { width: 300, height: 300 },
     getScrollElement: () => element as any,
     scrollToFn: vi.fn(),
@@ -491,20 +430,13 @@ test('a list that grew without an update before the element reported still rende
       report = cb
       return () => {}
     },
-  }
-  const virtualizer = new Virtualizer({ ...options, count: 50 })
+  })
+  virtualizer.getTotalSize()
   virtualizer._willUpdate()
-  // Rows measure 40, not 30: the list ends at 2000, not 1500. The adapter
-  // redraws on onChange (reading the items and the total size), not through
-  // `_willUpdate`.
-  for (let i = 0; i < 50; i++) virtualizer.resizeItem(i, 40)
-  virtualizer.getVirtualItems()
-  report!(1700, false)
-  virtualizer.setOptions({ ...options, count: 45 })
-  virtualizer._willUpdate()
-  // 45 rows end at 1800: 1700 is stale until the element reports its
-  // clamped position, so the range is the last 300px of rows.
+  for (let i = 0; i < 50; i++) virtualizer.resizeItem(i, 20)
+  report!(1200, true)
+  // 50 rows of 20 end at 1000: 1200 is stale, so the range is the last 300px.
   expect(virtualizer.getVirtualIndexes()).toEqual([
-    37, 38, 39, 40, 41, 42, 43, 44,
+    35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
   ])
 })

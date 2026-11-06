@@ -549,19 +549,13 @@ export class Virtualizer<
   // (`followOnAppend does not follow 'trim only'`; reading the element at
   // write time still moves 49 of 1080 snapshot seeds).
   private _reportedOverscroll = false
-  // The last position the element reported, and where the list ended in the
-  // element then. A `scrollOffset` past the list's end is where the element
-  // is only if it is that report and the list has not shrunk since, as when
-  // other content shares the scroll element (#1371). The end is the sizer as
-  // last rendered (`_willUpdate` runs once the adapter has rendered), taken
-  // to layout coordinates with the report: measurements and a held
-  // correction move the layout's own end before the element has the new size.
-  // The initial offset counts as a report, against the end it is first
-  // ranged with (a null end until then).
-  private _renderedListEnd = Infinity
-  private _rangeListEnd = -Infinity
-  private _reportedOffset: number | null = null
-  private _reportedListEnd: number | null = null
+  // How far the scroll element extends past the end of the list: other
+  // content that shares it (#1371). Read with the element's scroll range on
+  // scroll reports and on attach, against the sizer the element has (the
+  // last `getTotalSize()` an adapter drew), not a layout that measurements
+  // moved since.
+  private _trailing = 0
+  private _drawnListEnd = Infinity
   // The touch gesture in progress (see `IosGesture`). Its tail closing on
   // its own makes a write possible again: the last momentum frame may have
   // come before the timer. The hold is released first, so a command that
@@ -1082,11 +1076,7 @@ export class Virtualizer<
     // its next touch cycle.
     this._holdOffset = 0
     this._reportedOverscroll = false
-    // A position the old element reported means nothing for the next one.
-    // The initial offset, given before any element, stays: `_willUpdate`
-    // writes it to the element it attaches, and an element already there
-    // fires no scroll event to report it.
-    if (this.scrollElement !== null) this._reportedOffset = null
+    this._trailing = 0
     // (The gesture was ended with its listeners, in the unsubs above.)
     this._clampedAdjustment = null
     // A write to the old element will never be read back.
@@ -1102,7 +1092,6 @@ export class Virtualizer<
   }
 
   _willUpdate = () => {
-    this._renderedListEnd = this.getTotalSize() + this.options.scrollMargin
     const scrollElement = this.options.enabled
       ? this.options.getScrollElement()
       : null
@@ -1140,6 +1129,7 @@ export class Virtualizer<
           // judged only while scrolling: at rest the element has clamped,
           // and a stale sizer makes no bounce.
           const elementMax = isScrolling ? this._elementMaxScrollOffset() : null
+          this._readTrailing(elementMax)
           const wasOverscrolled = this._reportedOverscroll
           this._reportedOverscroll =
             offset < 0 || (elementMax !== null && offset > elementMax + 1)
@@ -1147,14 +1137,6 @@ export class Virtualizer<
           this._lastElementOffset = elementOffset
           // Everything below works in layout coordinates.
           offset = this._toLayoutOffset(offset)
-          // An adapter that redraws on onChange (Vue, Svelte) renders the
-          // sizer of the last range without `_willUpdate`, so the element can
-          // end further down than recorded there; the longer end only makes
-          // the offset stale sooner.
-          const listEnd = Math.max(
-            this._toLayoutOffset(this._renderedListEnd),
-            this._rangeListEnd,
-          )
 
           const kind = this._classifyScrollEvent(
             offset,
@@ -1217,8 +1199,6 @@ export class Virtualizer<
                 : 'backward'
             : null
           this.scrollOffset = offset
-          this._reportedOffset = offset
-          this._reportedListEnd = listEnd
           this.isScrolling = isScrolling
 
           // A finger that lands on a fling fires no touch events (#1307), so
@@ -1288,17 +1268,7 @@ export class Virtualizer<
       }
 
       this._scrollToOffset(this.getScrollOffset())
-      // The kept initial offset is where the element is unless the element
-      // cannot scroll that far: then it clamps, and already resting there it
-      // fires no scroll event to say so.
-      const elementMax = this._elementMaxScrollOffset()
-      if (
-        elementMax !== null &&
-        this._reportedOffset !== null &&
-        this._reportedOffset > elementMax + this._holdOffset
-      ) {
-        this._reportedOffset = null
-      }
+      this._readTrailing(this._elementMaxScrollOffset())
     }
 
     // The consumer has committed the sizer.
@@ -1625,14 +1595,11 @@ export class Virtualizer<
       return 0
     }
 
-    if (this.scrollOffset === null) {
-      this.scrollOffset =
-        typeof this.options.initialOffset === 'function'
-          ? this.options.initialOffset()
-          : this.options.initialOffset
-      this._reportedOffset = this.scrollOffset
-      this._reportedListEnd = null
-    }
+    this.scrollOffset =
+      this.scrollOffset ??
+      (typeof this.options.initialOffset === 'function'
+        ? this.options.initialOffset()
+        : this.options.initialOffset)
 
     return this.scrollOffset
   }
@@ -1919,42 +1886,23 @@ export class Virtualizer<
       // scrollOffset is measured in the scroll element and the layout total
       // from the list start, so the list ends scrollMargin further down.
       this._getLayoutTotalSize() + this.options.scrollMargin,
-      this._reportedOffset,
-      this._reportedListEnd,
-      this._reportedOverscroll,
+      this._trailing,
     ],
-    (
-      measurements,
-      outerSize,
-      scrollOffset,
-      lanes,
-      listEnd,
-      reportedOffset,
-      reportedListEnd,
-      overscrolled,
-    ) => {
-      this._rangeListEnd = listEnd
-      if (reportedListEnd === null) {
-        this._reportedListEnd = reportedListEnd = listEnd
-      }
+    (measurements, outerSize, scrollOffset, lanes, listEnd, trailing) => {
       if (measurements.length === 0 || outerSize === 0) {
         this.range = null
         return null
       }
       // Until the element reports a clamped position (the list shrank, a
       // rubber-band bounce), the offset can sit past the last row, which
-      // would leave only that row in the range. Any other offset past the
-      // end is where the element is: the list is above the viewport.
-      const stale =
-        overscrolled ||
-        scrollOffset !== reportedOffset ||
-        listEnd < reportedListEnd
+      // would leave only that row in the range. The element ends `trailing`
+      // past the list where other content follows it, and an offset up to
+      // there is where the element is.
+      const maxScrollOffset = Math.max(listEnd + trailing - outerSize, 0)
       this.range = calculateRangeImpl(
         measurements,
         outerSize,
-        stale
-          ? Math.min(scrollOffset, Math.max(listEnd - outerSize, 0))
-          : scrollOffset,
+        Math.min(scrollOffset, maxScrollOffset),
         lanes,
         // Pass the typed array so binary search + forward-walk can read
         // start/end directly from Float64Array, skipping the Proxy traps.
@@ -2304,6 +2252,12 @@ export class Virtualizer<
       offset += this.pendingScrollAnchor.delta
     }
     return offset
+  }
+
+  private _readTrailing = (elementMax: number | null) => {
+    if (elementMax === null) return
+    const trailing = elementMax + this.getSize() - this._drawnListEnd
+    this._trailing = trailing > 0 ? trailing : 0
   }
 
   // The element's own scroll range, or null where it cannot be read (no
@@ -2663,8 +2617,11 @@ export class Virtualizer<
   // The size the consumer gives the container: the layout's total, short by
   // a held correction so the rows exposed shifted by it still fill it (see
   // `_holdOffset`).
-  getTotalSize = () =>
-    Math.max(this._getLayoutTotalSize() - this._holdOffset, 0)
+  getTotalSize = () => {
+    const total = Math.max(this._getLayoutTotalSize() - this._holdOffset, 0)
+    this._drawnListEnd = total + this.options.scrollMargin
+    return total
+  }
 
   private _getLayoutTotalSize = () => {
     const measurements = this.getMeasurements()
