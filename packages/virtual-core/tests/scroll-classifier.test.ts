@@ -21,6 +21,7 @@ const at = (input: Partial<ScrollEventInput>) =>
     scrollOffset: 500,
     pendingWrite: null,
     clampedMaxAtWrite: null,
+    ownWriteAt: null,
     ...input,
   })
 
@@ -222,6 +223,19 @@ describe('classifyScrollEvent', () => {
       ).toBe('clampedEcho')
     })
   })
+
+  describe('restEcho', () => {
+    test('at rest within 1.5px of where our own write was reported', () => {
+      // WebKit reports a write of 1000.5 at 1000.
+      const rest = { isScrolling: false, ownWriteAt: 1000.5 }
+      expect(at({ ...rest, offset: 1000 })).toBe('restEcho')
+      expect(at({ ...rest, offset: 1002 })).toBe('external')
+    })
+
+    test('not while scrolling', () => {
+      expect(at({ offset: 1000, ownWriteAt: 1000 })).toBe('external')
+    })
+  })
 })
 
 describe('externalRetiresCommand', () => {
@@ -252,6 +266,20 @@ describe('externalRetiresCommand', () => {
       expect(retires({ kind })).toEqual({ result: false, targetCalls: 0 })
     },
   )
+
+  test('our write echoed at rest keeps a command whose target has moved since it wrote it', () => {
+    expect(retires({ kind: 'restEcho' }, 1200)).toEqual({
+      result: false,
+      targetCalls: 1,
+    })
+  })
+
+  test('our write echoed at rest retires a command whose target has not moved, computing it once', () => {
+    expect(retires({ kind: 'restEcho' })).toEqual({
+      result: true,
+      targetCalls: 1,
+    })
+  })
 
   test('a clamped echo keeps the command, but only after the target check', () => {
     expect(retires({ kind: 'clampedEcho' })).toEqual({

@@ -12,6 +12,8 @@ import { approxEqual } from './utils'
 //                    through since the write
 //   clampedEcho      a compensation write the browser clamped (#1258)
 //                    reporting at the max seen at write time
+//   restEcho         our own write reported again at rest, where the last
+//                    scroll event reported it
 //   external         anything else: the user, a fling, a smooth animation
 //                    frame
 type ScrollEventKind =
@@ -19,6 +21,7 @@ type ScrollEventKind =
   | 'readBack'
   | 'clampedReadBack'
   | 'clampedEcho'
+  | 'restEcho'
   | 'external'
 
 export interface ScrollEventInput {
@@ -44,6 +47,9 @@ export interface ScrollEventInput {
   // The element's max when a clamped compensation write was made (#1258),
   // or null when none is pending.
   clampedMaxAtWrite: number | null
+  // Where the last scroll event reported our own write (read back, clamped
+  // or echoed), until a report anywhere else.
+  ownWriteAt: number | null
 }
 
 export function classifyScrollEvent({
@@ -54,6 +60,7 @@ export function classifyScrollEvent({
   scrollOffset,
   pendingWrite,
   clampedMaxAtWrite,
+  ownWriteAt,
 }: ScrollEventInput): ScrollEventKind {
   // A scroll event that reports movement but lands on the offset we already
   // hold — and isn't a self-write read-back — is a spurious no-op re-emit
@@ -99,6 +106,17 @@ export function classifyScrollEvent({
   ) {
     return 'clampedEcho'
   }
+  // A write is reported again when the element comes to rest: `scrollend`
+  // follows its scroll event in the same frame's scroll steps, before
+  // reconcile; the fallback follows it after `isScrollingResetDelay`.
+  // Nothing has moved the element in between.
+  if (
+    !isScrolling &&
+    ownWriteAt !== null &&
+    Math.abs(offset - ownWriteAt) < 1.5
+  ) {
+    return 'restEcho'
+  }
   return 'external'
 }
 
@@ -142,14 +160,17 @@ export interface RetireInput {
 
 // Whether a scroll event that is not the read-back of our own write retires
 // the in-flight index command: an external scroll moved away from its
-// target. Our own measurement updates (including clamped writes) still need
-// to reconcile.
+// target, or our own write left the element where reconcile will not move
+// it. Our own measurement updates (including clamped writes) still need to
+// reconcile.
 export function externalRetiresCommand({
   kind,
   offset,
   command,
   target,
 }: RetireInput): boolean {
+  let fresh: number | undefined
+  const freshTarget = () => (fresh ??= target())
   return (
     kind !== 'spurious' &&
     kind !== 'readBack' &&
@@ -170,7 +191,15 @@ export function externalRetiresCommand({
     // has landed.
     !isAnimating(command.phase) &&
     !approxEqual(offset, command.lastTargetOffset) &&
-    !approxEqual(offset, target()) &&
+    !approxEqual(offset, freshTarget()) &&
+    // Our own write reported again at rest (`restEcho`): nothing else has
+    // moved the element, but reconcile writes only a target that moved. Once
+    // the target has moved since the command wrote it, reconcile lands the
+    // command there (with `scrollend`, a correction's echo arrives before
+    // reconcile has run on the measurements behind it); while it has not,
+    // nothing will bring the element back, and the command ends here.
+    (kind !== 'restEcho' ||
+      approxEqual(freshTarget(), command.lastTargetOffset)) &&
     // A compensation write's clamped echo (#1258) keeps the command. The
     // order is deliberate, not tidiness: this clause stays after `target()`
     // (and `clampedReadBack` before it) because `target()` can rebuild the
