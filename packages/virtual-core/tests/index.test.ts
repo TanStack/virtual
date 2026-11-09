@@ -1,4 +1,4 @@
-import { expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   Virtualizer,
   observeElementOffset,
@@ -33,6 +33,55 @@ test('should return correct total size with one item and multiple lanes', () => 
   })
   expect(virtualizer.getTotalSize()).toBe(50)
 })
+
+describe.each([0, 50, 200])(
+  'total size with scrollMargin %i',
+  (scrollMargin) => {
+    test.each([
+      { paddingStart: 0, paddingEnd: 0 },
+      { paddingStart: 40, paddingEnd: 0 },
+      { paddingStart: 0, paddingEnd: 60 },
+      { paddingStart: 40, paddingEnd: 60 },
+    ])('preserves padding $paddingStart / $paddingEnd', (padding) => {
+      for (const horizontal of [false, true]) {
+        for (const lanes of [1, 2]) {
+          const virtualizer = new Virtualizer({
+            count: 0,
+            estimateSize: () => 50,
+            getScrollElement: () => null,
+            scrollToFn: vi.fn(),
+            observeElementRect: vi.fn(),
+            observeElementOffset: vi.fn(),
+            scrollMargin,
+            horizontal,
+            lanes,
+            ...padding,
+          })
+          const totalPadding = padding.paddingStart + padding.paddingEnd
+
+          for (const count of [0, 4, 0, 4, 0]) {
+            virtualizer.setOptions({ ...virtualizer.options, count })
+            expect(virtualizer.getTotalSize()).toBe(
+              totalPadding + Math.ceil(count / lanes) * 50,
+            )
+          }
+
+          virtualizer.setOptions({
+            ...virtualizer.options,
+            count: 4,
+            enabled: false,
+          })
+          expect(virtualizer.getTotalSize()).toBe(totalPadding)
+
+          virtualizer.setOptions({ ...virtualizer.options, enabled: true })
+          expect(virtualizer.getTotalSize()).toBe(
+            totalPadding + (4 / lanes) * 50,
+          )
+        }
+      }
+    })
+  },
+)
 
 test('should correctly recalculate lane assignments when lane count changes', () => {
   // Create a mock scroll element
