@@ -1138,7 +1138,14 @@ export class Virtualizer<
             this.scrollDirection !== 'backward' &&
             this.isPinnedToEnd()
           this.scrollRect = rect
-          if (wasAtEnd && prevSize > this.getSize()) {
+          // Before a command's read-back, leave the shrink to the command, as
+          // resizeItem does: reconcile retargets an index or end command from
+          // the new layout, and an offset command lands where it was written.
+          if (
+            wasAtEnd &&
+            prevSize > this.getSize() &&
+            !this._awaitingCommandReadBack()
+          ) {
             // While a clamped write waits for the sizer to grow, the DOM end
             // is stale; apply the whole shrink and let the retry land it.
             const shrink = prevSize - this.getSize()

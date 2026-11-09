@@ -851,3 +851,21 @@ test('anchorTo:end does not pull a reader scrolling up back to the end when the 
 
   expect(scrollToFn).not.toHaveBeenCalled()
 })
+
+test('anchorTo:end leaves a shrink before a scroll command has been read back to the command', () => {
+  // Pinned at the end, a command away from it is written but not yet read
+  // back, so `scrollOffset` still says "at the end". As resizeItem does, leave
+  // it to the command: reconcile retargets an index or end command from the
+  // new layout, and an offset command lands where it was written.
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, resizeViewport } = createChatVirtualizer({
+    messages,
+    offset: 300,
+  })
+
+  virtualizer.scrollToIndex(0)
+  scrollToFn.mockClear()
+  resizeViewport(150)
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+})
