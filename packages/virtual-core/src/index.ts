@@ -1130,8 +1130,12 @@ export class Virtualizer<
           const prevSize =
             !isFirstRect && this.scrollRect !== null ? this.getSize() : null
           isFirstRect = false
+          // A reader scrolling up is leaving the end: don't pull them back
+          // (e.g. the iOS toolbar reappearing on scroll-up shrinks a window
+          // scroller).
           const wasAtEnd =
             prevSize !== null &&
+            this.scrollDirection !== 'backward' &&
             this.options.anchorTo === 'end' &&
             !isSmoothScroll(this.scrollState) &&
             this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold

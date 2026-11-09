@@ -835,3 +835,19 @@ test('anchorTo:end does not carry an end pin over to a new, shorter scroll eleme
     scrollToFn.mock.calls.filter(([, opts]) => opts?.adjustments),
   ).toHaveLength(0)
 })
+
+test('anchorTo:end does not pull a reader scrolling up back to the end when the scroll element shrinks', () => {
+  // e.g. a window scroller on iOS: scrolling up near the end brings the URL
+  // bar back, which shrinks the viewport. Scrolling up means leaving the end.
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { scrollToFn, emitScroll, resizeViewport } = createChatVirtualizer({
+    messages,
+    offset: 300,
+    threshold: 10,
+  })
+
+  emitScroll(295, true)
+  resizeViewport(150)
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+})
