@@ -260,6 +260,13 @@ test.each([{ lanes: 1 }, { lanes: 2, useCachedMeasurements: true }])(
   },
 )
 
+test("should not throw when a row is measured at its estimate right after 'enabled' turns off", () => {
+  const { virtualizer } = measuredLanes()
+  virtualizer.setOptions({ ...virtualizer.options, enabled: false })
+
+  expect(() => virtualizer.resizeItem(0, 100)).not.toThrow()
+})
+
 test("should cache lanes incrementally as items are measured when laneAssignmentMode is 'measured'", () => {
   const virtualizer = new Virtualizer({
     count: 4,
