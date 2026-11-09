@@ -198,8 +198,7 @@ export function externalRetiresCommand({
     // command there (with `scrollend`, a correction's echo arrives before
     // reconcile has run on the measurements behind it); while it has not,
     // nothing will bring the element back, and the command ends here.
-    (kind !== 'restEcho' ||
-      approxEqual(freshTarget(), command.lastTargetOffset)) &&
+    (kind !== 'restEcho' || freshTarget() === command.lastTargetOffset) &&
     // A compensation write's clamped echo (#1258) keeps the command. The
     // order is deliberate, not tidiness: this clause stays after `target()`
     // (and `clampedReadBack` before it) because `target()` can rebuild the

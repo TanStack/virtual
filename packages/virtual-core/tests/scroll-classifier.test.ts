@@ -268,7 +268,8 @@ describe('externalRetiresCommand', () => {
   )
 
   test('our write echoed at rest keeps a command whose target has moved since it wrote it', () => {
-    expect(retires({ kind: 'restEcho' }, 1200)).toEqual({
+    // Half a pixel is a move: reconcile writes any change.
+    expect(retires({ kind: 'restEcho' }, 1000.5)).toEqual({
       result: false,
       targetCalls: 1,
     })
