@@ -86,74 +86,87 @@ function ReactTableVirtualized() {
     overscan: 20,
   })
 
+  const virtualRows = virtualizer.getVirtualItems()
+
+  // Height of the spacer rows rendered above and below the visible rows
+  const [paddingTop, paddingBottom] =
+    virtualRows.length > 0
+      ? [
+          virtualRows[0].start,
+          virtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end,
+        ]
+      : [0, 0]
+
+  const columnCount = table.getVisibleLeafColumns().length
+
   return (
     <div ref={parentRef} className="container">
-      <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
-        <table>
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
+      <table>
+        <thead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                return (
+                  <th
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    style={{ width: header.getSize() }}
+                  >
+                    {header.isPlaceholder ? null : (
+                      <div
+                        {...{
+                          className: header.column.getCanSort()
+                            ? 'cursor-pointer select-none'
+                            : '',
+                          onClick: header.column.getToggleSortingHandler(),
+                        }}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                        {{
+                          asc: ' 🔼',
+                          desc: ' 🔽',
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                    )}
+                  </th>
+                )
+              })}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {paddingTop > 0 && (
+            <tr>
+              <td colSpan={columnCount} style={{ height: paddingTop }} />
+            </tr>
+          )}
+          {virtualRows.map((virtualRow) => {
+            const row = rows[virtualRow.index]
+            return (
+              <tr key={row.id} style={{ height: `${virtualRow.size}px` }}>
+                {row.getVisibleCells().map((cell) => {
                   return (
-                    <th
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      style={{ width: header.getSize() }}
-                    >
-                      {header.isPlaceholder ? null : (
-                        <div
-                          {...{
-                            className: header.column.getCanSort()
-                              ? 'cursor-pointer select-none'
-                              : '',
-                            onClick: header.column.getToggleSortingHandler(),
-                          }}
-                        >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                          {{
-                            asc: ' 🔼',
-                            desc: ' 🔽',
-                          }[header.column.getIsSorted() as string] ?? null}
-                        </div>
+                    <td key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
                       )}
-                    </th>
+                    </td>
                   )
                 })}
               </tr>
-            ))}
-          </thead>
-          <tbody>
-            {virtualizer.getVirtualItems().map((virtualRow, index) => {
-              const row = rows[virtualRow.index]
-              return (
-                <tr
-                  key={row.id}
-                  style={{
-                    height: `${virtualRow.size}px`,
-                    transform: `translateY(${
-                      virtualRow.start - index * virtualRow.size
-                    }px)`,
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    return (
-                      <td key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+            )
+          })}
+          {paddingBottom > 0 && (
+            <tr>
+              <td colSpan={columnCount} style={{ height: paddingBottom }} />
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -162,10 +175,10 @@ function App() {
   return (
     <div>
       <p>
-        For tables, the basis for the offset of the translate css function is
-        from the row's initial position itself. Because of this, we need to
-        calculate the translateY pixel count differently and base it off the
-        index.
+        Table rows can't be absolutely positioned, so only the visible rows are
+        rendered, with a spacer row above and below them. The spacers keep the
+        table as tall as all of its rows, so the sticky header stays in place
+        while scrolling.
       </p>
       <ReactTableVirtualized />
       <br />

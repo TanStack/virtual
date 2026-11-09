@@ -1,5 +1,137 @@
 # @tanstack/virtual-core
 
+## 3.19.11
+
+### Patch Changes
+
+- [#1363](https://github.com/TanStack/virtual/pull/1363) [`acaef5e`](https://github.com/TanStack/virtual/commit/acaef5ef7fc2ed86f10fad660b2e21c9285027b5) - fix(virtual-core): compute `getOffsetForIndex` (and the first write of `scrollToIndex`) from the current measurements, not from those of the last render
+
+- [#1291](https://github.com/TanStack/virtual/pull/1291) [`bd08fe5`](https://github.com/TanStack/virtual/commit/bd08fe5b4e798fb12f54ba1e28d31f15482e43a6) - Fix programmatic scrolling in horizontal RTL elements by converting logical offsets, including measurement adjustments, to negative DOM scroll offsets.
+
+## 3.19.10
+
+### Patch Changes
+
+- [#1351](https://github.com/TanStack/virtual/pull/1351) [`9d7ff67`](https://github.com/TanStack/virtual/commit/9d7ff6781767f1b9ea30ef69f42d72d8524ab75d) - Keep a full viewport of rows in the range when the scroll offset is past the end of the list, as it is after the list shrinks and before the element reports its clamped position.
+
+## 3.19.9
+
+### Patch Changes
+
+- [#1347](https://github.com/TanStack/virtual/pull/1347) [`35ad56d`](https://github.com/TanStack/virtual/commit/35ad56db40da52b9c43f226ca60c8267cf1d4c53) - fix(virtual-core): stop a touch fling for a command issued during it on Android too
+
+- [#1348](https://github.com/TanStack/virtual/pull/1348) [`979c1b4`](https://github.com/TanStack/virtual/commit/979c1b46e0b32e3cdfbe634484b9a95b6b5a191e) - Avoid ResizeObserver loop errors when a synchronous resize render mounts or unmounts rows. Measure new rows immediately, defer their observation until the next frame, and stop observing detached rows before delivery ends.
+
+## 3.19.8
+
+### Patch Changes
+
+- [#1340](https://github.com/TanStack/virtual/pull/1340) [`2343004`](https://github.com/TanStack/virtual/commit/23430040447e24bcfdd9665bd6b6c67d8fefd0ea) - fix(virtual-core): account for scrollMargin when deciding the viewport is at the end
+
+## 3.19.7
+
+### Patch Changes
+
+- [#1335](https://github.com/TanStack/virtual/pull/1335) [`887e971`](https://github.com/TanStack/virtual/commit/887e97172207c28d12bf9a0df8a842e261565a42) - fix(virtual-core): cancel stale anchor work on explicit scroll
+
+- [#1337](https://github.com/TanStack/virtual/pull/1337) [`5d51f1d`](https://github.com/TanStack/virtual/commit/5d51f1d972c8c22b9cb0b767741a9c544bd89299) - fix(virtual-core): hold a clamped compensation retry while a touch owns the scroll
+
+## 3.19.6
+
+### Patch Changes
+
+- [#1326](https://github.com/TanStack/virtual/pull/1326) [`05bb4d3`](https://github.com/TanStack/virtual/commit/05bb4d3e75359442e7a650f1814bd496e382bc3d) - Measure the scroll viewport using client dimensions so borders and scrollbars do not obscure end-aligned items.
+
+## 3.19.5
+
+### Patch Changes
+
+- [#1330](https://github.com/TanStack/virtual/pull/1330) [`56b2a63`](https://github.com/TanStack/virtual/commit/56b2a63d2336907659d87125b072fa11e4ac9046) - fix(virtual-core): keep an instant scroll command clamped at a max the sizer committed outside a row resize
+
+  Before an instant scroll command's write is reported, the browser can clamp it at a smaller scroll max that the sizer moves to without a row resize: an append or prepend, `measure()`, or a resize the sizer had not committed when the command was written. The virtualizer now also records the max at each commit, so such an event is read as its own clamped write and the command lands. A clamped write reported with `isScrolling` false is now written again too.
+
+- [#1329](https://github.com/TanStack/virtual/pull/1329) [`d2c7911`](https://github.com/TanStack/virtual/commit/d2c7911d6b749aaa47e9aab1dc10125040363bd0) - fix(virtual-core): keep an instant scroll command when the browser clamps its write before rows grow back
+
+  Rows measured right after an instant `scrollToEnd()` (or `scrollToIndex`) can first shrink the sizer below the written position and then grow it again in the same task. The browser clamps the write to the smaller max, and the scroll event reports that position. It was read as the user scrolling away, so the command was cancelled and the list stopped short of the end (a chat opened with `estimateSize` larger than its rows). The virtualizer now follows the scroll max through those measurements and reads such an event as its own clamped write, so the command retargets and lands at the end.
+
+- [#1324](https://github.com/TanStack/virtual/pull/1324) [`9c762fe`](https://github.com/TanStack/virtual/commit/9c762fe49021b602b1109e471ba38e3065cba5b5) - fix(virtual-core): scroll commands and corrections that stalled or were lost ([#1307](https://github.com/TanStack/virtual/issues/1307))
+  - On iOS 27 and later a `scrollTop` write no longer stops a fling but is overridden by it within a frame. A `scrollToIndex`, `scrollToOffset` or `scrollToEnd` issued during a fling now waits for the fling to end instead of being lost. The user taking over before then cancels it: a drag, a second flick, or a finger stopping the fling (iOS reports none of these with touch events while the fling runs). Corrections keep being held through the gesture as on every version.
+  - `scrollToOffset` / `scrollBy`: a row above the viewport growing after the write's read-back moved the element off the fixed target, and the command kept reconciling until the 5s safety valve. The target now moves with the correction.
+  - A prepend (`anchorTo: 'end'`) before the read-back of a scroll command was anchored against the stale offset and written over the command. It is now left to reconcile, like a resize in that window.
+  - A scroll event between the prepend's options change and the adapter's commit no longer loses the anchor (one blank frame when the element could not be written by commit time).
+  - A command's write clamped by a sizer that shrank below it before the read-back no longer reads as a user scroll; the command reaches its fresh target.
+
+- [#1332](https://github.com/TanStack/virtual/pull/1332) [`6789f7a`](https://github.com/TanStack/virtual/commit/6789f7affc32c3fe77d8ed5b3b9d7c274d158be9) - fix(virtual-core): on iOS 27 and later, a scroll command issued during a fling takes effect at once
+
+  A `scrollToIndex`, `scrollToOffset` or `scrollToEnd` issued during a fling waited for the fling to end, so a button outside the list (such as "jump to latest") did nothing until the list stopped. The command now stops the fling by hiding the scroll element's overflow for two frames, then restores the element's own inline value and writes. The user taking over before the write still cancels the command.
+
+- [#1325](https://github.com/TanStack/virtual/pull/1325) [`77cb05e`](https://github.com/TanStack/virtual/commit/77cb05eef131699bcef0f0a5877b60503e54a366) - refactor(virtual-core): move the iOS touch gesture tracking into its own internal module. One fix along the way: changing the scroll element no longer carries over a pending iOS late-fling window, which could defer corrections on the new element for 150ms.
+
+- [#1318](https://github.com/TanStack/virtual/pull/1318) [`4a1a4fd`](https://github.com/TanStack/virtual/commit/4a1a4fdae1fa86cdda6603194876399f6651630d) - fix(virtual-core): on iOS, defer scroll corrections only for touch-driven scrolls (a finger down, or the momentum after it), so a programmatic landing like `scrollToOffset` compensates before paint instead of snapping later
+
+- [#1319](https://github.com/TanStack/virtual/pull/1319) [`3c61b6e`](https://github.com/TanStack/virtual/commit/3c61b6e30723e6af24d375ea1c5221d12a2e894d) - fix(virtual-core): hold a scroll correction the element cannot take instead of writing it ([#1287](https://github.com/TanStack/virtual/issues/1287))
+
+  A prepend's anchor delta or an above-viewport size change that lands while a `scrollTop` write is impossible (iOS during a touch gesture or its momentum tail, any WebKit while the element is rubber-banding past an edge) is now held: `scrollOffset` carries the corrected position, the rows and the total size are exposed shifted back by the held amount so every adapter keeps the reader's row where it is, and one write moves the element once a write is possible. Before, the write was discarded during the bounce on desktop Safari (the bounce stalled with the new rows and a blank top on screen), and on iOS the new rows showed through the bounce and snapped back at the flush.
+
+- [#1324](https://github.com/TanStack/virtual/pull/1324) [`9c762fe`](https://github.com/TanStack/virtual/commit/9c762fe49021b602b1109e471ba38e3065cba5b5) - refactor(virtual-core): simplify the scroll-correction state (no behaviour change)
+  - A scroll event is classified once (spurious re-emit, our own write's read-back, a clamped read-back or echo, or external) before the handler acts on it, a scroll command waiting for the iOS 27 momentum tail is a phase of its own, and the iOS touch gesture tracks a single `moved` flag.
+  - `scrollAdjustments` is deprecated: a correction is folded into `scrollOffset` at once, so it is always 0. Read `scrollOffset` alone; the getter stays.
+  - One edge case changes: corrections made while `enabled: false` used to accumulate, and a correction made after re-enabling but before the next update was added on top of them. They are no longer carried over.
+
+## 3.19.4
+
+### Patch Changes
+
+- [#1320](https://github.com/TanStack/virtual/pull/1320) [`269e8ed`](https://github.com/TanStack/virtual/commit/269e8ed12db0b9ce55543da5b0bb1082a6296aac) - fix(virtual-core): with `useAnimationFrameWithResizeObserver`, request frames from the scroll element's window instead of the global one, and cancel frames still queued on cleanup, so a list rendered into another window does not stall while the opener is minimized or occluded
+
+## 3.19.3
+
+### Patch Changes
+
+- [#1316](https://github.com/TanStack/virtual/pull/1316) [`f211d3a`](https://github.com/TanStack/virtual/commit/f211d3a64de6cbdd85469c9b97959db65df32eb6) - refactor(virtual-core): simplify the scroll-correction state: a scroll write is tracked until its read-back as one record, the iOS touch gesture as one record, the pending prepend anchor as a tagged record, and every scroll command starts through one entry point (no behaviour change, with two exceptions: a second `touchend`/`touchcancel` inside the post-touch grace window now restarts the window instead of leaving the first timer to end it early, and after the scroll element is swapped or the virtualizer disabled, a write to the old element is no longer matched to the new element's first scroll report). `scrollAdjustments` becomes a read-only getter with the same value (assigning to it is no longer supported).
+
+## 3.19.2
+
+### Patch Changes
+
+- [#1314](https://github.com/TanStack/virtual/pull/1314) [`3800fb3`](https://github.com/TanStack/virtual/commit/3800fb3e76aa7e86bc8a8eba7ddde84aef3066eb) - fix(virtual-core): treat iOS `touchcancel` like `touchend` so interrupted gestures cannot leave touch state stuck and keep scroll anchoring suppressed
+
+- [#1311](https://github.com/TanStack/virtual/pull/1311) [`cb510cb`](https://github.com/TanStack/virtual/commit/cb510cbb50a3e10eaaa7ff8c3c51f320d1224c79) - refactor(virtual-core): track an in-flight scroll command's lifecycle as one phase instead of several flags (no behaviour change)
+
+## 3.19.1
+
+### Patch Changes
+
+- [#1310](https://github.com/TanStack/virtual/pull/1310) [`7aa34f6`](https://github.com/TanStack/virtual/commit/7aa34f62587aab20938dbc84ba88a25e59552036) - fix(virtual-core): let a user scroll end a non-smooth `scrollToIndex` before reconcile has seen it land, so a later measurement no longer pulls the user back to the old target
+
+- [#1309](https://github.com/TanStack/virtual/pull/1309) [`e7a0a92`](https://github.com/TanStack/virtual/commit/e7a0a92e4bec5ecd0a37659e951c8e8ff72e0207) - fix(virtual-core): leave resizes measured before a scroll command's write is read back to reconcile, so an upward `scrollToIndex` no longer jumps back and stalls until the safety valve, and build `scrollBy` on a just-written offset
+
+## 3.19.0
+
+### Minor Changes
+
+- [#1302](https://github.com/TanStack/virtual/pull/1302) [`92c697f`](https://github.com/TanStack/virtual/commit/92c697f7b9c5189137b14f0b0fb41a29eddedbc6) - fix(virtual-core): keep lanes aligned after changing `lanes` with `measureElement` ([#1036](https://github.com/TanStack/virtual/issues/1036))
+  - `overscan` now counts whole rows when `lanes > 1`, so every lane renders (and measures) the same number of extra items. This renders more items than before: `lanes: 4, overscan: 2` now adds 8 items on each side instead of 2. `Range` gains an optional `lanes` field that `defaultRangeExtractor` reads; a custom `rangeExtractor` gets row overscan only if it delegates to `defaultRangeExtractor`.
+  - A ResizeObserver callback now measures all of its entries before notifying, so a synchronous re-render can no longer unmount part of a row before it is measured.
+
+### Patch Changes
+
+- [#1305](https://github.com/TanStack/virtual/pull/1305) [`28a2174`](https://github.com/TanStack/virtual/commit/28a21741bcc5055bbda9891655630989dc6b7517) - fix(virtual-core): don't replay iOS-deferred size corrections after an in-flight `scrollToIndex` lands
+
+## 3.18.0
+
+### Minor Changes
+
+- [#1300](https://github.com/TanStack/virtual/pull/1300) [`43675bc`](https://github.com/TanStack/virtual/commit/43675bc42e3043cb2cea4dba015df077d9813602) - feat(virtual-core): add `cancelScroll()` to stop an in-flight `scrollToIndex` / `scrollToOffset` / `scrollBy` / `scrollToEnd` from correcting toward its target, so a user gesture can take over the viewport ([#1285](https://github.com/TanStack/virtual/issues/1285))
+
+### Patch Changes
+
+- [#1276](https://github.com/TanStack/virtual/pull/1276) [`9df47a3`](https://github.com/TanStack/virtual/commit/9df47a3215f3fb3d182442316d058e2a96696e4f) - Fix `scrollToIndex(last, { align: 'end' })` overshooting the last item by `paddingEnd`; it now respects `scrollPaddingEnd` like other end-aligned items. To scroll to the very bottom including `paddingEnd`, use `scrollToEnd()`.
+
+- [#1293](https://github.com/TanStack/virtual/pull/1293) [`c644f10`](https://github.com/TanStack/virtual/commit/c644f1096c9f4d8221d92862afdc9316b17df62a) - fix(virtual-core): don't cache a 0 size when `measureElement` receives a node that isn't attached to the document yet
+
+- [#1294](https://github.com/TanStack/virtual/pull/1294) [`2a631f4`](https://github.com/TanStack/virtual/commit/2a631f46f4366227533f45604af3db8e60deb70f) - Keep scrollToIndex reconciliation active until pending ResizeObserver measurements can update its target, including when useAnimationFrameWithResizeObserver is enabled. Respect an external scroll away from a reached target during this settling period.
+
 ## 3.17.11
 
 ### Patch Changes

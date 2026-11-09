@@ -2,6 +2,33 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg: #ffffff;
+  --sidebar-bg: #f9f9f9;
+  --hover: #ececec;
+  --text: #0d0d0d;
+  --muted: #6b6b6b;
+  --border: #e5e5e5;
+  --bubble: #f1f1f1;
+  --accent: #0d0d0d;
+  --accent-text: #ffffff;
+  --sidebar-width: 260px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #212121;
+    --sidebar-bg: #171717;
+    --hover: #2f2f2f;
+    --text: #ececec;
+    --muted: #9b9b9b;
+    --border: #3a3a3a;
+    --bubble: #303030;
+    --accent: #ececec;
+    --accent-text: #0d0d0d;
+  }
+}
+
 html {
   font-family:
     Inter,
@@ -11,8 +38,8 @@ html {
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color: #171717;
-  background: #f6f8fa;
+  color: var(--text);
+  background: var(--bg);
 }
 
 body {
@@ -20,85 +47,335 @@ body {
 }
 
 button {
-  border: 1px solid #c6d0da;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #171717;
-  cursor: pointer;
   font: inherit;
-  font-size: 13px;
-  padding: 7px 10px;
-}
-
-button:hover {
-  background: #eef3f7;
+  color: inherit;
+  cursor: pointer;
 }
 
 .App {
-  height: 100vh;
+  height: 100dvh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
 
-.Toolbar {
-  align-items: center;
-  background: #ffffff;
-  border-bottom: 1px solid #d9e0e6;
+.App[data-sidebar-open='false'] {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+
+/* Sidebar */
+
+.Sidebar {
+  background: var(--sidebar-bg);
   display: flex;
-  gap: 8px;
-  justify-content: space-between;
-  padding: 10px 12px;
-}
-
-.ToolbarGroup {
-  display: flex;
-  gap: 8px;
-}
-
-.Status {
-  color: #5c6670;
-  font-size: 13px;
-}
-
-.Shell {
-  display: grid;
+  flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  place-items: stretch;
+  padding: 8px;
 }
 
-.Messages {
-  min-height: 0;
-  overflow: auto;
-  overflow-anchor: none;
+.App[data-sidebar-open='false'] .Sidebar {
+  visibility: hidden;
+}
+
+.SidebarHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 4px 8px 8px;
+}
+
+.Brand {
+  font-weight: 600;
+}
+
+.IconButton {
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  display: grid;
+  height: 40px;
+  place-items: center;
+  width: 40px;
+}
+
+.IconButton:hover {
+  background: var(--hover);
+}
+
+.NewChat {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.NewChat,
+.ChatLink {
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  flex: none;
+  overflow: hidden;
+  padding: 8px 10px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   width: 100%;
 }
 
-.MessageRow {
-  padding: 6px 12px;
+.NewChat:hover,
+.ChatLink:hover,
+.NewChat[aria-current='page'],
+.ChatLink[aria-current='page'] {
+  background: var(--hover);
 }
 
-.Bubble {
-  border: 1px solid #d7dee5;
-  border-radius: 8px;
-  line-height: 1.45;
-  max-width: min(720px, 88vw);
-  padding: 10px 12px;
+.SidebarLabel {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 20px 10px 6px;
+}
+
+.ChatList {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.SidebarHint {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 8px 10px;
+}
+
+.Backdrop {
+  display: none;
+}
+
+/* Main */
+
+.Main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.MainHeader {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  height: 52px;
+  padding: 0 12px;
+}
+
+.MainTitle {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.Pane {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.Messages {
+  height: 100%;
+  overflow: auto;
+  overflow-anchor: none;
+}
+
+.PaneHint {
+  color: var(--muted);
+  flex: 1;
+  padding: 24px;
+  text-align: center;
+}
+
+.HistoryLoader {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13px;
+  left: 50%;
+  padding: 4px 12px;
+  position: absolute;
+  top: 8px;
+  transform: translateX(-50%);
+}
+
+.JumpToLatest {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  bottom: 12px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+  display: grid;
+  height: 40px;
+  left: 50%;
+  place-items: center;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 40px;
+}
+
+/* Messages */
+
+.MessageRow {
+  padding: 0 16px;
+}
+
+.Message {
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 768px;
+  padding: 12px 0;
+}
+
+.Message-user {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.UserBubble {
+  background: var(--bubble);
+  border-radius: 18px;
+  max-width: 70%;
+  padding: 8px 16px;
   white-space: pre-wrap;
 }
 
-.Bubble-user {
-  background: #e6f3ff;
-  margin-left: auto;
+.Message-assistant {
+  white-space: pre-wrap;
 }
 
-.Bubble-assistant {
-  background: #ffffff;
-  margin-right: auto;
+.Message-assistant a {
+  color: inherit;
+  overflow-wrap: anywhere;
 }
 
-.Meta {
-  color: #637081;
-  font-size: 12px;
-  margin-bottom: 4px;
+/* Composer */
+
+.ComposerDock {
+  padding: 0 16px 16px;
+}
+
+.Empty {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px 15vh;
+}
+
+.Empty h1 {
+  font-size: 28px;
+  font-weight: 500;
+  margin: 0 0 24px;
+}
+
+.Suggestions {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+  max-width: 768px;
+  width: 100%;
+}
+
+.Suggestion {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted);
+  display: flex;
+  gap: 12px;
+  padding: 10px 20px;
+  text-align: left;
+}
+
+.Suggestion span {
+  display: flex;
+}
+
+.Suggestion:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.Composer {
+  align-items: flex-end;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.06);
+  display: flex;
+  gap: 8px;
+  margin: 0 auto;
+  max-width: 768px;
+  padding: 10px 10px 10px 20px;
+  width: 100%;
+}
+
+.Composer textarea {
+  background: none;
+  border: 0;
+  color: inherit;
+  field-sizing: content;
+  flex: 1;
+  font: inherit;
+  line-height: 1.5;
+  max-height: 200px;
+  outline: none;
+  padding: 6px 0;
+  resize: none;
+}
+
+.SendButton {
+  background: var(--accent);
+  border: 0;
+  border-radius: 50%;
+  color: var(--accent-text);
+  display: grid;
+  flex: none;
+  height: 40px;
+  place-items: center;
+  width: 40px;
+}
+
+.SendButton:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+/* Narrow screens: the sidebar slides over the chat. */
+
+@media (max-width: 768px) {
+  .App,
+  .App[data-sidebar-open='false'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .Sidebar {
+    bottom: 0;
+    left: 0;
+    position: fixed;
+    top: 0;
+    width: var(--sidebar-width);
+    z-index: 2;
+  }
+
+  .App[data-sidebar-open='true'] .Backdrop {
+    background: rgb(0 0 0 / 0.4);
+    display: block;
+    inset: 0;
+    position: fixed;
+    z-index: 1;
+  }
 }

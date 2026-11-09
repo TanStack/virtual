@@ -94,69 +94,89 @@
     estimateSize: () => 34,
     overscan: 20,
   })
+
+  $: virtualRows = $virtualizer.getVirtualItems()
+
+  // Height of the spacer rows rendered above and below the visible rows
+  $: paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0
+  $: paddingBottom =
+    virtualRows.length > 0
+      ? $virtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
+      : 0
+
+  $: columnCount = $table.getVisibleLeafColumns().length
 </script>
 
 <main>
   <p>
-    For tables, the basis for the offset of the translate css function is from
-    the row's initial position itself. Because of this, we need to calculate the
-    translateY pixel count differently and base it off the index.
+    Table rows can't be absolutely positioned, so only the visible rows are
+    rendered, with a spacer row above and below them. The spacers keep the table
+    as tall as all of its rows, so the sticky header stays in place while
+    scrolling.
   </p>
 
   <div class="list scroll-container" bind:this={virtualListEl}>
-    <div style="position: relative; height: {$virtualizer.getTotalSize()}px;">
-      <table>
-        <thead>
-          {#each $table.getHeaderGroups() as headerGroup (headerGroup.id)}
-            <tr>
-              {#each headerGroup.headers as header (header.id)}
-                <th
-                  colspan={header.colSpan}
-                  style="width: {header.getSize()}px;"
-                >
-                  {#if !header.isPlaceholder}
-                    <button
-                      class:sortable-header={header.column.getCanSort()}
-                      disabled={!header.column.getCanSort()}
-                      on:click={header.column.getToggleSortingHandler()}
-                    >
-                      <svelte:component
-                        this={flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                      />
-                      {#if header.column.getIsSorted()}
-                        {header.column.getIsSorted() === 'desc' ? ' 🔽' : ' 🔼'}
-                      {/if}
-                    </button>
-                  {/if}
-                </th>
-              {/each}
-            </tr>
-          {/each}
-        </thead>
-        <tbody>
-          {#each $virtualizer.getVirtualItems() as row, idx (row.index)}
-            <tr
-              style="height: {row.size}px; transform: translateY({row.start -
-                idx * row.size}px);"
-            >
-              {#each rows[row.index].getVisibleCells() as cell (cell.id)}
-                <td>
-                  <svelte:component
-                    this={flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext(),
-                    )}
-                  />
-                </td>
-              {/each}
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
+    <table>
+      <thead>
+        {#each $table.getHeaderGroups() as headerGroup (headerGroup.id)}
+          <tr>
+            {#each headerGroup.headers as header (header.id)}
+              <th colspan={header.colSpan} style="width: {header.getSize()}px;">
+                {#if !header.isPlaceholder}
+                  <button
+                    class:sortable-header={header.column.getCanSort()}
+                    disabled={!header.column.getCanSort()}
+                    on:click={header.column.getToggleSortingHandler()}
+                  >
+                    <svelte:component
+                      this={flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    />
+                    {#if header.column.getIsSorted()}
+                      {header.column.getIsSorted() === 'desc' ? ' 🔽' : ' 🔼'}
+                    {/if}
+                  </button>
+                {/if}
+              </th>
+            {/each}
+          </tr>
+        {/each}
+      </thead>
+      <tbody>
+        {#if paddingTop > 0}
+          <tr>
+            <td
+              colspan={columnCount}
+              style="height: {paddingTop}px; padding: 0;"
+            ></td>
+          </tr>
+        {/if}
+        {#each virtualRows as row (row.index)}
+          <tr style="height: {row.size}px;">
+            {#each rows[row.index].getVisibleCells() as cell (cell.id)}
+              <td>
+                <svelte:component
+                  this={flexRender(
+                    cell.column.columnDef.cell,
+                    cell.getContext(),
+                  )}
+                />
+              </td>
+            {/each}
+          </tr>
+        {/each}
+        {#if paddingBottom > 0}
+          <tr>
+            <td
+              colspan={columnCount}
+              style="height: {paddingBottom}px; padding: 0;"
+            ></td>
+          </tr>
+        {/if}
+      </tbody>
+    </table>
   </div>
 </main>
 
@@ -176,6 +196,15 @@
     height: 600px;
     width: 100%;
     overflow: auto;
+    overflow-anchor: none;
+  }
+  table {
+    border-collapse: collapse;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    background: white;
   }
   .sortable-header {
     cursor: pointer;

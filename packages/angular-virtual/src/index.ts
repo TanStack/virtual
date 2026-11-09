@@ -133,6 +133,7 @@ function injectVirtualizerBase<
         '_didMount',
         '_willUpdate',
         'calculateRange',
+        'cancelScroll',
         'getVirtualIndexes',
         'measure',
         'measureElement',

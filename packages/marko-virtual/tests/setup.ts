@@ -31,8 +31,8 @@ if (!global.requestAnimationFrame) {
   })
 
 // ---------------------------------------------------------------------------
-// offsetHeight / offsetWidth — always 0 in jsdom (no CSS layout engine).
-// observeElementRect calls getRect(element) = { offsetWidth, offsetHeight }.
+// Element dimensions are always 0 in jsdom (no CSS layout engine).
+// The viewport uses client dimensions, while rows use offset dimensions.
 // Without this, the virtualizer sees a 0-height viewport and renders no items.
 // 400px ÷ 50px default estimateSize = 8 visible + 5 overscan each side ≈ 18.
 // ---------------------------------------------------------------------------
@@ -41,6 +41,15 @@ Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
   get: () => 400,
 })
 Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+  configurable: true,
+  get: () => 400,
+})
+
+Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+  configurable: true,
+  get: () => 400,
+})
+Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
   configurable: true,
   get: () => 400,
 })

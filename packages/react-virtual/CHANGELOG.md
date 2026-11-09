@@ -1,5 +1,100 @@
 # @tanstack/react-virtual
 
+## 3.14.26
+
+### Patch Changes
+
+- Updated dependencies [[`acaef5e`](https://github.com/TanStack/virtual/commit/acaef5ef7fc2ed86f10fad660b2e21c9285027b5), [`bd08fe5`](https://github.com/TanStack/virtual/commit/bd08fe5b4e798fb12f54ba1e28d31f15482e43a6)]:
+  - @tanstack/virtual-core@3.19.11
+
+## 3.14.25
+
+### Patch Changes
+
+- Updated dependencies [[`9d7ff67`](https://github.com/TanStack/virtual/commit/9d7ff6781767f1b9ea30ef69f42d72d8524ab75d)]:
+  - @tanstack/virtual-core@3.19.10
+
+## 3.14.24
+
+### Patch Changes
+
+- Updated dependencies [[`35ad56d`](https://github.com/TanStack/virtual/commit/35ad56db40da52b9c43f226ca60c8267cf1d4c53), [`979c1b4`](https://github.com/TanStack/virtual/commit/979c1b46e0b32e3cdfbe634484b9a95b6b5a191e)]:
+  - @tanstack/virtual-core@3.19.9
+
+## 3.14.23
+
+### Patch Changes
+
+- Updated dependencies [[`2343004`](https://github.com/TanStack/virtual/commit/23430040447e24bcfdd9665bd6b6c67d8fefd0ea)]:
+  - @tanstack/virtual-core@3.19.8
+
+## 3.14.22
+
+### Patch Changes
+
+- Updated dependencies [[`887e971`](https://github.com/TanStack/virtual/commit/887e97172207c28d12bf9a0df8a842e261565a42), [`5d51f1d`](https://github.com/TanStack/virtual/commit/5d51f1d972c8c22b9cb0b767741a9c544bd89299)]:
+  - @tanstack/virtual-core@3.19.7
+
+## 3.14.21
+
+### Patch Changes
+
+- Updated dependencies [[`05bb4d3`](https://github.com/TanStack/virtual/commit/05bb4d3e75359442e7a650f1814bd496e382bc3d)]:
+  - @tanstack/virtual-core@3.19.6
+
+## 3.14.20
+
+### Patch Changes
+
+- Updated dependencies [[`56b2a63`](https://github.com/TanStack/virtual/commit/56b2a63d2336907659d87125b072fa11e4ac9046), [`d2c7911`](https://github.com/TanStack/virtual/commit/d2c7911d6b749aaa47e9aab1dc10125040363bd0), [`9c762fe`](https://github.com/TanStack/virtual/commit/9c762fe49021b602b1109e471ba38e3065cba5b5), [`6789f7a`](https://github.com/TanStack/virtual/commit/6789f7affc32c3fe77d8ed5b3b9d7c274d158be9), [`77cb05e`](https://github.com/TanStack/virtual/commit/77cb05eef131699bcef0f0a5877b60503e54a366), [`4a1a4fd`](https://github.com/TanStack/virtual/commit/4a1a4fdae1fa86cdda6603194876399f6651630d), [`3c61b6e`](https://github.com/TanStack/virtual/commit/3c61b6e30723e6af24d375ea1c5221d12a2e894d), [`9c762fe`](https://github.com/TanStack/virtual/commit/9c762fe49021b602b1109e471ba38e3065cba5b5)]:
+  - @tanstack/virtual-core@3.19.5
+
+## 3.14.19
+
+### Patch Changes
+
+- Updated dependencies [[`269e8ed`](https://github.com/TanStack/virtual/commit/269e8ed12db0b9ce55543da5b0bb1082a6296aac)]:
+  - @tanstack/virtual-core@3.19.4
+
+## 3.14.18
+
+### Patch Changes
+
+- Updated dependencies [[`f211d3a`](https://github.com/TanStack/virtual/commit/f211d3a64de6cbdd85469c9b97959db65df32eb6)]:
+  - @tanstack/virtual-core@3.19.3
+
+## 3.14.17
+
+### Patch Changes
+
+- Updated dependencies [[`3800fb3`](https://github.com/TanStack/virtual/commit/3800fb3e76aa7e86bc8a8eba7ddde84aef3066eb), [`cb510cb`](https://github.com/TanStack/virtual/commit/cb510cbb50a3e10eaaa7ff8c3c51f320d1224c79)]:
+  - @tanstack/virtual-core@3.19.2
+
+## 3.14.16
+
+### Patch Changes
+
+- Updated dependencies [[`7aa34f6`](https://github.com/TanStack/virtual/commit/7aa34f62587aab20938dbc84ba88a25e59552036), [`e7a0a92`](https://github.com/TanStack/virtual/commit/e7a0a92e4bec5ecd0a37659e951c8e8ff72e0207)]:
+  - @tanstack/virtual-core@3.19.1
+
+## 3.14.15
+
+### Patch Changes
+
+- Updated dependencies [[`28a2174`](https://github.com/TanStack/virtual/commit/28a21741bcc5055bbda9891655630989dc6b7517), [`92c697f`](https://github.com/TanStack/virtual/commit/92c697f7b9c5189137b14f0b0fb41a29eddedbc6)]:
+  - @tanstack/virtual-core@3.19.0
+
+## 3.14.14
+
+### Patch Changes
+
+- [#1301](https://github.com/TanStack/virtual/pull/1301) [`ce57b78`](https://github.com/TanStack/virtual/commit/ce57b78ddf7c2c3384067c528ef59f18d3199a46) - fix(react-virtual): position `directDomUpdates` rows that mount without the owner re-rendering
+
+  Rows were only positioned by the owner's layout effect or the next `onChange`. A row mounted by a child that re-renders on its own (local state, context, a resolved Suspense boundary) skipped both when it was fixed-size, and stayed unpositioned until the range changed. Rows are now positioned as they register through `measureElement`, and `containerRef` positions the rows that mounted together with the container.
+
+- Updated dependencies [[`43675bc`](https://github.com/TanStack/virtual/commit/43675bc42e3043cb2cea4dba015df077d9813602), [`9df47a3`](https://github.com/TanStack/virtual/commit/9df47a3215f3fb3d182442316d058e2a96696e4f), [`c644f10`](https://github.com/TanStack/virtual/commit/c644f1096c9f4d8221d92862afdc9316b17df62a), [`2a631f4`](https://github.com/TanStack/virtual/commit/2a631f46f4366227533f45604af3db8e60deb70f)]:
+  - @tanstack/virtual-core@3.18.0
+
 ## 3.14.13
 
 ### Patch Changes

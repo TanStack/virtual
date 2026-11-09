@@ -141,6 +141,18 @@ test('isRtl: a right-to-left horizontal list advances as the user scrolls left',
   expect(idx[idx.length - 1]!).toBeGreaterThan(50)
 })
 
+test('isRtl: scrollToIndex reaches a column using the default scroll function', async ({
+  page,
+}) => {
+  await page.goto('/rtl')
+  await page.waitForSelector('[data-index="0"]')
+  await page.getByTestId('scroll-50').click()
+
+  const scroller = page.getByTestId('scroller')
+  await expect.poll(() => scroller.evaluate((el) => el.scrollLeft)).toBe(-5000)
+  await expect(page.locator('[data-index="50"]')).toBeInViewport()
+})
+
 test('custom measureElement: item sizes come from the custom measurer (+10)', async ({
   page,
 }) => {

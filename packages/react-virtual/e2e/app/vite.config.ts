@@ -16,6 +16,10 @@ export default defineConfig({
           __dirname,
           'measure-element/index.html',
         ),
+        'resize-delivery': path.resolve(
+          __dirname,
+          'resize-delivery/index.html',
+        ),
         'smooth-scroll': path.resolve(__dirname, 'smooth-scroll/index.html'),
         'smooth-prepend': path.resolve(__dirname, 'smooth-prepend/index.html'),
         'stale-index': path.resolve(__dirname, 'stale-index/index.html'),
@@ -23,6 +27,9 @@ export default defineConfig({
           __dirname,
           'direct-dom-updates/index.html',
         ),
+        'lanes-change': path.resolve(__dirname, 'lanes-change/index.html'),
+        'ios-deferral': path.resolve(__dirname, 'ios-deferral/index.html'),
+        'command-retire': path.resolve(__dirname, 'command-retire/index.html'),
         'cached-measurements': path.resolve(
           __dirname,
           'cached-measurements/index.html',
