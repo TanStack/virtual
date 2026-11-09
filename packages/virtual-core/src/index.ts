@@ -1116,6 +1116,10 @@ export class Virtualizer<
         this.observer.observe(cached)
       })
 
+      // The first report for a new element has nothing to compare against:
+      // `scrollRect` and `scrollOffset` still describe the previous element,
+      // and its offset observer is not set up yet.
+      let isFirstRect = true
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
           // With anchorTo: 'end', keep an end-pinned viewport pinned when the
@@ -1123,7 +1127,9 @@ export class Virtualizer<
           // browser keeps scrollTop, so the end would otherwise drop below the
           // fold. Judge "pinned" against the size before this change, and
           // never scroll past the element's real end.
-          const prevSize = this.scrollRect !== null ? this.getSize() : null
+          const prevSize =
+            !isFirstRect && this.scrollRect !== null ? this.getSize() : null
+          isFirstRect = false
           const wasAtEnd =
             prevSize !== null &&
             this.options.anchorTo === 'end' &&

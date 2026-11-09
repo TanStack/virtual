@@ -796,3 +796,42 @@ test('anchorTo:end reaches the end when the scroll element shrinks while a clamp
   const [offset, { adjustments }] = scrollToFn.mock.calls.at(-1)!
   expect(offset + (adjustments ?? 0)).toBe(420)
 })
+
+test('anchorTo:end does not carry an end pin over to a new, shorter scroll element', () => {
+  // `cleanup` keeps scrollRect and scrollOffset, and the new element's rect
+  // is reported before its offset, so the first report has nothing to
+  // compare against.
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 300,
+  })
+
+  const shorter = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollHeight: 500,
+    scrollWidth: 1000,
+    clientHeight: 150,
+    clientWidth: 400,
+    offsetHeight: 150,
+  } as unknown as HTMLDivElement
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    getScrollElement: () => shorter,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 150 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+  scrollToFn.mockClear()
+  virtualizer._willUpdate()
+
+  expect(
+    scrollToFn.mock.calls.filter(([, opts]) => opts?.adjustments),
+  ).toHaveLength(0)
+})
