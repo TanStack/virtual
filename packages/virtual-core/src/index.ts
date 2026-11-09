@@ -1136,9 +1136,7 @@ export class Virtualizer<
           const wasAtEnd =
             prevSize !== null &&
             this.scrollDirection !== 'backward' &&
-            this.options.anchorTo === 'end' &&
-            !isSmoothScroll(this.scrollState) &&
-            this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
+            this.isPinnedToEnd()
           this.scrollRect = rect
           if (wasAtEnd && prevSize > this.getSize()) {
             // While a clamped write waits for the sizer to grow, the DOM end
@@ -2109,10 +2107,7 @@ export class Virtualizer<
     const delta = size - itemSize
 
     if (delta !== 0) {
-      const wasAtEnd =
-        this.options.anchorTo === 'end' &&
-        !isSmoothScroll(this.scrollState) &&
-        this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
+      const wasAtEnd = this.isPinnedToEnd()
       const prevTotalSize = wasAtEnd ? this._getLayoutTotalSize() : 0
       // Default anchoring predicate (used unless the consumer supplies a
       // custom shouldAdjustScrollPositionOnItemSizeChange).
@@ -2385,6 +2380,13 @@ export class Virtualizer<
     const maxAtWrite = elementMax + this._holdOffset
     return target > maxAtWrite + 0.5 ? { target, maxAtWrite } : null
   }
+
+  // Whether an end-anchored viewport should follow size changes to stay at
+  // the end. Shared by item growth (`resizeItem`) and scroll element shrink.
+  private isPinnedToEnd = () =>
+    this.options.anchorTo === 'end' &&
+    !isSmoothScroll(this.scrollState) &&
+    this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
 
   private getVirtualDistanceFromEnd = () => {
     // `_getLayoutTotalSize()` measures the sizer, which starts `scrollMargin`
