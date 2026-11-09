@@ -633,6 +633,10 @@ export class Virtualizer<
     smooth: boolean
     lowMaxes?: Array<number>
   } | null = null
+  // Where the last scroll event reported our own write, until a report
+  // anywhere else. The browser reports the write again when the element
+  // comes to rest (`restEcho`).
+  private _ownWriteAt: number | null = null
   // A compensation write from `applyScrollAdjustment` whose target exceeded
   // the element's scroll max at the moment of the write. The browser clamps
   // such a write because the consumer's sizer has not grown yet: an
@@ -956,7 +960,7 @@ export class Virtualizer<
         // the rows and the total shifted back by it, so the reader's row
         // stays put, and the flush writes it once a write is possible.
         this._holdOffset += anchorDelta
-        this._followOffsetTarget(anchorDelta)
+        this._followAnchor(anchorDelta)
       }
     }
   }
@@ -1081,6 +1085,7 @@ export class Virtualizer<
     this._clampedAdjustment = null
     // A write to the old element will never be read back.
     this.pendingWrite = null
+    this._ownWriteAt = null
     this.scrollElement = null
     this.targetWindow = null
   }
@@ -1170,6 +1175,17 @@ export class Virtualizer<
             this.scrollState = null
           }
           this.pendingWrite = null
+          // Remember where our own write was reported. Its echo at rest
+          // leaves that as it is; any other report clears it.
+          if (
+            kind === 'readBack' ||
+            kind === 'clampedReadBack' ||
+            kind === 'clampedEcho'
+          ) {
+            this._ownWriteAt = offset
+          } else if (kind !== 'restEcho') {
+            this._ownWriteAt = null
+          }
 
           // A pending clamped compensation write (#1258) survives only its
           // own read-back, which the browser reports at the scroll max we
@@ -1292,14 +1308,11 @@ export class Virtualizer<
         // an update scheduled from a layout effect commits before paint.
         if (!this._canWriteScroll()) {
           this._holdOffset += anchor.delta
-          this._followOffsetTarget(anchor.delta)
+          this._followAnchor(anchor.delta)
           this.notify(false)
         } else if (
           isSmoothScroll(this.scrollState) &&
-          !approxEqual(
-            this.getScrollOffset() - anchor.delta,
-            this.scrollState.lastTargetOffset,
-          )
+          !this._landedBeforeAnchor(this.scrollState, anchor.delta)
         ) {
           // A smooth programmatic scroll is still travelling. Writing scrollTop
           // here would cancel the browser's animation, and Chromium drops a
@@ -1307,10 +1320,10 @@ export class Virtualizer<
           // the journey would be stranded. The target is index-based and
           // recomputes against the new layout in reconcileScroll, so let the
           // animation run; the next scroll event re-syncs the tracked offset.
-          // A smooth scroll that has already landed (offset at its target,
-          // reconcile not yet retired it) still gets the anchor sync.
+          // A smooth scroll that has already landed (reconcile not yet
+          // retired it) still gets the anchor sync.
         } else {
-          this._followOffsetTarget(anchor.delta)
+          this._followAnchor(anchor.delta)
           this._scrollToOffset(this.getScrollOffset())
         }
       } else {
@@ -1345,6 +1358,7 @@ export class Virtualizer<
       scrollOffset: this.scrollOffset,
       pendingWrite: this.pendingWrite,
       clampedMaxAtWrite: this._clampedAdjustment?.maxAtWrite ?? null,
+      ownWriteAt: this._ownWriteAt,
     })
 
   // Re-issue a compensation write the browser clamped because the sizer had
@@ -2760,6 +2774,32 @@ export class Virtualizer<
   private _followOffsetTarget = (delta: number) => {
     if (this.scrollState !== null && this.scrollState.index == null) {
       this.scrollState.lastTargetOffset += delta
+    }
+  }
+
+  // Whether a command had landed where a prepend's anchor (`delta`, already
+  // in `getScrollOffset()`) found the viewport: it has written (a `queued`
+  // command has not, wherever the fling is), and reconcile has seen it at
+  // its target or the viewport is where it last wrote. A correction since
+  // then can have moved the viewport and the target together.
+  private _landedBeforeAnchor = (state: ScrollState, delta: number) =>
+    state.phase !== 'queued' &&
+    (state.stableFrames > 0 ||
+      approxEqual(this.getScrollOffset() - delta, state.lastTargetOffset))
+
+  // A prepend's anchor moves the viewport with the rows it shows. An offset
+  // target moves with it. An index command that had landed is done: the
+  // reader stays on the rows it was aimed at, and its index now names
+  // others. An end target is still the end.
+  private _followAnchor = (delta: number) => {
+    this._followOffsetTarget(delta)
+    const state = this.scrollState
+    if (
+      state?.index != null &&
+      !state.toEnd &&
+      this._landedBeforeAnchor(state, delta)
+    ) {
+      this.scrollState = null
     }
   }
 
