@@ -200,6 +200,66 @@ test("should defer lane caching until measurement when laneAssignmentMode is 'me
   expect(lanesBeforeResize).toEqual(lanesAfterResize)
 })
 
+const measuredLanes = () => {
+  const virtualizer = new Virtualizer({
+    count: 8,
+    lanes: 2,
+    estimateSize: () => 100,
+    laneAssignmentMode: 'measured',
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const lanes = () => virtualizer['getMeasurements']().map((m) => m.lane)
+  lanes()
+  return { virtualizer, lanes }
+}
+
+test("should keep the lane of a row measured at its estimate when laneAssignmentMode is 'measured'", () => {
+  const { virtualizer, lanes } = measuredLanes()
+  const before = lanes()
+
+  for (let i = 0; i < 8; i++) virtualizer.resizeItem(i, 100)
+  virtualizer.resizeItem(1, 500)
+
+  expect(lanes()).toEqual(before)
+})
+
+test('should keep the lane of a row measured at its estimate after a row above it changed in the same batch', () => {
+  const { virtualizer, lanes } = measuredLanes()
+
+  // Rows 2 and on are measured after row 1 changed, with no rebuild in between.
+  virtualizer.resizeItem(1, 300)
+  for (let i = 2; i < 8; i++) virtualizer.resizeItem(i, 100)
+  const before = lanes()
+  expect(before).toEqual([0, 1, 0, 0, 1, 0, 1, 0])
+  virtualizer.resizeItem(1, 500)
+
+  expect(lanes()).toEqual(before)
+})
+
+test.each([{ lanes: 1 }, { lanes: 2, useCachedMeasurements: true }])(
+  'should not cache a lane for a size equal to the estimate with %o',
+  (options) => {
+    const virtualizer = new Virtualizer({
+      count: 4,
+      estimateSize: () => 100,
+      laneAssignmentMode: 'measured',
+      getScrollElement: () => null,
+      scrollToFn: vi.fn(),
+      observeElementRect: vi.fn(),
+      observeElementOffset: vi.fn(),
+      ...options,
+    })
+    virtualizer['getMeasurements']()
+
+    virtualizer.resizeItem(0, 100)
+
+    expect(virtualizer['laneAssignments'].size).toBe(0)
+  },
+)
+
 test("should cache lanes incrementally as items are measured when laneAssignmentMode is 'measured'", () => {
   const virtualizer = new Virtualizer({
     count: 4,

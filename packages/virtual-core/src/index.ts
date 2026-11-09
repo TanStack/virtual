@@ -2165,6 +2165,18 @@ export class Virtualizer<
       // `_willUpdate` (#1266).
       this._flushHoldIfReady(true)
       this._retryClampedAdjustment()
+    } else if (
+      this.options.lanes > 1 &&
+      this.options.laneAssignmentMode === 'measured' &&
+      !this.options.useCachedMeasurements
+    ) {
+      // Measured at its estimate: nothing moves, but the row counts as measured
+      // and its lane must not change later. A pending rebuild from this row or
+      // above caches the lane; otherwise none will, so cache it here.
+      this.itemSizeCache.set(key, size)
+      if (this.pendingMin === null || index < this.pendingMin) {
+        this.laneAssignments.set(index, this.measurementsCache[index]!.lane)
+      }
     }
   }
 
