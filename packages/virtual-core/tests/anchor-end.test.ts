@@ -3,6 +3,8 @@ import {
   Virtualizer,
   observeElementOffset,
   observeElementRect,
+  observeWindowOffset,
+  observeWindowRect,
 } from '../src/index'
 
 // ─── end anchoring / chat-style reverse virtualization ──────────────────────
@@ -699,4 +701,197 @@ test('#1258: cleanup drops a pending clamped write', () => {
   virtualizer['cleanup']()
 
   expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+// ─── the size is read with a scroll event ───────────────────────────────────
+
+// An end-anchored list using the default rect observer (the one the refresh
+// measures like), 10 rows of 50px in a 200px viewport, scrolled to the end.
+function createDefaultRectVirtualizer(
+  onChange?: (v: Virtualizer<any, any>) => void,
+) {
+  let offsetCb: ((offset: number, isScrolling: boolean) => void) | null = null
+  const el: any = {
+    scrollTop: 300,
+    scrollLeft: 0,
+    scrollHeight: 500,
+    scrollWidth: 400,
+    clientHeight: 200,
+    clientWidth: 400,
+    offsetHeight: 200,
+    ownerDocument: {
+      defaultView: {
+        requestAnimationFrame: () => 1,
+        cancelAnimationFrame: () => {},
+        performance: { now: () => 0 },
+        ResizeObserver: vi.fn(function () {
+          return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+        }),
+      },
+    },
+  }
+  const virtualizer = new Virtualizer<any, any>({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () => el,
+    scrollToFn: () => {},
+    observeElementRect,
+    observeElementOffset: (_inst, cb) => {
+      offsetCb = cb
+      cb(el.scrollTop, false)
+      return () => {}
+    },
+    anchorTo: 'end',
+    onChange,
+  })
+  virtualizer._willUpdate()
+  virtualizer['getMeasurements']()
+  return {
+    virtualizer,
+    el,
+    emitScroll(nextOffset: number, isScrolling = false) {
+      el.scrollTop = nextOffset
+      offsetCb?.(nextOffset, isScrolling)
+    },
+  }
+}
+
+test('a scroll event after the scroll element grew reports the new size with the new offset', () => {
+  // The browser clamps scrollTop and fires the scroll event before the
+  // ResizeObserver runs; the notify must not pair the new offset with the
+  // old height.
+  const { virtualizer, el, emitScroll } = createDefaultRectVirtualizer()
+  expect(virtualizer.scrollRect).toEqual({ width: 400, height: 200 })
+  expect(virtualizer.isAtEnd()).toBe(true)
+
+  el.clientHeight = 250
+  el.offsetHeight = 250
+  emitScroll(250, false)
+
+  expect(virtualizer.scrollRect?.height).toBe(250)
+  expect(virtualizer.getVirtualDistanceFromEnd()).toBe(0)
+  expect(virtualizer.isAtEnd()).toBe(true)
+})
+
+test('a consumer sees the new size with the new offset in onChange for that scroll event', () => {
+  const seen: Array<[number, number | undefined]> = []
+  const { el, emitScroll } = createDefaultRectVirtualizer((instance) => {
+    seen.push([instance.scrollOffset!, instance.scrollRect?.height])
+  })
+
+  el.clientHeight = 250
+  el.offsetHeight = 250
+  emitScroll(250, true)
+
+  expect(seen.at(-1)).toEqual([250, 250])
+})
+
+test('a scroll event leaves a size from a custom rect observer alone', () => {
+  // The consumer measures differently (here: a fixed 580 while the element
+  // reads 600). Only a size produced by the default observer is refreshed.
+  const scrollToFn = vi.fn()
+  let scrollCb: ((o: number, s: boolean) => void) | null = null
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: 0,
+        scrollLeft: 0,
+        scrollHeight: 500,
+        clientHeight: 600,
+        clientWidth: 400,
+        offsetHeight: 600,
+      }) as any,
+    scrollToFn,
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 580 })
+      return () => {}
+    },
+    observeElementOffset: (_inst, cb) => {
+      scrollCb = cb
+      cb(0, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+
+  scrollCb!(100, true)
+
+  expect(v.scrollRect).toEqual({ width: 400, height: 580 })
+})
+
+test('a scroll event does not invent a size for a scroll element whose rect observer reports nothing', () => {
+  const scrollToFn = vi.fn()
+  let scrollCb: ((o: number, s: boolean) => void) | null = null
+  const v = new Virtualizer({
+    count: 10,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({
+        scrollTop: 0,
+        scrollLeft: 0,
+        scrollHeight: 500,
+        clientHeight: 200,
+        clientWidth: 400,
+        offsetHeight: 200,
+      }) as any,
+    scrollToFn,
+    observeElementRect: () => {},
+    observeElementOffset: (_inst, cb) => {
+      scrollCb = cb
+      cb(0, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+
+  scrollCb!(100, true)
+
+  expect(v.scrollRect).toEqual({ width: 0, height: 0 })
+})
+
+test('a window scroller reads innerHeight with the scroll event, as its rect observer does', () => {
+  const listeners = new Map<string, Set<() => void>>()
+  const win: any = {
+    innerWidth: 800,
+    innerHeight: 600,
+    scrollX: 0,
+    scrollY: 0,
+    document: { documentElement: { scrollHeight: 5000, scrollWidth: 800 } },
+    addEventListener: (name: string, fn: () => void) => {
+      if (!listeners.has(name)) listeners.set(name, new Set())
+      listeners.get(name)!.add(fn)
+    },
+    removeEventListener: (name: string, fn: () => void) => {
+      listeners.get(name)?.delete(fn)
+    },
+    requestAnimationFrame: () => 1,
+    cancelAnimationFrame: () => {},
+    setTimeout: () => 1,
+    clearTimeout: () => {},
+    performance: { now: () => 0 },
+  }
+  win.window = win
+  const v = new Virtualizer<Window, any>({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => win,
+    scrollToFn: () => {},
+    observeElementRect: observeWindowRect,
+    observeElementOffset: observeWindowOffset,
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+  expect(v.scrollRect).toEqual({ width: 800, height: 600 })
+
+  // The window grows and its scroll event arrives before the resize event.
+  win.innerHeight = 700
+  win.scrollY = 4300
+  listeners.get('scroll')!.forEach((fn) => fn())
+
+  expect(v.scrollRect).toEqual({ width: 800, height: 700 })
+  expect(v.getVirtualDistanceFromEnd()).toBe(0)
 })
