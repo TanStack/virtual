@@ -29,6 +29,7 @@ function createChatVirtualizer({
   let currentMessages = messages
   const scrollToFn = vi.fn()
   let offsetCb: ((offset: number, isScrolling: boolean) => void) | null = null
+  let rectCb: ((rect: { width: number; height: number }) => void) | null = null
   const scrollElement = {
     scrollTop: offset,
     scrollLeft: 0,
@@ -70,6 +71,7 @@ function createChatVirtualizer({
         _instance: any,
         cb: (rect: { width: number; height: number }) => void,
       ) => {
+        rectCb = cb
         cb({ width: 400, height: viewportSize })
         return () => {}
       },
@@ -109,6 +111,12 @@ function createChatVirtualizer({
     emitScroll(nextOffset: number, isScrolling = false) {
       scrollElement.scrollTop = nextOffset
       offsetCb?.(nextOffset, isScrolling)
+    },
+    // Simulate the ResizeObserver reporting a new scroll element size.
+    resizeViewport(height: number) {
+      ;(scrollElement as any).clientHeight = height
+      ;(scrollElement as any).offsetHeight = height
+      rectCb?.({ width: 400, height })
     },
   }
 }
@@ -699,4 +707,165 @@ test('#1258: cleanup drops a pending clamped write', () => {
   virtualizer['cleanup']()
 
   expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+// ─── scroll element shrink ──────────────────────────────────────────────────
+
+test('anchorTo:end keeps an end-pinned viewport pinned when the scroll element shrinks', () => {
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, resizeViewport } = createChatVirtualizer({
+    messages,
+    offset: 300,
+  })
+
+  resizeViewport(150)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(300)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(50)
+  expect(virtualizer.getVirtualDistanceFromEnd()).toBe(0)
+})
+
+test('anchorTo:end leaves the scroll position alone when the scroll element grows or the user is away from end', () => {
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const pinned = createChatVirtualizer({ messages, offset: 300 })
+  // The browser clamps scrollTop onto the new end itself.
+  pinned.resizeViewport(250)
+  expect(pinned.scrollToFn).not.toHaveBeenCalled()
+
+  const reading = createChatVirtualizer({ messages, offset: 100 })
+  reading.resizeViewport(150)
+  expect(reading.scrollToFn).not.toHaveBeenCalled()
+})
+
+test('anchorTo:end keeps the distance from the end when pinned within the threshold and ignores width changes', () => {
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, resizeViewport } = createChatVirtualizer({
+    messages,
+    offset: 295,
+    threshold: 10,
+  })
+
+  // Same height: nothing to keep in view.
+  resizeViewport(200)
+  expect(scrollToFn).not.toHaveBeenCalled()
+
+  resizeViewport(150)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(50)
+  expect(virtualizer.getVirtualDistanceFromEnd()).toBe(5)
+})
+
+test.each(['scroll element first', 'item first'])(
+  'anchorTo:end stays pinned when an item above the viewport shrinks in the same frame as the scroll element (%s)',
+  (order) => {
+    // e.g. rows capped at a share of the window height, on a window resize.
+    const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+    const { virtualizer, scrollElement, resizeViewport } =
+      createChatVirtualizer({ messages, offset: 300 })
+    const shrinkItem = () => {
+      virtualizer.resizeItem(2, 30)
+      ;(scrollElement as any).scrollHeight = 480
+    }
+
+    if (order === 'scroll element first') {
+      resizeViewport(150)
+      shrinkItem()
+    } else {
+      shrinkItem()
+      resizeViewport(150)
+    }
+
+    expect(virtualizer.getTotalSize()).toBe(480)
+    expect(virtualizer.scrollOffset).toBe(330)
+  },
+)
+
+test('anchorTo:end reaches the end when the scroll element shrinks while a clamped write waits for the sizer', () => {
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, resizeViewport } =
+    createChatVirtualizer({ messages, offset: 300 })
+
+  // The last item grows before the sizer does, so the end write is clamped.
+  virtualizer.resizeItem(9, 120)
+  resizeViewport(150)
+  // The sizer commits and the clamped write is retried.
+  ;(scrollElement as any).scrollHeight = 570
+  virtualizer._willUpdate()
+
+  const [offset, { adjustments }] = scrollToFn.mock.calls.at(-1)!
+  expect(offset + (adjustments ?? 0)).toBe(420)
+})
+
+test('anchorTo:end does not carry an end pin over to a new, shorter scroll element', () => {
+  // `cleanup` keeps scrollRect and scrollOffset, and the new element's rect
+  // is reported before its offset, so the first report has nothing to
+  // compare against.
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 300,
+  })
+
+  const shorter = {
+    scrollTop: 0,
+    scrollLeft: 0,
+    scrollHeight: 500,
+    scrollWidth: 1000,
+    clientHeight: 150,
+    clientWidth: 400,
+    offsetHeight: 150,
+  } as unknown as HTMLDivElement
+  virtualizer.setOptions({
+    ...virtualizer.options,
+    getScrollElement: () => shorter,
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 150 })
+      return () => {}
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+      return () => {}
+    },
+  })
+  scrollToFn.mockClear()
+  virtualizer._willUpdate()
+
+  expect(
+    scrollToFn.mock.calls.filter(([, opts]) => opts?.adjustments),
+  ).toHaveLength(0)
+})
+
+test('anchorTo:end does not pull a reader scrolling up back to the end when the scroll element shrinks', () => {
+  // e.g. a window scroller on iOS: scrolling up near the end brings the URL
+  // bar back, which shrinks the viewport. Scrolling up means leaving the end.
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { scrollToFn, emitScroll, resizeViewport } = createChatVirtualizer({
+    messages,
+    offset: 300,
+    threshold: 10,
+  })
+
+  emitScroll(295, true)
+  resizeViewport(150)
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+})
+
+test('anchorTo:end leaves a shrink before a scroll command has been read back to the command', () => {
+  // Pinned at the end, a command away from it is written but not yet read
+  // back, so `scrollOffset` still says "at the end". As resizeItem does, leave
+  // it to the command: reconcile retargets an index or end command from the
+  // new layout, and an offset command lands where it was written.
+  const messages = Array.from({ length: 10 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, resizeViewport } = createChatVirtualizer({
+    messages,
+    offset: 300,
+  })
+
+  virtualizer.scrollToIndex(0)
+  scrollToFn.mockClear()
+  resizeViewport(150)
+
+  expect(scrollToFn).not.toHaveBeenCalled()
 })

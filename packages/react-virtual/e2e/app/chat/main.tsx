@@ -21,6 +21,7 @@ const initialMessages = Array.from({ length: 30 }, (_, index) =>
 function App() {
   const [messages, setMessages] = React.useState(initialMessages)
   const [didInitialScroll, setDidInitialScroll] = React.useState(false)
+  const [viewportHeight, setViewportHeight] = React.useState(300)
   const parentRef = React.useRef<HTMLDivElement>(null)
   const firstMessageIndexRef = React.useRef(0)
   const nextMessageIndexRef = React.useRef(initialMessages.length)
@@ -91,12 +92,31 @@ function App() {
       <button id="scroll-to-end" onClick={() => virtualizer.scrollToEnd()}>
         End
       </button>
+      <button id="shrink-viewport" onClick={() => setViewportHeight(200)}>
+        Shrink viewport
+      </button>
+      <button
+        id="shrink-viewport-and-row"
+        onClick={() => {
+          // Like a row capped at a share of the window height on a window resize.
+          setViewportHeight(200)
+          setMessages((current) =>
+            current.map((message, index) =>
+              index === current.length - 8
+                ? { ...message, height: 30 }
+                : message,
+            ),
+          )
+        }}
+      >
+        Shrink viewport and row
+      </button>
 
       <div
         ref={parentRef}
         id="scroll-container"
         style={{
-          height: 300,
+          height: viewportHeight,
           overflow: 'auto',
           width: 420,
           border: '1px solid #ddd',

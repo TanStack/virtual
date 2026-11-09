@@ -1116,9 +1116,45 @@ export class Virtualizer<
         this.observer.observe(cached)
       })
 
+      // The first report for a new element has nothing to compare against:
+      // `scrollRect` and `scrollOffset` still describe the previous element,
+      // and its offset observer is not set up yet.
+      let isFirstRect = true
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
+          // With anchorTo: 'end', keep an end-pinned viewport pinned when the
+          // scroll element shrinks, as resizeItem does when an item grows. The
+          // browser keeps scrollTop, so the end would otherwise drop below the
+          // fold. Judge "pinned" against the size before this change, and
+          // never scroll past the element's real end.
+          const prevSize =
+            !isFirstRect && this.scrollRect !== null ? this.getSize() : null
+          isFirstRect = false
+          // A reader scrolling up is leaving the end: don't pull them back
+          // (e.g. the iOS toolbar reappearing on scroll-up shrinks a window
+          // scroller).
+          const wasAtEnd =
+            prevSize !== null &&
+            this.scrollDirection !== 'backward' &&
+            this.isPinnedToEnd()
           this.scrollRect = rect
+          // Before a command's read-back, leave the shrink to the command, as
+          // resizeItem does: reconcile retargets an index or end command from
+          // the new layout, and an offset command lands where it was written.
+          if (
+            wasAtEnd &&
+            prevSize > this.getSize() &&
+            !this._awaitingCommandReadBack()
+          ) {
+            // While a clamped write waits for the sizer to grow, the DOM end
+            // is stale; apply the whole shrink and let the retry land it.
+            const shrink = prevSize - this.getSize()
+            this.applyScrollAdjustment(
+              this._clampedAdjustment !== null
+                ? shrink
+                : Math.min(shrink, this.getDistanceFromEnd()),
+            )
+          }
           this.maybeNotify()
         }),
       )
@@ -2078,10 +2114,7 @@ export class Virtualizer<
     const delta = size - itemSize
 
     if (delta !== 0) {
-      const wasAtEnd =
-        this.options.anchorTo === 'end' &&
-        !isSmoothScroll(this.scrollState) &&
-        this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
+      const wasAtEnd = this.isPinnedToEnd()
       const prevTotalSize = wasAtEnd ? this._getLayoutTotalSize() : 0
       // Default anchoring predicate (used unless the consumer supplies a
       // custom shouldAdjustScrollPositionOnItemSizeChange).
@@ -2354,6 +2387,13 @@ export class Virtualizer<
     const maxAtWrite = elementMax + this._holdOffset
     return target > maxAtWrite + 0.5 ? { target, maxAtWrite } : null
   }
+
+  // Whether an end-anchored viewport should follow size changes to stay at
+  // the end. Shared by item growth (`resizeItem`) and scroll element shrink.
+  private isPinnedToEnd = () =>
+    this.options.anchorTo === 'end' &&
+    !isSmoothScroll(this.scrollState) &&
+    this.getVirtualDistanceFromEnd() <= this.options.scrollEndThreshold
 
   private getVirtualDistanceFromEnd = () => {
     // `_getLayoutTotalSize()` measures the sizer, which starts `scrollMargin`
