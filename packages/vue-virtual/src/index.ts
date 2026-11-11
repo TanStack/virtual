@@ -100,14 +100,22 @@ export function useWindowVirtualizer<TItemElement extends Element>(
   >,
 ): Ref<Virtualizer<Window, TItemElement>> {
   return useVirtualizerBase<Window, TItemElement>(
-    computed(() => ({
-      getScrollElement: () => (typeof document !== 'undefined' ? window : null),
-      observeElementRect: observeWindowRect,
-      observeElementOffset: observeWindowOffset,
-      scrollToFn: windowScroll,
-      initialOffset: () =>
-        typeof document !== 'undefined' ? window.scrollY : 0,
-      ...unref(options),
-    })),
+    computed(() => {
+      const resolvedOptions = unref(options)
+      return {
+        getScrollElement: () =>
+          typeof document !== 'undefined' ? window : null,
+        observeElementRect: observeWindowRect,
+        observeElementOffset: observeWindowOffset,
+        scrollToFn: windowScroll,
+        initialOffset: () =>
+          typeof document !== 'undefined'
+            ? resolvedOptions.horizontal
+              ? window.scrollX
+              : window.scrollY
+            : 0,
+        ...resolvedOptions,
+      }
+    }),
   )
 }

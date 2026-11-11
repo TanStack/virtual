@@ -1,8 +1,8 @@
 import { beforeEach, test, expect, vi } from 'vitest'
 import * as React from 'react'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, renderHook, screen } from '@testing-library/react'
 
-import { useVirtualizer, Range } from '../src/index'
+import { useVirtualizer, useWindowVirtualizer, Range } from '../src/index'
 import type { ReactVirtualizer } from '../src/index'
 
 beforeEach(() => {
@@ -385,4 +385,28 @@ test('directDomUpdates positions rows a child mounts together with the container
   expect(screen.getByTestId('item-3')).toHaveStyle({
     transform: 'translate3d(0, 150px, 0)',
   })
+})
+
+test('useWindowVirtualizer seeds a horizontal list from window.scrollX', () => {
+  Object.defineProperties(window, {
+    scrollX: { configurable: true, value: 300 },
+    scrollY: { configurable: true, value: 1000 },
+  })
+  try {
+    const { result } = renderHook(() =>
+      useWindowVirtualizer({
+        count: 100,
+        estimateSize: () => 50,
+        horizontal: true,
+      }),
+    )
+
+    expect(result.current.getVirtualItems()[0]?.index).toBe(5)
+    expect(result.current.scrollOffset).toBe(300)
+  } finally {
+    Object.defineProperties(window, {
+      scrollX: { configurable: true, value: 0 },
+      scrollY: { configurable: true, value: 0 },
+    })
+  }
 })
