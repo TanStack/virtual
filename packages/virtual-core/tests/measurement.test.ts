@@ -887,11 +887,16 @@ function setupResizeBatch(onChange: (instance: any, sync: boolean) => void) {
     frames.clear()
     queued.forEach((callback) => callback(0))
   }
+  const scroll = (offset: number) => {
+    el.scrollTop = offset
+    setOffset(offset, true)
+  }
   return {
     virtualizer,
     sizes,
     node,
     deliver,
+    scroll,
     observe,
     unobserve,
     frames,
@@ -998,6 +1003,118 @@ test.each(['removed', 'replaced', 'disconnected'] as const)(
     expect(observe.mock.calls.map(([target]) => target)).not.toContain(node(10))
   },
 )
+
+// ─── resetItemSize ───────────────────────────────────────────────────────────
+
+function createListVirtualizer() {
+  const el = {
+    scrollTop: 0,
+    scrollHeight: 10000,
+    clientHeight: 200,
+    ownerDocument: { defaultView: null },
+  } as unknown as HTMLDivElement
+  const virtualizer = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => el,
+    scrollToFn: vi.fn(),
+    observeElementRect: (_instance, cb) => {
+      cb({ width: 400, height: 200 })
+    },
+    observeElementOffset: (_instance, cb) => {
+      cb(0, false)
+    },
+  })
+  virtualizer._willUpdate()
+  virtualizer.getVirtualItems()
+  return virtualizer
+}
+
+test('resetItemSize returns an item that is not rendered to its estimate', () => {
+  const virtualizer = createListVirtualizer()
+  virtualizer.resizeItem(0, 120)
+  virtualizer.resizeItem(5, 80)
+  virtualizer.getVirtualItems()
+
+  virtualizer.resetItemSize(0)
+
+  expect(virtualizer.getOffsetForIndex(3, 'start')?.[0]).toBe(150)
+  expect(
+    virtualizer.takeSnapshot().map(({ key, size }) => ({ key, size })),
+  ).toEqual([{ key: 5, size: 80 }])
+})
+
+test('resetItemSize forgets an item measured at its estimate', () => {
+  const virtualizer = createListVirtualizer()
+  virtualizer.resizeItem(5, 80)
+  virtualizer.resizeItem(5, 50)
+
+  virtualizer.resetItemSize(5)
+
+  expect(virtualizer.takeSnapshot()).toEqual([])
+})
+
+test('resetItemSize below an index resized since the last read', () => {
+  const virtualizer = createListVirtualizer()
+  virtualizer.resizeItem(3, 200)
+  virtualizer.getVirtualItems()
+  virtualizer.resizeItem(10, 100)
+
+  virtualizer.resetItemSize(3)
+
+  expect(virtualizer.getTotalSize()).toBe(5050)
+})
+
+test('resetItemSize reads a rendered element, not its cached size', () => {
+  const virtualizer = createListVirtualizer()
+  const node = {
+    getAttribute: (name: string) => (name === 'data-index' ? '2' : null),
+    isConnected: true,
+    offsetHeight: 80,
+  }
+  virtualizer.measureElement(node as unknown as HTMLDivElement)
+  node.offsetHeight = 140
+
+  virtualizer.resetItemSize(2)
+
+  expect(virtualizer.getOffsetForIndex(3, 'start')?.[0]).toBe(240)
+})
+
+test('resetItemSize measures a rendered item as a re-measurement', () => {
+  const { virtualizer, sizes } = setupResizeBatch((instance) => {
+    instance.getVirtualItems()
+  })
+
+  // Item 4 spans the fold, so its growth is below the anchor point (#1218).
+  sizes.set(4, 150)
+  virtualizer.resetItemSize(4)
+
+  expect(virtualizer.getMeasurements()[4]!.size).toBe(150)
+  expect(virtualizer.scrollOffset).toBe(450)
+})
+
+test('resetItemSize anchors like a first measurement, also while scrolling backward', () => {
+  const { virtualizer, sizes, node, deliver, scroll } = setupResizeBatch(
+    (instance) => {
+      instance.getVirtualItems()
+    },
+  )
+
+  // A re-measurement above the viewport is not compensated while scrolling
+  // backward; a first measurement is. Item 2 (200..300) is not rendered:
+  // back at its estimate (90), it moves the rows below it up by 10.
+  scroll(300)
+  node(2).isConnected = false
+  virtualizer.resetItemSize(2)
+  expect(virtualizer.scrollOffset).toBe(290)
+
+  // Still scrolling up, it renders again at 160.
+  node(2).isConnected = true
+  sizes.set(2, 160)
+  deliver([2])
+
+  expect(virtualizer.scrollOffset).toBe(360)
+})
 
 // ─── useAnimationFrameWithResizeObserver: frames of the scroll element's window
 

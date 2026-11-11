@@ -2045,6 +2045,37 @@ export class Virtualizer<
   }
 
   resizeItem = (index: number, size: number) => {
+    this._resizeItem(index, size)
+  }
+
+  /**
+   * Forgets the measured size of the item at `index`, for content that
+   * changed shape while its key stayed the same. The item falls back to
+   * `estimateSize` until it is measured again, that measurement counts as a
+   * first one, and `takeSnapshot()` leaves the item out until then. A
+   * rendered item is measured again right away instead.
+   */
+  resetItemSize = (index: number) => {
+    if (!this.isIndexInRange(index)) return
+    const key = this.options.getItemKey(index)
+    const node = this.elementsCache.get(key)
+    if (!node?.isConnected || this.options.useCachedMeasurements) {
+      this._resizeItem(index, null)
+      return
+    }
+    // The default `measureElement` answers from the cache when it has the
+    // key, so take it out while the element is read. Put it back for
+    // `_resizeItem`: the change is measured against it, as a re-measurement.
+    const cachedSize = this.itemSizeCache.get(key)
+    this.itemSizeCache.delete(key)
+    const size = this.options.measureElement(node, undefined, this)
+    if (cachedSize !== undefined) this.itemSizeCache.set(key, cachedSize)
+    this._resizeItem(index, size)
+  }
+
+  // `size` null forgets the item's measured size (`resetItemSize`): the
+  // layout falls back to its estimate, anchored like a first measurement.
+  private _resizeItem = (index: number, size: number | null) => {
     if (!this.isIndexInRange(index)) return
 
     // An earlier entry in this ResizeObserver batch moved `scrollOffset`.
@@ -2075,7 +2106,7 @@ export class Virtualizer<
     }
 
     const itemSize = this.itemSizeCache.get(key) ?? cachedSize
-    const delta = size - itemSize
+    const delta = (size ?? this.options.estimateSize(index)) - itemSize
 
     if (delta !== 0) {
       const wasAtEnd =
@@ -2086,7 +2117,7 @@ export class Virtualizer<
       // Default anchoring predicate (used unless the consumer supplies a
       // custom shouldAdjustScrollPositionOnItemSizeChange).
       const scrollOffset = this.getScrollOffset()
-      const isFirstMeasure = !this.itemSizeCache.has(key)
+      const isFirstMeasure = size === null || !this.itemSizeCache.has(key)
       const defaultShouldAdjust = isFirstMeasure
         ? // First measurement: compensate any item whose top sits above the
           // fold — the estimate→actual delta must be corrected regardless of
@@ -2123,7 +2154,11 @@ export class Virtualizer<
       if (this.pendingMin === null || index < this.pendingMin) {
         this.pendingMin = index
       }
-      this.itemSizeCache.set(key, size)
+      if (size === null) {
+        this.itemSizeCache.delete(key)
+      } else {
+        this.itemSizeCache.set(key, size)
+      }
       this.itemSizeCacheVersion++
 
       // Before a command's read-back, an index or end target is retargeted
@@ -2165,6 +2200,9 @@ export class Virtualizer<
       // `_willUpdate` (#1266).
       this._flushHoldIfReady(true)
       this._retryClampedAdjustment()
+    } else if (size === null) {
+      // Measured at its estimate: nothing moves, but it is no longer measured.
+      this.itemSizeCache.delete(key)
     }
   }
 
