@@ -1093,6 +1093,36 @@ test('resetItemSize measures a rendered item as a re-measurement', () => {
   expect(virtualizer.scrollOffset).toBe(450)
 })
 
+test.each([
+  {
+    before: 'another reset',
+    apply: (v: Virtualizer<any, any>) => v.resetItemSize(2),
+  },
+  {
+    before: 'a resize to its estimate',
+    apply: (v: Virtualizer<any, any>) => v.resizeItem(2, 90),
+  },
+])(
+  'resetItemSize after $before, before the layout is read again: the next change starts from the estimate',
+  ({ apply }) => {
+    // onChange does not read the layout, as with an adapter that renders later.
+    const { virtualizer, sizes, node, deliver } = setupResizeBatch(() => {})
+
+    // Item 2 (200..300) is not rendered: back at its estimate (90), it moves
+    // the rows below it up by 10, once.
+    node(2).isConnected = false
+    apply(virtualizer)
+    virtualizer.resetItemSize(2)
+    expect(virtualizer.scrollOffset).toBe(440)
+
+    node(2).isConnected = true
+    sizes.set(2, 160)
+    deliver([2])
+
+    expect(virtualizer.scrollOffset).toBe(510)
+  },
+)
+
 test('resetItemSize anchors like a first measurement, also while scrolling backward', () => {
   const { virtualizer, sizes, node, deliver, scroll } = setupResizeBatch(
     (instance) => {

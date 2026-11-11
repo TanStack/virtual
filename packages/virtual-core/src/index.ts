@@ -2160,6 +2160,10 @@ export class Virtualizer<
         this.itemSizeCache.set(key, size)
       }
       this.itemSizeCacheVersion++
+      // Without a cache entry, the layout is the only record of the item's
+      // size: rebuild it now, or a change to the item before the next read
+      // starts from the size it was reset from.
+      if (size === null) this.getMeasurements()
 
       // Before a command's read-back, an index or end target is retargeted
       // from fresh measurements by reconcileScroll next frame; an offset
@@ -2202,7 +2206,9 @@ export class Virtualizer<
       this._retryClampedAdjustment()
     } else if (size === null) {
       // Measured at its estimate: nothing moves, but it is no longer measured.
+      // A pending rebuild still has to land, as above.
       this.itemSizeCache.delete(key)
+      this.getMeasurements()
     }
   }
 
