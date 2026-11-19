@@ -24,7 +24,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Tools
-        uses: tanstack/config/.github/setup@e4b48f16568324f76f467aa4c2aac2f05db632c3 # main
+        uses: tanstack/config/.github/setup@88949c60ce4973c0aea4395a6bafb37cd7390e3b # main
       - name: Fix formatting
         run: pnpm format
       - name: Apply fixes
