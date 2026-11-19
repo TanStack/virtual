@@ -9,13 +9,13 @@ import {
 } from '@tanstack/virtual-core'
 
 import {
-  createComputed,
+  createMemo,
+  createRenderEffect,
   createSignal,
-  mergeProps,
-  onCleanup,
-  onMount,
+  createStore,
+  merge,
+  onSettled,
 } from 'solid-js'
-import { createStore, reconcile } from 'solid-js/store'
 import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
 export * from '@tanstack/virtual-core'
@@ -27,63 +27,96 @@ function createVirtualizerBase<
   options: VirtualizerOptions<TScrollElement, TItemElement>,
 ): Virtualizer<TScrollElement, TItemElement> {
   const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> =
-    mergeProps(options)
+    merge(options)
 
-  const instance = new Virtualizer<TScrollElement, TItemElement>(
-    resolvedOptions,
+  // Built in a memo, so it waits under `Loading` while an option (such as a
+  // `count` from a query) is still loading, instead of throwing. Once built
+  // the memo returns it without reading; the options effect below applies
+  // later changes.
+  let built: Virtualizer<TScrollElement, TItemElement> | undefined
+  const core = createMemo(
+    () =>
+      (built ??= new Virtualizer<TScrollElement, TItemElement>(
+        resolvedOptions,
+      )),
   )
 
-  const [virtualItems, setVirtualItems] = createStore(
-    instance.getVirtualItems(),
+  // The virtualizer reports changes from scroll and resize observers and from
+  // inside the options effect below; each report bumps `version`, which the
+  // item projection (reconciled by index) and the total size re-read.
+  const [version, setVersion] = createSignal(0, {
+    equals: false,
+    ownedWrite: true,
+  })
+  const [virtualItems] = createStore(
+    () => {
+      version()
+      return core().getVirtualItems()
+    },
+    [],
+    { key: 'index' },
   )
-  const [totalSize, setTotalSize] = createSignal(instance.getTotalSize())
+  const totalSize = createMemo(() => {
+    version()
+    return core().getTotalSize()
+  })
+
+  const sync = () => setVersion(0)
+
+  // Once built the virtualizer is read directly, so `ref={v.measureElement}`
+  // and other reads in a component body stay plain; before that a read goes
+  // through the memo and waits like any other pending value.
+  const current = () => built ?? core()
 
   const handler = {
-    get(
-      target: Virtualizer<TScrollElement, TItemElement>,
-      prop: keyof Virtualizer<TScrollElement, TItemElement>,
-    ) {
+    get(_: object, prop: keyof Virtualizer<TScrollElement, TItemElement>) {
       switch (prop) {
         case 'getVirtualItems':
           return () => virtualItems
         case 'getTotalSize':
           return () => totalSize()
-        default:
-          return Reflect.get(target, prop)
+        default: {
+          // Solid checks whether a computed value is a promise with an
+          // untracked read, which gives no virtualizer while it is pending.
+          const instance = current() as object | undefined
+          return instance && Reflect.get(instance, prop)
+        }
       }
     },
+    set: (_: object, prop: PropertyKey, value: unknown) =>
+      Reflect.set(current(), prop, value),
   }
 
-  const virtualizer = new Proxy(instance, handler)
-  virtualizer.setOptions(resolvedOptions)
+  const virtualizer = new Proxy({}, handler) as Virtualizer<
+    TScrollElement,
+    TItemElement
+  >
 
-  onMount(() => {
-    const cleanup = virtualizer._didMount()
-    virtualizer._willUpdate()
-    onCleanup(cleanup)
-  })
-
-  createComputed(() => {
-    virtualizer.setOptions(
-      mergeProps(resolvedOptions, options, {
+  // Reading every option here tracks them; the effect half then applies the
+  // snapshot to the core virtualizer.
+  createRenderEffect(
+    () => ({ ...resolvedOptions }),
+    (snapshot) => {
+      virtualizer.setOptions({
+        ...snapshot,
         onChange: (
           instance: Virtualizer<TScrollElement, TItemElement>,
-          sync: boolean,
+          isSync: boolean,
         ) => {
           instance._willUpdate()
-          setVirtualItems(
-            reconcile(instance.getVirtualItems(), {
-              key: 'index',
-            }),
-          )
-          setTotalSize(instance.getTotalSize())
-          options.onChange?.(instance, sync)
+          sync()
+          snapshot.onChange?.(instance, isSync)
         },
-      }),
-    )
+      })
+      virtualizer._willUpdate()
+      sync()
+    },
+  )
+
+  onSettled(() => {
+    const cleanup = virtualizer._didMount()
     virtualizer._willUpdate()
-    setVirtualItems(reconcile(instance.getVirtualItems(), { key: 'index' }))
-    setTotalSize(instance.getTotalSize())
+    return cleanup
   })
 
   return virtualizer
@@ -99,7 +132,7 @@ export function createVirtualizer<
   >,
 ): Virtualizer<TScrollElement, TItemElement> {
   return createVirtualizerBase<TScrollElement, TItemElement>(
-    mergeProps(
+    merge(
       {
         observeElementRect: observeElementRect,
         observeElementOffset: observeElementOffset,
@@ -120,7 +153,7 @@ export function createWindowVirtualizer<TItemElement extends Element>(
   >,
 ): Virtualizer<Window, TItemElement> {
   return createVirtualizerBase<Window, TItemElement>(
-    mergeProps(
+    merge(
       {
         getScrollElement: () =>
           typeof document !== 'undefined' ? window : null,
