@@ -581,10 +581,10 @@ Current `Rect` of the scroll element.
 ### `shouldAdjustScrollPositionOnItemSizeChange`
 
 ```tsx
-shouldAdjustScrollPositionOnItemSizeChange: undefined | ((item: VirtualItem, delta: number, instance: Virtualizer<TScrollElement, TItemElement>) => boolean)
+shouldAdjustScrollPositionOnItemSizeChange: undefined | ((item: VirtualItem, delta: number, instance: Virtualizer<TScrollElement, TItemElement>) => boolean | undefined)
 ```
 
-Provides fine-grained control over the scroll-position adjustment that fires when an above-viewport item's measured size differs from its estimated size. By default the virtualizer applies this correction only when the user is **not** scrolling backward, which avoids the well-known "items jump while scrolling up" jank. Supply this callback only if you want to override that default — for example, to apply corrections during backward scroll, or to skip them in additional scenarios.
+Controls scroll-position corrections when an item's measured size changes. By default, end anchoring follows changes in the total layout size. Otherwise, first measurements above the viewport are compensated regardless of scroll direction; remeasured items are compensated only when entirely above the viewport and the user is not scrolling backward.
 
 This is a virtualizer instance property, not a `VirtualizerOptions` option. Assign it directly on the virtualizer instance after creating the virtualizer:
 
@@ -598,9 +598,15 @@ virtualizer.shouldAdjustScrollPositionOnItemSizeChange = (
 }
 ```
 
-The callback receives the resized `item`, the size `delta`, and the `instance`; return `true` to apply the scroll adjustment, `false` to skip it.
+The callback receives the resized `item`, the size `delta`, and the `instance`:
 
-On iOS WebKit, scroll-position writes are deferred regardless of this callback while a finger is on screen, during momentum-scroll, and during elastic-overscroll bounce. The cumulative delta is flushed in a single write once the scroll settles, preserving iOS's native momentum physics.
+- Return `undefined` to use the complete default policy, including end anchoring, just as when no callback is assigned.
+- Return `false` to skip both synchronous resize-correction branches, including the end-anchor correction. This intentionally changes the previous behavior, where the end-anchor branch could still correct the scroll position despite `false`.
+- Return `true` to override the default decision and allow a resize correction. Existing smooth-scroll and pending command-readback guards still apply.
+
+This is not a global scroll lock. It does not cancel structural anchoring, explicit navigation or reconciliation, or previously queued iOS, held or clamped adjustments.
+
+On iOS WebKit, an allowed resize correction can still be deferred while a finger is on screen, during momentum-scroll, and during elastic-overscroll bounce. The cumulative deferred delta is flushed in a single write once the scroll settles, preserving iOS's native momentum physics. Returning `false` prevents a new resize correction from being added; it does not cancel adjustments queued earlier.
 
 On iOS 27 and later a write no longer stops a fling but is overridden by it within a frame, so a `scrollToIndex`, `scrollToOffset` or `scrollToEnd` issued during a fling is written once the fling ends (about 150ms after its last frame) rather than being lost; a drag before then cancels it, a tap does not.
 
