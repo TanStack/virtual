@@ -15,7 +15,6 @@ import {
   createStore,
   merge,
   onSettled,
-  untrack,
 } from 'solid-js'
 import type { PartialKeys, VirtualizerOptions } from '@tanstack/virtual-core'
 
@@ -30,10 +29,16 @@ function createVirtualizerBase<
   const resolvedOptions: VirtualizerOptions<TScrollElement, TItemElement> =
     merge(options)
 
-  // The constructor reads every option once; the options effect below is
-  // what tracks them.
-  const instance = untrack(
-    () => new Virtualizer<TScrollElement, TItemElement>(resolvedOptions),
+  // Built in a memo, so it waits under `Loading` while an option (such as a
+  // `count` from a query) is still loading, instead of throwing. Once built
+  // the memo returns it without reading; the options effect below applies
+  // later changes.
+  let built: Virtualizer<TScrollElement, TItemElement> | undefined
+  const core = createMemo(
+    () =>
+      (built ??= new Virtualizer<TScrollElement, TItemElement>(
+        resolvedOptions,
+      )),
   )
 
   // The virtualizer reports changes from scroll and resize observers and from
@@ -46,35 +51,42 @@ function createVirtualizerBase<
   const [virtualItems] = createStore(
     () => {
       version()
-      return instance.getVirtualItems()
+      return core().getVirtualItems()
     },
     [],
     { key: 'index' },
   )
   const totalSize = createMemo(() => {
     version()
-    return instance.getTotalSize()
+    return core().getTotalSize()
   })
 
   const sync = () => setVersion(0)
 
+  // Once built the virtualizer is read directly, so `ref={v.measureElement}`
+  // and other reads in a component body stay plain; before that a read goes
+  // through the memo and waits like any other pending value.
+  const current = () => built ?? core()
+
   const handler = {
-    get(
-      target: Virtualizer<TScrollElement, TItemElement>,
-      prop: keyof Virtualizer<TScrollElement, TItemElement>,
-    ) {
+    get(_: object, prop: keyof Virtualizer<TScrollElement, TItemElement>) {
       switch (prop) {
         case 'getVirtualItems':
           return () => virtualItems
         case 'getTotalSize':
           return () => totalSize()
         default:
-          return Reflect.get(target, prop)
+          return Reflect.get(current(), prop)
       }
     },
+    set: (_: object, prop: PropertyKey, value: unknown) =>
+      Reflect.set(current(), prop, value),
   }
 
-  const virtualizer = new Proxy(instance, handler)
+  const virtualizer = new Proxy({}, handler) as Virtualizer<
+    TScrollElement,
+    TItemElement
+  >
 
   // Reading every option here tracks them; the effect half then applies the
   // snapshot to the core virtualizer.
