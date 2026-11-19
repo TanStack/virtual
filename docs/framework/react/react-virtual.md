@@ -145,3 +145,46 @@ const virtualizer = useVirtualizer({
   directDomUpdatesMode: 'position', // Use top/left instead of transform
 })
 ```
+
+## Testing
+
+DOM environments such as jsdom and happy-dom do not perform layout. Setting a height in CSS is not enough for the virtualizer to find visible items, so `getVirtualItems()` can return an empty array in unit tests.
+
+For an element-based list, mock the scroll element's `clientHeight` and `clientWidth`. If your list uses `measureElement`, also mock the items' `offsetHeight` and `offsetWidth` for their initial measurements. Mocking only `getBoundingClientRect` or only `offsetHeight` on the scroll element does not provide its viewport size.
+
+For example, this Vitest setup gives a scroll element with `data-testid="scroller"` a 200 × 320 viewport and its items a height of 40:
+
+```tsx
+import { afterEach, beforeEach, vi } from 'vitest'
+
+beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(
+    function (this: HTMLElement) {
+      return this.dataset.testid === 'scroller' ? 200 : 0
+    },
+  )
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(
+    function (this: HTMLElement) {
+      return this.dataset.testid === 'scroller' ? 320 : 0
+    },
+  )
+  vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(
+    function (this: HTMLElement) {
+      return this.matches('[data-testid="scroller"] [data-index]') ? 40 : 0
+    },
+  )
+  vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(
+    function (this: HTMLElement) {
+      return this.matches('[data-testid="scroller"] [data-index]') ? 320 : 0
+    },
+  )
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+```
+
+Scope the mocks to your list so unrelated elements keep their default measurements. The item selectors use the default `data-index` attribute. If you set a custom `indexAttribute`, replace `data-index` with that attribute. Restore the getters after each test to avoid affecting other tests. If your test environment does not provide `ResizeObserver`, supply a mock or polyfill as well. To test later item resizes, deliver `ResizeObserver` entries with the corresponding `borderBoxSize`.
+
+Alternatively, pass a custom [`observeElementRect`](../../api/virtualizer.md#observeelementrect) to report a viewport size without mocking its DOM getters. For dynamically measured items, you can also pass a custom [`measureElement`](../../api/virtualizer.md#measureelement). Use browser tests when you need real layout, scrolling, or resize behavior.
