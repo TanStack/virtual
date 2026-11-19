@@ -69,10 +69,17 @@ export interface Rect {
 
 //
 
+// How the default rect observers measure the scroll element. The scroll
+// handler measures with the same functions (`_readDefaultRect`).
 const getRect = (element: HTMLElement): Rect => {
   const { clientWidth, clientHeight } = element
-  return { width: clientWidth, height: clientHeight }
+  return { width: Math.round(clientWidth), height: Math.round(clientHeight) }
 }
+
+const getWindowRect = (win: Window): Rect => ({
+  width: win.innerWidth,
+  height: win.innerHeight,
+})
 
 // Animation frames for `useAnimationFrameWithResizeObserver`, requested from
 // the scroll element's own window rather than the global one.
@@ -126,8 +133,7 @@ export const observeElementRect = <T extends Element>(
   }
 
   const handler = (rect: Rect) => {
-    const { width, height } = rect
-    cb({ width: Math.round(width), height: Math.round(height) })
+    cb(rect)
   }
 
   handler(getRect(element as unknown as HTMLElement))
@@ -169,7 +175,7 @@ export const observeWindowRect = (
   }
 
   const handler = () => {
-    cb({ width: element.innerWidth, height: element.innerHeight })
+    cb(getWindowRect(element))
   }
   handler()
 
@@ -1118,7 +1124,7 @@ export class Virtualizer<
 
       this.unsubs.push(
         this.options.observeElementRect(this, (rect) => {
-          this.scrollRect = rect
+          this._setScrollRect(rect)
           this.maybeNotify()
         }),
       )
@@ -1249,6 +1255,14 @@ export class Virtualizer<
           ) {
             this.scrollState = null
           }
+
+          // The element may have changed size since its ResizeObserver last
+          // reported it: a resize fires its scroll event (from the clamped
+          // position), and the isScrolling reset timer, before the observer
+          // runs. Read the size with the offset, so a notify never pairs a
+          // new position with an old size.
+          const liveRect = this._readDefaultRect()
+          if (liveRect !== null) this._setScrollRect(liveRect)
 
           // A held correction is written once a write is possible.
           this._flushHoldIfReady(true)
@@ -2353,6 +2367,32 @@ export class Virtualizer<
     if (elementMax === null) return null
     const maxAtWrite = elementMax + this._holdOffset
     return target > maxAtWrite + 0.5 ? { target, maxAtWrite } : null
+  }
+
+  // The scroll element's current size, measured as the default rect observer
+  // measures it. Null when the consumer supplied their own rect observer: only
+  // a size produced the same way can be refreshed, and their size is theirs.
+  private _readDefaultRect = (): Rect | null => {
+    const el = this.scrollElement as unknown
+    const observe = this.options.observeElementRect as unknown
+    if (el == null) return null
+    if (observe === observeElementRect) return getRect(el as HTMLElement)
+    if (observe === observeWindowRect) return getWindowRect(el as Window)
+    return null
+  }
+
+  // Take a new size for the scroll element, from its rect observer or read
+  // with a scroll event.
+  private _setScrollRect = (rect: Rect) => {
+    const prev = this.scrollRect
+    if (
+      prev !== null &&
+      prev.width === rect.width &&
+      prev.height === rect.height
+    ) {
+      return
+    }
+    this.scrollRect = rect
   }
 
   private getVirtualDistanceFromEnd = () => {
