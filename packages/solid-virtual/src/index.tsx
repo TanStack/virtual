@@ -75,8 +75,12 @@ function createVirtualizerBase<
           return () => virtualItems
         case 'getTotalSize':
           return () => totalSize()
-        default:
-          return Reflect.get(current(), prop)
+        default: {
+          // Solid checks whether a computed value is a promise with an
+          // untracked read, which gives no virtualizer while it is pending.
+          const instance = current() as object | undefined
+          return instance && Reflect.get(instance, prop)
+        }
       }
     },
     set: (_: object, prop: PropertyKey, value: unknown) =>
