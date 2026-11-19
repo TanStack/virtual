@@ -15,6 +15,16 @@ async function waitForEnd(page: Page) {
     .toBeLessThan(1.01)
 }
 
+async function waitForViewportHeight(page: Page, height: number) {
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        () => document.querySelector('#scroll-container')?.clientHeight,
+      ),
+    )
+    .toBe(height)
+}
+
 async function maybeFirstVisibleMessage(page: Page) {
   return page.evaluate(() => {
     const container = document.querySelector('#scroll-container')
@@ -166,6 +176,32 @@ test('chat mode keeps streaming bottom message pinned as it grows with paddingEn
   await waitForEnd(page)
 
   await page.click('#grow-last')
+  await waitForEnd(page)
+
+  await expect(page.locator('[data-testid="message-m-29"]')).toBeVisible()
+})
+
+test('chat mode keeps the end in view when the scroll container shrinks', async ({
+  page,
+}) => {
+  await page.goto('/chat/')
+  await waitForEnd(page)
+
+  await page.click('#shrink-viewport')
+  await waitForViewportHeight(page, 200)
+  await waitForEnd(page)
+
+  await expect(page.locator('[data-testid="message-m-29"]')).toBeVisible()
+})
+
+test('chat mode keeps the end in view when the scroll container and a row above it shrink together', async ({
+  page,
+}) => {
+  await page.goto('/chat/')
+  await waitForEnd(page)
+
+  await page.click('#shrink-viewport-and-row')
+  await waitForViewportHeight(page, 200)
   await waitForEnd(page)
 
   await expect(page.locator('[data-testid="message-m-29"]')).toBeVisible()
