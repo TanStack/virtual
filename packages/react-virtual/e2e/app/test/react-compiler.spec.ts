@@ -82,3 +82,62 @@ for (const mode of ['position', 'transform'] as const) {
     })
   })
 }
+
+// `useVirtualizer` itself is skipped by the compiler, but a component the
+// virtualizer is passed to is compiled. These cover reads made there.
+test.describe('react-compiler useVirtualizerState', () => {
+  test('a compiled child reading useVirtualizerState follows scrolling', async ({
+    page,
+  }) => {
+    await page.goto('/react-compiler/?api=state')
+
+    await expect(page.locator('[data-testid="item-0"]')).toBeVisible()
+    await expect(page.locator('#inner')).toHaveAttribute(
+      'style',
+      new RegExp(`height:\\s*${1000 * ITEM_SIZE}px`),
+    )
+
+    await page.click('#scroll-to-500')
+
+    await expect(page.locator('[data-testid="item-500"]')).toBeVisible({
+      timeout: 5000,
+    })
+    await expect(page.locator('[data-testid="item-500"]')).toHaveAttribute(
+      'style',
+      /translateY\(20000px\)/,
+    )
+  })
+
+  test('a compiled child reading useVirtualizerState renders newly visible items', async ({
+    page,
+  }) => {
+    await page.goto('/react-compiler/?api=state')
+
+    await expect(page.locator('[data-testid="item-0"]')).toBeVisible()
+
+    await page.locator('#scroll-container').evaluate((el, by) => {
+      el.scrollTop = by
+    }, ITEM_SIZE * 20)
+
+    await expect(page.locator('[data-testid="item-25"]')).toBeVisible()
+    await expect(page.locator('[data-testid="item-0"]')).toHaveCount(0)
+  })
+
+  // Control: the same child reading the instance is memoised on the stable
+  // virtualizer, so it keeps its first render — taken before the scroll
+  // element was attached, with no items — which is what the state hook fixes.
+  test('a compiled child reading the instance goes stale', async ({ page }) => {
+    await page.goto('/react-compiler/?api=instance')
+
+    await expect(page.locator('#scroll-container')).toBeVisible()
+    await page.waitForTimeout(300)
+    await expect(page.locator('[data-testid="item-0"]')).toHaveCount(0)
+
+    await page.locator('#scroll-container').evaluate((el, by) => {
+      el.scrollTop = by
+    }, ITEM_SIZE * 20)
+
+    await page.waitForTimeout(300)
+    await expect(page.locator('[data-testid="item-25"]')).toHaveCount(0)
+  })
+})

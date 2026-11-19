@@ -62,6 +62,23 @@ export interface VirtualItem {
   lane: number
 }
 
+/**
+ * The render-relevant state of a `Virtualizer`, as returned by
+ * `getState()`. The object is immutable and keeps its identity until one of
+ * its fields changes, so it can back a `useSyncExternalStore`-style
+ * subscription (see `subscribe`).
+ */
+export interface VirtualizerState {
+  readonly virtualItems: ReadonlyArray<VirtualItem>
+  readonly totalSize: number
+  readonly range: {
+    readonly startIndex: number
+    readonly endIndex: number
+  } | null
+  readonly isScrolling: boolean
+  readonly scrollDirection: ScrollDirection | null
+}
+
 export interface Rect {
   width: number
   height: number
@@ -654,6 +671,11 @@ export class Virtualizer<
   // Set while a ResizeObserver callback measures its entries; `resizeItem`
   // records the pending notify here instead of firing it per entry.
   private _resizeBatch: { sync: boolean; notify?: boolean } | null = null
+  private listeners = new Set<() => void>()
+  private state: VirtualizerState | null = null
+  // The snapshot listeners were last told about. Listeners run only when
+  // `getState()` moves away from it.
+  private publishedState: VirtualizerState | null = null
   private now = () => this.targetWindow?.performance?.now?.() ?? Date.now()
   private observer = (() => {
     let _ro: ResizeObserver | null = null
@@ -963,6 +985,92 @@ export class Virtualizer<
 
   private notify = (sync: boolean) => {
     this.options.onChange?.(this, sync)
+    this.emitState()
+  }
+
+  // Records the last computed range (`this.range`) as the one the owner has
+  // rendered, so `maybeNotify` fires only once the range moves away from it
+  // (#871). It does not recompute the range: that would run
+  // `getMeasurements` ahead of its readers.
+  private ackRange = () => {
+    this.maybeNotify.updateDeps([
+      this.isScrolling,
+      this.range ? this.range.startIndex : null,
+      this.range ? this.range.endIndex : null,
+    ])
+  }
+
+  // Calls listeners when `getState()` has moved since they were last called.
+  // Besides `notify`, this runs after a scroll event that only flips
+  // `scrollDirection`, and from `_willUpdate`, which picks up options set
+  // during render (e.g. a new `count`) once they are committed.
+  private emitState = () => {
+    if (this.listeners.size === 0) return
+    const state = this.getState()
+    if (state === this.publishedState) return
+    this.publishedState = state
+    this.listeners.forEach((listener) => listener())
+  }
+
+  /**
+   * Registers a listener that runs whenever `getState()` returns a new
+   * snapshot. Returns an unsubscribe function. Pair with `getState()` for a
+   * `useSyncExternalStore`-style subscription. Use `onChange` instead when an
+   * update must be flushed synchronously.
+   */
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener)
+    return () => {
+      this.listeners.delete(listener)
+    }
+  }
+
+  /**
+   * Returns the render-relevant state. The returned object keeps its identity
+   * for as long as none of its fields change, so it is safe to use as a
+   * `useSyncExternalStore` snapshot. It is derived from the current options,
+   * so it also reflects a `setOptions` that has not been followed by a notify
+   * yet (e.g. a new `count` during render).
+   */
+  getState = (): VirtualizerState => {
+    const virtualItems = this._virtualItems()
+    const totalSize = this.getTotalSize()
+    const prev = this.state
+    // `calculateRange` allocates a new object on every scroll offset change,
+    // so the snapshot keeps its own copy, reused for as long as the indexes
+    // match — `range` stays referentially stable across snapshots that only
+    // differ in other fields.
+    const range =
+      prev !== null &&
+      (prev.range === this.range ||
+        (prev.range !== null &&
+          this.range !== null &&
+          prev.range.startIndex === this.range.startIndex &&
+          prev.range.endIndex === this.range.endIndex))
+        ? prev.range
+        : this.range && {
+            startIndex: this.range.startIndex,
+            endIndex: this.range.endIndex,
+          }
+
+    if (
+      prev !== null &&
+      prev.virtualItems === virtualItems &&
+      prev.totalSize === totalSize &&
+      prev.range === range &&
+      prev.isScrolling === this.isScrolling &&
+      prev.scrollDirection === this.scrollDirection
+    ) {
+      return prev
+    }
+
+    return (this.state = {
+      virtualItems,
+      totalSize,
+      range,
+      isScrolling: this.isScrolling,
+      scrollDirection: this.scrollDirection,
+    })
   }
 
   // Returns `true` when it performed a synchronous `scrollTop` write this
@@ -1092,6 +1200,10 @@ export class Virtualizer<
   }
 
   _willUpdate = () => {
+    // The owner has committed a render of the last computed range, also when
+    // it read it through `getState()`.
+    this.ackRange()
+
     const scrollElement = this.options.enabled
       ? this.options.getScrollElement()
       : null
@@ -1101,6 +1213,7 @@ export class Virtualizer<
 
       if (!scrollElement) {
         this.maybeNotify()
+        this.emitState()
         return
       }
 
@@ -1257,6 +1370,8 @@ export class Virtualizer<
             this.scheduleScrollReconcile()
           }
           this.maybeNotify()
+          // A direction flip within the same range does not notify.
+          this.emitState()
         }),
       )
 
@@ -1326,6 +1441,14 @@ export class Virtualizer<
     // The consumer has committed the new total size by now, so a clamped
     // compensation write may have room (#1258).
     this._retryClampedAdjustment()
+
+    // Options set during render change the snapshot without a notify, and a
+    // subscriber that did not re-render with its parent (e.g. a memoised
+    // child) would keep the old one. This is also what commits a sizer such
+    // a subscriber renders before `resizeItem` retries a clamped write
+    // (#1258): React flushes the update it schedules here inside the
+    // owner's `flushSync`.
+    this.emitState()
   }
 
   // Classify a scroll event (see `ScrollEventKind`) from the state as it was
@@ -1921,7 +2044,7 @@ export class Virtualizer<
     },
   )
 
-  getVirtualIndexes = memo(
+  private _virtualIndexes = memo(
     () => {
       let startIndex: number | null = null
       let endIndex: number | null = null
@@ -1930,7 +2053,6 @@ export class Virtualizer<
         startIndex = range.startIndex
         endIndex = range.endIndex
       }
-      this.maybeNotify.updateDeps([this.isScrolling, startIndex, endIndex])
       return [
         this.options.rangeExtractor,
         this.options.overscan,
@@ -2168,8 +2290,8 @@ export class Virtualizer<
     }
   }
 
-  getVirtualItems = memo(
-    () => [this.getVirtualIndexes(), this.getMeasurements(), this._holdOffset],
+  private _virtualItems = memo(
+    () => [this._virtualIndexes(), this.getMeasurements(), this._holdOffset],
     (indexes, measurements, hold) => {
       const virtualItems: Array<VirtualItem> = []
 
@@ -2197,6 +2319,21 @@ export class Virtualizer<
       debug: () => this.options.debug,
     },
   )
+
+  // `getVirtualIndexes` and `getVirtualItems` count the range they return as
+  // rendered (#871), since an owner renders what it reads; `getState` reads
+  // the same values without that side effect.
+  getVirtualIndexes = () => {
+    const indexes = this._virtualIndexes()
+    this.ackRange()
+    return indexes
+  }
+
+  getVirtualItems = () => {
+    const virtualItems = this._virtualItems()
+    this.ackRange()
+    return virtualItems
+  }
 
   getVirtualItemForOffset = (offset: number) => {
     const measurements = this.getMeasurements()
