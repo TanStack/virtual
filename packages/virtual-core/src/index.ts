@@ -2165,6 +2165,17 @@ export class Virtualizer<
       // `_willUpdate` (#1266).
       this._flushHoldIfReady(true)
       this._retryClampedAdjustment()
+    } else if (
+      this.options.lanes > 1 &&
+      !this.options.useCachedMeasurements &&
+      !this.laneAssignments.has(index)
+    ) {
+      // Measured at its estimate, so no rebuild will cache its lane. A single
+      // lane has none to cache, a size under useCachedMeasurements is not a
+      // measurement, and a lane already cached (as always in 'estimate' mode)
+      // must not change.
+      const item = this.getMeasurements()[index]
+      if (item) this.laneAssignments.set(index, item.lane)
     }
   }
 
