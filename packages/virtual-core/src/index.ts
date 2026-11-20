@@ -998,6 +998,12 @@ export class Virtualizer<
         adjustments: delta,
         behavior,
       })
+      // A write past the top is clamped to 0 by the browser, and from an
+      // element already there no scroll event follows (#1229): record what
+      // the element can report back, as `scrollOffset` is clamped below, or
+      // the write would look like an unreported one for as long as a
+      // command is in flight.
+      if (write.target < 0) write.target = 0
       // Eagerly carry the intended target in `scrollOffset` so callers that
       // read it before the next scroll event — notably the next `resizeItem`
       // tick's `getVirtualDistanceFromEnd()` / `wasAtEnd` check — see the
@@ -1325,7 +1331,7 @@ export class Virtualizer<
     this._flushHoldIfReady(false)
     // The consumer has committed the new total size by now, so a clamped
     // compensation write may have room (#1258).
-    this._retryClampedAdjustment()
+    this._retryClampedAdjustment(true)
   }
 
   // Classify a scroll event (see `ScrollEventKind`) from the state as it was
@@ -1356,7 +1362,7 @@ export class Virtualizer<
   // absence of one leave `_clampedAdjustment` set, so timing does not matter.
   // While the element cannot take a write (`_canWriteScroll`) the record is
   // kept for the next opportunity, the latest being the tail closing.
-  private _retryClampedAdjustment = () => {
+  private _retryClampedAdjustment = (committed = false) => {
     if (
       this._clampedAdjustment === null ||
       !this.scrollElement ||
@@ -1373,6 +1379,24 @@ export class Virtualizer<
       this._clampedAdjustment =
         target > max + 0.5 ? { target, maxAtWrite: max } : null
       this._scrollToOffset(target)
+    } else if (committed && this._isUnscrollable()) {
+      // The sizer is committed and did not grow, nor will it: the layout
+      // fits the viewport, so the element's one position is 0. The browser clamped the write
+      // there and, from an element already at 0, reported no scroll event
+      // (#1229 at the other edge). Adopt it: otherwise `scrollOffset` keeps
+      // the clamped target until some unrelated scroll event, and a command
+      // written to 0 afterwards can never read back, its target being where
+      // the element already is.
+      this._clampedAdjustment = null
+      if (this.scrollOffset !== null && this.scrollOffset > 0) {
+        this.scrollOffset = 0
+      }
+      if (
+        this.pendingWrite !== null &&
+        approxEqual(this.pendingWrite.target, target)
+      ) {
+        this.pendingWrite.target = 0
+      }
     }
   }
 
@@ -1478,7 +1502,19 @@ export class Virtualizer<
         : undefined
     return offsetInfo ? offsetInfo[0] : state.lastTargetOffset
   }
+  // A write the element never reports (clamped where it already was, or
+  // dropped) stays pending until reconcile retargets or retires its command.
+  // That ends the pending position with no scroll event to say so, so a
+  // consumer that waited for the read-back to act on the position is told.
   private reconcileScroll() {
+    const wasPending = this.isScrollPending()
+    this._reconcileScrollStep()
+    if (wasPending && !this.isScrollPending()) {
+      this.notify(false)
+    }
+  }
+
+  private _reconcileScrollStep() {
     if (!this.scrollState) return
 
     const el = this.scrollElement
@@ -2346,6 +2382,16 @@ export class Virtualizer<
     )
   }
 
+  // The layout fits the viewport and the element has no scroll range: its
+  // one position is 0, and no scroll event will ever report another.
+  private _isUnscrollable = () => {
+    const layoutMax =
+      this._getLayoutTotalSize() + this.options.scrollMargin - this.getSize()
+    if (layoutMax > 0) return false
+    const elementMax = this._elementMaxScrollOffset()
+    return elementMax !== null && elementMax <= 0.5
+  }
+
   // A compensation write past the element's current max (the sizer has not
   // grown yet) is clamped by the browser; record it for the retry (#1258).
   private _clampedBy = (target: number) => {
@@ -2614,7 +2660,10 @@ export class Virtualizer<
       this.targetWindow.cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
+    const wasPending = this.isScrollPending()
     this.scrollState = null
+    // See `reconcileScroll`: the pending position ends with the command.
+    if (wasPending) this.notify(false)
   }
 
   // The size the consumer gives the container: the layout's total, short by
@@ -2733,6 +2782,23 @@ export class Virtualizer<
     !this.pendingWrite.smooth
       ? this.pendingWrite.target
       : null
+
+  /**
+   * Whether a scroll command (`scrollToIndex`, `scrollToOffset`, `scrollBy`,
+   * `scrollToEnd`) has written a position that no scroll event has reported
+   * back yet. While it has, `scrollOffset`, `range`, `getVirtualItems()` and
+   * `isAtEnd()` still describe the position before the command. An
+   * `onChange` fired in between (a row measured, the scroll element resized)
+   * pairs the current sizes with that old position. A consumer that acts on
+   * the position in `onChange` can skip such a notify: the read-back always
+   * brings another.
+   *
+   * `false` for a smooth write, whose scroll events keep `scrollOffset`
+   * current, and for a correction, which is folded into `scrollOffset` at
+   * once. A write the element never reports stops being pending when
+   * reconcile retargets or gives up on the command, with a notify.
+   */
+  isScrollPending = (): boolean => this._awaitingCommandReadBack()
 
   // A scroll command (or reconcile) wrote a new position that neither a
   // scroll event nor an eager update has reflected in `scrollOffset` yet.
