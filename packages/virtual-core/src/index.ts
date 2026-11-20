@@ -2630,11 +2630,11 @@ export class Virtualizer<
     const measurements = this.getMeasurements()
 
     let end: number
-    // If there are no measurements, set the end to paddingStart
+    // If there are no measurements, include the scroll origin and start padding
     // If there is only one lane, use the last measurement's end
     // Otherwise find the maximum end value among all measurements
     if (measurements.length === 0) {
-      end = this.options.paddingStart
+      end = this.options.scrollMargin + this.options.paddingStart
     } else if (this.options.lanes === 1) {
       // Fast path: read last item's end directly from the flat typed array
       // when available; avoids a Proxy.get + VirtualItem materialization
