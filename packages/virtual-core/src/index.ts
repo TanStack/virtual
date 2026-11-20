@@ -668,6 +668,8 @@ export class Virtualizer<
   private _echoFrom = new Map<Key, number>()
   private _echoConfirmKeys = new Set<Key>()
   private _echoSettleScheduled = false
+  // Keys whose confirm is queued; a later timer batch must keep their guard.
+  private _echoPendingKeys = new Set<Key>()
   private _echoToken = 0
   // > 0 while a size change is writing scroll or notifying. A measurement
   // that re-enters from that notify is the echo of the change, not a new one.
@@ -1088,6 +1090,7 @@ export class Virtualizer<
     this._echoSettleScheduled = false
     this._echoFrom.clear()
     this._echoConfirmKeys.clear()
+    this._echoPendingKeys.clear()
     this.scrollState = null
     // The element is let go of: give it back its overflow now. A stop the
     // next element needs starts afresh.
@@ -2096,13 +2099,19 @@ export class Virtualizer<
       // Nothing echoed: release the guard so a later, real return to the
       // previous size still applies. An echo waits for a settled box.
       if (keys.length === 0) {
-        this._echoFrom.clear()
+        for (const key of [...this._echoFrom.keys()]) {
+          if (!this._echoPendingKeys.has(key)) this._echoFrom.delete(key)
+        }
         return
       }
+      for (const key of keys) this._echoPendingKeys.add(key)
       const confirm = () => {
         if (token !== this._echoToken) return
-        this._echoFrom.clear()
-        for (const key of keys) this._confirmEchoKey(key)
+        for (const key of keys) {
+          if (!this._confirmEchoKey(key)) continue
+          this._echoFrom.delete(key)
+          this._echoPendingKeys.delete(key)
+        }
       }
       if (win.requestAnimationFrame == null) {
         confirm()
@@ -2115,14 +2124,28 @@ export class Virtualizer<
     }, 0)
   }
 
-  private _confirmEchoKey = (key: Key) => {
+  // False when the confirm is deferred and the key must keep its guard.
+  private _confirmEchoKey = (key: Key): boolean => {
     const node = this.elementsCache.get(key)
-    if (!node?.isConnected) return
+    if (!node?.isConnected) return true
     const index = this.indexFromElement(node)
-    if (!this.isIndexInRange(index)) return
+    if (!this.isIndexInRange(index)) return true
+    if (
+      !(
+        (!this.isScrolling || this.scrollState) &&
+        this.shouldMeasureDuringScroll(index)
+      )
+    ) {
+      this._echoConfirmKeys.add(key)
+      this._scheduleEchoSettle()
+      return false
+    }
     const live = this._readLiveItemSize(node)
-    if (live == null || !Number.isFinite(live)) return
-    this.resizeItem(index, live)
+    if (live != null && Number.isFinite(live)) {
+      this._echoFrom.delete(key)
+      this.resizeItem(index, live)
+    }
+    return true
   }
 
   // A fresh border box. The sync measure path returns the cache, which is
@@ -2132,17 +2155,28 @@ export class Virtualizer<
     const horizontal = this.options.horizontal
     const block = el?.[horizontal ? 'offsetWidth' : 'offsetHeight']
     const inline = el?.[horizontal ? 'offsetHeight' : 'offsetWidth']
-    if (typeof block !== 'number' || !(block > 0)) {
+    if (typeof block !== 'number' || !Number.isFinite(block) || block < 0) {
       return this.options.measureElement(node, undefined, this)
     }
+    const width = horizontal ? block : inline || 0
+    const height = horizontal ? inline || 0 : block
+    const boxSize = [{ blockSize: height, inlineSize: width }]
     const entry = {
       target: node,
-      borderBoxSize: [
-        {
-          blockSize: horizontal ? inline || 0 : block,
-          inlineSize: horizontal ? block : inline || 0,
-        },
-      ],
+      borderBoxSize: boxSize,
+      contentBoxSize: boxSize,
+      devicePixelContentBoxSize: [],
+      contentRect: {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        width,
+        height,
+        right: width,
+        bottom: height,
+        toJSON: () => ({}),
+      },
     } as unknown as ResizeObserverEntry
     return this.options.measureElement(node, entry, this)
   }
