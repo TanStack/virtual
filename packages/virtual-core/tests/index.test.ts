@@ -517,6 +517,32 @@ test('takeSnapshot: works with lanes>1 too', () => {
   expect(snap[1]!.size).toBe(90)
 })
 
+test('initialMeasurementsCache: an emptied and refilled list keeps sizes measured since mount', () => {
+  const v = new Virtualizer({
+    count: 20,
+    estimateSize: () => 50,
+    initialMeasurementsCache: [
+      { index: 0, key: 0, start: 0, size: 80, end: 80, lane: 0 },
+    ],
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  expect(v['getMeasurements']()[0]!.size).toBe(80)
+
+  // The row is measured at a new size after mount.
+  v.resizeItem(0, 120)
+  expect(v['getMeasurements']()[0]!.size).toBe(120)
+
+  // A filter that matches nothing, then is cleared.
+  v.setOptions({ ...v.options, count: 0 })
+  v['getMeasurements']()
+  v.setOptions({ ...v.options, count: 20 })
+
+  expect(v['getMeasurements']()[0]!.size).toBe(120)
+})
+
 test('setOptions: explicit value overrides default', () => {
   const virtualizer = new Virtualizer({
     count: 10,

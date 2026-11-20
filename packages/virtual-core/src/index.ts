@@ -502,6 +502,11 @@ export class Virtualizer<
   private prevLanes: number | undefined = undefined
   private lanesChangedFlag = false
   private lanesSettling = false
+  // Whether `initialMeasurementsCache` has seeded `itemSizeCache`. It is
+  // read once: a list that empties and refills keeps the sizes measured
+  // since, rather than going back to the snapshot's. `enabled: false`
+  // resets it along with the sizes.
+  private initialMeasurementsCacheApplied = false
   private pendingScrollAnchor: PendingScrollAnchor | null = null
   scrollRect: Rect | null = null
   /**
@@ -1693,6 +1698,7 @@ export class Virtualizer<
         this._singleLaneMeasurements = null
         this.itemSizeCache.clear()
         this.laneAssignments.clear()
+        this.initialMeasurementsCacheApplied = false
         return []
       }
 
@@ -1719,7 +1725,12 @@ export class Virtualizer<
 
       // Don't restore from initialMeasurementsCache during lane changes
       // as it contains stale lane assignments from the previous lane count
-      if (this.measurementsCache.length === 0 && !this.lanesSettling) {
+      if (
+        !this.initialMeasurementsCacheApplied &&
+        this.measurementsCache.length === 0 &&
+        !this.lanesSettling
+      ) {
+        this.initialMeasurementsCacheApplied = true
         this.measurementsCache = this.options.initialMeasurementsCache
         this.measurementsCache.forEach((item) => {
           this.itemSizeCache.set(item.key, item.size)
