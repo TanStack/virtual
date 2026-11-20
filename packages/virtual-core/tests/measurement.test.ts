@@ -1225,3 +1225,84 @@ test('refreshes horizontal end alignment when a scrollbar toggles', () => {
   }
   virtualizer._didMount()()
 })
+
+// ─── indexAttribute ──────────────────────────────────────────────────────────
+
+test('indexAttribute lets a row and a column virtualizer measure the same cell', () => {
+  const createVirtualizer = (horizontal: boolean, indexAttribute?: string) => {
+    const virtualizer = new Virtualizer({
+      count: 10,
+      horizontal,
+      indexAttribute,
+      estimateSize: () => 50,
+      getScrollElement: () => null,
+      scrollToFn: vi.fn(),
+      observeElementRect: (_instance, cb) => {
+        cb({ width: 400, height: 400 })
+        return () => {}
+      },
+      observeElementOffset: (_instance, cb) => {
+        cb(0, false)
+        return () => {}
+      },
+    })
+    virtualizer._willUpdate()
+    // Seed the measurements, as a render does before refs call measureElement.
+    virtualizer['getMeasurements']()
+    return virtualizer
+  }
+
+  const rows = createVirtualizer(false, 'data-row-index')
+  const columns = createVirtualizer(true, 'data-column-index')
+
+  // A grid cell at row 2, column 5. A single `data-index` could not carry both.
+  const attributes: Record<string, string> = {
+    'data-row-index': '2',
+    'data-column-index': '5',
+  }
+  const cell = {
+    getAttribute: (name: string) => attributes[name] ?? null,
+    offsetHeight: 80,
+    offsetWidth: 120,
+    isConnected: true,
+  } as unknown as HTMLElement
+
+  rows.measureElement(cell)
+  columns.measureElement(cell)
+
+  expect(rows.elementsCache.get(2)).toBe(cell)
+  expect(columns.elementsCache.get(5)).toBe(cell)
+  const rowMeasurements = rows['getMeasurements']()
+  const columnMeasurements = columns['getMeasurements']()
+  expect(rowMeasurements[2]!.size).toBe(80)
+  expect(columnMeasurements[5]!.size).toBe(120)
+  // Neither virtualizer touched the other's index.
+  expect(rowMeasurements[5]!.size).toBe(50)
+  expect(columnMeasurements[2]!.size).toBe(50)
+})
+
+test('indexAttribute defaults to data-index and warns when the attribute is missing', () => {
+  const virtualizer = new Virtualizer({
+    count: 3,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const node = {
+    getAttribute: (name: string) => (name === 'data-index' ? '1' : null),
+  } as unknown as HTMLElement
+  expect(virtualizer.indexFromElement(node)).toBe(1)
+
+  const custom = new Virtualizer({
+    ...virtualizer.options,
+    indexAttribute: 'data-row-index',
+  })
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  expect(custom.indexFromElement(node)).toBe(-1)
+  expect(warn).toHaveBeenCalledWith(
+    "Missing attribute name 'data-row-index={index}' on measured element.",
+  )
+  warn.mockRestore()
+})
