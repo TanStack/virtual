@@ -103,6 +103,15 @@ export interface Input {
   }
 />
 
+// `onUpdate` runs before the new `size` reaches the consumer's sizer: Marko commits
+// it in a later batch. A prepend's anchor write made in between is clamped to the old
+// scroll max, so retry it here, after every render that committed a new total size
+// (#1267). A no-op when nothing was clamped.
+<script() {
+  const _size = size
+  v?._retryClampedAdjustment()
+}/>
+
 <return=(({
   virtualItems: items,
   totalSize: size,

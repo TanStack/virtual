@@ -94,17 +94,27 @@ function createChatVirtualizer({
   virtualizer['getMeasurements']()
   scrollToFn.mockClear()
 
+  const growSizer = () => {
+    ;(scrollElement as any).scrollHeight =
+      scrollMargin + currentMessages.length * itemSize + paddingEnd
+  }
+
   return {
     virtualizer,
     scrollElement,
     scrollToFn,
-    setMessages(nextMessages: Array<{ id: string }>) {
+    // `commitSizer: false` models an adapter whose framework commits the
+    // grown sizer only after `_willUpdate` (Marko); `growSizer()` does it.
+    setMessages(
+      nextMessages: Array<{ id: string }>,
+      { commitSizer = true }: { commitSizer?: boolean } = {},
+    ) {
       currentMessages = nextMessages
       virtualizer.setOptions(makeOptions())
-      ;(scrollElement as any).scrollHeight =
-        scrollMargin + nextMessages.length * itemSize + paddingEnd
+      if (commitSizer) growSizer()
       virtualizer._willUpdate()
     },
+    growSizer,
     // Simulate the browser's scroll event after a write (or a gesture).
     emitScroll(nextOffset: number, isScrolling = false) {
       scrollElement.scrollTop = nextOffset
@@ -698,5 +708,79 @@ test('#1258: cleanup drops a pending clamped write', () => {
 
   virtualizer['cleanup']()
 
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+// ─── #1267: prepend anchor sync clamped by a sizer committed after it ───────
+// 5 × 50px = 250px sizer, 200px viewport, pinned to the bottom at 50. Two
+// rows prepended above move the anchor to 150, but an adapter that commits
+// the 350px sizer only after `_willUpdate` (Marko) has the write clamped to
+// the old max, a whole prepend short of the anchor.
+
+function clampedPrependSetup() {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const setup = createChatVirtualizer({ messages, offset: 50 })
+  setup.setMessages([{ id: 'm--2' }, { id: 'm--1' }, ...messages], {
+    commitSizer: false,
+  })
+  expect(setup.scrollToFn).toHaveBeenCalledTimes(1)
+  expect(setup.scrollToFn.mock.calls[0]![0]).toBe(150)
+  return setup
+}
+
+test('#1267: a clamped prepend anchor sync is re-issued once the sizer commits after _willUpdate', () => {
+  const { virtualizer, scrollToFn, emitScroll, growSizer } =
+    clampedPrependSetup()
+  expect(virtualizer['_clampedAdjustment']).toEqual({
+    target: 150,
+    maxAtWrite: 50,
+  })
+
+  // Browser read-back of the clamped write: it landed on the old max.
+  emitScroll(50)
+  // The framework commits the grown sizer, then the adapter retries.
+  growSizer()
+  virtualizer._retryClampedAdjustment()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(150)
+  expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1267: a retry before the sizer commits keeps the clamped prepend anchor sync pending', () => {
+  const { virtualizer, scrollToFn, growSizer } = clampedPrependSetup()
+
+  virtualizer._retryClampedAdjustment()
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(virtualizer['_clampedAdjustment']).not.toBeNull()
+
+  growSizer()
+  virtualizer._retryClampedAdjustment()
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(150)
+})
+
+test('#1267: an explicit scroll after a clamped prepend anchor sync drops the retry', () => {
+  const { virtualizer, scrollToFn, growSizer } = clampedPrependSetup()
+
+  virtualizer.scrollToOffset(0)
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  growSizer()
+  virtualizer._retryClampedAdjustment()
+
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+})
+
+test('#1267: a prepend anchor sync within the committed sizer records no retry', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, setMessages, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 50,
+  })
+
+  setMessages([{ id: 'm--2' }, { id: 'm--1' }, ...messages])
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(150)
   expect(virtualizer['_clampedAdjustment']).toBeNull()
 })

@@ -193,11 +193,7 @@ test('scrolling near the top auto-loads older history', async ({ page }) => {
     .toBeGreaterThan(heightBefore)
 })
 
-// FIXME(#1267): deterministic on CI. The click lands before the 180ms auto history
-// load fires, the prepend then resolves after the jump, and the adapter's anchor
-// write is clamped against the not-yet-grown sizer — the view strands one prepend
-// (~870px) above the bottom. Re-enable once #1267 is fixed.
-test.fixme('Latest returns to the bottom and status flips back to At latest', async ({
+test('Latest returns to the bottom and status flips back to At latest', async ({
   page,
 }) => {
   await page.goto('/chat-pretext')
@@ -212,6 +208,41 @@ test.fixme('Latest returns to the bottom and status flips back to At latest', as
   await waitForPin(page)
   await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
   await expect(page.locator('[data-key^="message-4"]').last()).toBeVisible()
+})
+
+// #1267: Latest clicked while a history load is in flight, so the prepend lands
+// after the jump. Its anchor write is made before Marko commits the grown sizer and
+// is clamped to the old max; unless it is retried once the sizer has grown, the view
+// strands one prepend above the bottom with no scroll event to recover it. The
+// scroll to the top and the click run in the page, well inside the 180ms history
+// timer, so the prepend always resolves after the click.
+test('Latest stays at the bottom when an in-flight history load lands after it', async ({
+  page,
+}) => {
+  await page.goto('/chat-pretext')
+  await waitForPin(page)
+  await page.waitForTimeout(400) // the near-top auto history load arms after 250ms
+  const heightBefore = await page
+    .locator('.messages')
+    .evaluate((el) => el.scrollHeight)
+  const statusAtClick = await page.locator('.messages').evaluate(async (el) => {
+    const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+    el.scrollTop = 0
+    await frame()
+    await frame()
+    await new Promise((resolve) => setTimeout(resolve))
+    const status = document.querySelector('[data-testid="status"]')!.textContent
+    document.querySelector<HTMLElement>('[data-testid="latest"]')!.click()
+    return status?.trim()
+  })
+  expect(statusAtClick).toBe('Loading history')
+  await expect
+    .poll(() => page.locator('.messages').evaluate((el) => el.scrollHeight), {
+      timeout: 3000,
+    })
+    .toBeGreaterThan(heightBefore)
+  await waitForPin(page)
+  await expect(page.locator('[data-testid="status"]')).toHaveText('At latest')
 })
 
 test('a reply streamed from the server grows progressively and stays pinned', async ({
