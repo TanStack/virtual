@@ -521,12 +521,14 @@ test('#1218: first measurement of a spanning item still compensates', () => {
 function setupEchoList({
   onChange,
   measure,
+  getComputedStyle,
 }: {
   onChange?: (instance: Virtualizer<any, any>, sync: boolean) => void
   measure?: (
     element: HTMLElement,
     entry: ResizeObserverEntry | undefined,
   ) => number
+  getComputedStyle?: (element: HTMLElement) => Partial<CSSStyleDeclaration>
 } = {}) {
   const timers: Array<() => void> = []
   const rafs: Array<FrameRequestCallback> = []
@@ -543,6 +545,7 @@ function setupEchoList({
     },
     clearTimeout: () => {},
     performance: { now: () => 0 },
+    getComputedStyle,
     ResizeObserver: class {
       constructor(cb: ResizeObserverCallback) {
         roCallback = cb
@@ -668,6 +671,63 @@ test('#1252: the frame after an echo adopts the settled size once', () => {
   expect(v.itemSizeCache.get(0)).toBe(50)
   expect(v.scrollOffset).toBe(400)
   expect(el.scrollTop).toBe(400)
+})
+
+test('#1252: a stale observation after the confirm keeps the confirmed size', () => {
+  let notifies = 0
+  const { v, el, node, deliver, flushSettle } = setupEchoList({
+    onChange: (instance, sync) => {
+      if (!sync) return
+      notifies++
+      if (notifies > 8) throw new Error('scroll correction loop')
+      const size = instance.itemSizeCache.get(0)
+      instance.resizeItem(0, size === 53 ? 50 : 53)
+    },
+  })
+  v.measureElement(node)
+  node.offsetHeight = 50
+  flushSettle()
+  expect(v.itemSizeCache.get(0)).toBe(50)
+
+  // The confirm moved 53 -> 50; the box still reports 53 once more.
+  deliver(53)
+  expect(v.itemSizeCache.get(0)).toBe(50)
+  expect(v.scrollOffset).toBe(400)
+  expect(el.scrollTop).toBe(400)
+})
+
+test('#1252: the confirm gives a custom measurer content-box fields', () => {
+  const style = {
+    paddingTop: '10px',
+    paddingBottom: '10px',
+    paddingLeft: '0px',
+    paddingRight: '0px',
+    borderTopWidth: '0px',
+    borderBottomWidth: '0px',
+    borderLeftWidth: '0px',
+    borderRightWidth: '0px',
+  }
+  let notifies = 0
+  const { v, node, flushSettle } = setupEchoList({
+    getComputedStyle: () => style,
+    // Adds the vertical padding back to the content box, as a custom
+    // measurer that reads contentRect would.
+    measure: (element, entry) =>
+      entry ? entry.contentRect.height + 20 : element.offsetHeight,
+    onChange: (instance, sync) => {
+      if (!sync) return
+      notifies++
+      if (notifies > 8) throw new Error('scroll correction loop')
+      const size = instance.itemSizeCache.get(0)
+      instance.resizeItem(0, size === 53 ? 50 : 53)
+    },
+  })
+  v.measureElement(node)
+  expect(v.itemSizeCache.get(0)).toBe(53)
+  node.offsetHeight = 70
+  flushSettle()
+
+  expect(v.itemSizeCache.get(0)).toBe(70)
 })
 
 test('#1252: a later direct resize back to a previous size still applies', () => {

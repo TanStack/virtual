@@ -2108,9 +2108,9 @@ export class Virtualizer<
       const confirm = () => {
         if (token !== this._echoToken) return
         for (const key of keys) {
-          if (!this._confirmEchoKey(key)) continue
-          this._echoFrom.delete(key)
-          this._echoPendingKeys.delete(key)
+          // The confirm drops the original guard itself. A guard that its
+          // resizeItem records for the confirmed change must survive here.
+          if (this._confirmEchoKey(key)) this._echoPendingKeys.delete(key)
         }
       }
       if (win.requestAnimationFrame == null) {
@@ -2127,9 +2127,15 @@ export class Virtualizer<
   // False when the confirm is deferred and the key must keep its guard.
   private _confirmEchoKey = (key: Key): boolean => {
     const node = this.elementsCache.get(key)
-    if (!node?.isConnected) return true
+    if (!node?.isConnected) {
+      this._echoFrom.delete(key)
+      return true
+    }
     const index = this.indexFromElement(node)
-    if (!this.isIndexInRange(index)) return true
+    if (!this.isIndexInRange(index)) {
+      this._echoFrom.delete(key)
+      return true
+    }
     if (
       !(
         (!this.isScrolling || this.scrollState) &&
@@ -2140,11 +2146,9 @@ export class Virtualizer<
       this._scheduleEchoSettle()
       return false
     }
+    this._echoFrom.delete(key)
     const live = this._readLiveItemSize(node)
-    if (live != null && Number.isFinite(live)) {
-      this._echoFrom.delete(key)
-      this.resizeItem(index, live)
-    }
+    if (live != null && Number.isFinite(live)) this.resizeItem(index, live)
     return true
   }
 
@@ -2160,21 +2164,40 @@ export class Virtualizer<
     }
     const width = horizontal ? block : inline || 0
     const height = horizontal ? inline || 0 : block
-    const boxSize = [{ blockSize: height, inlineSize: width }]
+    // Content-box fields are the border box less padding and borders, as a
+    // ResizeObserver reports them, for callbacks that add padding back.
+    const style = this.targetWindow?.getComputedStyle?.(el)
+    const px = (v: string | undefined) => parseFloat(v ?? '') || 0
+    const insetX = style
+      ? px(style.paddingLeft) +
+        px(style.paddingRight) +
+        px(style.borderLeftWidth) +
+        px(style.borderRightWidth)
+      : 0
+    const insetY = style
+      ? px(style.paddingTop) +
+        px(style.paddingBottom) +
+        px(style.borderTopWidth) +
+        px(style.borderBottomWidth)
+      : 0
+    const contentWidth = Math.max(0, width - insetX)
+    const contentHeight = Math.max(0, height - insetY)
+    const top = style ? px(style.paddingTop) : 0
+    const left = style ? px(style.paddingLeft) : 0
     const entry = {
       target: node,
-      borderBoxSize: boxSize,
-      contentBoxSize: boxSize,
+      borderBoxSize: [{ blockSize: height, inlineSize: width }],
+      contentBoxSize: [{ blockSize: contentHeight, inlineSize: contentWidth }],
       devicePixelContentBoxSize: [],
       contentRect: {
-        x: 0,
-        y: 0,
-        top: 0,
-        left: 0,
-        width,
-        height,
-        right: width,
-        bottom: height,
+        x: left,
+        y: top,
+        top,
+        left,
+        width: contentWidth,
+        height: contentHeight,
+        right: left + contentWidth,
+        bottom: top + contentHeight,
         toJSON: () => ({}),
       },
     } as unknown as ResizeObserverEntry
