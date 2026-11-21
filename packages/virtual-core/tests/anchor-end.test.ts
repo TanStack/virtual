@@ -14,6 +14,7 @@ function createChatVirtualizer({
   itemSize = 50,
   followOnAppend = false,
   threshold = 1,
+  paddingStart = 0,
   paddingEnd = 0,
   scrollMargin = 0,
 }: {
@@ -23,10 +24,13 @@ function createChatVirtualizer({
   itemSize?: number
   followOnAppend?: boolean | 'auto' | 'smooth' | 'instant'
   threshold?: number
+  paddingStart?: number
   paddingEnd?: number
   scrollMargin?: number
 }) {
   let currentMessages = messages
+  let currentPaddingStart = paddingStart
+  let currentScrollMargin = scrollMargin
   const scrollToFn = vi.fn()
   let offsetCb: ((offset: number, isScrolling: boolean) => void) | null = null
   const scrollElement = {
@@ -34,7 +38,11 @@ function createChatVirtualizer({
     scrollLeft: 0,
     // The sizer is `getTotalSize()`, which includes paddingEnd. Anything
     // above the list inside the same scroller adds `scrollMargin` on top.
-    scrollHeight: scrollMargin + messages.length * itemSize + paddingEnd,
+    scrollHeight:
+      currentScrollMargin +
+      currentPaddingStart +
+      messages.length * itemSize +
+      paddingEnd,
     scrollWidth: 1000,
     clientHeight: viewportSize,
     clientWidth: 400,
@@ -84,8 +92,9 @@ function createChatVirtualizer({
       anchorTo: 'end' as const,
       followOnAppend,
       scrollEndThreshold: threshold,
+      paddingStart: currentPaddingStart,
       paddingEnd,
-      scrollMargin,
+      scrollMargin: currentScrollMargin,
     }
   }
 
@@ -102,7 +111,30 @@ function createChatVirtualizer({
       currentMessages = nextMessages
       virtualizer.setOptions(makeOptions())
       ;(scrollElement as any).scrollHeight =
-        scrollMargin + nextMessages.length * itemSize + paddingEnd
+        currentScrollMargin +
+        currentPaddingStart +
+        nextMessages.length * itemSize +
+        paddingEnd
+      virtualizer._willUpdate()
+    },
+    setPaddingStart(nextPaddingStart: number) {
+      currentPaddingStart = nextPaddingStart
+      virtualizer.setOptions(makeOptions())
+      ;(scrollElement as any).scrollHeight =
+        currentScrollMargin +
+        nextPaddingStart +
+        currentMessages.length * itemSize +
+        paddingEnd
+      virtualizer._willUpdate()
+    },
+    setScrollMargin(nextScrollMargin: number) {
+      currentScrollMargin = nextScrollMargin
+      virtualizer.setOptions(makeOptions())
+      ;(scrollElement as any).scrollHeight =
+        nextScrollMargin +
+        currentPaddingStart +
+        currentMessages.length * itemSize +
+        paddingEnd
       virtualizer._willUpdate()
     },
     // Simulate the browser's scroll event after a write (or a gesture).
@@ -112,6 +144,36 @@ function createChatVirtualizer({
     },
   }
 }
+
+test('anchorTo:end keeps visible content stable when only paddingStart changes (#1366)', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { scrollToFn, setPaddingStart } = createChatVirtualizer({
+    messages,
+    offset: 100,
+    paddingStart: 0,
+  })
+
+  setPaddingStart(50)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  const [offset] = scrollToFn.mock.calls[0]!
+  expect(offset).toBe(150)
+})
+
+test('anchorTo:end keeps visible content stable when only scrollMargin changes (#1366)', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { scrollToFn, setScrollMargin } = createChatVirtualizer({
+    messages,
+    offset: 100,
+    scrollMargin: 0,
+  })
+
+  setScrollMargin(40)
+
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  const [offset] = scrollToFn.mock.calls[0]!
+  expect(offset).toBe(140)
+})
 
 test('anchorTo:end keeps visible content stable when older items are prepended', () => {
   const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
@@ -699,4 +761,77 @@ test('#1258: cleanup drops a pending clamped write', () => {
   virtualizer['cleanup']()
 
   expect(virtualizer['_clampedAdjustment']).toBeNull()
+})
+
+test('#1366: a reader inside paddingStart keeps the first item when paddingStart grows or shrinks', () => {
+  const messages = Array.from({ length: 20 }, (_, i) => ({ id: `m-${i}` }))
+  const { scrollToFn, setPaddingStart } = createChatVirtualizer({
+    messages,
+    offset: 33,
+    viewportSize: 300,
+    itemSize: 100,
+    paddingStart: 40,
+  })
+
+  // m-0 was at viewport y 7 (40 - 33); when paddingStart grows to 80, it stays there at offset 73.
+  setPaddingStart(80)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(73)
+  scrollToFn.mockClear()
+
+  // Shrinking paddingStart below the negative anchor offset clamps once at 0.
+  setPaddingStart(0)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(0)
+})
+
+test('#1366: paddingStart change in its own update after a prepend keeps the anchored item', () => {
+  const messages = Array.from({ length: 20 }, (_, i) => ({ id: `m-${i}` }))
+  const { setMessages, setPaddingStart, scrollToFn } = createChatVirtualizer({
+    messages,
+    offset: 250,
+    viewportSize: 300,
+    itemSize: 100,
+    paddingStart: 40,
+  })
+
+  // Update 1: prepend 8 items (m-2 moves from 240 to 1040 -> offset 1050), no scroll read-back yet.
+  const prepended = [
+    ...Array.from({ length: 8 }, (_, i) => ({ id: `p-${i}` })),
+    ...messages,
+  ]
+  setMessages(prepended)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(1050)
+  scrollToFn.mockClear()
+
+  // Update 2: paddingStart grows 40 -> 80 in its own update -> offset 1090.
+  setPaddingStart(80)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(1090)
+})
+
+test('#1366: clamped paddingStart anchor write retries once the sizer grows', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollElement, scrollToFn, emitScroll } =
+    createChatVirtualizer({
+      messages,
+      offset: 90,
+      viewportSize: 200,
+      itemSize: 50,
+      paddingStart: 40,
+    })
+
+  // Consumer updates paddingStart to 90, but commits _willUpdate before growing scrollHeight (still 290, max 90).
+  virtualizer.setOptions({ ...virtualizer.options, paddingStart: 90 })
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(140)
+
+  // Browser clamps write at old max (90), then sizer grows to 340 (max 140).
+  emitScroll(90)
+  ;(scrollElement as any).scrollHeight = 340
+  virtualizer._willUpdate()
+  expect(scrollToFn).toHaveBeenCalledTimes(2)
+  expect(scrollToFn.mock.calls[1]![0]).toBe(140)
 })
