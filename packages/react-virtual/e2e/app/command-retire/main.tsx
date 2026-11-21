@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { flushSync } from 'react-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 // Scroll commands that must finish without the user's help (#1307 step 5,
@@ -12,6 +13,14 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 //   from the spec through `window.__v`). The compensation moves the element
 //   past the target; the command must retire rather than reconcile until the
 //   5s safety valve.
+// - scrollToIndex, then one ResizeObserver batch measures a row above the
+//   fold (compensated) and one between the fold and the target (not): the
+//   target moves further than the correction (rows resized from the spec
+//   through `window.__resize`). The command must land on the fresh target.
+// With `?scrollend=1` (`useScrollendEvent`) the browser also reports each
+// write by `scrollend`, before reconcile; every command must finish the same.
+
+const params = new URLSearchParams(window.location.search)
 
 const COUNT = 100
 const EST = 50
@@ -27,8 +36,12 @@ const App = () => {
     getScrollElement: () => parentRef.current,
     estimateSize: () => EST,
     overscan: 2,
+    useScrollendEvent: params.get('scrollend') === '1',
   })
   ;(window as any).__v = virtualizer
+  // Commits in the caller's task, so the rows are measured in this frame.
+  ;(window as any).__resize = (next: Record<number, number>) =>
+    flushSync(() => setSizes((s) => s.map((size, i) => next[i] ?? size)))
 
   return (
     <div>
