@@ -213,6 +213,23 @@ test('iOS 27: a waiting index target follows rows measured during the fling', ()
   expect(h.writes).toEqual([4550])
 })
 
+test('iOS 27: a prepend as the fling passes the waiting target does not end the command', () => {
+  const h = flingOnIOS27()
+  h.run(() => {
+    h.v.setOptions({ ...h.v.options, anchorTo: 'end', getItemKey: (i) => i })
+    h.v._willUpdate()
+    h.v.scrollToIndex(20, { align: 'start' })
+    h.scroll(true, 1000)
+    h.v.setOptions({ ...h.v.options, count: 112, getItemKey: (i) => i - 12 })
+    h.v._willUpdate()
+    h.scroll(false)
+  })
+  h.expireTail()
+  // The held anchor keeps the reader's rows. Nothing had been written for
+  // the command, so it had not landed: it is written against the new list.
+  expect(h.writes).toEqual([1600, 1000])
+})
+
 // A touch that lands on a scroller still in its fling fires no touch or
 // pointer events on iOS (seen on the 26.5 and 27.0 simulators and an iPhone
 // on 27.0.1, #1307). Touch events arrive only once the fling has stopped,
