@@ -730,6 +730,31 @@ test('#1252: the confirm gives a custom measurer content-box fields', () => {
   expect(v.itemSizeCache.get(0)).toBe(70)
 })
 
+test('#1252: the confirm leaves scrollbar space out of the content box', () => {
+  let notifies = 0
+  const { v, node, flushSettle } = setupEchoList({
+    getComputedStyle: () => ({ paddingTop: '0px', paddingBottom: '0px' }),
+    // Adds the horizontal scrollbar back to the content box.
+    measure: (element, entry) =>
+      entry
+        ? entry.contentRect.height + element.offsetHeight - element.clientHeight
+        : element.offsetHeight,
+    onChange: (instance, sync) => {
+      if (!sync) return
+      notifies++
+      if (notifies > 8) throw new Error('scroll correction loop')
+      const size = instance.itemSizeCache.get(0)
+      instance.resizeItem(0, size === 53 ? 50 : 53)
+    },
+  })
+  v.measureElement(node)
+  expect(v.itemSizeCache.get(0)).toBe(53)
+  Object.assign(node, { offsetHeight: 85, clientHeight: 70 })
+  flushSettle()
+
+  expect(v.itemSizeCache.get(0)).toBe(85)
+})
+
 test('#1252: a later direct resize back to a previous size still applies', () => {
   const { v } = makeAdjustmentVirtualizer(400)
   v.resizeItem(0, 80)

@@ -2164,24 +2164,31 @@ export class Virtualizer<
     }
     const width = horizontal ? block : inline || 0
     const height = horizontal ? inline || 0 : block
-    // Content-box fields are the border box less padding and borders, as a
-    // ResizeObserver reports them, for callbacks that add padding back.
+    // Content-box fields as a ResizeObserver reports them, for callbacks
+    // that add padding back: the client box (which excludes classic
+    // scrollbars) less padding, else the border box less padding and borders.
     const style = this.targetWindow?.getComputedStyle?.(el)
     const px = (v: string | undefined) => parseFloat(v ?? '') || 0
-    const insetX = style
-      ? px(style.paddingLeft) +
-        px(style.paddingRight) +
-        px(style.borderLeftWidth) +
-        px(style.borderRightWidth)
+    const padX = style ? px(style.paddingLeft) + px(style.paddingRight) : 0
+    const padY = style ? px(style.paddingTop) + px(style.paddingBottom) : 0
+    const borderX = style
+      ? px(style.borderLeftWidth) + px(style.borderRightWidth)
       : 0
-    const insetY = style
-      ? px(style.paddingTop) +
-        px(style.paddingBottom) +
-        px(style.borderTopWidth) +
-        px(style.borderBottomWidth)
+    const borderY = style
+      ? px(style.borderTopWidth) + px(style.borderBottomWidth)
       : 0
-    const contentWidth = Math.max(0, width - insetX)
-    const contentHeight = Math.max(0, height - insetY)
+    const clientBox = (client: unknown, border: number, inset: number) =>
+      typeof client === 'number' && Number.isFinite(client)
+        ? client
+        : border - inset
+    const contentWidth = Math.max(
+      0,
+      clientBox(el?.clientWidth, width, borderX) - padX,
+    )
+    const contentHeight = Math.max(
+      0,
+      clientBox(el?.clientHeight, height, borderY) - padY,
+    )
     const top = style ? px(style.paddingTop) : 0
     const left = style ? px(style.paddingLeft) : 0
     const entry = {
