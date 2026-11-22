@@ -1,5 +1,13 @@
 # @tanstack/virtual-core
 
+## 3.19.13
+
+### Patch Changes
+
+- [#1391](https://github.com/TanStack/virtual/pull/1391) [`df00c7f`](https://github.com/TanStack/virtual/commit/df00c7f30ddff82d322e58a51860172550dba51b) - Apply `initialMeasurementsCache` only once. A list whose `count` went to 0 and back re-applied the snapshot's sizes over the sizes its rows had been measured at since mount.
+
+- [#1393](https://github.com/TanStack/virtual/pull/1393) [`c8ec72d`](https://github.com/TanStack/virtual/commit/c8ec72d15cb0bf91dd61d27f4470896beeebf481) - Rebuild the layout once per ResizeObserver batch instead of once per entry after a scroll adjustment. Dragging the scrollbar on large lists with measured rows no longer drops frames.
+
 ## 3.19.12
 
 ### Patch Changes
