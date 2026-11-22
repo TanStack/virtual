@@ -160,6 +160,64 @@ test('WindowVirtualizerController seeds a horizontal list from window.scrollX', 
   }
 })
 
+test('WindowVirtualizerController seeds from the current axis after re-enabling', () => {
+  Object.defineProperties(window, {
+    scrollX: { configurable: true, value: 300 },
+    scrollY: { configurable: true, value: 1000 },
+  })
+  const { host } = createHost()
+  const controller = new WindowVirtualizerController(host, {
+    count: 100,
+    estimateSize: () => 50,
+  })
+  try {
+    controller.hostConnected()
+    expect(controller.getVirtualizer().scrollOffset).toBe(1000)
+
+    controller.setOptions({ enabled: false })
+    controller.setOptions({ horizontal: true })
+    controller.setOptions({ enabled: true })
+
+    const virtualizer = controller.getVirtualizer()
+    expect(virtualizer.getVirtualItems()[0]?.index).toBe(5)
+    expect(virtualizer.scrollOffset).toBe(300)
+  } finally {
+    controller.hostDisconnected()
+    Object.defineProperties(window, {
+      scrollX: { configurable: true, value: 0 },
+      scrollY: { configurable: true, value: 0 },
+    })
+  }
+})
+
+test('WindowVirtualizerController keeps an explicit initialOffset', () => {
+  Object.defineProperties(window, {
+    scrollX: { configurable: true, value: 300 },
+    scrollY: { configurable: true, value: 1000 },
+  })
+  const { host } = createHost()
+  const controller = new WindowVirtualizerController(host, {
+    count: 100,
+    estimateSize: () => 50,
+    initialOffset: () => 150,
+  })
+  try {
+    controller.hostConnected()
+
+    controller.setOptions({ enabled: false })
+    controller.setOptions({ horizontal: true })
+    controller.setOptions({ enabled: true })
+
+    expect(controller.getVirtualizer().scrollOffset).toBe(150)
+  } finally {
+    controller.hostDisconnected()
+    Object.defineProperties(window, {
+      scrollX: { configurable: true, value: 0 },
+      scrollY: { configurable: true, value: 0 },
+    })
+  }
+})
+
 @customElement('test-list-set-options')
 class ListSetOptions extends LitElement {
   @property({ type: Number })

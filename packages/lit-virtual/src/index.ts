@@ -158,9 +158,9 @@ export class WindowVirtualizerController<
       observeElementRect: observeWindowRect,
       observeElementOffset: observeWindowOffset,
       scrollToFn: windowScroll,
-      initialOffset: () =>
+      initialOffset: (instance) =>
         typeof document !== 'undefined'
-          ? options.horizontal
+          ? instance.options.horizontal
             ? window.scrollX
             : window.scrollY
           : 0,

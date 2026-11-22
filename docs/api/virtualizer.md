@@ -125,10 +125,10 @@ The padding to apply to the end of the virtualizer in pixels when scrolling to a
 ### `initialOffset`
 
 ```tsx
-initialOffset?: number | (() => number)
+initialOffset?: number | ((instance: Virtualizer<TScrollElement, TItemElement>) => number)
 ```
 
-The position where the list is scrolled to on render. This is useful if you are rendering the virtualizer in a SSR environment or are conditionally rendering the virtualizer.
+The position where the list is scrolled to on render. This is useful if you are rendering the virtualizer in a SSR environment or are conditionally rendering the virtualizer. A function is passed the virtualizer instance, and must not call methods that read the scroll offset, such as `getVirtualItems`.
 
 ### `getItemKey`
 

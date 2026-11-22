@@ -628,6 +628,24 @@ test('setOptions: explicit value overrides default', () => {
   expect(virtualizer.options.lanes).toBe(3)
 })
 
+test('initialOffset: receives the virtualizer with its current options', () => {
+  const virtualizer = new Virtualizer({
+    count: 100,
+    estimateSize: () => 50,
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+    enabled: false,
+    initialOffset: (instance) => (instance.options.horizontal ? 300 : 1000),
+  })
+
+  virtualizer.setOptions({ ...virtualizer.options, horizontal: true })
+  virtualizer.setOptions({ ...virtualizer.options, enabled: true })
+
+  expect(virtualizer['getScrollOffset']()).toBe(300)
+})
+
 // ─── Public-exports lockdown ─────────────────────────────────────────────────
 // If any of these go missing the next minor bump silently breaks consumers.
 
