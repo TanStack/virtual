@@ -128,7 +128,11 @@ export function createWindowVirtualizer<TItemElement extends Element>(
         observeElementOffset: observeWindowOffset,
         scrollToFn: windowScroll,
         initialOffset: () =>
-          typeof document !== 'undefined' ? window.scrollY : 0,
+          typeof document !== 'undefined'
+            ? options.horizontal
+              ? window.scrollX
+              : window.scrollY
+            : 0,
       },
       options,
     ),

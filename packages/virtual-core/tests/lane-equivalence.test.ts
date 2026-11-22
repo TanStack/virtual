@@ -285,7 +285,8 @@ describe('multi-lane placement equivalence under measured-mode rebuilds', () => 
         const gap = Math.floor(rng() * 10)
         const paddingStart = Math.floor(rng() * 30)
         const scrollMargin = Math.floor(rng() * 30)
-        const estimateSize = (i: number) => 20 + ((i * 37) % 90)
+        // Fractional, so a measurement below never equals its estimate.
+        const estimateSize = (i: number) => 20.5 + ((i * 37) % 90)
 
         const reference = new ReferenceVirtualizer({
           count,

@@ -1,4 +1,4 @@
-import { expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   Virtualizer,
   observeElementOffset,
@@ -33,6 +33,55 @@ test('should return correct total size with one item and multiple lanes', () => 
   })
   expect(virtualizer.getTotalSize()).toBe(50)
 })
+
+describe.each([0, 50, 200])(
+  'total size with scrollMargin %i',
+  (scrollMargin) => {
+    test.each([
+      { paddingStart: 0, paddingEnd: 0 },
+      { paddingStart: 40, paddingEnd: 0 },
+      { paddingStart: 0, paddingEnd: 60 },
+      { paddingStart: 40, paddingEnd: 60 },
+    ])('preserves padding $paddingStart / $paddingEnd', (padding) => {
+      for (const horizontal of [false, true]) {
+        for (const lanes of [1, 2]) {
+          const virtualizer = new Virtualizer({
+            count: 0,
+            estimateSize: () => 50,
+            getScrollElement: () => null,
+            scrollToFn: vi.fn(),
+            observeElementRect: vi.fn(),
+            observeElementOffset: vi.fn(),
+            scrollMargin,
+            horizontal,
+            lanes,
+            ...padding,
+          })
+          const totalPadding = padding.paddingStart + padding.paddingEnd
+
+          for (const count of [0, 4, 0, 4, 0]) {
+            virtualizer.setOptions({ ...virtualizer.options, count })
+            expect(virtualizer.getTotalSize()).toBe(
+              totalPadding + Math.ceil(count / lanes) * 50,
+            )
+          }
+
+          virtualizer.setOptions({
+            ...virtualizer.options,
+            count: 4,
+            enabled: false,
+          })
+          expect(virtualizer.getTotalSize()).toBe(totalPadding)
+
+          virtualizer.setOptions({ ...virtualizer.options, enabled: true })
+          expect(virtualizer.getTotalSize()).toBe(
+            totalPadding + (4 / lanes) * 50,
+          )
+        }
+      }
+    })
+  },
+)
 
 test('should correctly recalculate lane assignments when lane count changes', () => {
   // Create a mock scroll element
@@ -198,6 +247,73 @@ test("should defer lane caching until measurement when laneAssignmentMode is 'me
   virtualizer.resizeItem(1, 200)
   const lanesAfterResize = virtualizer['getMeasurements']().map((m) => m.lane)
   expect(lanesBeforeResize).toEqual(lanesAfterResize)
+})
+
+const measuredLanes = () => {
+  const virtualizer = new Virtualizer({
+    count: 8,
+    lanes: 2,
+    estimateSize: () => 100,
+    laneAssignmentMode: 'measured',
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  const lanes = () => virtualizer['getMeasurements']().map((m) => m.lane)
+  lanes()
+  return { virtualizer, lanes }
+}
+
+test("should keep the lane of a row measured at its estimate when laneAssignmentMode is 'measured'", () => {
+  const { virtualizer, lanes } = measuredLanes()
+  const before = lanes()
+
+  for (let i = 0; i < 8; i++) virtualizer.resizeItem(i, 100)
+  virtualizer.resizeItem(1, 500)
+
+  expect(lanes()).toEqual(before)
+})
+
+test('should keep the lane of a row measured at its estimate after a row above it changed in the same batch', () => {
+  const { virtualizer, lanes } = measuredLanes()
+
+  // Rows 2 and on are measured after row 1 changed, with no rebuild in between.
+  virtualizer.resizeItem(1, 300)
+  for (let i = 2; i < 8; i++) virtualizer.resizeItem(i, 100)
+  const before = lanes()
+  expect(before).toEqual([0, 1, 0, 0, 1, 0, 1, 0])
+  virtualizer.resizeItem(1, 500)
+
+  expect(lanes()).toEqual(before)
+})
+
+test.each([{ lanes: 1 }, { lanes: 2, useCachedMeasurements: true }])(
+  'should not cache a lane for a size equal to the estimate with %o',
+  (options) => {
+    const virtualizer = new Virtualizer({
+      count: 4,
+      estimateSize: () => 100,
+      laneAssignmentMode: 'measured',
+      getScrollElement: () => null,
+      scrollToFn: vi.fn(),
+      observeElementRect: vi.fn(),
+      observeElementOffset: vi.fn(),
+      ...options,
+    })
+    virtualizer['getMeasurements']()
+
+    virtualizer.resizeItem(0, 100)
+
+    expect(virtualizer['laneAssignments'].size).toBe(0)
+  },
+)
+
+test("should not throw when a row is measured at its estimate right after 'enabled' turns off", () => {
+  const { virtualizer } = measuredLanes()
+  virtualizer.setOptions({ ...virtualizer.options, enabled: false })
+
+  expect(() => virtualizer.resizeItem(0, 100)).not.toThrow()
 })
 
 test("should cache lanes incrementally as items are measured when laneAssignmentMode is 'measured'", () => {
@@ -466,6 +582,32 @@ test('takeSnapshot: works with lanes>1 too', () => {
   expect(snap.length).toBe(2)
   expect(snap[0]!.size).toBe(80)
   expect(snap[1]!.size).toBe(90)
+})
+
+test('initialMeasurementsCache: an emptied and refilled list keeps sizes measured since mount', () => {
+  const v = new Virtualizer({
+    count: 20,
+    estimateSize: () => 50,
+    initialMeasurementsCache: [
+      { index: 0, key: 0, start: 0, size: 80, end: 80, lane: 0 },
+    ],
+    getScrollElement: () => null,
+    scrollToFn: vi.fn(),
+    observeElementRect: vi.fn(),
+    observeElementOffset: vi.fn(),
+  })
+  expect(v['getMeasurements']()[0]!.size).toBe(80)
+
+  // The row is measured at a new size after mount.
+  v.resizeItem(0, 120)
+  expect(v['getMeasurements']()[0]!.size).toBe(120)
+
+  // A filter that matches nothing, then is cleared.
+  v.setOptions({ ...v.options, count: 0 })
+  v['getMeasurements']()
+  v.setOptions({ ...v.options, count: 20 })
+
+  expect(v['getMeasurements']()[0]!.size).toBe(120)
 })
 
 test('setOptions: explicit value overrides default', () => {

@@ -115,3 +115,29 @@ describe('scroll element lifecycle', () => {
     expect(cleanupOffset).toHaveBeenCalledTimes(1)
   })
 })
+
+test('useWindowVirtualizer seeds a horizontal list from window.scrollX', () => {
+  Object.defineProperties(window, {
+    scrollX: { configurable: true, value: 300 },
+    scrollY: { configurable: true, value: 1000 },
+  })
+  const scope = effectScope()
+  try {
+    const virtualizer = scope.run(() =>
+      useWindowVirtualizer({
+        count: 100,
+        estimateSize: () => 50,
+        horizontal: true,
+      }),
+    )!
+
+    expect(virtualizer.value.getVirtualItems()[0]?.index).toBe(5)
+    expect(virtualizer.value.scrollOffset).toBe(300)
+  } finally {
+    scope.stop()
+    Object.defineProperties(window, {
+      scrollX: { configurable: true, value: 0 },
+      scrollY: { configurable: true, value: 0 },
+    })
+  }
+})
