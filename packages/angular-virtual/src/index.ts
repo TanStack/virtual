@@ -216,12 +216,20 @@ export function injectWindowVirtualizer<TItemElement extends Element>(
     | 'scrollToFn'
   >,
 ): AngularVirtualizer<Window, TItemElement> {
-  return injectVirtualizerBase<Window, TItemElement>(() => ({
-    getScrollElement: () => (typeof document !== 'undefined' ? window : null),
-    observeElementRect: observeWindowRect,
-    observeElementOffset: observeWindowOffset,
-    scrollToFn: windowScroll,
-    initialOffset: () => (typeof document !== 'undefined' ? window.scrollY : 0),
-    ...options(),
-  }))
+  return injectVirtualizerBase<Window, TItemElement>(() => {
+    const resolvedOptions = options()
+    return {
+      getScrollElement: () => (typeof document !== 'undefined' ? window : null),
+      observeElementRect: observeWindowRect,
+      observeElementOffset: observeWindowOffset,
+      scrollToFn: windowScroll,
+      initialOffset: () =>
+        typeof document !== 'undefined'
+          ? resolvedOptions.horizontal
+            ? window.scrollX
+            : window.scrollY
+          : 0,
+      ...resolvedOptions,
+    }
+  })
 }
