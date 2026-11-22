@@ -505,7 +505,7 @@ Returns the total size in pixels for the virtualized items. This measurement wil
 measure: () => void
 ```
 
-Resets any prev item measurements.
+Resets any prev item measurements. To forget one item's size, use `resetItemSize`.
 
 ### `takeSnapshot`
 
@@ -569,6 +569,16 @@ Change the virtualized item's size manually. Use this function to manually set t
 You can also use this method with a throttled ResizeObserver instead of `Virtualizer.measureElement` to reduce re-rendering.
 
 > ⚠️ Please be aware that manually changing the size of an item when using `Virtualizer.measureElement` to monitor that item, will result in unpredictable behaviour as the `Virtualizer.measureElement` is also changing the size. However you can use one of resizeItem or measureElement in the same virtualizer instance but on different item indexes.
+
+### `resetItemSize`
+
+```tsx
+resetItemSize: (index: number) => void
+```
+
+Forgets the measured size of the item at `index`. Use it when an item's content changes shape while its key stays the same (a group expands or collapses, a message is edited) and the item may not be rendered, so nothing measures it again until it scrolls back into view.
+
+The item falls back to `estimateSize` until it is measured again, and `takeSnapshot()` leaves it out until then. That measurement counts as a first one, so the scroll position is corrected for it even while scrolling backward. If the item is rendered, it is measured again right away instead.
 
 ### `scrollRect`
 
