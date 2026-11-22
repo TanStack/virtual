@@ -134,6 +134,32 @@ test('WindowVirtualizerController.setOptions keeps the window defaults', () => {
   controller.hostDisconnected()
 })
 
+test('WindowVirtualizerController seeds a horizontal list from window.scrollX', () => {
+  Object.defineProperties(window, {
+    scrollX: { configurable: true, value: 300 },
+    scrollY: { configurable: true, value: 1000 },
+  })
+  const { host } = createHost()
+  const controller = new WindowVirtualizerController(host, {
+    count: 100,
+    estimateSize: () => 50,
+    horizontal: true,
+  })
+  try {
+    controller.hostConnected()
+
+    const virtualizer = controller.getVirtualizer()
+    expect(virtualizer.getVirtualItems()[0]?.index).toBe(5)
+    expect(virtualizer.scrollOffset).toBe(300)
+  } finally {
+    controller.hostDisconnected()
+    Object.defineProperties(window, {
+      scrollX: { configurable: true, value: 0 },
+      scrollY: { configurable: true, value: 0 },
+    })
+  }
+})
+
 @customElement('test-list-set-options')
 class ListSetOptions extends LitElement {
   @property({ type: Number })
