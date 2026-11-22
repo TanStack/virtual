@@ -1027,6 +1027,74 @@ test('reconcileScroll: smooth scroll retargets remain smooth while distance > vi
   expect(lastCall![1].behavior).toBe('smooth')
 })
 
+// ─── a write reported again at rest ──────────────────────────────────────────
+// With `useScrollendEvent` a write is reported twice: by its scroll event,
+// and by `scrollend` at the same position, both before reconcile (the
+// fallback reports it again after `isScrollingResetDelay`). The second
+// report is the virtualizer's own write, not the user scrolling away.
+
+test('a correction reported again at rest does not cancel a scrollToIndex whose target moved further', () => {
+  const { v, el, scroll, frame, settle } = setupHandDrivenScroll()
+
+  // Row 20 ends at the bottom of the viewport: 1050 - 200.
+  v.scrollToIndex(20, { align: 'end' })
+  scroll(850, true)
+  scroll(850, false)
+  frame()
+  // One ResizeObserver batch: row 10, above the fold, is compensated
+  // (850 -> 900); row 18, in view above the target, grows by 100. The target
+  // moves to 1000. The correction's `scrollend` used to read as the user
+  // scrolling away: the element was neither where the command wrote nor at
+  // its fresh target.
+  v.resizeItem(10, 100)
+  v.resizeItem(18, 150)
+  expect(el.scrollTop).toBe(900)
+  scroll(900, true)
+  scroll(900, false)
+  settle()
+
+  expect(el.scrollTop).toBe(1000)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a clamped write reported again at rest does not cancel scrollToIndex', () => {
+  // As `index-shrink` in the command-retire e2e (#1310): rows 0–19 shrink
+  // by 30px each before the read-back, and the browser clamps the write of
+  // 4500 at the smaller max.
+  const { v, el, scroll, settle } = setupHandDrivenScroll()
+
+  v.scrollToIndex(90, { align: 'start' })
+  for (let i = 0; i < 20; i++) v.resizeItem(i, 20)
+  el.scrollHeight = 4400
+  el.scrollTop = 4200
+  scroll(4200, true)
+  scroll(4200, false)
+  settle()
+
+  expect(el.scrollTop).toBe(3900)
+  expect(v.scrollState).toBeNull()
+})
+
+test('a correction that moves the element off an unmoved target ends the scrollToIndex', () => {
+  // A predicate that compensates rows below the target too: the element
+  // moves, the target does not, and reconcile writes only a target that
+  // moved. The command ends at the correction's echo rather than holding
+  // until the safety valve.
+  const { v, el, scroll, frame } = setupHandDrivenScroll()
+  v.shouldAdjustScrollPositionOnItemSizeChange = () => true
+
+  v.scrollToIndex(20, { align: 'start' })
+  scroll(1000, true)
+  scroll(1000, false)
+  frame()
+  v.resizeItem(22, 100)
+  expect(el.scrollTop).toBe(1050)
+  scroll(1050, true)
+  scroll(1050, false)
+
+  expect(v.scrollState).toBeNull()
+})
+
 // ─── a prepend must not strand a travelling smooth scroll ────────────────────
 // The end-anchor prepend sync in _willUpdate writes scrollTop instantly. That
 // cancels a smooth scrollToIndex the browser is still animating, and Chromium
@@ -1638,6 +1706,62 @@ test('scrollToOffset: a prepend after the read-back moves the target with the an
   settle()
 
   expect(el.scrollTop).toBe(2600)
+  expect(v.scrollState).toBeNull()
+})
+
+test('scrollToIndex: a prepend after a correction keeps the reader on its rows', () => {
+  // Row 10 grows once reconcile has seen the command at its target: the
+  // correction moves the viewport and the target together, off where the
+  // command wrote. The anchor still ends the command, as its index now names
+  // other rows: reconcile must not take the reader to row 20 of the new
+  // list (old row 8) before any report at rest.
+  const { v, el, scroll, frame } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  v.scrollToIndex(20, { align: 'start' })
+  scroll(1000, true)
+  scroll(1000, false)
+  frame()
+  v.resizeItem(10, 100)
+  expect(el.scrollTop).toBe(1050)
+  el.scrollHeight = 5650
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  expect(el.scrollTop).toBe(1650)
+  scroll(1650, true)
+  frame()
+  // Old row 3, above the fold, grows.
+  v.resizeItem(15, 100)
+  frame()
+
+  expect(el.scrollTop).toBe(1700)
+})
+
+test('scrollToEnd: a prepend after the read-back keeps the command following the end', () => {
+  // The anchor ends an index command that had landed, as its index now names
+  // other rows; an end target is still the end.
+  const { v, el, scroll, frame, settle } = setupHandDrivenScroll({
+    anchorTo: 'end',
+    getItemKey: (i) => i,
+  })
+
+  v.scrollToEnd()
+  scroll(4800, true)
+  scroll(4800, false)
+  frame()
+  el.scrollHeight = 5600
+  v.setOptions({ ...v.options, count: 112, getItemKey: (i) => i - 12 })
+  v._willUpdate()
+  expect(el.scrollTop).toBe(5400)
+  scroll(5400, true)
+  scroll(5400, false)
+  // A toolbar takes 75px from the viewport before reconcile.
+  el.clientHeight = 125
+  settle()
+
+  expect(el.scrollTop).toBe(5475)
   expect(v.scrollState).toBeNull()
 })
 

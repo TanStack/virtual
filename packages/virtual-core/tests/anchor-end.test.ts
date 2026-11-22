@@ -412,6 +412,30 @@ test('anchorTo:end still pins an end-pinned viewport with a scrollMargin', () =>
   expect(scrollToFn.mock.calls[0]![1].adjustments).toBe(70)
 })
 
+test('anchorTo:end with a scrollMargin writes nothing when the list empties and follows the refill', () => {
+  const messages = Array.from({ length: 8 }, (_, i) => ({ id: `m-${i}` }))
+  const { virtualizer, scrollToFn, setMessages, emitScroll } =
+    createChatVirtualizer({
+      messages,
+      offset: 410,
+      paddingEnd: 60,
+      scrollMargin: 150,
+      followOnAppend: true,
+    })
+
+  setMessages([])
+  expect(virtualizer.getTotalSize()).toBe(60)
+  expect(scrollToFn).not.toHaveBeenCalled()
+
+  // The shorter sizer clamps the element: 150 + 60 - 200.
+  emitScroll(10)
+  expect(virtualizer.isAtEnd()).toBe(true)
+
+  setMessages(messages)
+  expect(scrollToFn).toHaveBeenCalledTimes(1)
+  expect(scrollToFn.mock.calls[0]![0]).toBe(410)
+})
+
 test('isAtEnd and getDistanceFromEnd use the scroll element max offset', () => {
   const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m-${i}` }))
   const { virtualizer } = createChatVirtualizer({

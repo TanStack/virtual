@@ -85,7 +85,11 @@ function useVirtualizerBase<
   TScrollElement,
   TItemElement
 > {
-  const rerender = React.useReducer((x: number) => x + 1, 0)[1]
+  const [, dispatch] = React.useReducer((x: number) => x + 1, 0)
+  // React DevTools replays hooks with a no-op dispatch while inspecting them.
+  // Keep the original dispatch so that setOptions below cannot replace the
+  // virtualizer's render callback with the inspector's no-op.
+  const rerender = React.useRef(dispatch).current
 
   // Mutable across renders so the onChange closure captured by setOptions
   // always reads the latest values without us having to re-create it.
