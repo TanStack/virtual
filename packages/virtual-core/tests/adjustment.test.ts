@@ -513,3 +513,72 @@ test('#1218: first measurement of a spanning item still compensates', () => {
 
   expect(v.scrollOffset).toBe(before + 70)
 })
+
+test('resize batch rebuilds the layout once', () => {
+  let resizeCallback: ResizeObserverCallback | null = null
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    performance: { now: () => Date.now() },
+    ResizeObserver: vi.fn(function (callback: ResizeObserverCallback) {
+      resizeCallback = callback
+      return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+    }),
+  }
+  const el = {
+    scrollTop: 2000,
+    scrollLeft: 0,
+    scrollHeight: 100000,
+    clientHeight: 600,
+    offsetHeight: 600,
+    ownerDocument: { defaultView: mockWindow },
+    scrollTo: vi.fn(({ top }: { top: number }) => {
+      el.scrollTop = top
+    }),
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }
+  const count = 1000
+  const getItemKey = vi.fn((index: number) => index)
+  const v = new Virtualizer<any, any>({
+    count,
+    estimateSize: () => 50,
+    getItemKey,
+    getScrollElement: () => el as any,
+    scrollToFn: elementScroll,
+    observeElementRect: (_i, cb) => {
+      cb({ width: 300, height: 600 })
+    },
+    observeElementOffset: (_i, cb) => {
+      cb(2000, false)
+      return () => {}
+    },
+  })
+  v._willUpdate()
+  v['getMeasurements']()
+
+  const createEntry = (index: number, height: number) => {
+    const node = {
+      getAttribute: (name: string) =>
+        name === 'data-index' ? String(index) : null,
+      isConnected: true,
+      offsetHeight: 50,
+      getBoundingClientRect: () => ({ width: 300, height: 50 }),
+    }
+    return {
+      target: node,
+      borderBoxSize: [{ blockSize: height, inlineSize: 300 }],
+    } as unknown as ResizeObserverEntry
+  }
+  v.measureElement(createEntry(30, 50).target as any)
+  const entries = [createEntry(30, 80)]
+  for (let index = 40; index < 50; index++) entries.push(createEntry(index, 70))
+
+  getItemKey.mockClear()
+  const before = v.scrollOffset!
+  resizeCallback!(entries, {} as ResizeObserver)
+
+  expect(v.scrollOffset).toBe(before + 30)
+  expect(v.getOffsetForIndex(40, 'start')?.[0]).toBe(2030)
+  expect(getItemKey.mock.calls.length).toBeLessThan(2 * count)
+})
