@@ -1,5 +1,17 @@
 # @tanstack/virtual-core
 
+## 3.19.12
+
+### Patch Changes
+
+- [#1380](https://github.com/TanStack/virtual/pull/1380) [`23026e2`](https://github.com/TanStack/virtual/commit/23026e2b93c076a0c5cd48985890c26be3520697) - Preserve start and end padding for empty lists with a nonzero scroll margin.
+
+- [#1377](https://github.com/TanStack/virtual/pull/1377) [`b0132f7`](https://github.com/TanStack/virtual/commit/b0132f7940a2eeac8622aa4d50b3147bcf85f1df) - Keep the lane of a row measured at exactly its estimate in `laneAssignmentMode: 'measured'`. Such a row never had its lane cached, so a row growing above it could move it to another lane.
+
+- [#1376](https://github.com/TanStack/virtual/pull/1376) [`508bf45`](https://github.com/TanStack/virtual/commit/508bf45ec674cf83ed68678615e7e9f767a043ad) - `scrollToIndex` and `scrollToEnd` no longer stop short of a target that moved while they settled: the report of the virtualizer's own write at rest (a size correction, or a write the browser clamped) is no longer read as the user scrolling away. This applies to `scrollend` with `useScrollendEvent: true`, and to the debounced fallback in the default mode when the next frame is slow. With `anchorTo: 'end'`, rows prepended once a `scrollToIndex` has landed end the command in either mode, so the view stays on the rows it showed rather than moving to the row the index names in the new list.
+
+- [#1372](https://github.com/TanStack/virtual/pull/1372) [`54a3f7d`](https://github.com/TanStack/virtual/commit/54a3f7d3cc32b373187b3802d81cb4b24ae08b0b) - Render only the last rows of a list that is above the viewport in a shared scroll element. The scroll offset is capped at the end of the scroll element, the list's end plus the content after it, rather than at the list's end, so a list that has the element to itself is capped as before.
+
 ## 3.19.11
 
 ### Patch Changes

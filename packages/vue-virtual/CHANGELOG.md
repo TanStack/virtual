@@ -1,5 +1,14 @@
 # @tanstack/vue-virtual
 
+## 3.13.53
+
+### Patch Changes
+
+- [#1383](https://github.com/TanStack/virtual/pull/1383) [`b883a1c`](https://github.com/TanStack/virtual/commit/b883a1cc6f45b62505a9490ed72b0f56c2ada6c9) - Seed a horizontal window virtualizer's default `initialOffset` from `window.scrollX` instead of `window.scrollY`, matching `observeWindowOffset` and the Marko adapter. A horizontal list mounted on a page that was scrolled down no longer renders the columns at the vertical scroll position until the first scroll event.
+
+- Updated dependencies [[`23026e2`](https://github.com/TanStack/virtual/commit/23026e2b93c076a0c5cd48985890c26be3520697), [`b0132f7`](https://github.com/TanStack/virtual/commit/b0132f7940a2eeac8622aa4d50b3147bcf85f1df), [`508bf45`](https://github.com/TanStack/virtual/commit/508bf45ec674cf83ed68678615e7e9f767a043ad), [`54a3f7d`](https://github.com/TanStack/virtual/commit/54a3f7d3cc32b373187b3802d81cb4b24ae08b0b)]:
+  - @tanstack/virtual-core@3.19.12
+
 ## 3.13.52
 
 ### Patch Changes

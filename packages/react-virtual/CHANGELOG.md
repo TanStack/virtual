@@ -1,5 +1,16 @@
 # @tanstack/react-virtual
 
+## 3.14.27
+
+### Patch Changes
+
+- [#1382](https://github.com/TanStack/virtual/pull/1382) [`971b4d0`](https://github.com/TanStack/virtual/commit/971b4d093db9410cfed0aac92f0c2d05bba4d6c9) - Fix virtualized lists freezing when hovering their elements in the browser's Elements panel with React DevTools' "Record why each component rendered while profiling" setting enabled, even without starting a profiling recording ([#682](https://github.com/TanStack/virtual/issues/682)). Preserve the original reducer dispatch during hook inspection so scrolling continues to render new rows.
+
+- [#1383](https://github.com/TanStack/virtual/pull/1383) [`b883a1c`](https://github.com/TanStack/virtual/commit/b883a1cc6f45b62505a9490ed72b0f56c2ada6c9) - Seed a horizontal window virtualizer's default `initialOffset` from `window.scrollX` instead of `window.scrollY`, matching `observeWindowOffset` and the Marko adapter. A horizontal list mounted on a page that was scrolled down no longer renders the columns at the vertical scroll position until the first scroll event.
+
+- Updated dependencies [[`23026e2`](https://github.com/TanStack/virtual/commit/23026e2b93c076a0c5cd48985890c26be3520697), [`b0132f7`](https://github.com/TanStack/virtual/commit/b0132f7940a2eeac8622aa4d50b3147bcf85f1df), [`508bf45`](https://github.com/TanStack/virtual/commit/508bf45ec674cf83ed68678615e7e9f767a043ad), [`54a3f7d`](https://github.com/TanStack/virtual/commit/54a3f7d3cc32b373187b3802d81cb4b24ae08b0b)]:
+  - @tanstack/virtual-core@3.19.12
+
 ## 3.14.26
 
 ### Patch Changes
