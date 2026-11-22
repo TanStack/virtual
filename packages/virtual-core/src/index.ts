@@ -496,6 +496,9 @@ export class Virtualizer<
   } | null = null
   itemSizeCache = new Map<Key, number>()
   private itemSizeCacheVersion = 0
+  private builtMeasurementOptions: object | null = null
+  private builtItemSizeCacheVersion = -1
+  private pendingResizes: Array<{ index: number; delta: number }> = []
   private laneAssignments = new Map<number, number>() // index → lane cache
   // Earliest index dirtied since last getMeasurements() rebuild, or null.
   private pendingMin: number | null = null
@@ -1679,8 +1682,8 @@ export class Virtualizer<
 
   private getMeasurements = memo(
     () => [this.getMeasurementOptions(), this.itemSizeCacheVersion],
-    (
-      {
+    (measurementOptions, itemSizeCacheVersion) => {
+      const {
         count,
         paddingStart,
         scrollMargin,
@@ -1689,9 +1692,10 @@ export class Virtualizer<
         lanes,
         laneAssignmentMode,
         gap,
-      },
-      _itemSizeCacheVersion,
-    ) => {
+      } = measurementOptions
+      this.builtMeasurementOptions = measurementOptions
+      this.builtItemSizeCacheVersion = itemSizeCacheVersion
+      this.pendingResizes = []
       const itemSizeCache = this.itemSizeCache
       if (!enabled) {
         this.measurementsCache = []
@@ -2069,6 +2073,16 @@ export class Virtualizer<
     }
   }
 
+  private canShiftFromPendingResizes = (): boolean =>
+    this.options.lanes === 1 &&
+    this._singleLaneMeasurements !== null &&
+    this.shouldAdjustScrollPositionOnItemSizeChange === undefined &&
+    !this.lanesChangedFlag &&
+    !this.lanesSettling &&
+    this.getMeasurementOptions() === this.builtMeasurementOptions &&
+    this.itemSizeCacheVersion ===
+      this.builtItemSizeCacheVersion + this.pendingResizes.length
+
   resizeItem = (index: number, size: number) => {
     if (!this.isIndexInRange(index)) return
 
@@ -2078,7 +2092,16 @@ export class Virtualizer<
     // this item's current start, not a stale one, against the adjusted
     // offset (#1218). Without a scroll move, the caches are exactly as stale
     // as they were before batching, so skip the rebuild.
-    if (this._resizeBatch?.sync) this.getMeasurements()
+    let startShift = 0
+    if (this._resizeBatch?.sync) {
+      if (this.canShiftFromPendingResizes()) {
+        for (const resize of this.pendingResizes) {
+          if (resize.index < index) startShift += resize.delta
+        }
+      } else {
+        this.getMeasurements()
+      }
+    }
 
     // Fast field reads. For lanes===1 we read raw start/size from the flat
     // typed array, avoiding a Proxy.get + VirtualItem allocation per call.
@@ -2089,7 +2112,7 @@ export class Virtualizer<
     const flat = this._singleLaneMeasurements?.flat
     if (this.options.lanes === 1 && flat != null) {
       key = this.options.getItemKey(index)
-      itemStart = flat[index * 2]!
+      itemStart = flat[index * 2]! + startShift
       cachedSize = flat[index * 2 + 1]!
     } else {
       const item = this.measurementsCache[index]
@@ -2150,6 +2173,7 @@ export class Virtualizer<
       }
       this.itemSizeCache.set(key, size)
       this.itemSizeCacheVersion++
+      this.pendingResizes.push({ index, delta })
 
       // Before a command's read-back, an index or end target is retargeted
       // from fresh measurements by reconcileScroll next frame; an offset
