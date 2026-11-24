@@ -117,14 +117,15 @@ function createChatVirtualizer({
         paddingEnd
       virtualizer._willUpdate()
     },
-    setPaddingStart(nextPaddingStart: number) {
+    setPaddingStart(nextPaddingStart: number, sizerHeight?: number) {
       currentPaddingStart = nextPaddingStart
       virtualizer.setOptions(makeOptions())
       ;(scrollElement as any).scrollHeight =
+        sizerHeight ??
         currentScrollMargin +
-        currentPaddingStart +
-        currentMessages.length * itemSize +
-        paddingEnd
+          currentPaddingStart +
+          currentMessages.length * itemSize +
+          paddingEnd
       virtualizer._willUpdate()
     },
     setScrollMargin(nextScrollMargin: number) {
@@ -206,6 +207,30 @@ test('anchorTo:end keeps the item at the offset when only scrollMargin changes',
   // Same delta as the paddingStart case: m2 moved from 240 to 280.
   expect(scrollToFn).toHaveBeenCalledTimes(1)
   expect(scrollToFn.mock.calls[0]![0]).toBe(290)
+})
+
+test('anchorTo:end retires a stale clamp retry when the anchor corrects the offset', () => {
+  const messages = Array.from({ length: 5 }, (_, i) => ({ id: `m${i}` }))
+  const { virtualizer, scrollToFn, setPaddingStart } = createChatVirtualizer({
+    messages,
+    offset: 170,
+    itemSize: 50,
+    paddingStart: 40,
+    paddingEnd: 80,
+  })
+
+  // The last item grows 50 -> 120 while the sizer is still the old total:
+  // the end-anchored compensation write to 240 is clamped to the current
+  // max (170) and kept for a retry (#1258).
+  virtualizer.resizeItem(4, 120)
+  scrollToFn.mockClear()
+
+  // paddingStart 40 -> 80 committed with the measured sizer (480): the
+  // anchor moves the offset to 280 and the stale retry to 240 must not
+  // follow it and undo the correction.
+  setPaddingStart(80, 480)
+
+  expect(scrollToFn.mock.calls.map((call) => call[0])).toEqual([280])
 })
 
 test('anchorTo:end does not yank a scrolled-up user when items append', () => {

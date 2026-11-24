@@ -1313,6 +1313,11 @@ export class Virtualizer<
 
     if (anchor && this.scrollElement && this.options.enabled) {
       if (anchor.kind === 'anchor') {
+        // A clamp retry pending from before this anchor was recorded
+        // against the old layout: retarget it at the anchored offset (or
+        // retire it when that offset needs no retry), so it cannot undo
+        // the correction below.
+        this._clampedAdjustment = this._clampedBy(this.getScrollOffset())
         // scrollOffset was eagerly adjusted in setOptions so the
         // virtualizer already computed the correct range during render.
         // Now sync the browser's actual scroll position to match.
