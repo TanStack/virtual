@@ -865,8 +865,15 @@ export class Virtualizer<
           (merged.getItemKey(0) !== prevFirstKey ||
             merged.getItemKey(nextCount - 1) !== prevLastKey))
 
-      if (didEdgeKeysChange) {
-        edgeKeysChanged = true
+      // A paddingStart or scrollMargin change shifts every item by the same
+      // delta without touching the edge keys, so it needs the same anchor to
+      // keep the item at the scroll offset in place (#1366).
+      const didStartOffsetChange =
+        merged.paddingStart !== prevOptions.paddingStart ||
+        merged.scrollMargin !== prevOptions.scrollMargin
+
+      if (didEdgeKeysChange || didStartOffsetChange) {
+        edgeKeysChanged = didEdgeKeysChange
         const item =
           prevCount > 0
             ? (this.getVirtualItemForOffset(this.getScrollOffset()) ??
