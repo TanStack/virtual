@@ -1724,3 +1724,26 @@ test('iOS deferral: a clamped compensation is not retried while a touch owns the
     expect(v['_clampedAdjustment']).toBeNull()
   })
 })
+
+test('deferAdjustmentsDuringWheel holds adjustments during wheel input and flushes at rest', () => {
+  const h = makeDeferralHarness({ ios: false, start: 200 })
+  h.writes.length = 0
+
+  // Disabled by default: wheel does not defer writes.
+  h.el._dispatch('wheel')
+  h.v.resizeItem(0, 70)
+  expect(h.writes).toEqual([220])
+  h.scroll(false, 220)
+  h.writes.length = 0
+
+  h.v.setOptions({ ...h.v.options, deferAdjustmentsDuringWheel: true })
+  h.el._dispatch('wheel')
+  h.v.resizeItem(1, 100)
+  expect(h.writes).toEqual([])
+
+  // After the quiet window, flushes once from the live scrollTop.
+  h.el.scrollTop = 180
+  h.expireTail()
+  expect(h.writes).toEqual([230])
+  expect(h.el.scrollTop).toBe(230)
+})
