@@ -2150,3 +2150,69 @@ test.each([
     expect(v.getVirtualItems().at(-1)!.index).toBeGreaterThanOrEqual(54)
   },
 )
+
+test('a correction clamped at the top during a command is not left waiting for a scroll event', () => {
+  // Three rows estimated at 100px in a 400px viewport, anchored to the end:
+  // the list fits, so it is at the end at offset 0. A row measuring smaller
+  // keeps the end pinned with a write to -8, which the browser clamps to 0
+  // from an element already there, so no scroll event reports it.
+  const { v, el } = setupHandDrivenScroll({
+    count: 3,
+    estimateSize: () => 100,
+    anchorTo: 'end',
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 400 })
+      return () => {}
+    },
+  })
+  el.clientHeight = 400
+  el.scrollHeight = 400
+
+  v.scrollToIndex(2, { align: 'end' })
+  expect(el.scrollTop).toBe(0)
+  expect(v['_awaitingCommandReadBack']()).toBe(false)
+
+  v.resizeItem(0, 92)
+  expect(el.scrollTop).toBe(0)
+  expect(v.scrollOffset).toBe(0)
+  // The recorded write matches the clamp, so it does not read as one the
+  // element has yet to report.
+  expect(v['_awaitingCommandReadBack']()).toBe(false)
+})
+
+test('a correction on a list that fits its viewport is adopted as 0, with a notify', () => {
+  // Three rows estimated at 100px in a 400px viewport, anchored to the end.
+  // The last row grows by 24px: the end stays pinned with a write to 24,
+  // which the browser clamps to 0 from an element already there, so no
+  // scroll event reports it and the sizer never grows past the viewport.
+  const onChange = vi.fn()
+  const { v, el } = setupHandDrivenScroll({
+    onChange,
+    count: 3,
+    estimateSize: () => 100,
+    anchorTo: 'end',
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 400 })
+      return () => {}
+    },
+  })
+  el.clientHeight = 400
+  el.scrollHeight = 400
+
+  v.resizeItem(2, 124)
+  expect(el.scrollTop).toBe(0)
+  expect(onChange.mock.lastCall![0].scrollOffset).toBe(24)
+
+  // The consumer renders: the sizer is committed, still shorter than the
+  // viewport, so 0 is the only position.
+  onChange.mockClear()
+  v._willUpdate()
+  expect(v.scrollOffset).toBe(0)
+  expect(onChange).toHaveBeenCalledTimes(1)
+  expect(onChange.mock.calls[0][0].scrollOffset).toBe(0)
+
+  // A command to the end writes 0, where the element already is. It is not
+  // left waiting for a scroll event that cannot come.
+  v.scrollToIndex(2, { align: 'end' })
+  expect(v['_awaitingCommandReadBack']()).toBe(false)
+})
