@@ -39,11 +39,11 @@ function App() {
   )
 }
 
-function RowVirtualizerDynamic({ rows }: { rows: Array<number> }) {
+function RowVirtualizerDynamic({ rows: rowSizes }: { rows: Array<number> }) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
-    count: rows.length,
+    count: rowSizes.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
     paddingStart: 100,
@@ -79,7 +79,7 @@ function RowVirtualizerDynamic({ rows }: { rows: Array<number> }) {
                 top: 0,
                 left: 0,
                 width: '100%',
-                height: `${rows[virtualRow.index]}px`,
+                height: `${rowSizes[virtualRow.index]}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
@@ -92,12 +92,16 @@ function RowVirtualizerDynamic({ rows }: { rows: Array<number> }) {
   )
 }
 
-function ColumnVirtualizerDynamic({ columns }: { columns: Array<number> }) {
+function ColumnVirtualizerDynamic({
+  columns: columnSizes,
+}: {
+  columns: Array<number>
+}) {
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
-    count: columns.length,
+    count: columnSizes.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
     paddingStart: 100,
@@ -135,7 +139,7 @@ function ColumnVirtualizerDynamic({ columns }: { columns: Array<number> }) {
                 top: 0,
                 left: 0,
                 height: '100%',
-                width: `${columns[virtualColumn.index]}px`,
+                width: `${columnSizes[virtualColumn.index]}px`,
                 transform: `translateX(${virtualColumn.start}px)`,
               }}
             >
@@ -149,8 +153,8 @@ function ColumnVirtualizerDynamic({ columns }: { columns: Array<number> }) {
 }
 
 function GridVirtualizerDynamic({
-  rows,
-  columns,
+  rows: rowSizes,
+  columns: columnSizes,
 }: {
   rows: Array<number>
   columns: Array<number>
@@ -158,7 +162,7 @@ function GridVirtualizerDynamic({
   const parentRef = React.useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
-    count: rows.length,
+    count: rowSizes.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
     paddingStart: 200,
@@ -168,7 +172,7 @@ function GridVirtualizerDynamic({
 
   const columnVirtualizer = useVirtualizer({
     horizontal: true,
-    count: columns.length,
+    count: columnSizes.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
     paddingStart: 200,
@@ -178,7 +182,7 @@ function GridVirtualizerDynamic({
 
   const [show, setShow] = React.useState(true)
 
-  const halfWay = Math.floor(rows.length / 2)
+  const halfWay = Math.floor(rowSizes.length / 2)
 
   return (
     <>
@@ -186,8 +190,8 @@ function GridVirtualizerDynamic({
       <button onClick={() => rowVirtualizer.scrollToIndex(halfWay)}>
         Scroll to index {halfWay}
       </button>
-      <button onClick={() => rowVirtualizer.scrollToIndex(rows.length - 1)}>
-        Scroll to index {rows.length - 1}
+      <button onClick={() => rowVirtualizer.scrollToIndex(rowSizes.length - 1)}>
+        Scroll to index {rowSizes.length - 1}
       </button>
       {show ? (
         <div
@@ -230,8 +234,8 @@ function GridVirtualizerDynamic({
                       position: 'absolute',
                       top: 0,
                       left: 0,
-                      width: `${columns[virtualColumn.index]}px`,
-                      height: `${rows[virtualRow.index]}px`,
+                      width: `${columnSizes[virtualColumn.index]}px`,
+                      height: `${rowSizes[virtualRow.index]}px`,
                       transform: `translateX(${virtualColumn.start}px) translateY(${virtualRow.start}px)`,
                     }}
                   >
