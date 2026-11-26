@@ -9,7 +9,12 @@ import {
   flingCaught,
   flingSpedUp,
 } from './scroll-classifier'
-import { IosGesture, isIOSWebKit, momentumOverridesWrites } from './ios-gesture'
+import {
+  IosGesture,
+  isIOSWebKit,
+  isWebKit,
+  momentumOverridesWrites,
+} from './ios-gesture'
 import type { ScrollPhase, ScrollSample } from './scroll-classifier'
 
 export { _resetIOSDetectionForTests } from './ios-gesture'
@@ -540,6 +545,10 @@ export class Virtualizer<
   // `_flushHoldIfReady`: the rows re-render in layout coordinates and the
   // element moves by the same amount in one paint.
   private _holdOffset = 0
+  // When the last wheel event came (`now()`), listened for on WebKit only.
+  private _lastWheelAt: number | null = null
+  // The frame a prepend's anchor write waits for (`_holdAnchorUnderWheel`).
+  private _anchorHoldFrame: number | null = null
   // Whether the element's last scroll event reported a position past either
   // edge (the rubber-band bounce). Judged at report time against the
   // element's own max, with a 1px tolerance for a fractional scrollTop: a
@@ -1087,6 +1096,11 @@ export class Virtualizer<
     // just removed), deferring every adjustment on the new element until
     // its next touch cycle.
     this._holdOffset = 0
+    if (this._anchorHoldFrame !== null && this.targetWindow) {
+      this.targetWindow.cancelAnimationFrame(this._anchorHoldFrame)
+    }
+    this._anchorHoldFrame = null
+    this._lastWheelAt = null
     this._reportedOverscroll = false
     this._trailing = 0
     // (The gesture was ended with its listeners, in the unsubs above.)
@@ -1286,9 +1300,15 @@ export class Virtualizer<
 
       // Touch event listeners (iOS-aware deferral).
       if ('addEventListener' in this.scrollElement) {
-        this.unsubs.push(
-          this._iosGesture.listen(this.scrollElement as unknown as EventTarget),
-        )
+        const target = this.scrollElement as unknown as EventTarget
+        this.unsubs.push(this._iosGesture.listen(target))
+        if (isWebKit()) {
+          const onWheel = () => {
+            this._lastWheelAt = this.now()
+          }
+          target.addEventListener('wheel', onWheel, addEventListenerOptions)
+          this.unsubs.push(() => target.removeEventListener('wheel', onWheel))
+        }
       }
 
       this._scrollToOffset(this.getScrollOffset())
@@ -1314,6 +1334,7 @@ export class Virtualizer<
         // it and this commit (a concurrent render) can have changed that.
         // Hold the delta after all and have the rows re-rendered shifted;
         // an update scheduled from a layout effect commits before paint.
+        this._holdAnchorUnderWheel()
         if (!this._canWriteScroll()) {
           this._holdOffset += anchor.delta
           this._followAnchor(anchor.delta)
@@ -1443,11 +1464,43 @@ export class Virtualizer<
   //   #1307), so a correction is held through the tail on every version;
   // - not while the element is overscrolled past either edge (the
   //   rubber-band bounce): WebKit discards the write and the bounce can
-  //   stall where it was (#1287).
+  //   stall where it was (#1287);
+  // - not while a prepend made under wheel input waits for its frames
+  //   (`_holdAnchorUnderWheel`).
   // A write that is unwanted for another reason (a travelling smooth scroll
   // owns the position) is a separate check at the call sites.
   private _canWriteScroll = () =>
-    !(isIOSWebKit() && this._iosGesture.inMotion()) && !this._reportedOverscroll
+    !(isIOSWebKit() && this._iosGesture.inMotion()) &&
+    !this._reportedOverscroll &&
+    this._anchorHoldFrame === null
+
+  // WebKit can drop a scrollTop write made while wheel input drives the
+  // scroll: the scrolling thread carries on from where it was. A prepend's
+  // anchor write lost that way throws the reader by the whole prepend
+  // (#1398). Held for two frames and written from the second, it stays:
+  // 0 jumps in 42 runs of the issue's repro in Playwright WebKit 26.0,
+  // where the write from `_willUpdate` jumped in about 1 run of 4 and a
+  // write from the next scroll event in 4 of 7. Real Safari and trackpad
+  // momentum are not measured. Size corrections are written as before;
+  // one arriving within the two frames joins the hold.
+  private _holdAnchorUnderWheel = () => {
+    const win = this.targetWindow
+    if (
+      win === null ||
+      this._anchorHoldFrame !== null ||
+      this._lastWheelAt === null ||
+      this.now() - this._lastWheelAt >= 150
+    ) {
+      return
+    }
+    this._anchorHoldFrame = win.requestAnimationFrame(() => {
+      this._anchorHoldFrame = win.requestAnimationFrame(() => {
+        this._anchorHoldFrame = null
+        this._flushHoldIfReady(true)
+        this._retryClampedAdjustment()
+      })
+    })
+  }
 
   // Write a held correction once a write is possible, from the scroll
   // handler, the touch tail timer, `_willUpdate` and a resize notify. The
