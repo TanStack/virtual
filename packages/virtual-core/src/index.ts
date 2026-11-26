@@ -1012,6 +1012,12 @@ export class Virtualizer<
         adjustments: delta,
         behavior,
       })
+      // A write past the top is clamped to 0 by the browser, and from an
+      // element already there no scroll event follows (#1229): record what
+      // the element can report back, as `scrollOffset` is clamped below, or
+      // the write would look like an unreported one for as long as a
+      // command is in flight.
+      if (write.target < 0) write.target = 0
       // Eagerly carry the intended target in `scrollOffset` so callers that
       // read it before the next scroll event — notably the next `resizeItem`
       // tick's `getVirtualDistanceFromEnd()` / `wasAtEnd` check — see the
@@ -1348,7 +1354,7 @@ export class Virtualizer<
     this._flushHoldIfReady(false)
     // The consumer has committed the new total size by now, so a clamped
     // compensation write may have room (#1258).
-    this._retryClampedAdjustment()
+    this._retryClampedAdjustment(true)
   }
 
   // Classify a scroll event (see `ScrollEventKind`) from the state as it was
@@ -1380,7 +1386,7 @@ export class Virtualizer<
   // absence of one leave `_clampedAdjustment` set, so timing does not matter.
   // While the element cannot take a write (`_canWriteScroll`) the record is
   // kept for the next opportunity, the latest being the tail closing.
-  private _retryClampedAdjustment = () => {
+  private _retryClampedAdjustment = (committed = false) => {
     if (
       this._clampedAdjustment === null ||
       !this.scrollElement ||
@@ -1397,6 +1403,28 @@ export class Virtualizer<
       this._clampedAdjustment =
         target > max + 0.5 ? { target, maxAtWrite: max } : null
       this._scrollToOffset(target)
+    } else if (committed && this._isUnscrollable()) {
+      // The sizer is committed and did not grow, nor will it: the layout
+      // fits the viewport, so the element's one position is 0. The browser
+      // clamped the write there and, from an element already at 0, reported
+      // no scroll event (#1229 at the other edge). Adopt it: otherwise
+      // `scrollOffset` keeps the clamped target until some unrelated scroll
+      // event, and a command written to 0 afterwards can never read back, its
+      // target being where the element already is.
+      this._clampedAdjustment = null
+      const moved = this.scrollOffset !== null && this.scrollOffset > 0
+      if (moved) {
+        this.scrollOffset = 0
+      }
+      if (
+        this.pendingWrite !== null &&
+        approxEqual(this.pendingWrite.target, target)
+      ) {
+        this.pendingWrite.target = 0
+      }
+      // The last notify carried the clamped target; no scroll event will
+      // report 0.
+      if (moved) this.notify(false)
     }
   }
 
@@ -2406,6 +2434,16 @@ export class Virtualizer<
         if (stop.restore()) stop.done()
       }),
     )
+  }
+
+  // The layout fits the viewport and the element has no scroll range: its
+  // one position is 0, and no scroll event will ever report another.
+  private _isUnscrollable = () => {
+    const layoutMax =
+      this._getLayoutTotalSize() + this.options.scrollMargin - this.getSize()
+    if (layoutMax > 0) return false
+    const elementMax = this._elementMaxScrollOffset()
+    return elementMax !== null && elementMax <= 0.5
   }
 
   // A compensation write past the element's current max (the sizer has not
