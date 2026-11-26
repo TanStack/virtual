@@ -18,6 +18,8 @@ npm install @tanstack/react-virtual
 npm install @tanstack/solid-virtual
 ```
 
+`@tanstack/solid-virtual` 4.x works with Solid 2. For Solid 1, install `@tanstack/solid-virtual@3`.
+
 ## Svelte Virtual
 
 ```bash
