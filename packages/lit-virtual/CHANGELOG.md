@@ -1,5 +1,14 @@
 # @tanstack/lit-virtual
 
+## 3.15.6
+
+### Patch Changes
+
+- [#1395](https://github.com/TanStack/virtual/pull/1395) [`4f32cb3`](https://github.com/TanStack/virtual/commit/4f32cb3168dc3beaa30c91535466d6c0d3844e31) - Pass the virtualizer to `initialOffset` when it is a function. The Lit and Svelte window virtualizers use it to read the current `horizontal` option, so a list whose axis changed while `enabled: false` starts from the correct window scroll position when it is enabled again. The Marko tags accept the same callback type.
+
+- Updated dependencies [[`4f32cb3`](https://github.com/TanStack/virtual/commit/4f32cb3168dc3beaa30c91535466d6c0d3844e31)]:
+  - @tanstack/virtual-core@3.19.14
+
 ## 3.15.5
 
 ### Patch Changes
