@@ -25,7 +25,7 @@ export interface VirtualizerInput {
   scrollPaddingEnd?: number
   gap?: number
   lanes?: number
-  initialOffset?: number | (() => number)
+  initialOffset?: number | ((instance: Virtualizer<Element, Element>) => number)
   // Viewport size used for the render-time (server / pre-mount) slice. When omitted,
   // virtual-core's default 0x0 rect yields an empty window (totalSize is still correct).
   initialRect?: { width: number; height: number }

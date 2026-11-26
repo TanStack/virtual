@@ -28,7 +28,9 @@ export interface Input {
   scrollPaddingEnd?: number
   gap?: number
   lanes?: number
-  initialOffset?: number | (() => number)
+  initialOffset?:
+    | number
+    | ((instance: Virtualizer<Window, Element>) => number)
   initialRect?: { width: number; height: number }
   getItemKey?: (index: number) => number | string | bigint
   rangeExtractor?: (range: Range) => number[]
