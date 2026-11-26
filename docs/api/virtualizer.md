@@ -513,6 +513,18 @@ Cancels an in-flight `scrollToIndex`, `scrollToOffset`, `scrollBy` or `scrollToE
 
 The current scroll position is not changed. It does nothing when no scroll is in flight.
 
+### `isScrollPending`
+
+```tsx
+isScrollPending: () => boolean
+```
+
+Whether a scroll command (`scrollToIndex`, `scrollToOffset`, `scrollBy`, `scrollToEnd`) has written a position that no scroll event has reported back yet.
+
+While it has, `scrollOffset`, `range`, `getVirtualItems()` and `isAtEnd()` still describe the position before the command. An `onChange` fired in between, by a row being measured or the scroll element resizing, pairs the current sizes with that old position. A consumer that acts on the position in `onChange`, for example to report which rows are on screen, can skip a notify while this is `true`. The read-back always brings another, and so does the command being given up on.
+
+It is `false` for a smooth scroll, whose scroll events keep `scrollOffset` current while it travels, and for a scroll correction, which is folded into `scrollOffset` at once.
+
 ### `getDistanceFromEnd`
 
 ```tsx

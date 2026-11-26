@@ -2150,3 +2150,152 @@ test.each([
     expect(v.getVirtualItems().at(-1)!.index).toBeGreaterThanOrEqual(54)
   },
 )
+
+test('isScrollPending reports a command’s write until its scroll event', () => {
+  const { v, el, scroll } = setupHandDrivenScroll()
+
+  expect(v.isScrollPending()).toBe(false)
+  v.scrollToOffset(1000)
+  expect(el.scrollTop).toBe(1000)
+  // Written, not yet reported: the position the instance exposes is the old one.
+  expect(v.isScrollPending()).toBe(true)
+  expect(v.scrollOffset).toBe(0)
+  expect(v.range).toMatchObject({ startIndex: 0 })
+
+  scroll(1000, true)
+  expect(v.isScrollPending()).toBe(false)
+  expect(v.scrollOffset).toBe(1000)
+  expect(v.range).toMatchObject({ startIndex: 20 })
+})
+
+test('an onChange between a command’s write and its read-back can be told apart', () => {
+  const onChange = vi.fn()
+  const { v, scroll } = setupHandDrivenScroll({ onChange })
+  onChange.mockClear()
+
+  v.scrollToOffset(1000)
+  // A row measured before the scroll event: sizes are current, the position is not.
+  v.resizeItem(0, 70)
+  expect(onChange).toHaveBeenCalled()
+  const duringWrite = onChange.mock.calls.map(([instance]) =>
+    instance.isScrollPending(),
+  )
+  expect(duringWrite.every(Boolean)).toBe(true)
+
+  onChange.mockClear()
+  scroll(1020, true)
+  // The read-back notifies, and by then nothing is pending.
+  expect(onChange).toHaveBeenCalled()
+  expect(onChange.mock.calls[0][0].isScrollPending()).toBe(false)
+})
+
+test('a smooth write and a scroll correction are not pending', () => {
+  const { v, el, scroll } = setupHandDrivenScroll()
+  el.scrollTop = 2000
+  scroll(2000, false)
+
+  v.scrollToOffset(1000, { behavior: 'smooth' })
+  expect(v.isScrollPending()).toBe(false)
+  v.cancelScroll()
+  scroll(2000, false)
+
+  // A row above the viewport grows: the correction is folded into scrollOffset at once.
+  v.resizeItem(0, 100)
+  expect(el.scrollTop).toBe(2050)
+  expect(v.scrollOffset).toBe(2050)
+  expect(v.isScrollPending()).toBe(false)
+})
+
+test('a write the element never reports is retired with a notify', () => {
+  vi.useFakeTimers()
+  try {
+    const onChange = vi.fn()
+    const { v, browser, frames } = setupHandDrivenScroll({ onChange })
+    browser.ignoreWrites = true
+    onChange.mockClear()
+
+    v.scrollToOffset(1000)
+    expect(v.isScrollPending()).toBe(true)
+    frames(3)
+    expect(v.isScrollPending()).toBe(true)
+    expect(onChange).not.toHaveBeenCalled()
+
+    // Reconcile gives up on the command after its safety valve.
+    vi.advanceTimersByTime(5001)
+    frames(1)
+    expect(v.scrollState).toBeNull()
+    expect(v.isScrollPending()).toBe(false)
+    expect(onChange).toHaveBeenCalledTimes(1)
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('a correction clamped at the top during a command leaves nothing pending', () => {
+  // Three rows estimated at 100px in a 400px viewport, anchored to the end:
+  // the list fits, so it is at the end at offset 0. A row measuring smaller
+  // keeps the end pinned with a write to -8, which the browser clamps to 0
+  // from an element already there, so no scroll event reports it.
+  const { v, el } = setupHandDrivenScroll({
+    count: 3,
+    estimateSize: () => 100,
+    anchorTo: 'end',
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 400 })
+      return () => {}
+    },
+  })
+  el.clientHeight = 400
+  el.scrollHeight = 400
+
+  v.scrollToIndex(2, { align: 'end' })
+  expect(el.scrollTop).toBe(0)
+  expect(v.isScrollPending()).toBe(false)
+
+  v.resizeItem(0, 92)
+  expect(el.scrollTop).toBe(0)
+  expect(v.scrollOffset).toBe(0)
+  expect(v.isScrollPending()).toBe(false)
+})
+
+test('cancelScroll ends a pending write with a notify', () => {
+  const onChange = vi.fn()
+  const { v, browser } = setupHandDrivenScroll({ onChange })
+  browser.ignoreWrites = true
+  onChange.mockClear()
+
+  v.scrollToOffset(1000)
+  expect(v.isScrollPending()).toBe(true)
+  v.cancelScroll()
+  expect(v.isScrollPending()).toBe(false)
+  expect(onChange).toHaveBeenCalledTimes(1)
+})
+
+test('a correction on a list that fits its viewport keeps the offset at 0, so a later command is not pending', () => {
+  // Three rows estimated at 100px in a 400px viewport, anchored to the end.
+  // The last row grows by 24px: the end stays pinned with a write to 24,
+  // which the browser clamps to 0 from an element already there, so no
+  // scroll event reports it and the sizer never grows past the viewport.
+  const { v, el } = setupHandDrivenScroll({
+    count: 3,
+    estimateSize: () => 100,
+    anchorTo: 'end',
+    observeElementRect: (_inst, cb) => {
+      cb({ width: 400, height: 400 })
+      return () => {}
+    },
+  })
+  el.clientHeight = 400
+  el.scrollHeight = 400
+
+  v.resizeItem(2, 124)
+  expect(el.scrollTop).toBe(0)
+  // The consumer renders: the sizer is committed, still shorter than the viewport.
+  v._willUpdate()
+  expect(v.scrollOffset).toBe(0)
+  expect(v.isScrollPending()).toBe(false)
+
+  // A command to the end writes 0, where the element already is.
+  v.scrollToIndex(2, { align: 'end' })
+  expect(v.isScrollPending()).toBe(false)
+})
