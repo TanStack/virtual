@@ -1747,3 +1747,63 @@ test('deferAdjustmentsDuringWheel holds adjustments during wheel input and flush
   expect(h.writes).toEqual([230])
   expect(h.el.scrollTop).toBe(230)
 })
+
+test('deferAdjustmentsDuringWheel preserves a pre-wheel clamped adjustment on flush', () => {
+  const makeClampingHarness = () => {
+    const h = makeDeferralHarness({ ios: false, start: 4800 })
+    h.v.setOptions({
+      ...h.v.options,
+      deferAdjustmentsDuringWheel: true,
+      scrollToFn: (offset, { adjustments = 0 }) => {
+        const target = offset + adjustments
+        h.writes.push(target)
+        h.el.scrollTop = Math.min(target, h.el.scrollHeight - h.el.clientHeight)
+      },
+    })
+    h.writes.length = 0
+    return h
+  }
+
+  // Start at max (4800). A pre-wheel resize requests 4850 and clamps at 4800.
+  const h = makeClampingHarness()
+  h.v.resizeItem(0, 100)
+  expect(h.writes).toEqual([4850])
+  expect(h.el.scrollTop).toBe(4800)
+  expect(h.v['_clampedAdjustment']).toEqual({ target: 4850, maxAtWrite: 4800 })
+  h.writes.length = 0
+
+  // Start wheel input, commit the larger sizer, then hold another 50px resize.
+  h.el._dispatch('wheel')
+  h.el.scrollHeight = 5050
+  h.v._willUpdate()
+  h.v.resizeItem(1, 100)
+  expect(h.writes).toEqual([])
+  expect(h.v.scrollOffset).toBe(4900)
+
+  // Flush must keep the 50px clamp shortfall rather than rebasing to 4800 + 50.
+  h.expireTail()
+  expect(h.writes).toEqual([4900])
+  expect(h.v['_clampedAdjustment']).toEqual({ target: 4900, maxAtWrite: 4850 })
+
+  // Once the second sizer growth commits, the retry lands at 4900.
+  h.el.scrollHeight = 5100
+  h.v._willUpdate()
+  expect(h.writes).toEqual([4900, 4900])
+  expect(h.el.scrollTop).toBe(4900)
+  expect(h.v['_clampedAdjustment']).toBeNull()
+
+  // If the element actually scrolled away from the clamp max during wheel,
+  // drop the clamp shortfall and flush from the live offset.
+  const moved = makeClampingHarness()
+  moved.v.resizeItem(0, 100)
+  moved.writes.length = 0
+  moved.el._dispatch('wheel')
+  moved.el.scrollHeight = 5050
+  moved.v._willUpdate()
+  moved.v.resizeItem(1, 100)
+  moved.el.scrollTop = 4700
+  moved.expireTail()
+  expect(moved.writes).toEqual([4750])
+  expect(moved.el.scrollTop).toBe(4750)
+  expect(moved.v['_clampedAdjustment']).toBeNull()
+})

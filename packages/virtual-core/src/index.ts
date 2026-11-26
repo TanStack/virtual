@@ -1305,8 +1305,22 @@ export class Virtualizer<
           this._wheelTimer = this.targetWindow.setTimeout(() => {
             this._wheelTimer = null
             const live = this._readElementOffset()
-            if (live !== null && this._holdOffset !== 0) {
-              this.scrollOffset = this._toLayoutOffset(live)
+            if (
+              live !== null &&
+              this._holdOffset !== 0 &&
+              this.options.enabled &&
+              this._canWriteScroll() &&
+              this.scrollState?.phase !== 'smooth'
+            ) {
+              // If an earlier write was clamped to `maxAtWrite` and the
+              // element has not scrolled away from it, keep its shortfall
+              // when rebasing from the live DOM offset.
+              const clamped = this._clampedAdjustment
+              const clampShortfall =
+                clamped !== null && Math.abs(live - clamped.maxAtWrite) < 1.5
+                  ? clamped.target - clamped.maxAtWrite
+                  : 0
+              this.scrollOffset = this._toLayoutOffset(live) + clampShortfall
             }
             this._flushHoldIfReady(true)
             this._retryClampedAdjustment()
