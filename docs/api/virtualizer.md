@@ -329,6 +329,18 @@ scrollEndThreshold?: number
 
 The pixel threshold used by `isAtEnd()` and `followOnAppend` to decide whether the viewport is close enough to the end to count as pinned.
 
+### `deferAdjustmentsDuringWheel`
+
+```tsx
+deferAdjustmentsDuringWheel?: boolean
+```
+
+**Default:** `false`
+
+When enabled, scroll-position adjustments triggered by prepends or above-viewport item resizes are held while `wheel` input is active and flushed once input has been quiet for 150ms.
+
+This is useful on desktop WebKit, where synchronous `scrollTop` writes during a wheel or trackpad gesture can be overwritten by the browser's scrolling thread.
+
 ### `isScrollingResetDelay`
 
 ```tsx
