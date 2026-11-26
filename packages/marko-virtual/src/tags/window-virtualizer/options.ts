@@ -28,7 +28,7 @@ export interface WindowVirtualizerInput {
   // Starting scroll offset. Defaults to reading the live window scroll position
   // (window.scrollY, or window.scrollX when horizontal) on the client and 0 on the
   // server. Pass a number to seed a server slice at a position (pairs with initialRect).
-  initialOffset?: number | (() => number)
+  initialOffset?: number | ((instance: Virtualizer<Window, Element>) => number)
   // Window viewport size for the render-time (server / pre-mount) slice. When omitted,
   // there is no server slice.
   initialRect?: { width: number; height: number }

@@ -217,7 +217,7 @@ Both tags are self-closing and expose the same tag-variable shape. Capture it wi
 | `scrollPaddingEnd` | `number` | — | Scroll padding for `scrollToIndex` |
 | `gap` | `number` | — | Gap between items in px |
 | `lanes` | `number` | `1` | Lanes for masonry layouts |
-| `initialOffset` | `number \| (() => number)` | — | Scroll offset (px) for the server slice — server-render at a scroll position (deep link / restore). Element only; see [SSR](#ssr) |
+| `initialOffset` | `number \| ((instance: Virtualizer) => number)` | — | Scroll offset (px) for the server slice — server-render at a scroll position (deep link / restore). Element only; see [SSR](#ssr) |
 | `initialRect` | `{ width: number; height: number }` | — | Viewport hint for a server-rendered slice (SSR). When set, the server paints the initial visible rows; omit for client-only fill. See [SSR](#ssr). |
 | `getItemKey` | `(index: number) => number \| string \| bigint` | the index | Stable per-item identity so cached measurements survive reorder |
 | `rangeExtractor` | `(range: Range) => number[]` | `defaultRangeExtractor` | Hook over the visible range: force extra indexes (e.g. a pinned sticky header) into the rendered window. Compose with `defaultRangeExtractor` from `@tanstack/virtual-core` |
