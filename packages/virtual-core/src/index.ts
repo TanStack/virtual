@@ -867,8 +867,15 @@ export class Virtualizer<
           (merged.getItemKey(0) !== prevFirstKey ||
             merged.getItemKey(nextCount - 1) !== prevLastKey))
 
-      if (didEdgeKeysChange) {
-        edgeKeysChanged = true
+      // A paddingStart or scrollMargin change shifts every item by the same
+      // delta without touching the edge keys, so it needs the same anchor to
+      // keep the item at the scroll offset in place (#1366).
+      const didStartOffsetChange =
+        merged.paddingStart !== prevOptions.paddingStart ||
+        merged.scrollMargin !== prevOptions.scrollMargin
+
+      if (didEdgeKeysChange || didStartOffsetChange) {
+        edgeKeysChanged = didEdgeKeysChange
         const item =
           prevCount > 0
             ? (this.getVirtualItemForOffset(this.getScrollOffset()) ??
@@ -1308,6 +1315,11 @@ export class Virtualizer<
 
     if (anchor && this.scrollElement && this.options.enabled) {
       if (anchor.kind === 'anchor') {
+        // A clamp retry pending from before this anchor was recorded
+        // against the old layout: retarget it at the anchored offset (or
+        // retire it when that offset needs no retry), so it cannot undo
+        // the correction below.
+        this._clampedAdjustment = this._clampedBy(this.getScrollOffset())
         // scrollOffset was eagerly adjusted in setOptions so the
         // virtualizer already computed the correct range during render.
         // Now sync the browser's actual scroll position to match.
