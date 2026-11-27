@@ -106,9 +106,10 @@ test('WebKit: a hold is written two frames after the element reaches the top, th
     h.frame()
     expect(h.writes).toEqual([600])
 
-    // The wheel still holds what comes next.
+    // The next wheel event holds what comes after it.
     h.writes.length = 0
     h.scroll(true, 600)
+    h.el._dispatch('wheel')
     h.v.resizeItem(0, 70)
     expect(h.writes).toEqual([])
   })
@@ -128,17 +129,54 @@ test('WebKit: a hold at the top is written with no scroll event, from the wheel 
   })
 })
 
-test('WebKit: a hold is written two frames after the element reaches the end', () => {
+test('WebKit: a hold is not written when the reader leaves the top within the two frames', () => {
   withUserAgent(SAFARI, () => {
     const h = endAnchoredAt2000()
     h.el._dispatch('wheel')
-    h.scroll(true, 4800)
-    h.v.resizeItem(0, 70)
-    expect(h.writes).toEqual([])
+    prepend(h)
+    h.scroll(true, 0)
+    h.frame()
     h.el._dispatch('wheel')
+    h.scroll(true, 400)
+    h.frame()
+    expect(h.writes).toEqual([])
+
+    h.expireTail()
+    expect(h.writes).toEqual([1000])
+  })
+})
+
+test('WebKit: with a scroll margin a hold is written where the list starts', () => {
+  withUserAgent(SAFARI, () => {
+    const h = endAnchoredAt2000()
+    h.v.setOptions({ ...h.v.options, scrollMargin: 300 })
+    h.v._willUpdate()
+    h.writes.length = 0
+    h.el._dispatch('wheel')
+    prepend(h)
+    h.scroll(true, 400)
     h.frame()
     h.frame()
-    expect(h.writes).toEqual([4820])
+    expect(h.writes).toEqual([])
+
+    // The top of the list: above it held rows would cover the margin.
+    h.scroll(true, 300)
+    h.frame()
+    h.frame()
+    expect(h.writes).toEqual([900])
+  })
+})
+
+test('WebKit: a negative hold is written when the layout reaches the top', () => {
+  withUserAgent(SAFARI, () => {
+    const h = endAnchoredAt2000()
+    h.el._dispatch('wheel')
+    h.v.resizeItem(0, 20)
+    expect(h.writes).toEqual([])
+    h.scroll(true, 30)
+    h.frame()
+    h.frame()
+    expect(h.writes).toEqual([0])
   })
 })
 
@@ -176,4 +214,14 @@ test('not WebKit: corrections under wheel input are written at once', () => {
     prepend(h)
     expect(h.writes).toEqual([2620])
   })
+})
+
+test('jsdom is not WebKit: corrections under wheel input are written at once', () => {
+  // jsdom's own user agent names AppleWebKit.
+  expect(navigator.userAgent).toMatch(/AppleWebKit.*jsdom/)
+  _resetIOSDetectionForTests()
+  const h = endAnchoredAt2000()
+  h.el._dispatch('wheel')
+  h.v.resizeItem(0, 70)
+  expect(h.writes).toEqual([2020])
 })
