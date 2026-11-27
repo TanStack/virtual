@@ -43,9 +43,24 @@ export const iosMomentumOverridesWrites = (): boolean => {
 export const momentumOverridesWrites = (): boolean =>
   !isIOSWebKit() || iosMomentumOverridesWrites()
 
+// Any WebKit: Safari, a WKWebView app, every browser on iOS. Chromium's
+// user agent names AppleWebKit too, and so do jsdom's and happy-dom's, where
+// a consumer's test must see the same writes as before. Cached like the iOS
+// check; SSR-safe.
+let _isWebKitResult: boolean | undefined
+export const isWebKit = (): boolean => {
+  if (_isWebKitResult !== undefined) return _isWebKitResult
+  if (typeof navigator === 'undefined') return (_isWebKitResult = false)
+  const ua = navigator.userAgent
+  return (_isWebKitResult =
+    /AppleWebKit/.test(ua) &&
+    !/Chrome|Chromium|Android|jsdom|HappyDOM/.test(ua))
+}
+
 // Test hook: reset the iOS detection caches. Not exported.
 export const _resetIOSDetectionForTests = () => {
   _isIOSResult = undefined
+  _isWebKitResult = undefined
   _iosMomentumOverridesWritesResult = undefined
 }
 

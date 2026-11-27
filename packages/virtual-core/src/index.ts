@@ -9,7 +9,12 @@ import {
   flingCaught,
   flingSpedUp,
 } from './scroll-classifier'
-import { IosGesture, isIOSWebKit, momentumOverridesWrites } from './ios-gesture'
+import {
+  IosGesture,
+  isIOSWebKit,
+  isWebKit,
+  momentumOverridesWrites,
+} from './ios-gesture'
 import type { ScrollPhase, ScrollSample } from './scroll-classifier'
 
 export { _resetIOSDetectionForTests } from './ios-gesture'
@@ -542,6 +547,12 @@ export class Virtualizer<
   // `_flushHoldIfReady`: the rows re-render in layout coordinates and the
   // element moves by the same amount in one paint.
   private _holdOffset = 0
+  // Set in WebKit from a wheel event until 150ms pass without one, whether
+  // or not that event scrolled this element. Corrections are held meanwhile
+  // (see `_canWriteScroll`).
+  private _wheelTimer: number | null = null
+  // The frame a hold at the top is written in (`_flushHoldAtTop`).
+  private _edgeFlushFrame: number | null = null
   // Whether the element's last scroll event reported a position past either
   // edge (the rubber-band bounce). Judged at report time against the
   // element's own max, with a 1px tolerance for a fractional scrollTop: a
@@ -1089,6 +1100,16 @@ export class Virtualizer<
     // just removed), deferring every adjustment on the new element until
     // its next touch cycle.
     this._holdOffset = 0
+    if (this.targetWindow) {
+      if (this._wheelTimer !== null) {
+        this.targetWindow.clearTimeout(this._wheelTimer)
+      }
+      if (this._edgeFlushFrame !== null) {
+        this.targetWindow.cancelAnimationFrame(this._edgeFlushFrame)
+      }
+    }
+    this._wheelTimer = null
+    this._edgeFlushFrame = null
     this._reportedOverscroll = false
     this._trailing = 0
     // (The gesture was ended with its listeners, in the unsubs above.)
@@ -1278,6 +1299,7 @@ export class Virtualizer<
 
           // A held correction is written once a write is possible.
           this._flushHoldIfReady(true)
+          this._flushHoldAtTop()
 
           if (this.scrollState) {
             this.scheduleScrollReconcile()
@@ -1288,9 +1310,24 @@ export class Virtualizer<
 
       // Touch event listeners (iOS-aware deferral).
       if ('addEventListener' in this.scrollElement) {
-        this.unsubs.push(
-          this._iosGesture.listen(this.scrollElement as unknown as EventTarget),
-        )
+        const target = this.scrollElement as unknown as EventTarget
+        this.unsubs.push(this._iosGesture.listen(target))
+        if (isWebKit()) {
+          const onWheel = () => {
+            const win = this.targetWindow
+            if (win === null) return
+            if (this._wheelTimer !== null) win.clearTimeout(this._wheelTimer)
+            this._wheelTimer = win.setTimeout(() => {
+              this._wheelTimer = null
+              this._flushHoldIfReady(true)
+              this._retryClampedAdjustment()
+            }, 150)
+            // At the top the element stops moving, so no scroll event comes.
+            this._flushHoldAtTop()
+          }
+          target.addEventListener('wheel', onWheel, addEventListenerOptions)
+          this.unsubs.push(() => target.removeEventListener('wheel', onWheel))
+        }
       }
 
       this._scrollToOffset(this.getScrollOffset())
@@ -1445,11 +1482,67 @@ export class Virtualizer<
   //   #1307), so a correction is held through the tail on every version;
   // - not while the element is overscrolled past either edge (the
   //   rubber-band bounce): WebKit discards the write and the bounce can
-  //   stall where it was (#1287).
+  //   stall where it was (#1287);
+  // - not in WebKit within 150ms of a wheel event: the write lands, but
+  //   WebKit then discards the distance of the next wheel event, and a list
+  //   of rows measured on the way up writes on most frames. In Playwright
+  //   WebKit 26.0 a wheel event per frame lost about a third of its
+  //   distance that way (#1398, #1400); a prepend's anchor write could be
+  //   undone whole. Real Safari and trackpad momentum are not measured.
   // A write that is unwanted for another reason (a travelling smooth scroll
   // owns the position) is a separate check at the call sites.
   private _canWriteScroll = () =>
-    !(isIOSWebKit() && this._iosGesture.inMotion()) && !this._reportedOverscroll
+    !(isIOSWebKit() && this._iosGesture.inMotion()) &&
+    !this._reportedOverscroll &&
+    this._wheelTimer === null
+
+  // A hold shifts the rows and leaves the element where it is, so the
+  // element reaches its top while the layout has `_holdOffset` further to
+  // go (or, for a negative hold, the layout reaches its top first). Wheel
+  // input that never pauses would park the reader there, so there the wheel
+  // hold ends early and the hold is written, two frames later (a prepend's
+  // anchor written at once can be undone, #1398). The next wheel event
+  // starts the wheel hold again. Not before the top: while the element
+  // still moves, WebKit applies the write about two frames after the rows
+  // have gone back to layout coordinates, and they show `_holdOffset` away
+  // for those frames (measured with a 1200px and a one-viewport margin,
+  // #1400). The list's top is `scrollMargin` down the element, where held
+  // rows would be drawn over what is above the list; the element still
+  // moves there, so those frames are the lesser evil. Past the top (a
+  // bounce) the write waits: the next wheel or scroll event tries again.
+  // The end needs none of this: the total size is exposed short by the
+  // hold, so the element and the layout reach it together.
+  private _holdAtTop = () => {
+    if (this._holdOffset === 0) return false
+    const offset = this._readElementOffset()
+    // 1px for a fractional scrollTop.
+    return (
+      offset !== null &&
+      (offset < this.options.scrollMargin + 1 || offset + this._holdOffset < 1)
+    )
+  }
+  private _flushHoldAtTop = () => {
+    const win = this.targetWindow
+    if (
+      win === null ||
+      this._wheelTimer === null ||
+      this._edgeFlushFrame !== null ||
+      !this._holdAtTop()
+    ) {
+      return
+    }
+    this._edgeFlushFrame = win.requestAnimationFrame(() => {
+      this._edgeFlushFrame = win.requestAnimationFrame(() => {
+        this._edgeFlushFrame = null
+        // The reader can have turned back within the two frames.
+        if (this._wheelTimer === null || !this._holdAtTop()) return
+        win.clearTimeout(this._wheelTimer)
+        this._wheelTimer = null
+        this._flushHoldIfReady(true)
+        this._retryClampedAdjustment()
+      })
+    })
+  }
 
   // Write a held correction once a write is possible, from the scroll
   // handler, the touch tail timer, `_willUpdate` and a resize notify. The
