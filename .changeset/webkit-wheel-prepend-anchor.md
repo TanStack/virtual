@@ -2,4 +2,4 @@
 '@tanstack/virtual-core': patch
 ---
 
-Fix an end-anchored list losing the reader's place in WebKit when rows are prepended during wheel or trackpad scrolling. The anchor write is now made two frames later, where WebKit keeps it.
+Fix wheel and trackpad scrolling in WebKit losing distance, or the reader's place, when rows are measured or prepended on the way. Scroll corrections are now held while wheel input drives the scroll and written when it rests, or when the element reaches either edge.

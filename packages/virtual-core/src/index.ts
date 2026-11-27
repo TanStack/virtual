@@ -545,10 +545,12 @@ export class Virtualizer<
   // `_flushHoldIfReady`: the rows re-render in layout coordinates and the
   // element moves by the same amount in one paint.
   private _holdOffset = 0
-  // When the last wheel event came (`now()`), listened for on WebKit only.
-  private _lastWheelAt: number | null = null
-  // The frame a prepend's anchor write waits for (`_holdAnchorUnderWheel`).
-  private _anchorHoldFrame: number | null = null
+  // Set while wheel input drives the scroll in WebKit: from a wheel event
+  // until 150ms pass without one. Corrections are held meanwhile (see
+  // `_canWriteScroll`).
+  private _wheelTimer: number | null = null
+  // The frame a hold at an edge is written in (`_flushHoldAtEdge`).
+  private _edgeFlushFrame: number | null = null
   // Whether the element's last scroll event reported a position past either
   // edge (the rubber-band bounce). Judged at report time against the
   // element's own max, with a 1px tolerance for a fractional scrollTop: a
@@ -1096,11 +1098,16 @@ export class Virtualizer<
     // just removed), deferring every adjustment on the new element until
     // its next touch cycle.
     this._holdOffset = 0
-    if (this._anchorHoldFrame !== null && this.targetWindow) {
-      this.targetWindow.cancelAnimationFrame(this._anchorHoldFrame)
+    if (this.targetWindow) {
+      if (this._wheelTimer !== null) {
+        this.targetWindow.clearTimeout(this._wheelTimer)
+      }
+      if (this._edgeFlushFrame !== null) {
+        this.targetWindow.cancelAnimationFrame(this._edgeFlushFrame)
+      }
     }
-    this._anchorHoldFrame = null
-    this._lastWheelAt = null
+    this._wheelTimer = null
+    this._edgeFlushFrame = null
     this._reportedOverscroll = false
     this._trailing = 0
     // (The gesture was ended with its listeners, in the unsubs above.)
@@ -1290,6 +1297,7 @@ export class Virtualizer<
 
           // A held correction is written once a write is possible.
           this._flushHoldIfReady(true)
+          this._flushHoldAtEdge()
 
           if (this.scrollState) {
             this.scheduleScrollReconcile()
@@ -1304,7 +1312,16 @@ export class Virtualizer<
         this.unsubs.push(this._iosGesture.listen(target))
         if (isWebKit()) {
           const onWheel = () => {
-            this._lastWheelAt = this.now()
+            const win = this.targetWindow
+            if (win === null) return
+            if (this._wheelTimer !== null) win.clearTimeout(this._wheelTimer)
+            this._wheelTimer = win.setTimeout(() => {
+              this._wheelTimer = null
+              this._flushHoldIfReady(true)
+              this._retryClampedAdjustment()
+            }, 150)
+            // At an edge the element stops moving, so no scroll event comes.
+            this._flushHoldAtEdge()
           }
           target.addEventListener('wheel', onWheel, addEventListenerOptions)
           this.unsubs.push(() => target.removeEventListener('wheel', onWheel))
@@ -1334,7 +1351,6 @@ export class Virtualizer<
         // it and this commit (a concurrent render) can have changed that.
         // Hold the delta after all and have the rows re-rendered shifted;
         // an update scheduled from a layout effect commits before paint.
-        this._holdAnchorUnderWheel()
         if (!this._canWriteScroll()) {
           this._holdOffset += anchor.delta
           this._followAnchor(anchor.delta)
@@ -1465,39 +1481,54 @@ export class Virtualizer<
   // - not while the element is overscrolled past either edge (the
   //   rubber-band bounce): WebKit discards the write and the bounce can
   //   stall where it was (#1287);
-  // - not while a prepend made under wheel input waits for its frames
-  //   (`_holdAnchorUnderWheel`).
+  // - not in WebKit while wheel input drives the scroll: the write lands,
+  //   but WebKit then discards the distance of the next wheel event, and a
+  //   list of rows measured on the way up writes on most frames. In
+  //   Playwright WebKit 26.0 a wheel event per frame lost about a third of
+  //   its distance that way (#1398, #1400); a prepend's anchor write could
+  //   be undone whole. Real Safari and trackpad momentum are not measured.
   // A write that is unwanted for another reason (a travelling smooth scroll
   // owns the position) is a separate check at the call sites.
   private _canWriteScroll = () =>
-    !(isIOSWebKit() && this._iosGesture.inMotion()) &&
-    !this._reportedOverscroll &&
-    this._anchorHoldFrame === null
+    this._elementTakesWrite() && this._wheelTimer === null
 
-  // WebKit can drop a scrollTop write made while wheel input drives the
-  // scroll: the scrolling thread carries on from where it was. A prepend's
-  // anchor write lost that way throws the reader by the whole prepend
-  // (#1398). Held for two frames and written from the second, it stays:
-  // 0 jumps in 42 runs of the issue's repro in Playwright WebKit 26.0,
-  // where the write from `_willUpdate` jumped in about 1 run of 4 and a
-  // write from the next scroll event in 4 of 7. Real Safari and trackpad
-  // momentum are not measured. Size corrections are written as before;
-  // one arriving within the two frames joins the hold.
-  private _holdAnchorUnderWheel = () => {
+  // The first two of those: the element would ignore or discard the write.
+  private _elementTakesWrite = () =>
+    !(isIOSWebKit() && this._iosGesture.inMotion()) && !this._reportedOverscroll
+
+  // A hold shifts the rows and leaves the element where it is, so the
+  // element reaches its edge while the layout has `_holdOffset` further to
+  // go, or the other way round. Wheel input that never pauses would park
+  // the reader there. At either edge the hold is written while the wheel
+  // still runs, two frames later (a prepend's anchor written at once can be
+  // undone, #1398). Not before the edge: while the element still moves,
+  // WebKit applies the write about two frames after the rows have gone
+  // back to layout coordinates, and they show `_holdOffset` away for those
+  // frames (measured with a 1200px and a one-viewport margin, #1400). At
+  // the edge the element has nowhere to go and the write lands with the
+  // rows. Past the edge (a bounce) the write waits: the next wheel or
+  // scroll event tries again.
+  private _flushHoldAtEdge = () => {
     const win = this.targetWindow
     if (
       win === null ||
-      this._anchorHoldFrame !== null ||
-      this._lastWheelAt === null ||
-      this.now() - this._lastWheelAt >= 150
+      this._holdOffset === 0 ||
+      this._wheelTimer === null ||
+      this._edgeFlushFrame !== null
     ) {
       return
     }
-    this._anchorHoldFrame = win.requestAnimationFrame(() => {
-      this._anchorHoldFrame = win.requestAnimationFrame(() => {
-        this._anchorHoldFrame = null
-        this._flushHoldIfReady(true)
-        this._retryClampedAdjustment()
+    const offset = this._readElementOffset()
+    const max = this._elementMaxScrollOffset()
+    if (offset === null || max === null) return
+    // 1px for a fractional scrollTop.
+    if (offset >= 1 && offset + this._holdOffset >= 1 && max - offset >= 1) {
+      return
+    }
+    this._edgeFlushFrame = win.requestAnimationFrame(() => {
+      this._edgeFlushFrame = win.requestAnimationFrame(() => {
+        this._edgeFlushFrame = null
+        this._flushHoldIfReady(true, true)
       })
     })
   }
@@ -1508,11 +1539,14 @@ export class Virtualizer<
   // notify issued before the write, so the sizer can take the position and
   // both commit in the paint the write lands in. `sync` is false only where
   // the caller already runs inside the consumer's commit (`_willUpdate`),
-  // where an update it schedules commits before paint anyway.
-  private _flushHoldIfReady = (sync: boolean) => {
+  // where an update it schedules commits before paint anyway. `underWheel`
+  // writes although wheel input still runs (`_flushHoldAtEdge`).
+  private _flushHoldIfReady = (sync: boolean, underWheel = false) => {
     if (this._holdOffset === 0) return
     if (!this.scrollElement || !this.options.enabled) return
-    if (!this._canWriteScroll()) return
+    if (!(underWheel ? this._elementTakesWrite() : this._canWriteScroll())) {
+      return
+    }
     // Let a travelling smooth scroll land first (see `_willUpdate`).
     if (this.scrollState?.phase === 'smooth') return
     this._holdOffset = 0
