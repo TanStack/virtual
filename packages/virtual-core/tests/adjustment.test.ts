@@ -6,6 +6,167 @@ import {
   observeElementRect,
 } from '../src/index'
 
+test.each([1, 2])(
+  'resizeItem uses the updated layout before the next render (%i lanes)',
+  (lanes) => {
+    const scrollToFn = vi.fn()
+    let scroll: (offset: number, scrolling: boolean) => void = () => {}
+    const options = {
+      count: 10,
+      lanes,
+      paddingStart: 0,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({ scrollTop: 100, scrollHeight: 1000, clientHeight: 200 } as any),
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (_instance: any, cb: typeof scroll) => {
+        scroll = cb
+        cb(80, false)
+        return () => {}
+      },
+    }
+    const virtualizer = new Virtualizer(options)
+    virtualizer._willUpdate()
+    virtualizer.getTotalSize()
+    scroll(100, true)
+    scrollToFn.mockClear()
+
+    // The first row has moved below the viewport before its first measurement.
+    virtualizer.setOptions({ ...options, paddingStart: 200 })
+    virtualizer.resizeItem(0, 80)
+    expect(scrollToFn).not.toHaveBeenCalled()
+    expect(virtualizer.takeSnapshot()[0]?.size).toBe(80)
+  },
+)
+
+test('resizeItem still compensates a row above the viewport after a layout change', () => {
+  const scrollToFn = vi.fn()
+  const options = {
+    count: 10,
+    paddingStart: 200,
+    estimateSize: () => 50,
+    getScrollElement: () =>
+      ({ scrollTop: 100, scrollHeight: 1000, clientHeight: 200 } as any),
+    scrollToFn,
+    observeElementRect: () => {},
+    observeElementOffset: (
+      _instance: any,
+      cb: (o: number, s: boolean) => void,
+    ) => {
+      cb(100, false)
+      return () => {}
+    },
+  }
+  const virtualizer = new Virtualizer(options)
+  virtualizer._willUpdate()
+  virtualizer.getTotalSize()
+  scrollToFn.mockClear()
+
+  virtualizer.setOptions({ ...options, paddingStart: 0 })
+  virtualizer.resizeItem(0, 80)
+  expect(scrollToFn).toHaveBeenCalledWith(
+    100,
+    { adjustments: 30, behavior: undefined },
+    virtualizer,
+  )
+})
+
+test('a ResizeObserver measurement after an option update uses the new position', () => {
+  let deliver: ResizeObserverCallback = () => {}
+  const mockWindow = {
+    requestAnimationFrame: vi.fn(),
+    cancelAnimationFrame: vi.fn(),
+    ResizeObserver: vi.fn(function (cb: ResizeObserverCallback) {
+      deliver = cb
+      return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
+    }),
+  }
+  const element = {
+    scrollTop: 100,
+    scrollHeight: 1000,
+    clientHeight: 200,
+    ownerDocument: { defaultView: mockWindow },
+  }
+  const scrollToFn = vi.fn()
+  let scroll: (offset: number, scrolling: boolean) => void = () => {}
+  const options = {
+    count: 10,
+    paddingStart: 0,
+    estimateSize: () => 50,
+    getScrollElement: () => element as any,
+    scrollToFn,
+    observeElementRect: () => {},
+    observeElementOffset: (_instance: any, cb: typeof scroll) => {
+      scroll = cb
+      cb(80, false)
+      return () => {}
+    },
+  }
+  const virtualizer = new Virtualizer(options)
+  virtualizer._willUpdate()
+  virtualizer.getTotalSize()
+  const node = {
+    isConnected: true,
+    getAttribute: () => '0',
+    offsetHeight: 50,
+  } as unknown as HTMLElement
+  virtualizer.measureElement(node)
+  scroll(100, true)
+  scrollToFn.mockClear()
+
+  virtualizer.setOptions({ ...options, paddingStart: 200 })
+  deliver(
+    [
+      {
+        target: node,
+        borderBoxSize: [{ blockSize: 80, inlineSize: 100 }],
+      } as unknown as ResizeObserverEntry,
+    ],
+    {} as ResizeObserver,
+  )
+
+  expect(scrollToFn).not.toHaveBeenCalled()
+  expect(virtualizer.takeSnapshot()[0]).toMatchObject({ start: 200, size: 80 })
+})
+
+test.each([1, 2])(
+  'an added item can be measured before the next render (%i lanes)',
+  (lanes) => {
+    const scrollToFn = vi.fn()
+    const options = {
+      count: 1,
+      lanes,
+      estimateSize: () => 50,
+      getScrollElement: () =>
+        ({ scrollTop: 100, scrollHeight: 1000, clientHeight: 200 }) as any,
+      scrollToFn,
+      observeElementRect: () => {},
+      observeElementOffset: (
+        _instance: any,
+        cb: (o: number, s: boolean) => void,
+      ) => {
+        cb(100, false)
+        return () => {}
+      },
+    }
+    const virtualizer = new Virtualizer(options)
+    virtualizer._willUpdate()
+    virtualizer.getTotalSize()
+    scrollToFn.mockClear()
+
+    virtualizer.setOptions({ ...options, count: 2 })
+    virtualizer.resizeItem(1, 80)
+
+    expect(scrollToFn).toHaveBeenCalledWith(
+      100,
+      { adjustments: 30, behavior: undefined },
+      virtualizer,
+    )
+    expect(virtualizer.takeSnapshot()[0]).toMatchObject({ index: 1, size: 80 })
+  },
+)
+
 test('scroll-up jank: backward-scroll skips adjustment on re-measurement by default', () => {
   // Default behavior: when an already-measured above-viewport item resizes
   // AGAIN while the user is scrolling BACKWARD, we no longer write to

@@ -2088,6 +2088,13 @@ export class Virtualizer<
   resizeItem = (index: number, size: number) => {
     if (!this.isIndexInRange(index)) return
 
+    // Options can change before the next render rebuilds the measurements.
+    // Use the current item position and estimate when deciding whether this
+    // resize needs a scroll correction.
+    if (this.getMeasurementOptions() !== this.builtMeasurementOptions) {
+      this.getMeasurements()
+    }
+
     // An earlier entry in this ResizeObserver batch moved `scrollOffset`.
     // Outside a batch its sync notify would have re-rendered and rebuilt the
     // caches read below; rebuild them here so the anchoring check compares
