@@ -53,3 +53,5 @@ npm install @tanstack/marko-virtual
 ```bash
 npm install @tanstack/virtual-core
 ```
+
+See the [Vanilla JS guide](vanilla) for using the core without a framework adapter.

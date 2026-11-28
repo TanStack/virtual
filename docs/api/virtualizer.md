@@ -428,6 +428,32 @@ scrollElement: readonly TScrollElement | null
 
 The current scrollElement for the virtualizer. This property is updated via your framework adapter and is read-only.
 
+### `setOptions`
+
+```tsx
+setOptions: (options: VirtualizerOptions<TScrollElement, TItemElement>) => void
+```
+
+Replaces the virtualizer's options. Options left out of `options` (or set to `undefined`) take their default values, not their previous ones, so pass the complete set of options each time. Framework adapters call this for you when your options change; without an adapter, call `_willUpdate` afterwards. See the [Vanilla JS guide](../vanilla).
+
+### `_didMount`
+
+```tsx
+_didMount: () => () => void
+```
+
+Called by framework adapters when the virtualizer is mounted. Returns a cleanup function that detaches the virtualizer from its scroll element and disconnects the observers started by `_willUpdate`; call it when the list is removed. You only need to call `_didMount` yourself when using `@tanstack/virtual-core` without an adapter; see the [Vanilla JS guide](../vanilla).
+
+### `_willUpdate`
+
+```tsx
+_willUpdate: () => void
+```
+
+Called by framework adapters once the virtualizer is mounted and again as it updates. It attaches the virtualizer to the element returned by `getScrollElement` (reading its size, writing `initialOffset` to it, and observing its size and scroll position), switches to a new element if `getScrollElement` returns a different one, and applies scroll corrections that wait for the new total size to be rendered.
+
+Until `_willUpdate` has attached the virtualizer to a scroll element, `getVirtualItems()` returns an empty array. When using `@tanstack/virtual-core` without an adapter, call it once the scroll element is in the document, after every `setOptions` call, and after every render; see the [Vanilla JS guide](../vanilla).
+
 ### `getVirtualItems`
 
 ```tsx
