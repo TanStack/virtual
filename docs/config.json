@@ -85,6 +85,10 @@
         {
           "label": "Chat",
           "to": "chat"
+        },
+        {
+          "label": "Vanilla JS",
+          "to": "vanilla"
         }
       ]
     },
